@@ -1,3 +1,4 @@
+##ex all
 from caddee.caddee_core.system_model.sizing_group.sizing_models.sizing_model import SizingModel
 from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
 

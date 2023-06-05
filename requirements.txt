@@ -10,5 +10,5 @@ sphinx-copybutton
 sphinx-autoapi
 numpydoc
 gitpython
-git+https://github.com/anugrahjo/sphinx-collections.git
+# git+https://github.com/anugrahjo/sphinx-collections.git
 sphinxcontrib-bibtex

@@ -1,5 +1,4 @@
 ##skip
-
 from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
 from caddee.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_model.mechanics_model import MechanicsModel
 import csdl

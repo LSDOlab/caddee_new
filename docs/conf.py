@@ -30,7 +30,7 @@ version = '0.1'
 # ones.
 extensions = [
     "sphinx_rtd_theme",
-    "autoapi.extension",
+    # "autoapi.extension",
     "numpydoc",                 
     "sphinx_copybutton",            # allows copying code embedded in the docs rendered from .md or .ipynb files
     "myst_nb",                      # renders .md, .myst, .ipynb files
@@ -50,15 +50,15 @@ nb_execution_mode = 'off'
 # autodoc_typehints = 'description'
 
 # autoapi options
-autoapi_dirs = ["../caddee/core"]
-autoapi_root = 'src/autoapi'
-autoapi_type = 'python'
-autoapi_file_patterns = ['*.py', '*.pyi']
-autoapi_options = [ 'members', 'undoc-members', 'private-members', 'show-inheritance', 
-                   'show-module-summary', 'special-members', 'imported-members', ]
-autoapi_add_toctree_entry = False
-autoapi_member_order = 'groupwise'
-autoapi_python_class_content = 'class' # 'both' or '__init'
+# autoapi_dirs = ["../caddee/core"]
+# autoapi_root = 'src/autoapi'
+# autoapi_type = 'python'
+# autoapi_file_patterns = ['*.py', '*.pyi']
+# autoapi_options = [ 'members', 'undoc-members', 'private-members', 'show-inheritance', 
+#                    'show-module-summary', 'special-members', 'imported-members', ]
+# autoapi_add_toctree_entry = False
+# autoapi_member_order = 'groupwise'
+# autoapi_python_class_content = 'class' # 'both' or '__init'
 
 root_doc = 'index'
 
