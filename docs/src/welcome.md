@@ -1,6 +1,5 @@
-# Welcome to lsdo_project_template
+# Welcome to CADDEE
 
-![alt text](/src/images/lsdolab.png "Title displayed")
 
 This page describes conceptually the purpose of your package at a high-level.
 Start with a one sentence description of your package.
@@ -21,10 +20,10 @@ Include figures from the relevant paper and citation.
 ```
 
 <!-- Remove/add custom pages from/to toc as per your package's requirement -->
-
+<!-- 
 ```{toctree}
 :maxdepth: 1
-:hidden:
+:hidden: -->
 
 src/getting_started
 src/background
