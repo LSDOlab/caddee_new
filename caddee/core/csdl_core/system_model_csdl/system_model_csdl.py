@@ -1,9 +1,10 @@
 from csdl import Model
 from caddee.utils.base_model_csdl import BaseModelCSDL
-from caddee.caddee_core.system_model.system_model import SystemModel
-from caddee.caddee_core.system_representation.system_representation import SystemRepresentation
-from caddee.csdl_core_modules.system_model_csdl.mass_properties_csdl.constant_mass_properties_csdl import ConstantMassPropertiesCSDL
-from caddee.caddee_core.system_parameterization.system_parameterization import SystemParameterization
+from caddee.core.caddee_core.system_model.system_model import SystemModel
+from caddee.core.caddee_core.system_representation.system_representation import SystemRepresentation
+from caddee.core.csdl_core.system_model_csdl.mass_properties_csdl.constant_mass_properties_csdl import ConstantMassPropertiesCSDL
+
+from caddee.core.caddee_core.system_parameterization.system_parameterization import SystemParameterization
 
 
 class SystemModelCSDL(BaseModelCSDL):
@@ -11,6 +12,7 @@ class SystemModelCSDL(BaseModelCSDL):
         self.parameters.declare('system_model', types=SystemModel)
         self.parameters.declare('system_representation', types=SystemRepresentation, allow_none=False)
         self.parameters.declare('system_param', default=None, types=SystemParameterization, allow_none=True)
+
         # self.parameters.declare('meshes', default=None, allow_none=True)
         # establish a pattern where the pure python objects corresponding to 
         # csdl object are declared as parameters (including composition)

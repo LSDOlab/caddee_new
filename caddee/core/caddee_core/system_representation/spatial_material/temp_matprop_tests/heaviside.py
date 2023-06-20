@@ -1,16 +1,16 @@
 import pickle
 import numpy as np
-from caddee.caddee_core.system_configuration.spatial_material.spatial_material import SpatialMaterial
-import caddee.primitives.bsplines.bspline_functions as bsf
-from caddee.caddee_core.system_configuration.system_primitive.system_primitive import SystemPrimitive
-from caddee.caddee_core.system_configuration.mechanical_structure import MechanicalStructure
+from caddee.core.caddee_core.system_configuration.spatial_material.spatial_material import SpatialMaterial
+import caddee.core.primitives.bsplines.bspline_functions as bsf
+from caddee.core.caddee_core.system_configuration.system_primitive.system_primitive import SystemPrimitive
+from caddee.core.caddee_core.system_configuration.mechanical_structure import MechanicalStructure
 import meshio
 import pathlib
 import scipy.io
 import time
-from caddee.caddee_core.system_configuration.utils.mesh_utils import import_mesh
+from caddee.core.caddee_core.system_configuration.utils.mesh_utils import import_mesh
 import vedo
-from caddee.csdl_core.system_configuration_csdl.heaviside import PiecewiseHeavisideModel
+from caddee.core.csdl_core.system_configuration_csdl.heaviside import PiecewiseHeavisideModel
 import csdl
 from python_csdl_backend import Simulator
 

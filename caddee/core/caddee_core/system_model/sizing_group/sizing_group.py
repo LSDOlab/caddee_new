@@ -1,4 +1,4 @@
-from caddee.caddee_core.system_model.design_scenario.design_condition.model_group.model_group import ModelGroup
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.model_group.model_group import ModelGroup
 
 
 class SizingGroup(ModelGroup):
@@ -28,7 +28,7 @@ class SizingGroup(ModelGroup):
         return
 
     def _assemble_csdl(self):
-        from caddee.csdl_core_modules.system_model_csdl.sizing_group_csdl.sizing_group_csdl import SizingGroupCSDL
+        from caddee.core.csdl_core.system_model_csdl.sizing_group_csdl.sizing_group_csdl import SizingGroupCSDL
         csdl_model = SizingGroupCSDL(
             sizing_group=self,
         )

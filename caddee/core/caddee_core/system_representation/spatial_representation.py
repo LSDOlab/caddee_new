@@ -5,10 +5,10 @@ import os
 from pathlib import Path
 import vedo
 import pickle
-from caddee.caddee_core.system_representation.system_primitive.system_primitive import SystemPrimitive
-from caddee.caddee_core.system_representation.utils.io.step_io import read_openvsp_stp, write_step, read_gmsh_stp
-from caddee.caddee_core.system_representation.utils.io.iges_io import read_iges, write_iges
-from caddee import IMPORTS_FILES_FOLDER
+from caddee.core.caddee_core.system_representation.system_primitive.system_primitive import SystemPrimitive
+from caddee.core.caddee_core.system_representation.utils.io.step_io import read_openvsp_stp, write_step, read_gmsh_stp
+from caddee.core.caddee_core.system_representation.utils.io.iges_io import read_iges, write_iges
+from caddee import IMPORTS_FILES_FOLDER, GEOMETRY_FILES_FOLDER
 
 class SpatialRepresentation:
     '''
@@ -213,23 +213,24 @@ class SpatialRepresentation:
         primitives = IMPORTS_FILES_FOLDER / f'{fn_wo_ext}_primitives.pickle'
         my_file = Path(control_points) 
         if my_file.is_file():
-            with open(primitives, 'rb') as f:
-                self.primitives = pickle.load(f)
+            with open(primitives, 'rb') as file:
+                self.primitives = pickle.load(file)
 
-            with open(primitive_indices, 'rb') as f:
-                self.primitive_indices = pickle.load(f)
+            with open(primitive_indices, 'rb') as file:
+                self.primitive_indices = pickle.load(file)
 
-            with open(control_points, 'rb') as f:
-                self.control_points = pickle.load(f)
+            with open(control_points, 'rb') as file:
+                self.control_points = pickle.load(file)
 
         else:
             file_name = str(file_name)
             if (file_name[-4:].lower() == '.stp') or (file_name[-5:].lower() == '.step'):
-                with open(file_name, 'r') as f:
+                print(file_name)
+                with open(GEOMETRY_FILES_FOLDER/file_name, 'r') as f:
                     if 'CASCADE' in f.read():  # Not sure, could be another string to identify
-                        self.read_gmsh_stp(file_name)
+                        self.read_gmsh_stp(GEOMETRY_FILES_FOLDER/file_name)
                     else: 
-                        self.read_openvsp_stp(file_name)
+                        self.read_openvsp_stp(GEOMETRY_FILES_FOLDER/file_name)
             elif (file_name[-4:].lower() == '.igs') or (file_name[-5:].lower() == '.iges'):
                 raise NotImplementedError
                 # self.read_iges(file_name) #TODO
@@ -239,16 +240,16 @@ class SpatialRepresentation:
             self.assemble()
             save_file_name = os.path.basename(file_name)
             filename_without_ext = save_file_name[:save_file_name.rindex('.')]
-            with open(f'imports/{filename_without_ext}_control_points.pickle', 'wb+') as handle:
+            with open( IMPORTS_FILES_FOLDER / f'{filename_without_ext}_control_points.pickle', 'wb+') as handle:
                 pickle.dump(self.control_points, handle, protocol=pickle.HIGHEST_PROTOCOL)
                 # np.save(f, self.control_points)
-            with open(f'imports/{filename_without_ext}_primitive_indices.pickle', 'wb+') as handle:
+            with open(IMPORTS_FILES_FOLDER/ f'{filename_without_ext}_primitive_indices.pickle', 'wb+') as handle:
                 pickle.dump(self.primitive_indices, handle, protocol=pickle.HIGHEST_PROTOCOL)
-            with open(f'imports/{filename_without_ext}_primitives.pickle', 'wb+') as handle:
+            with open(IMPORTS_FILES_FOLDER/ f'{filename_without_ext}_primitives.pickle', 'wb+') as handle:
                 pickle.dump(self.primitives, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     def refit_geometry(self, num_control_points:int=25, fit_resolution:int=50, only_non_differentiable:bool=False, file_name=None):
-        import caddee.primitives.bsplines.bspline_functions as mfd  # lsdo_manifolds
+        import caddee.core.primitives.bsplines.bspline_functions as mfd  # lsdo_manifolds
 
         if file_name is not None:
             fn = os.path.basename(file_name)

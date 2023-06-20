@@ -5,8 +5,8 @@ import array_mapper as am
 # from vedo import Points, Plotter, Mesh
 import vedo
 
-from caddee.caddee_core.system_representation.utils.io.step_io import read_openvsp_stp, write_step, read_gmsh_stp
-from caddee.caddee_core.system_representation.utils.io.iges_io import read_iges, write_iges
+from caddee.core.caddee_core.system_representation.utils.io.step_io import read_openvsp_stp, write_step, read_gmsh_stp
+from caddee.core.caddee_core.system_representation.utils.io.iges_io import read_iges, write_iges
 
 class Geometry:
     '''

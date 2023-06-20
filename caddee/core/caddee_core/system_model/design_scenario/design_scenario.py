@@ -1,9 +1,9 @@
 from caddee.utils.caddee_base import CADDEEBase
-from caddee.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_group import MechanicsGroup
-from caddee.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_model.mechanics_model import MechanicsModel
-from caddee.caddee_core.system_model.design_scenario.design_condition.nonmechanics_group.nonmechanics_group import NonmechanicsGroup
-from caddee.caddee_core.system_model.design_scenario.design_condition.power_group.power_group import PowerGroup
-from caddee.caddee_core.system_model.design_scenario.design_condition.power_group.power_model.power_model import PowerModel
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_group import MechanicsGroup
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_model.mechanics_model import MechanicsModel
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.nonmechanics_group.nonmechanics_group import NonmechanicsGroup
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.power_group.power_group import PowerGroup
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.power_group.power_model.power_model import PowerModel
 import pandas as pd
 import numpy as np
 
@@ -28,7 +28,7 @@ class DesignScenario(CADDEEBase):
 
     def _assemble_csdl(self):
         # TODO: every _assemble_csdl will have an import similar to below (to avoid circular imports)
-        from caddee.csdl_core.system_model_csdl.design_scenario_csdl.design_scenario_csdl import DesignScenarioCSDL
+        from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_scenario_csdl import DesignScenarioCSDL
         csdl_model = DesignScenarioCSDL(
             design_scenario=self,
         )
@@ -36,7 +36,7 @@ class DesignScenario(CADDEEBase):
     
     def _assemble_csdl_modules(self, system_config=None, system_param=None, sizing_group=None):
         # TODO: every _assemble_csdl will have an import similar to below (to avoid circular imports)
-        from caddee.csdl_core_modules.system_model_csdl.design_scenario_csdl.design_scenario_csdl import DesignScenarioCSDL
+        from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_scenario_csdl import DesignScenarioCSDL
         csdl_model = DesignScenarioCSDL(
             design_scenario=self,
             system_config=system_config,

@@ -2,8 +2,8 @@ import numpy as np
 
 from caddee.utils.caddee_base import CADDEEBase
 
-from caddee.caddee_core.system_representation.spatial_representation import SpatialRepresentation
-from caddee.caddee_core.system_representation.component.component import Component, LiftingSurface, Rotor
+from caddee.core.caddee_core.system_representation.spatial_representation import SpatialRepresentation
+from caddee.core.caddee_core.system_representation.component.component import Component, LiftingSurface, Rotor
 
 # Type checking imports
 import array_mapper as am
@@ -137,11 +137,11 @@ class SystemRepresentation(CADDEEBase):
         '''
         Constructs and returns the CADDEE model.
         '''
-        from caddee.csdl_core.system_representation_csdl.system_representation_csdl import SystemRepresentationCSDL
+        from caddee.core.csdl_core.system_representation_csdl.system_representation_csdl import SystemRepresentationCSDL
         return SystemRepresentationCSDL(system_representation = self)
 
 
-from caddee.caddee_core.system_representation.prescribed_actuations import PrescribedActuation
+from caddee.core.caddee_core.system_representation.prescribed_actuations import PrescribedActuation
 
 class SystemConfiguration(CADDEEBase):
     '''

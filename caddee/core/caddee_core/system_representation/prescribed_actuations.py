@@ -1,6 +1,6 @@
 import array_mapper as am
 import numpy as np
-from caddee.caddee_core.system_representation.component.component import Component
+from caddee.core.caddee_core.system_representation.component.component import Component
 
 
 class PrescribedActuation:
@@ -36,7 +36,7 @@ class PrescribedRotation(PrescribedActuation):
         '''
         Assembles the CSDL model to perform this operation.
         '''
-        from caddee.csdl_core.system_representation_csdl.prescribed_rotation_csdl import PrescribedRotationCSDL
+        from caddee.core.csdl_core.system_representation_csdl.prescribed_rotation_csdl import PrescribedRotationCSDL
         return PrescribedRotationCSDL(prescribed_rotation = self)
 
 
@@ -50,7 +50,7 @@ class PrescribedTranslation(PrescribedActuation):
         '''
         Assembles the CSDL model to perform this operation.
         '''
-        from caddee.csdl_core.system_representation_csdl.system_representation_csdl import PrescribedTranslationCSDL
+        from caddee.core.csdl_core.system_representation_csdl.system_representation_csdl import PrescribedTranslationCSDL
         return PrescribedTranslationCSDL(prescribed_translation = self)
 
 
@@ -91,7 +91,7 @@ class PrescribedTranslation(PrescribedActuation):
 #         '''
 #         Assembles the CSDL model to perform this operation.
 #         '''
-#         from caddee.csdl_core.system_representation_csdl.system_representation_csdl import SystemRepresentationCSDL
+#         from caddee.core.csdl_core.system_representation_csdl.system_representation_csdl import SystemRepresentationCSDL
 #         return SystemRepresentationCSDL(system_representation = self)
 
 

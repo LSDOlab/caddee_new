@@ -1,8 +1,8 @@
 import numpy as np
 from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
 from caddee.utils.caddee_base import CADDEEBase
-# from caddee.caddee_core.system_representation.geometry import Geometry
-from caddee.caddee_core.system_representation.spatial_representation import SpatialRepresentation
+# from caddee.core.caddee_core.system_representation.geometry import Geometry
+# from caddee.core.caddee_core.system_representation.spatial_representation import SpatialRepresentation
 
 class Component(CADDEEBase):
     '''
@@ -24,7 +24,8 @@ class Component(CADDEEBase):
         # self.parameters.declare('geometry', types=Geometry)
         # self.parameters.declare('geometry_primitive_names', default=[], allow_none=True, types=list)
         self.parameters.declare('component_vars', default=[''], types=list)
-        self.parameters.declare('spatial_representation', default=None, types=SpatialRepresentation, allow_none=True)
+        # self.parameters.declare('spatial_representation', default=None, types=SpatialRepresentation, allow_none=True)
+        self.parameters.declare('spatial_representation', default=None, allow_none=True)
         self.parameters.declare('primitive_names', default=[], allow_none=True, types=list)
 
     def assign_attributes(self):

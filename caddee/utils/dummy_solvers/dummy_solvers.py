@@ -87,7 +87,7 @@ class MechanicsModel(BaseModel): # pure python side
 
 
 """ in lsdo_rotor (top-level) """ 
-from caddee.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_model.mechanics_model import MechanicsModel
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_model.mechanics_model import MechanicsModel
 from lsdo_rotor.core.bem_csdl import BEMCSDL # import from a lower-level the main csdl bem model that does all the computations 
 
 class BEMModel(MechanicsModel): # Pure python side

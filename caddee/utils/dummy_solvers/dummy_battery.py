@@ -1,7 +1,7 @@
 import csdl 
 from caddee.utils.caddee_base import CADDEEBase
-from caddee.caddee_core.system_model.design_scenario.design_condition.power_group.power_model.power_model import PowerModel
-from caddee.caddee_core.system_representation.component.component import Component
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.power_group.power_model.power_model import PowerModel
+from caddee.core.caddee_core.system_representation.component.component import Component
 from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
 
 

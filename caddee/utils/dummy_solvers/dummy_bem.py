@@ -1,7 +1,7 @@
 from csdl import Model 
 import csdl
-from caddee.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_model.mechanics_model import MechanicsModel
-from caddee.caddee_core.system_representation.component.component import Component
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_model.mechanics_model import MechanicsModel
+from caddee.core.caddee_core.system_representation.component.component import Component
 from caddee.utils.caddee_base import CADDEEBase
 from caddee.utils.variable_group import VariableGroup
 import numpy as np

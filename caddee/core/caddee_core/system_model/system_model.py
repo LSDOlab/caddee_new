@@ -1,5 +1,5 @@
 from caddee.utils.caddee_base import CADDEEBase
-from caddee.caddee_core.system_model.sizing_group.sizing_group import SizingGroup
+from caddee.core.caddee_core.system_model.sizing_group.sizing_group import SizingGroup
 
 class SystemModel(CADDEEBase):
     def initialize(self, kwargs):

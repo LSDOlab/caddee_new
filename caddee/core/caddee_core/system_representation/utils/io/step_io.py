@@ -5,8 +5,8 @@ import numpy as np
 import copy
 from vedo import Points, Plotter, colors, LegendBox, show
 
-from caddee.primitives.bsplines.bspline_surface import BSplineSurface
-import caddee.primitives.bsplines.bspline_functions as bsp
+from caddee.core.primitives.bsplines.bspline_surface import BSplineSurface
+import caddee.core.primitives.bsplines.bspline_functions as bsp
 
 import io
 
@@ -329,7 +329,7 @@ def read_openvsp_stp(file_name):
     for i in range(num_surf):
         line_numbs_total_array = np.append(line_numbs_total_array, parsed_info_dict[f'surf{i}_cp_line_nums'].flatten())
     #print('line_numbs_total_array',line_numbs_total_array)
-    point_table = pd.read_csv(file_name, sep='=', names=['lines', 'raw_point'], error_bad_lines=False)
+    point_table = pd.read_csv(file_name, sep='=', names=['lines', 'raw_point'])
     #print('point_table',point_table)
     filtered_point_table = point_table.loc[point_table["lines"].isin(line_numbs_total_array)]
     #print('filtered_point_table',filtered_point_table)

@@ -1,6 +1,6 @@
 from csdl import Model
 from caddee.utils.caddee_base import CADDEEBase
-from caddee.csdl_core.caddee_csdl import CADDEECSDL
+from caddee.core.csdl_core.caddee_csdl import CADDEECSDL
 
 
 
@@ -47,7 +47,7 @@ class CADDEE(CADDEEBase):
         return caddee_csdl
     
     def assemble_csdl_modules(self):
-        from caddee.csdl_core_modules.caddee_csdl import CADDEECSDL
+        from caddee.core.csdl_core.caddee_csdl import CADDEECSDL
         """
         High-level method that assembles the caddee csdl model
         

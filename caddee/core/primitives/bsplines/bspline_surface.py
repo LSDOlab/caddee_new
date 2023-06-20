@@ -3,10 +3,10 @@ import scipy.sparse as sps
 import array_mapper as am
 import vedo
 
-from caddee.cython.basis_matrix_surface_py import get_basis_surface_matrix
-from caddee.cython.surface_projection_py import compute_surface_projection
+from lsdo_geo.cython.basis_matrix_surface_py import get_basis_surface_matrix
+from lsdo_geo.cython.surface_projection_py import compute_surface_projection
 
-from caddee.primitives.bsplines.bspline import BSpline
+from caddee.core.primitives.bsplines.bspline import BSpline
 
 class BSplineSurface(BSpline):
     def __init__(self, name:str, order_u:int, order_v:int, knots_u:np.ndarray, knots_v:np.ndarray, shape:tuple, control_points:np.ndarray):

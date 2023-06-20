@@ -1,6 +1,6 @@
 import numpy as np
 
-from caddee.primitives.primitive import Primitive
+from caddee.core.primitives.primitive import Primitive
 
 class BSpline(Primitive):
     '''

@@ -1,6 +1,6 @@
 from caddee.utils.base_model_csdl import BaseModelCSDL
 from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
-from caddee.caddee_core.system_model.design_scenario.design_condition.atmosphere.atmosphere import SimpleAtmosphereModel
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.atmosphere.atmosphere import SimpleAtmosphereModel
 from csdl import Model
 
 """

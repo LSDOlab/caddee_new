@@ -1,12 +1,12 @@
 import numpy as np
 
 from utils.caddee_base import CADDEEBase
-from caddee.caddee_core.system_representation.system_representation import SystemRepresentation
-from caddee.caddee_core.system_representation.component.component import Component
-from caddee.caddee_core.system_representation.utils.material import Material
-from caddee.primitives.primitive import Primitive
-from caddee.primitives.bsplines import bspline_functions as bsf
-from caddee.csdl_core.system_configuration_csdl.heaviside import PiecewiseHeavisideModel
+from caddee.core.caddee_core.system_representation.system_representation import SystemRepresentation
+from caddee.core.caddee_core.system_representation.component.component import Component
+from caddee.core.caddee_core.system_representation.utils.material import Material
+from caddee.core.primitives.primitive import Primitive
+from caddee.core.primitives.bsplines import bspline_functions as bsf
+from caddee.core.csdl_core.system_configuration_csdl.heaviside import PiecewiseHeavisideModel
 import scipy.sparse as sps
 import vedo
 import array_mapper as am

@@ -1,12 +1,12 @@
 from csdl import Model
-# from caddee.caddee_core.caddee import CADDEE
+# from caddee.core.caddee_core.caddee import CADDEE
 from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
-from caddee.caddee_core.system_representation.system_representation import SystemRepresentation
-from caddee.caddee_core.system_parameterization.system_parameterization import SystemParameterization
-from caddee.caddee_core.system_model.system_model import SystemModel
-from caddee.csdl_core_modules.system_model_csdl.system_model_csdl import SystemModelCSDL
-from caddee.csdl_core_modules.system_parameterization_csdl.system_parameterization_csdl import SystemParameterizationCSDL
-from caddee.csdl_core_modules.system_representation_csdl.system_representation_csdl import SystemRepresentationCSDL
+# from caddee.core.caddee_core.system_representation.system_representation import SystemRepresentation
+# from caddee.core.caddee_core.system_parameterization.system_parameterization import SystemParameterization
+from caddee.core.caddee_core.system_model.system_model import SystemModel
+from caddee.core.csdl_core.system_model_csdl.system_model_csdl import SystemModelCSDL
+from caddee.core.csdl_core.system_parameterization_csdl.system_parameterization_csdl import SystemParameterizationCSDL
+from caddee.core.csdl_core.system_representation_csdl.system_representation_csdl import SystemRepresentationCSDL
 
 class CADDEECSDL(ModuleCSDL):
     """
@@ -67,11 +67,11 @@ class CADDEECSDL(ModuleCSDL):
 
 
 # from csdl import Model
-# from caddee.caddee_core.system_representation.system_representation import SystemRepresentation
-# from caddee.caddee_core.system_parameterization.system_parameterization import SystemParameterization
-# from caddee.caddee_core.system_model.system_model import SystemModel
-# from caddee.csdl_core.system_model_csdl.system_model_csdl import SystemModelCSDL
-# from caddee.csdl_core.system_representation_csdl.system_representation_csdl import SystemRepresentationCSDL
+# from caddee.core.caddee_core.system_representation.system_representation import SystemRepresentation
+# from caddee.core.caddee_core.system_parameterization.system_parameterization import SystemParameterization
+# from caddee.core.caddee_core.system_model.system_model import SystemModel
+# from caddee.core.csdl_core.system_model_csdl.system_model_csdl import SystemModelCSDL
+# from caddee.core.csdl_core.system_representation_csdl.system_representation_csdl import SystemRepresentationCSDL
 
 
 # class CADDEECSDL(Model):

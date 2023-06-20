@@ -1,33 +1,33 @@
 import csdl
 from caddee.utils.base_model_csdl import BaseModelCSDL
 from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
-from caddee.core.caddee_core.system_model.design_scenario.design_condition.design_condition import SteadyDesignCondition, CruiseCondition
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.design_condition import SteadyDesignCondition, CruiseCondition, HoverCondition, ClimbCondition
 import numpy as np
 
 
-class DesignConditionCSDL(BaseModelCSDL):
+class SteadyDesignConditionCSDL(BaseModelCSDL):
     def initialize(self):
-        self.parameters.declare('design_condition', types=SteadyDesignCondition)
-        # establish a pattern where the pure python objects corresponding to 
-        # csdl object are declared as parameters (including composition)
+        self.parameters.declare('cruise_condition', types=SteadyDesignCondition)
         
     def define(self):
-        # get design condition 
-        design_condition = self.parameters['design_condition']
+        design_condition = self.parameters['cruise_condition']
+        pass
     
 
-class AircraftConditionCSDL(DesignConditionCSDL):
+class CruiseConditionCSDL(SteadyDesignConditionCSDL):
     def initialize(self): 
-        self.parameters.declare('atmosphere_model')
+        self.parameters.declare('cruise_condition', types=CruiseCondition)
 
     def define(self):
-        atmosphere_model = self.parameters['atmosphere_model']
+        cruise_condition = self.parameters['cruise_condition']
         
         ac_module = self.module # self.parameters['aircraft_condition_module']
         ac_name = self.prepend
-        modules_dict = ac_module.mechanics_group.models_dictionary
+        
+        # modules_dict = ac_module.mechanics_group.models_dictionary
        
         # Required variables (user needs to provide these)
+        # TODO: don't require all of these, e.g., provide default values 
         phi = self.register_module_input(f'{ac_name}_roll_angle', shape=(1, ), computed_upstream=False)
         theta = self.register_module_input(f'{ac_name}_pitch_angle', shape=(1, ), computed_upstream=False)
         psi = self.register_module_input(f'{ac_name}_yaw_angle', shape=(1, ), computed_upstream=False)
@@ -36,16 +36,15 @@ class AircraftConditionCSDL(DesignConditionCSDL):
         altitude = self.register_module_input(f'{ac_name}_altitude', shape=(1, ), computed_upstream=False)
         observer_location = self.register_module_input(f'{ac_name}_observer_location', shape=(3, ), computed_upstream=False)
 
-        if atmosphere_model:
-            self.add_module(atmosphere_model._assemble_csdl(ac_name), 'atmosphere_model')
+        if cruise_condition.atmosphere_model:
+            self.add_module(cruise_condition.atmosphere_model._assemble_csdl(ac_name), 'atmosphere_model')
 
         # Check which user-defined variables are available to compute cruise speed 
-        # if ('mach_number' and 'time') or ('mach_number' and 'speed') in ac_module.inputs:
-        #     raise Exception(f"Incompatible user inputs. User specified 'mach_number' and 'range' or 'mach_number' and 'speed'.")
         if set(['range', 'time', 'speed']).issubset(ac_module.inputs):
             raise Exception(f"Error in design condition '{ac_name}': cannot specify 'range', 'time', and 'speed' at the same time")
         elif set(['range', 'time', 'mach_number']).issubset(ac_module.inputs):
             raise Exception(f"Error in design condition '{ac_name}': cannot specify 'range', 'time', and 'mach_number' at the same time")
+
 
         elif set(['range', 'time']).issubset(ac_module.inputs):
             range = self.register_module_input(f'{ac_name}_range', shape=(1, ), computed_upstream=False)
@@ -93,49 +92,53 @@ class AircraftConditionCSDL(DesignConditionCSDL):
         y = observer_location[1]
         z = observer_location[2]
 
-        self.register_module_output(f'{ac_name}_u', u)
-        self.register_module_output(f'{ac_name}_v', v)
-        self.register_module_output(f'{ac_name}_w', w)
+        # NOTE: below, we don't need to pre_pend the aircraft condition name any more since the vectorization will be handled by m3l
+        self.register_module_output('u', u)
+        self.register_module_output('v', v)
+        self.register_module_output('w', w)
 
-        self.register_module_output(f'{ac_name}_p', p)
-        self.register_module_output(f'{ac_name}_q', q)
-        self.register_module_output(f'{ac_name}_r', r)
+        self.register_module_output('p', p)
+        self.register_module_output('q', q)
+        self.register_module_output('r', r)
 
-        self.register_module_output(f'{ac_name}_phi', phi * 1)
-        self.register_module_output(f'{ac_name}_gamma', gamma * 1)
-        self.register_module_output(f'{ac_name}_psi', psi * 1)
-        self.register_module_output(f'{ac_name}_theta', theta * 1)
+        self.register_module_output('phi', phi * 1)
+        self.register_module_output('gamma', gamma * 1)
+        self.register_module_output('psi', psi * 1)
+        self.register_module_output('theta', theta * 1)
 
-        self.register_module_output(f'{ac_name}_x', x * 1)
-        self.register_module_output(f'{ac_name}_y', y * 1)
-        self.register_module_output(f'{ac_name}_z', z * 1)
+        self.register_module_output('x', x * 1)
+        self.register_module_output('y', y * 1)
+        self.register_module_output('z', z * 1)
+        
         # self.register_module_output(f'{ac_name}_altitude', z * 1)
 
 
         # Loop over models added and create inputs for any model-specific inputs 
-        module_inputs = []
-        compent_inputs = []
-        for module_name, module_info in modules_dict.items():
-            # Check if the module has a component
-            # (e.g., BEM would have a rotor component)
-            if module_info.parameters.__contains__('component'):
-                comp = module_info.parameters['component']
-                # Check if the component has any variables 
-                # (e.g., rotor could have 'rpm')
-                if comp:
-                    if comp.parameters['component_vars']:
-                        for module_input, input_info in module_info.inputs.items():
-                            if module_input in comp.parameters['component_vars']:
-                                compent_inputs.append(module_input)
-                                var_name = f"{module_input}_{comp.parameters['name']}"
-                                module_inputs.append(var_name)
-                                ac_module.inputs[var_name] = input_info
+        
+        # NOTE: below is no longer needed 
+        # module_inputs = []
+        # compent_inputs = []
+        # for module_name, module_info in modules_dict.items():
+        #     # Check if the module has a component
+        #     # (e.g., BEM would have a rotor component)
+        #     if module_info.parameters.__contains__('component'):
+        #         comp = module_info.parameters['component']
+        #         # Check if the component has any variables 
+        #         # (e.g., rotor could have 'rpm')
+        #         if comp:
+        #             if comp.parameters['component_vars']:
+        #                 for module_input, input_info in module_info.inputs.items():
+        #                     if module_input in comp.parameters['component_vars']:
+        #                         compent_inputs.append(module_input)
+        #                         var_name = f"{module_input}_{comp.parameters['name']}"
+        #                         module_inputs.append(var_name)
+        #                         ac_module.inputs[var_name] = input_info
                             
-            else:
-                for module_input, input_info in module_info.inputs.items():
-                    if module_input not in compent_inputs:
-                        module_inputs.append(module_input)
-                        ac_module.inputs[module_input] = input_info
+        #     else:
+        #         for module_input, input_info in module_info.inputs.items():
+        #             if module_input not in compent_inputs:
+        #                 module_inputs.append(module_input)
+        #                 ac_module.inputs[module_input] = input_info
 
         # bem_module_csdl = module._assemble_csdl()
         # bem_inputs = bem_module_csdl.module_inputs
@@ -148,9 +151,17 @@ class AircraftConditionCSDL(DesignConditionCSDL):
         # # print('ac_module_declared_vars', self.module_declared_vars)
         # if modules_dict['rotor_1_dummy_bem_modules'].parameters['componenet']:
         #     print('modules_dict', modules_dict['rotor_1_dummy_bem_modules'].parameters['componenet'])
-        ac_module.mechanics_group._all_model_inputs = module_inputs
-        for module_input in module_inputs:
-            self.register_module_input(f'{ac_name}_{module_input}', computed_upstream=False)
+        
+        # NOTE: below is no longer needed as there is no more mechanics_group
+        # ac_module.mechanics_group._all_model_inputs = module_inputs
+        # for module_input in module_inputs:
+        #     self.register_module_input(f'{ac_name}_{module_input}', computed_upstream=False)
+
+
+class HoverConditionCSDL(SteadyDesignConditionCSDL):
+    def initialize(self):
+        self.parameters.declare('hover_condition', types=HoverCondition)
+
 
 if __name__ == '__main__':
     from lsdo_modules.module.module import Module
