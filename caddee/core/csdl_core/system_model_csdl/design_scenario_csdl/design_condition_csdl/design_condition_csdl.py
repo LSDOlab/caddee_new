@@ -1,13 +1,13 @@
 import csdl
 from caddee.utils.base_model_csdl import BaseModelCSDL
 from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
-from caddee.caddee_core.system_model.design_scenario.design_condition.design_condition import DesignCondition, AircraftCondition
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.design_condition import SteadyDesignCondition, CruiseCondition
 import numpy as np
 
 
 class DesignConditionCSDL(BaseModelCSDL):
     def initialize(self):
-        self.parameters.declare('design_condition', types=DesignCondition)
+        self.parameters.declare('design_condition', types=SteadyDesignCondition)
         # establish a pattern where the pure python objects corresponding to 
         # csdl object are declared as parameters (including composition)
         

@@ -2,7 +2,7 @@ from caddee.utils.caddee_base import CADDEEBase
 import numpy as np
 
 
-class DesignCondition(CADDEEBase):
+class SteadyDesignCondition(CADDEEBase):
     """
     Class that is equivalent to mission segment in aircraft design context.
 
@@ -41,8 +41,8 @@ class DesignCondition(CADDEEBase):
         return csdl_model
     
     def _assemble_csdl_modules(self):
-        from caddee.csdl_core_modules.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import DesignConditionCSDL, AircraftConditionCSDL
-        if isinstance(self, AircraftCondition):
+        from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import DesignConditionCSDL, AircraftConditionCSDL
+        if isinstance(self, CruiseCondition):
             csdl_model = AircraftConditionCSDL(
                 module=self,
                 prepend=self.parameters['name'],
@@ -100,9 +100,9 @@ class DesignCondition(CADDEEBase):
                     self.variables_metadata.declare(name=name, default=val)
 
 
-class AircraftCondition(DesignCondition):
+class CruiseCondition(SteadyDesignCondition):
     """
-    Subclass of DesignCondition intended to define mission 
+    Subclass of SteadyDesignCondition intended to define mission 
     segments of air vehicles.
     
     CADDEE inputs (set by set_module_input()):
