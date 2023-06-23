@@ -28,34 +28,50 @@ class CADDEECSDL(ModuleCSDL):
         caddee = self.parameters['caddee']
         # system configuration & parameterization
         system_representation = caddee.system_representation
-        if system_representation.power_systems_architecture:
-            psa_connections = system_representation.power_systems_architecture.connections_list
-        else:
-            psa_connections = []
         system_parameterization = caddee.system_parameterization
         if system_parameterization is not None:
             system_parameterization_csdl = SystemParameterizationCSDL(
-                # system_representation=system_representation,
                 system_parameterization=system_parameterization,
             )
             self.add_module(system_parameterization_csdl, 'system_parameterization')
 
-        if system_representation.outputs:
-            system_representation_csdl = SystemRepresentationCSDL(
-                system_representation=system_representation,
-            )
-            self.add_module(system_representation_csdl, 'system_representation')
+        if system_representation is not None:
+            if system_representation.outputs:
+                system_representation_csdl = SystemRepresentationCSDL(
+                    system_representation=system_representation,
+                )
+                self.add_module(system_representation_csdl, 'system_representation')
 
 
         # system model
         system_model = caddee.system_model
         system_model_csdl = SystemModelCSDL(
             system_model=system_model,
-            psa_connections=psa_connections,
             system_representation=system_representation,
             system_param=system_parameterization
         )
         self.add_module(system_model_csdl, 'system_model')
+
+        # system_model_csdl = ModuleCSDL()
+
+        # system_model_m3l_models = system_model.m3l_models
+        # for m3l_model_name, m3l_model in system_model_m3l_models.items():
+        #     m3l_csdl_model = m3l_model.assemble_csdl()
+        #     system_model_csdl.add_module(m3l_csdl_model, m3l_model_name)
+
+        # design_scenarios = system_model.design_scenario_dictionary
+        # for design_scenario_name, design_scenario in design_scenarios.items():
+        #     design_conditions_dict = design_scenario.design_condition_dictionary
+        #     for design_condition_name, design_condition in design_conditions_dict.items():
+        #         design_condition_csdl_model = design_condition._assemble_csdl()
+        #         system_model_csdl.add_module(design_condition_csdl_model, design_condition_name)
+                
+        #         design_condition_m3l_models = design_condition.m3l_models
+        #         for design_condition_m3l_model_name, design_condition_m3l_model in design_condition_m3l_models.items():
+        #             design_condition_m3l_model_csdl_model = design_condition_m3l_model.assemble_csdl()
+        #             design_condition_csdl_model.add_module(design_condition_m3l_model_csdl_model, design_condition_m3l_model_name)
+
+
         
         
         # NOTE: previously we would suppress promotions but now, objects like meshes 

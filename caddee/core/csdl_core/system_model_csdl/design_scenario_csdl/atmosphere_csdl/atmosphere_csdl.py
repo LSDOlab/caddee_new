@@ -129,7 +129,8 @@ class SimpleAtmosphereCSDL(ModuleCSDL):
         N = len(pd)
 
         # x = self.declare_variable('altitude',val=1000)
-        x = self.declare_variable(prefix + '_' + 'altitude', shape=(1, ))
+        # x = self.declare_variable(prefix + '_' + 'altitude', shape=(1, ))
+        x = self.declare_variable('altitude', shape=(1, ))
 
         #px = p[0]*x**(N-1) + p[1]*x**(N-2) + p[2]*x**(N-3) + p[3]*x**(N-4) + p[4]*x**(N-5)...
         temp_density = self.create_output('temp_density',shape=(N),val=0)
@@ -156,8 +157,14 @@ class SimpleAtmosphereCSDL(ModuleCSDL):
         a = (gamma * R * temperature)**0.5
 
         # caddee outputs:
-        self.register_output(prefix + '_' + 'temperature',temperature)
-        self.register_output(prefix + '_' + 'pressure',pressure)
-        self.register_output(prefix + '_' + 'density',density)
-        self.register_output(prefix + '_' + 'dynamic_viscosity',mu)
-        self.register_output(prefix + '_' + 'speed_of_sound', a)
+        # self.register_output(prefix + '_' + 'temperature',temperature)
+        # self.register_output(prefix + '_' + 'pressure',pressure)
+        # self.register_output(prefix + '_' + 'density',density)
+        # self.register_output(prefix + '_' + 'dynamic_viscosity',mu)
+        # self.register_output(prefix + '_' + 'speed_of_sound', a)
+
+        self.register_output('temperature',temperature)
+        self.register_output('pressure',pressure)
+        self.register_output('density',density)
+        self.register_output('dynamic_viscosity',mu)
+        self.register_output('speed_of_sound', a)

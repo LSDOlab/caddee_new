@@ -7,10 +7,17 @@ from caddee.core.caddee_core.system_model.sizing_group.sizing_models.m4_regressi
 from caddee.core.caddee_core.system_model.design_scenario.design_scenario import DesignScenario
 from caddee.core.caddee_core.system_model.design_scenario.design_condition.design_condition import CruiseCondition
 from caddee.core.caddee_core.system_model.design_scenario.design_condition.atmosphere.atmosphere import SimpleAtmosphereModel
+from caddee.core.caddee_core.system_representation.component.component import Component, LiftingSurface, Rotor
+
+from caddee.utils.regression_models.c172_aerodynamics import C172AeroM3L
 
 
-from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.equations_of_motion_csdl.equations_of_motion_csdl import EulerFlatEarth6DoFGenRef
-
+from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.equations_of_motion_csdl.eom_6dof_module import EoMM3LEuler6DOF
+from caddee.core.csdl_core.system_model_csdl.sizing_group_csdl.sizing_models_csdl.M4_regressions_m3l import M4RegressionsM3L
+from caddee.core.csdl_core.system_model_csdl.sizing_group_csdl.sizing_models_csdl.simple_battery_sizing_m3l import SimpleBatterySizingM3L
+from caddee.core.csdl_core.system_model_csdl.mass_properties_csdl.constant_mass_properties_csdl import TotalMassPropertiesM3L
+from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.loads_csdl.inertial_loads_csdl import InertialLoadsM3L
+from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.loads_csdl.total_forces_moments_csdl import TotalForcesMomentsM3L
 
 # from core.system_parameterization.free_form_deformation.ffd_functions import create_cartesian_enclosure_volume
 # from core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock

@@ -18,39 +18,50 @@ class EulerFlatEarth6DoFGenRef(BaseModelCSDL):
         # region Inputs
         # Reference point
         ref_pt = self.register_module_input(name='ref_pt', shape=(3,), val=np.array([0, 0, 0]), units='m')
+        
         # Loads
-        Fx = self.register_module_input(name='Fx_total', shape=(num_nodes, 1), units='N')
-        Fy = self.register_module_input(name='Fy_total', shape=(num_nodes, 1), units='N')
-        Fz = self.register_module_input(name='Fz_total', shape=(num_nodes, 1), units='N')
-        Mx = self.register_module_input(name='Mx_total', shape=(num_nodes, 1), units='N*m')
-        My = self.register_module_input(name='My_total', shape=(num_nodes, 1), units='N*m')
-        Mz = self.register_module_input(name='Mz_total', shape=(num_nodes, 1), units='N*m')
+        F = self.register_module_input('total_forces', shape=(num_nodes, 3))
+        M = self.register_module_input('total_moments', shape=(num_nodes, 3))
+        
+        self.print_var(F)
+        self.print_var(M)
+
+        Fx = F[:, 0] #self.register_module_input(name='Fx_total', shape=(num_nodes, 1), units='N')
+        Fy = F[:, 1] #self.register_module_input(name='Fy_total', shape=(num_nodes, 1), units='N')
+        Fz = F[:, 2] #self.register_module_input(name='Fz_total', shape=(num_nodes, 1), units='N')
+        Mx = M[:, 0] #self.register_module_input(name='Mx_total', shape=(num_nodes, 1), units='N*m')
+        My = M[:, 1] #self.register_module_input(name='My_total', shape=(num_nodes, 1), units='N*m')
+        Mz = M[:, 2] #self.register_module_input(name='Mz_total', shape=(num_nodes, 1), units='N*m')
 
         #self.print_var(Fy)
         #self.print_var(Fz)
 
         # Mass properties
         m = self.register_module_input(
-            name='m_total',
+            name='total_mass',
             shape=(1,), units='kg')
-        Ixx = self.register_module_input(
-            name='ixx_total',
-            shape=(1,), units='kg*m**2')
-        Iyy = self.register_module_input(
-            name='iyy_total',
-            shape=(1,), units='kg*m**2')
-        Izz = self.register_module_input(
-            name='izz_total',
-            shape=(1,), units='kg*m**2')
-        Ixz = self.register_module_input(
-            name='ixz_total',
-            shape=(1,), units='kg*m**2')
-        Ixy = self.register_module_input(
-            name='ixy_total',
-            shape=(1,), units='kg*m**2', val=0.)
-        Iyz = self.register_module_input(
-            name='iyz_total',
-            shape=(1,), units='kg*m**2', val=0.)
+        inertia_tensor = self.register_module_input(
+            name='total_inertia_tensor',
+            shape=(3, 3)
+        )
+        cg_vector = self.register_module_input(
+            name='total_cg_vector',
+            shape=(3, )
+        )
+
+        Ixx = csdl.reshape(inertia_tensor[0, 0], (1, ))
+        Iyy = csdl.reshape(inertia_tensor[1, 1], (1, ))
+        Izz = csdl.reshape(inertia_tensor[2, 2], (1, ))
+        Ixy = csdl.reshape(inertia_tensor[0, 1], (1, ))
+        Ixz = csdl.reshape(inertia_tensor[0, 2], (1, ))
+        Iyz = csdl.reshape(inertia_tensor[1, 2], (1, ))
+
+        cgx = cg_vector[0]
+        cgy = cg_vector[1]
+        cgz = cg_vector[2]
+
+        self.print_var(cg_vector)
+
 
         # State
         u = self.register_module_input(name='u', shape=(num_nodes, 1), units='m/s')
@@ -67,12 +78,7 @@ class EulerFlatEarth6DoFGenRef(BaseModelCSDL):
         z = self.register_module_input(name='z', shape=(num_nodes, 1), units='m')
         # endregion
 
-        cgx = self.register_module_input(name='cgx_total',
-                                    shape=(1,), units='m')
-        cgy = self.register_module_input(name='cgy_total',
-                                    val=0, shape=(1,), units='m')
-        cgz = self.register_module_input(name='cgz_total',
-                                    val=0, shape=(1,), units='m')
+      
 
         Idot = self.create_input(name='Idot', val=0, shape=(3, 3))
 
@@ -272,5 +278,5 @@ class EulerFlatEarth6DoFGenRef(BaseModelCSDL):
         # obj_r = csdl.pnorm(var=xddot, axis=1) 
         obj_r = csdl.pnorm(csdl.pnorm(var=xddot, axis=1))
         self.print_var(obj_r)
-        self.register_module_output(name='obj_r', var=obj_r)
+        self.register_module_output(name='trim_residual', var=obj_r)
         # endregion

@@ -1,19 +1,26 @@
-##ex all
 from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
-from caddee.core.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_model.mechanics_model import MechanicsModel
 import csdl
+import m3l
 
-class C172AerodynamicsModel(MechanicsModel):
 
+class C172AeroM3L(m3l.ExplicitOperation):
     def initialize(self, kwargs):
         # parameters
         self.parameters.declare('component', default=None, types=None)
+        self.num_nodes = 1
 
-    def _assemble_csdl(self):
+    def compute(self) -> csdl.Model:
+        return C172AerodynamicsModelCSDL()
 
-        csdl_model = C172AerodynamicsModelCSDL(num_nodes=1)
+    def evaluate(self):
+        operation_csdl = self.compute()
+        arguments = {}
 
-        return csdl_model
+        c172_aero_operation = m3l.CSDLOperation(name='c172_aero_model', arguments=arguments, operation_csdl=operation_csdl)
+        forces = m3l.Variable(name='F', shape=(self.num_nodes, 3), operation=c172_aero_operation)
+        moments = m3l.Variable(name='M', shape=(self.num_nodes, 3), operation=c172_aero_operation)
+
+        return forces, moments
 
 
 class C172AerodynamicsModelCSDL(ModuleCSDL):
@@ -38,7 +45,7 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
 
         # Inputs changing across conditions (segments)
         u = self.register_module_input(name='u',
-                                       shape=(num_nodes, 1), units='rad', val=0,
+                                       shape=(num_nodes, 1), units='rad', val=50,
                                        vectorized=True)
         v = self.register_module_input(name='v',
                                   shape=(num_nodes, 1), units='rad', val=0)
@@ -141,7 +148,7 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
                1.84979559e-02 * alpha_deg + \
                2.88963441e-02
         Cl_delta_rud = 0.00394572 * alpha_deg - 0.06239875
-        Cl_delta_aile = 0.00458196 * delta_a_deg - 0.00890937
+        Cl_delta_aile = 0.00458196 * delta_a_deg - 0 #0.00890937
 
         # Yawing moment
         Cn_p = 6.63631918e-08 * alpha_deg ** 3 \
@@ -174,6 +181,11 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
                 0.075 * Cl_delta_rud * delta_r_deg +
                 wing_span / (2 * V) * (Cl_p * p + Cl_r * r)
         )
+        self.register_module_output('Cl', Cl)
+        self.register_module_output('Cl_delta_aile', Cl_delta_aile)
+        self.register_module_output('Cl_delta_rud', Cl_delta_rud)
+        self.register_module_output('delta_r_deg', delta_r_deg)
+
         Cn = (
                 Cn_beta * beta_deg +
                 Cn_delta_aile +

@@ -2,7 +2,53 @@ from csdl import Model
 from caddee.utils.base_model_csdl import BaseModelCSDL
 from caddee.core.caddee_core.system_model.sizing_group.sizing_group import SizingGroup
 import numpy as np
+import m3l
+import csdl
 
+
+class TotalMassPropertiesM3L(m3l.ExplicitOperation):
+    def initialize(self, kwargs):
+        pass
+
+    def compute(self, mass_input_names, cg_input_names, inertia_input_names) -> csdl.Model:
+        return ConstantMassPropertiesCSDL(
+            mass_input_names=mass_input_names,
+            cg_input_names=cg_input_names,
+            inertia_input_names=inertia_input_names,
+        )
+    
+    def evaluate(self, *args):
+        mass_input_names = []
+        cg_input_names = []
+        inertia_input_names = []
+        arguments = dict()
+        for arg in args:
+            arg_name = arg.name
+            arg_model_name = arg.operation.name
+            if arg_name == "mass":
+                mass_input_names.append(f"{arg_model_name}.{arg_name}")
+                arguments[f"{arg_model_name}.{arg_name}"] = arg
+            elif arg_name == "inertia_tensor": 
+                inertia_input_names.append(f"{arg_model_name}.{arg_name}")
+                arguments[f"{arg_model_name}.{arg_name}"] = arg
+            elif arg_name == "cg_vector":
+                cg_input_names.append(f"{arg_model_name}.{arg_name}")
+                arguments[f"{arg_model_name}.{arg_name}"] = arg
+            else:
+                raise Exception(f"Inputs muss either by 'mass', 'inertia_tensor', or 'cg_vector'. Received {arg_name}")
+        
+        operation_csdl = self.compute(mass_input_names=mass_input_names, cg_input_names=cg_input_names, inertia_input_names=inertia_input_names)
+
+        total_mass_operation = m3l.CSDLOperation(name='total_mass_properties', arguments=arguments, operation_csdl=operation_csdl)
+        mass = m3l.Variable(name='total_mass', shape=(1, ), operation=total_mass_operation)
+        cg_vector = m3l.Variable(name='total_cg_vector', shape=(3, ), operation=total_mass_operation)
+        inertia_tensor = m3l.Variable(name='total_inertia_tensor', shape=(3, 3), operation=total_mass_operation)
+        
+        return mass, cg_vector, inertia_tensor
+
+        # print(arguments)
+            
+        
 
 class ConstantMassPropertiesCSDL(BaseModelCSDL):
     """
@@ -11,10 +57,17 @@ class ConstantMassPropertiesCSDL(BaseModelCSDL):
     Ex: M4 Regressions, motor, battery sizing
     """
     def initialize(self):
-        self.parameters.declare('sizing_group', default=None, types=SizingGroup, allow_none=True)
+        # self.parameters.declare('sizing_group', default=None, types=SizingGroup, allow_none=True)
+        self.parameters.declare('mass_input_names', types=list)
+        self.parameters.declare('cg_input_names', types=list)
+        self.parameters.declare('inertia_input_names', types=list)
 
     def define(self):
-        sizing_group = self.parameters['sizing_group']
+        # sizing_group = self.parameters['sizing_group']
+        mass_input_names = self.parameters['mass_input_names']
+        cg_input_names = self.parameters['cg_input_names']
+        inertia_input_names = self.parameters['inertia_input_names']
+        
         
         ref_pt = self.register_module_input('ref_pt', shape=(3,), val=np.array([0, 0, 0]))
         
@@ -36,17 +89,22 @@ class ConstantMassPropertiesCSDL(BaseModelCSDL):
         # Loop over all sizing models and compute total mass properties 
         # of the system (using parallel axis theorem)
 
-        models_dict = sizing_group.models_dictionary
-        for model_name, model in models_dict.items():
-            # Declare individual mass properties from models 
-            m_model = self.register_module_input(f"{model_name}.mass", shape=(1, ))
-            cgx_model = self.register_module_input(f"{model_name}.cgx", shape=(1, ))
-            cgy_model = self.register_module_input(f"{model_name}.cgy", shape=(1, ))
-            cgz_model = self.register_module_input(f"{model_name}.cgz", shape=(1, ))
-            ixx_model = self.register_module_input(f"{model_name}.ixx", shape=(1, ))
-            iyy_model = self.register_module_input(f"{model_name}.iyy", shape=(1, ))
-            izz_model = self.register_module_input(f"{model_name}.izz", shape=(1, ))
-            ixz_model = self.register_module_input(f"{model_name}.ixz", shape=(1, ))
+        for i in range(len(mass_input_names)):
+            mass_name = mass_input_names[i]
+            cg_name = cg_input_names[i]
+            inertia_name = inertia_input_names[i]
+            
+            m_model = self.register_module_input(mass_name, shape=(1, ))
+            cg_model = self.register_module_input(cg_name, shape=(3, ))
+            cgx_model = cg_model[0]
+            cgy_model = cg_model[1]
+            cgz_model = cg_model[2]
+
+            inertia_model = self.register_module_input(inertia_name, shape=(3, 3))
+            ixx_model = csdl.reshape(inertia_model[0, 0], (1, ))
+            iyy_model = csdl.reshape(inertia_model[1, 1], (1, ))
+            izz_model = csdl.reshape(inertia_model[2, 2], (1, ))
+            ixz_model = csdl.reshape(inertia_model[0, 2], (1, ))
 
             # Compute total cg
             cgx = (m * cgx + m_model * cgx_model) / (m + m_model)
@@ -62,17 +120,65 @@ class ConstantMassPropertiesCSDL(BaseModelCSDL):
             ixx = ixx + ixx_model + m_model * (pos_y**2 + pos_z**2)
             iyy = iyy + iyy_model + m_model * (pos_x**2 + pos_z**2)
             izz = izz + izz_model + m_model * (pos_x**2 + pos_y**2)
-            ixz = ixz + ixz_model + m_model * (pos_x * pos_z)
+            ixz = ixz + ixz_model + m_model * (-pos_x * pos_z)
 
             # Compute total mass
             m = m + m_model
 
+
+
+        # models_dict = sizing_group.models_dictionary
+        # for model_name, model in models_dict.items():
+        #     # Declare individual mass properties from models 
+        #     m_model = self.register_module_input(f"{model_name}.mass", shape=(1, ))
+        #     cgx_model = self.register_module_input(f"{model_name}.cgx", shape=(1, ))
+        #     cgy_model = self.register_module_input(f"{model_name}.cgy", shape=(1, ))
+        #     cgz_model = self.register_module_input(f"{model_name}.cgz", shape=(1, ))
+        #     ixx_model = self.register_module_input(f"{model_name}.ixx", shape=(1, ))
+        #     iyy_model = self.register_module_input(f"{model_name}.iyy", shape=(1, ))
+        #     izz_model = self.register_module_input(f"{model_name}.izz", shape=(1, ))
+        #     ixz_model = self.register_module_input(f"{model_name}.ixz", shape=(1, ))
+
+        #     # Compute total cg
+        #     cgx = (m * cgx + m_model * cgx_model) / (m + m_model)
+        #     cgy = (m * cgy + m_model * cgy_model) / (m + m_model)
+        #     cgz = (m * cgz + m_model * cgz_model) / (m + m_model)
+
+        #     # Position vector elements
+        #     pos_x = cgx_model - ref_pt[0]
+        #     pos_y = cgy_model - ref_pt[1]
+        #     pos_z = cgz_model - ref_pt[2]
+
+        #     # Compute total inertia tensor
+        #     ixx = ixx + ixx_model + m_model * (pos_y**2 + pos_z**2)
+        #     iyy = iyy + iyy_model + m_model * (pos_x**2 + pos_z**2)
+        #     izz = izz + izz_model + m_model * (pos_x**2 + pos_y**2)
+        #     ixz = ixz + ixz_model + m_model * (pos_x * pos_z)
+
+        #     # Compute total mass
+        #     m = m + m_model
+
+        inertia_tensor = self.register_module_output('total_inertia_tensor', shape=(3, 3), val=0)
+        inertia_tensor[0, 0] = csdl.reshape(ixx, (1, 1))
+        inertia_tensor[0, 2] = csdl.reshape(ixz, (1, 1))
+        inertia_tensor[2, 0] = csdl.reshape(ixz, (1, 1))
+        inertia_tensor[1, 1] = csdl.reshape(iyy, (1, 1))
+        inertia_tensor[2, 2] = csdl.reshape(izz, (1, 1))
+
+        cg_vector = self.register_module_output('total_cg_vector', shape=(3, ), val=0)
+        cg_vector[0] = cgx
+        cg_vector[1] = cgy
+        cg_vector[2] = cgz
+
+
         # Register total constant mass properties 
-        self.register_module_output('m_total_constant', m)
-        self.register_module_output('cgx_total_constant', cgx)
-        self.register_module_output('cgy_total_constant', cgy)
-        self.register_module_output('cgz_total_constant', cgz)
-        self.register_module_output('ixx_total_constant', ixx)
-        self.register_module_output('iyy_total_constant', iyy)
-        self.register_module_output('izz_total_constant', izz)
-        self.register_module_output('ixz_total_constant', ixz)
+        self.register_module_output('total_mass', m)
+        
+        
+        # self.register_module_output('cgx_total_constant', cgx)
+        # self.register_module_output('cgy_total_constant', cgy)
+        # self.register_module_output('cgz_total_constant', cgz)
+        # self.register_module_output('ixx_total_constant', ixx)
+        # self.register_module_output('iyy_total_constant', iyy)
+        # self.register_module_output('izz_total_constant', izz)
+        # self.register_module_output('ixz_total_constant', ixz)

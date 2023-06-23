@@ -1,4 +1,5 @@
 from csdl import Model
+import csdl
 from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
 
 
@@ -25,7 +26,7 @@ class M4RegressionsCSDL(ModuleCSDL):
         # fuselage_length = self.create_input('fuselage_length', shape=shape, units='m' ,val=30 * ft_to_m) 
         battery_mass = self.register_module_input('battery_mass', shape=shape, units='kg')
         # self.print_var(battery_mass)
-        cruise_speed = self.register_module_input('cruise_speed', shape=shape, units='m/s') #, val=112 * ktas_to_m_s)
+        cruise_speed = self.register_module_input('cruise_speed', shape=shape, units='m/s', val=112 * ktas_to_m_s)
         # self.print_var(cruise_speed)
         tail_area = self.register_module_input('tail_area', shape=shape, units='m^2', val=39.51 * ft_2_to_m_2) * ft_2_to_m_2
         fin_area = self.register_module_input('fin_area',shape=shape, units='m^2', val=27.34 * ft_2_to_m_2)
@@ -142,6 +143,19 @@ class M4RegressionsCSDL(ModuleCSDL):
         self.register_module_output(
             name='cgz', 
             var=cg_z)
+        
+        cg_vector = self.register_module_output('cg_vector', shape=(3, ), val=0)
+        cg_vector[0] = cg_x
+        cg_vector[1] = cg_y
+        cg_vector[2] = cg_z
+
+        inertia_tensor = self.register_module_output('inertia_tensor', shape=(3, 3), val=0)
+        inertia_tensor[0, 0] = csdl.reshape(Ixx, (1, 1)) 
+        inertia_tensor[1, 1] = csdl.reshape(Iyy, (1, 1)) 
+        inertia_tensor[2, 2] = csdl.reshape(Izz, (1, 1)) 
+        inertia_tensor[0, 2] = csdl.reshape(Ixz, (1, 1)) 
+        inertia_tensor[2, 0] = csdl.reshape(Ixz, (1, 1)) 
+
         self.register_module_output(
             name='ixx', 
             var=Ixx)

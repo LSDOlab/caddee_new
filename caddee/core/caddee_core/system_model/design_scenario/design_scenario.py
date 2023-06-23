@@ -26,15 +26,15 @@ class DesignScenario(CADDEEBase):
         # is added. If that's the case, it will just override the previous design condition
         # and there needs to be an exception
 
-    def _assemble_csdl(self):
-        # TODO: every _assemble_csdl will have an import similar to below (to avoid circular imports)
-        from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_scenario_csdl import DesignScenarioCSDL
-        csdl_model = DesignScenarioCSDL(
-            design_scenario=self,
-        )
-        return csdl_model
+    # def _assemble_csdl(self):
+    #     # TODO: every _assemble_csdl will have an import similar to below (to avoid circular imports)
+    #     from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_scenario_csdl import DesignScenarioCSDL
+    #     csdl_model = DesignScenarioCSDL(
+    #         design_scenario=self,
+    #     )
+    #     return csdl_model
     
-    def _assemble_csdl_modules(self, system_config=None, system_param=None, sizing_group=None):
+    def _assemble_csdl(self, system_config=None, system_param=None, sizing_group=None):
         # TODO: every _assemble_csdl will have an import similar to below (to avoid circular imports)
         from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_scenario_csdl import DesignScenarioCSDL
         csdl_model = DesignScenarioCSDL(

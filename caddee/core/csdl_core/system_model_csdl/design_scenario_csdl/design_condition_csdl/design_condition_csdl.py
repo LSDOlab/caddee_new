@@ -20,65 +20,64 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
 
     def define(self):
         cruise_condition = self.parameters['cruise_condition']
-        
         ac_module = self.module # self.parameters['aircraft_condition_module']
-        ac_name = self.prepend
+        cruise_name = self.prepend
         
         # modules_dict = ac_module.mechanics_group.models_dictionary
        
         # Required variables (user needs to provide these)
         # TODO: don't require all of these, e.g., provide default values 
-        phi = self.register_module_input(f'{ac_name}_roll_angle', shape=(1, ), computed_upstream=False)
-        theta = self.register_module_input(f'{ac_name}_pitch_angle', shape=(1, ), computed_upstream=False)
-        psi = self.register_module_input(f'{ac_name}_yaw_angle', shape=(1, ), computed_upstream=False)
-        gamma = self.register_module_input(f'{ac_name}_flight_path_angle', shape=(1, ), computed_upstream=False)
-        psi_w = self.register_module_input(f'{ac_name}_wind_angle', shape=(1, ), computed_upstream=False)
-        altitude = self.register_module_input(f'{ac_name}_altitude', shape=(1, ), computed_upstream=False)
-        observer_location = self.register_module_input(f'{ac_name}_observer_location', shape=(3, ), computed_upstream=False)
+        phi = self.register_module_input(f'{cruise_name}_roll_angle', shape=(1, ), computed_upstream=False)
+        theta = self.register_module_input(f'{cruise_name}_pitch_angle', shape=(1, ), computed_upstream=False)
+        psi = self.register_module_input(f'{cruise_name}_yaw_angle', shape=(1, ), computed_upstream=False)
+        gamma = self.register_module_input(f'{cruise_name}_flight_path_angle', shape=(1, ), computed_upstream=False)
+        psi_w = self.register_module_input(f'{cruise_name}_wind_angle', shape=(1, ), computed_upstream=False)
+        altitude = self.register_module_input(f'{cruise_name}_altitude', shape=(1, ), computed_upstream=False)
+        observer_location = self.register_module_input(f'{cruise_name}_observer_location', shape=(3, ), computed_upstream=False)
 
         if cruise_condition.atmosphere_model:
-            self.add_module(cruise_condition.atmosphere_model._assemble_csdl(ac_name), 'atmosphere_model')
+            self.add_module(cruise_condition.atmosphere_model._assemble_csdl(cruise_name), 'atmosphere_model')
 
         # Check which user-defined variables are available to compute cruise speed 
         if set(['range', 'time', 'speed']).issubset(ac_module.inputs):
-            raise Exception(f"Error in design condition '{ac_name}': cannot specify 'range', 'time', and 'speed' at the same time")
+            raise Exception(f"Error in design condition '{cruise_name}': cannot specify 'range', 'time', and 'speed' at the same time")
         elif set(['range', 'time', 'mach_number']).issubset(ac_module.inputs):
-            raise Exception(f"Error in design condition '{ac_name}': cannot specify 'range', 'time', and 'mach_number' at the same time")
+            raise Exception(f"Error in design condition '{cruise_name}': cannot specify 'range', 'time', and 'mach_number' at the same time")
 
 
         elif set(['range', 'time']).issubset(ac_module.inputs):
-            range = self.register_module_input(f'{ac_name}_range', shape=(1, ), computed_upstream=False)
-            time = self.register_module_input(f'{ac_name}_time', shape=(1, ), computed_upstream=False)
+            range = self.register_module_input(f'{cruise_name}_range', shape=(1, ), computed_upstream=False)
+            time = self.register_module_input(f'{cruise_name}_time', shape=(1, ), computed_upstream=False)
             speed = range/time
-            self.register_module_output(f'{ac_name}_speed', speed)
+            self.register_module_output(f'{cruise_name}_speed', speed)
         elif set(['mach_number', 'time']).issubset(ac_module.inputs):
-            a = self.register_module_input(f'{ac_name}_speed_of_sound', shape=(1, ))
-            time = self.register_module_input(f'{ac_name}_time', shape=(1, ), computed_upstream=False)
-            M = self.register_module_input(f'{ac_name}_mach_number', shape=(1, ), computed_upstream=False)
+            a = self.register_module_input(f'{cruise_name}_speed_of_sound', shape=(1, ))
+            time = self.register_module_input(f'{cruise_name}_time', shape=(1, ), computed_upstream=False)
+            M = self.register_module_input(f'{cruise_name}_mach_number', shape=(1, ), computed_upstream=False)
             speed = a * M
             range = speed * time
-            self.register_module_output(f'{ac_name}_range', range)
-            self.register_module_output(f'{ac_name}_speed', speed)
+            self.register_module_output(f'{cruise_name}_range', range)
+            self.register_module_output(f'{cruise_name}_speed', speed)
         elif set(['mach_number', 'range']).issubset(ac_module.inputs):
-            a = self.register_module_input(f'{ac_name}_speed_of_sound', shape=(1, ))
-            range = self.register_module_input(f'{ac_name}_range', shape=(1, ), computed_upstream=False)
-            M = self.register_module_input(f'{ac_name}_mach_number', shape=(1, ), computed_upstream=False)
+            a = self.register_module_input(f'{cruise_name}_speed_of_sound', shape=(1, ))
+            range = self.register_module_input(f'{cruise_name}_range', shape=(1, ), computed_upstream=False)
+            M = self.register_module_input(f'{cruise_name}_mach_number', shape=(1, ), computed_upstream=False)
             speed = a * M
             time = range / speed
-            self.register_module_output(f'{ac_name}_time', time)
-            self.register_module_output(f'{ac_name}_speed', speed)
+            self.register_module_output(f'{cruise_name}_time', time)
+            self.register_module_output(f'{cruise_name}_speed', speed)
         elif set(['speed', 'time']).issubset(ac_module.inputs):
-            speed = self.register_module_input(f'{ac_name}_speed', shape=(1, ), computed_upstream=False)
-            time = self.register_module_input(f'{ac_name}_time', shape=(1, ), computed_upstream=False)
+            speed = self.register_module_input(f'{cruise_name}_speed', shape=(1, ), computed_upstream=False)
+            time = self.register_module_input(f'{cruise_name}_time', shape=(1, ), computed_upstream=False)
             range = speed * time
-            self.register_module_output(f'{ac_name}_range', range)
+            self.register_module_output(f'{cruise_name}_range', range)
         elif set(['speed', 'range']).issubset(ac_module.inputs):
-            speed = self.register_module_input(f'{ac_name}_speed', shape=(1, ), computed_upstream=False)
-            range = self.register_module_input(f'{ac_name}_range', shape=(1, ), computed_upstream=False)
+            speed = self.register_module_input(f'{cruise_name}_speed', shape=(1, ), computed_upstream=False)
+            range = self.register_module_input(f'{cruise_name}_range', shape=(1, ), computed_upstream=False)
             time = range / speed 
-            self.register_module_output(f'{ac_name}_time', time)
+            self.register_module_output(f'{cruise_name}_time', time)
         else:
-            raise Exception(f"Not enough information to determine 'speed', 'range', and 'time' for design condition '{ac_name}'. Please specify either ('speed', 'range'), ('speed', 'time'), ('mach_number', 'range'), ('mach_number', 'time'), or ('range', 'time').")
+            raise Exception(f"Not enough information to determine 'speed', 'range', and 'time' for design condition '{cruise_name}'. Please specify either ('speed', 'range'), ('speed', 'time'), ('mach_number', 'range'), ('mach_number', 'time'), or ('range', 'time').")
         
         
         # Compute aircraft states
@@ -110,8 +109,9 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
         self.register_module_output('y', y * 1)
         self.register_module_output('z', z * 1)
         
-        # self.register_module_output(f'{ac_name}_altitude', z * 1)
-
+        m3l_models = cruise_condition.m3l_models
+        for m3l_model_name, m3l_model in m3l_models:
+            self.add_module(m3l_model._assemble_csdl(), m3l_model_name)
 
         # Loop over models added and create inputs for any model-specific inputs 
         
@@ -161,6 +161,92 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
 class HoverConditionCSDL(SteadyDesignConditionCSDL):
     def initialize(self):
         self.parameters.declare('hover_condition', types=HoverCondition)
+
+    def define(self):
+        hover_condition = self.parameters['hover_condition']
+        hover_module = self.module 
+        hover_name = self.prepend
+
+        h = self.register_module_input(f'{hover_name}_altitude', shape=(1, ), computed_upstream=False)
+        t = self.register_module_input(f'{hover_name}_time', shape=(1, ), computed_upstream=False)
+        obs_loc = self.register_module_input(f'{hover_name}_observer_location', shape=(3, ), computed_upstream=False)
+
+        x = obs_loc[0]
+        y = obs_loc[1]
+        z = obs_loc[2]
+
+        # NOTE: still need to register the 12 aircraft states but all excep location should be zero
+        self.register_module_output('u', x * 0)
+        self.register_module_output('v', x * 0)
+        self.register_module_output('w', x * 0)
+
+        self.register_module_output('p', x * 0)
+        self.register_module_output('q', x * 0)
+        self.register_module_output('r', x * 0)
+
+        self.register_module_output('phi', x * 0)
+        self.register_module_output('gamma', x * 0)
+        self.register_module_output('psi',  x * 0)
+        self.register_module_output('theta', x * 0)
+
+        self.register_module_output('x', x * 1)
+        self.register_module_output('y', y * 1)
+        self.register_module_output('z', z * 1)
+
+
+
+
+class ClimbCondition(SteadyDesignConditionCSDL):
+    def initialize(self):
+        self.parameters.declare('climb_condition', types=ClimbCondition)
+
+    def define(self):
+        climb_condition = self.parameters['climb_condition']
+        climb_module = self.module 
+        climb_name = self.prepend 
+        
+        if set(['climb_gradient', 'gamma', 'pitch_angle', 'final_altitude']).issubset(climb_module.inputs):
+            gamma = self.register_module_input(f'{climb_name}_flight_path_angle', shape=(1, ), computed_upstream=False)
+            fh = self.register_module_input(f'{climb_name}_final_altitude', shape=(1, ), computed_upstream=False)
+            cg = self.register_module_input(f'{climb_name}_climb_gradient', shape=(1, ), computed_upstream=False)
+
+            V = cg / csdl.sin(gamma)
+            self.register_module_output(f'{climb_name}_speed', V)
+
+        elif set(['speed', 'pitch_angle', 'inital_altitude', 'final_altitude', 'time']).issubset(climb_module.inputs):
+            t = self.register_module_input(f'{climb_name}_time', shape=(1,), computed_upstream=False)
+            V = self.register_module_input(f'{climb_name}_speed', shape=(1,), computed_upstream=False)
+            ih = self.register_module_input(f'{climb_name}_initial_altitude', shape=(1,), computed_upstream=False) 
+            fh = self.register_module_input(f'{climb_name}_final_altitude', shape=(1, ), computed_upstream=False)
+            
+            total_distance_traveled = V * t
+            vertical_distance_gained = fh - ih
+            gamma = csdl.arcsin(vertical_distance_gained / total_distance_traveled)
+            
+
+        obs_loc = self.register_module_input(f'{climb_name}_observer_location', shape=(3, ), computed_upstream=False)
+        theta = self.register_module_input(f'{climb_name}_pitch_angle', shape=(1, ), computed_upstream=False)
+        alfa = theta - gamma
+        
+        u = V * csdl.cos(alfa)
+        v = 0 * V
+        w = -V * csdl.sin(alfa)
+        
+        x = obs_loc[0]
+        y = obs_loc[1]
+        z = obs_loc[2]
+
+        self.register_module_output('u', u)
+        self.register_module_output('v', v)
+        self.register_module_output('w', w)
+
+        self.register_module_output('x', x * 1)
+        self.register_module_output('y', y * 1)
+        self.register_module_output('z', z * 1)
+
+        
+        
+        
 
 
 if __name__ == '__main__':

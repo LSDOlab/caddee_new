@@ -1,7 +1,29 @@
 import csdl
 import numpy as np
 from caddee.utils.base_model_csdl import BaseModelCSDL
+import m3l
 
+
+class InertialLoadsM3L(m3l.ExplicitOperation):
+    def initialize(self, kwargs):
+        self.num_nodes = 1
+        pass
+
+    def compute(self):
+        return InertialLoadsModel(num_nodes=self.num_nodes)
+    
+    def evaluate(self, total_cg_vector, totoal_mass):
+        operation_csdl = self.compute()
+        arguments = {
+            'total_cg_vector' : total_cg_vector,
+            'total_mass' : totoal_mass
+        }
+
+        inertial_loads_operation = m3l.CSDLOperation(name='inertial_loads', arguments=arguments, operation_csdl=operation_csdl)
+        F_inertial = m3l.Variable(name='F_inertial', shape=(self.num_nodes, 3), operation=inertial_loads_operation)
+        M_inertial = m3l.Variable(name='M_inertial', shape=(self.num_nodes, 3), operation=inertial_loads_operation)
+
+        return F_inertial, M_inertial
 
 class InertialLoadsModel(BaseModelCSDL):
     def initialize(self):
@@ -12,14 +34,15 @@ class InertialLoadsModel(BaseModelCSDL):
         num_nodes = self.parameters['num_nodes']
 
         # Inputs constant across conditions (segments)
-        cgx = self.register_module_input('cgx_total', shape=(1, ), units='m')
-        cgy = self.register_module_input('cgy_total', shape=(1, ), units='m')
-        cgz = self.register_module_input('cgz_total', shape=(1, ), units='m')
-        m = self.register_module_input('m_total', shape=(1, ), units='kg')
-        ref_pt = self.register_module_input(name='ref_pt', shape=(3, ), val=np.array([0, 0, 0]), units='m')
-
+        cg_vector = self.register_module_input('total_cg_vector', shape=(3, ))
+        cgx = cg_vector[0]
+        cgy = cg_vector[1]
+        cgz = cg_vector[2]        
+        m = self.register_module_input('totoal_mass', shape=(1, ), units='kg')
         mass = csdl.expand(var=m, shape=(num_nodes, 1))
 
+        ref_pt = self.register_module_input(name='ref_pt', shape=(3, ), val=np.array([0, 0, 0]), units='m')
+        
         # Inputs changing across conditions (segments)
         th = self.register_module_input('theta', shape=(num_nodes, 1), units='rad')
         ph = self.register_module_input('phi', shape=(num_nodes, 1), units='rad')
@@ -41,9 +64,11 @@ class InertialLoadsModel(BaseModelCSDL):
 
         r_vec = cg - ref_pt
         r_vec = csdl.reshape(r_vec, (1, 3))
+        
         M = self.register_module_output(name='M_inertial', shape=(num_nodes, 3))
         for n in range(num_nodes):
             M[n, :] = csdl.cross(r_vec, F[n, :], axis=1)
+        
         # self.print_var(F)
         # self.print_var(r_vec)
         # self.print_var(cg)

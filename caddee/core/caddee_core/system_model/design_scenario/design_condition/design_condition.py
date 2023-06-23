@@ -24,6 +24,7 @@ class SteadyDesignCondition(CADDEEBase):
         # other class attributes are pure python objects
         self.atmosphere_model = None
         self.sub_conditions = dict()
+        self.m3l_models = dict()
         self.model_group = None
 
         # Parameters
@@ -31,15 +32,19 @@ class SteadyDesignCondition(CADDEEBase):
         self.parameters.declare(name='dynamic_flag', default=False, types=bool)
 
 
-    def add_model_group(self, model_group):
-        from m3l import ModelGroup
-        if not isinstance(model_group, ModelGroup):
-            raise TypeError("model_group must be of type 'm3l.ModelGroup' ")
+
+    def add_m3l_model(self, name, model):
+        from m3l import Model
+        if not isinstance(model, Model):
+            raise TypeError("model_group must be of type 'm3l.Model' ")
+        else:
+            self.m3l_models[name] = model
 
 
     def _assemble_csdl(self):
         from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import DesignConditionCSDL
         csdl_model = DesignConditionCSDL(
+            module=self,
             design_condition=self,
         )
 
@@ -85,7 +90,7 @@ class HoverCondition(SteadyDesignCondition):
     ---
         - altitude
         - time
-        - observer locations 
+        - observer location 
 
     """
     def initialize(self, kwargs):

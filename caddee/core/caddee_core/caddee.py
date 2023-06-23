@@ -28,9 +28,10 @@ class CADDEE(CADDEEBase):
         needed in the analysis.
         """
         
-        if self.system_representation is None:
-            raise Exception('No instance of class SystemRepresentation added.')
-        elif self.system_model is None:
+        # if self.system_representation is None:
+        #     pass
+            # raise Exception('No instance of class SystemRepresentation added.')
+        if self.system_model is None:
             raise Exception('No instance of class SystemModel added.')
         else:
             caddee_csdl = CADDEECSDL(
@@ -65,19 +66,20 @@ class CADDEE(CADDEEBase):
         needed in the analysis.
         """
         
-        # if self.system_representation is None:
-        #     # raise Exception('No instance of class SystemRepresentation added.')
-        #     pass
+        if self.system_representation is None:
+            raise Exception('SystemRepresentation attribute not set.')
+        
         if self.system_model is None:
-            raise Exception('No instance of class SystemModel added.')
+            raise Exception('SystemModel attribute not set.')
+        
         else:
             caddee_csdl = CADDEECSDL(
                 caddee=self,
             )
         
         # Some random csdl computation for testing 
-        test_input = caddee_csdl.create_input('caddee_test_input', val=10)
-        caddee_csdl.register_output('caddee_test_output', test_input*10)
+        # test_input = caddee_csdl.create_input('caddee_test_input', val=10)
+        # caddee_csdl.register_output('caddee_test_output', test_input*10)
         
         # caddee_csdl.connect('u', 
         #                     'bem_dummy_model.u')
