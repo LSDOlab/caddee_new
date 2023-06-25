@@ -10,6 +10,8 @@ from caddee.core.caddee_core.system_model.design_scenario.design_condition.atmos
 from caddee.core.caddee_core.system_representation.component.component import Component, LiftingSurface, Rotor
 
 from caddee.utils.regression_models.c172_aerodynamics import C172AeroM3L
+from caddee.utils.regression_models.c172_propulsion import C172PropulsionModel
+from caddee.utils.regression_models.c172_weights import C172MassProperties
 
 
 from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.equations_of_motion_csdl.eom_6dof_module import EoMM3LEuler6DOF

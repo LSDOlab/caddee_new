@@ -1,5 +1,7 @@
 from caddee.utils.caddee_base import CADDEEBase
 import numpy as np
+from csdl import GraphRepresentation
+import m3l
 
 
 class SteadyDesignCondition(CADDEEBase):
@@ -15,22 +17,15 @@ class SteadyDesignCondition(CADDEEBase):
         # Each design condition needs a name 
         self.parameters.declare(name='name', default='', types=str)
 
-        self.mechanics_group = None
-        self.nonmechanics_group = None
-        self.power_group = None
-        self.equations_of_motion_csdl= None 
-        # Note: because EOM is a CADDEE submodule (implemented in CSDL)
-        # we create a csdl model directly in the run script while all 
-        # other class attributes are pure python objects
         self.atmosphere_model = None
         self.sub_conditions = dict()
         self.m3l_models = dict()
-        self.model_group = None
+
+        self.num_nodes = 1
 
         # Parameters
         self.parameters.declare(name='stability_flag', default=False, types=bool)
         self.parameters.declare(name='dynamic_flag', default=False, types=bool)
-
 
 
     def add_m3l_model(self, name, model):
@@ -41,14 +36,14 @@ class SteadyDesignCondition(CADDEEBase):
             self.m3l_models[name] = model
 
 
-    def _assemble_csdl(self):
-        from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import DesignConditionCSDL
-        csdl_model = DesignConditionCSDL(
-            module=self,
-            design_condition=self,
-        )
+    # def _assemble_csdl(self):
+    #     from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import DesignConditionCSDL
+    #     csdl_model = DesignConditionCSDL(
+    #         module=self,
+    #         cruise_condition=self,
+    #     )
 
-        return csdl_model
+    #     return csdl_model
     
 
 class CruiseCondition(SteadyDesignCondition):
@@ -74,11 +69,75 @@ class CruiseCondition(SteadyDesignCondition):
     # NOTE: p, q, r will be part of the 12 aircraft states but don't affect the steady analysis 
     # as they are pitch, roll, yaw rates 
 
+    def compute(self): 
+        from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import CruiseConditionCSDL
+        csdl_model = CruiseConditionCSDL(
+            module=self,
+            prepend=self.parameters['name'],
+            cruise_condition=self,
+        ) 
+
+        return csdl_model
+
+    def evaluate_ac_states(self): 
+        operation_csdl = self.compute()
+        arguments = {} 
+
+        ac_state_operation = m3l.CSDLOperation(
+            name=f"{self.parameters['name']}_ac_states_operation",
+            arguments=arguments,
+            operation_csdl=operation_csdl,
+        )
+
+        u = m3l.Variable(name='u', shape=(self.num_nodes, ), operation=ac_state_operation)
+        v = m3l.Variable(name='v', shape=(self.num_nodes, ), operation=ac_state_operation)
+        w = m3l.Variable(name='w', shape=(self.num_nodes, ), operation=ac_state_operation)
+
+        p = m3l.Variable(name='p', shape=(self.num_nodes, ), operation=ac_state_operation)
+        q = m3l.Variable(name='q', shape=(self.num_nodes, ), operation=ac_state_operation)
+        r = m3l.Variable(name='r', shape=(self.num_nodes, ), operation=ac_state_operation)
+
+        phi = m3l.Variable(name='phi', shape=(self.num_nodes, ), operation=ac_state_operation)
+        gamma = m3l.Variable(name='gamma', shape=(self.num_nodes, ), operation=ac_state_operation)
+        psi = m3l.Variable(name='psi', shape=(self.num_nodes, ), operation=ac_state_operation)
+        theta = m3l.Variable(name='theta', shape=(self.num_nodes, ), operation=ac_state_operation)
+
+        x = m3l.Variable(name='x', shape=(self.num_nodes, ), operation=ac_state_operation)
+        y = m3l.Variable(name='y', shape=(self.num_nodes, ), operation=ac_state_operation)
+        z = m3l.Variable(name='z', shape=(self.num_nodes, ), operation=ac_state_operation)
+
+        ac_states = {
+            'u' : u, 
+            'v' : v, 
+            'w' : w, 
+            'p' : p, 
+            'q' : q, 
+            'r' : r, 
+            'phi' : phi, 
+            'gamma' : gamma, 
+            'psi' : psi, 
+            'theta' : theta, 
+            'x' : x, 
+            'y' : y, 
+            'z' : z
+        }
+
+        return ac_states
+
+
+
+
     def _assemble_csdl(self):
         from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import CruiseConditionCSDL
         csdl_model = CruiseConditionCSDL(
+            module=self,
+            prepend=self.parameters['name'],
             cruise_condition=self,
         )
+        # GraphRepresentation(csdl_model)
+        # print(self.inputs)
+        # print('#################3', csdl_model.module_inputs)
+        # print('\n')
 
         return csdl_model
 

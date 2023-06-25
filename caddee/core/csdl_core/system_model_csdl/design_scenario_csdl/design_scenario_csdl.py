@@ -4,6 +4,7 @@ from caddee.core.caddee_core.system_representation.system_representation import 
 from caddee.core.caddee_core.system_parameterization.system_parameterization import SystemParameterization
 from caddee.core.caddee_core.system_model.sizing_group.sizing_group import SizingGroup
 from caddee.utils.base_model_csdl import BaseModelCSDL
+from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
 from caddee.utils.csdl.vectorization_csdl import VectorizationCSDL
 from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.loads_csdl.inertial_loads_csdl import InertialLoadsModel
 from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.loads_csdl.total_forces_moments_csdl import TotalForcesMomentsCSDL
@@ -37,8 +38,9 @@ class DesignScenarioCSDL(BaseModelCSDL):
 
         # Add different design scenarios
         for design_condition_name, design_condition in design_condition_dictionary.items():
-            print('design_condition', design_condition)
-            self.add_module(design_condition._assemble_csdl(), design_condition_name, promotes=[])
+            module_csdl = ModuleCSDL()
+            module_csdl.add_module(design_condition._assemble_csdl(), design_condition_name)
+            self.add_module(module_csdl, design_condition_name, promotes=[])
 
         
 

@@ -10,11 +10,13 @@ class C172AeroM3L(m3l.ExplicitOperation):
         self.num_nodes = 1
 
     def compute(self) -> csdl.Model:
-        return C172AerodynamicsModelCSDL()
+        return C172AerodynamicsModelCSDL(
+            module=self,
+        )
 
-    def evaluate(self):
+    def evaluate(self, ac_states):
         operation_csdl = self.compute()
-        arguments = {}
+        arguments = ac_states
 
         c172_aero_operation = m3l.CSDLOperation(name='c172_aero_model', arguments=arguments, operation_csdl=operation_csdl)
         forces = m3l.Variable(name='F', shape=(self.num_nodes, 3), operation=c172_aero_operation)
@@ -45,8 +47,7 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
 
         # Inputs changing across conditions (segments)
         u = self.register_module_input(name='u',
-                                       shape=(num_nodes, 1), units='rad', val=50,
-                                       vectorized=True)
+                                       shape=(num_nodes, 1), units='rad', val=50, promotes=True)
         v = self.register_module_input(name='v',
                                   shape=(num_nodes, 1), units='rad', val=0)
         w = self.register_module_input(name='w',
@@ -72,11 +73,11 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
                                      shape=(num_nodes, 1), units='rad', val=0)
 
         delta_e = self.register_module_input(name='delta_e',
-                                        shape=(num_nodes, 1), units='rad', val=0)
+                                        shape=(num_nodes, 1), units='rad', val=0, computed_upstream=False)
         delta_r = self.register_module_input(name='delta_r',
-                                        shape=(num_nodes, 1), units='rad', val=0)
+                                        shape=(num_nodes, 1), units='rad', val=0, computed_upstream=False)
         delta_a = self.register_module_input(name='delta_a',
-                                        shape=(num_nodes, 1), units='rad', val=0)
+                                        shape=(num_nodes, 1), units='rad', val=0, computed_upstream=False)
 
         x = self.register_module_input(name='x',
                                   shape=(num_nodes, 1), units='rad', val=0)
@@ -148,7 +149,7 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
                1.84979559e-02 * alpha_deg + \
                2.88963441e-02
         Cl_delta_rud = 0.00394572 * alpha_deg - 0.06239875
-        Cl_delta_aile = 0.00458196 * delta_a_deg - 0 #0.00890937
+        Cl_delta_aile = 0.00458196 * delta_a_deg - 0.00890937
 
         # Yawing moment
         Cn_p = 6.63631918e-08 * alpha_deg ** 3 \
@@ -202,14 +203,14 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
         n = qBar * wing_area * wing_span * Cn
 
         F_wind = self.create_output(name='F_wind', shape=(num_nodes, 3))
-        F_wind[:, 0] = -D
-        F_wind[:, 1] = Y
-        F_wind[:, 2] = -L
+        F_wind[:, 0] = -D * 0  
+        F_wind[:, 1] = Y * 0
+        F_wind[:, 2] = -L 
 
         M_wind = self.create_output(name='M_wind', shape=(num_nodes, 3))
-        M_wind[:, 0] = l
-        M_wind[:, 1] = m
-        M_wind[:, 2] = n
+        M_wind[:, 0] = l * 0
+        M_wind[:, 1] = m * 0
+        M_wind[:, 2] = n * 0
 
         F = self.register_module_output(name='F', shape=(num_nodes, 3))
         M = self.register_module_output(name='M', shape=(num_nodes, 3))
@@ -229,6 +230,13 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
 
             F[ii, :] = csdl.reshape(csdl.matvec(csdl.transpose(DCM_bw), csdl.reshape(F_wind[ii, :], (3,))), (1, 3))
             M[ii, :] = csdl.reshape(csdl.matvec(csdl.transpose(DCM_bw), csdl.reshape(M_wind[ii, :], (3,))), (1, 3))
+        
+        # F[:, 1] = Y * 0
+        
+        # M[:, 0] = Y * 0
+        # M[:, 1] = Y * 0
+        # M[:, 2] = Y * 0
+        
         return
 
 

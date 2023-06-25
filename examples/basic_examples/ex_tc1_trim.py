@@ -99,6 +99,7 @@ system_model.add_m3l_model('sizing_model', sizing_model)
 design_scenario = cd.DesignScenario(name='aircraft_trim')
 
 # design condition
+cruise_model = m3l.Model()
 cruise_condition = cd.CruiseCondition(name="cruise_1")
 cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
 
@@ -106,16 +107,22 @@ cruise_condition.set_module_input(name='altitude', val=1000)
 cruise_condition.set_module_input(name='mach_number', val=0.17, dv_flag=True)
 cruise_condition.set_module_input(name='range', val=40000)
 cruise_condition.set_module_input(name='wing_incidence_angle', val=np.deg2rad(1), dv_flag=True)
-cruise_condition.set_module_input(name='pitch_angel', val=0)
+cruise_condition.set_module_input(name='pitch_angle', val=0)
+cruise_condition.set_module_input(name='flight_path_angle', val=0)
 cruise_condition.set_module_input(name='roll_angle', val=0)
 cruise_condition.set_module_input(name='yaw_angle', val=0)
-cruise_condition.set_module_input(name='observer_loacation', val=np.array([0, 0, 500]))
+cruise_condition.set_module_input(name='wind_angle', val=0)
+cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 500]))
 
-cruise_model = m3l.Model()
+ac_states = cruise_condition.evaluate_ac_states()
+cruise_model.register_output(ac_states)
 
 # aero forces and moments
 c172_aero_model = cd.C172AeroM3L()
-c172_forces, c172_moments = c172_aero_model.evaluate()
+c172_aero_model.set_module_input('delta_a', val=np.deg2rad(0))
+c172_aero_model.set_module_input('delta_r', val=np.deg2rad(0))
+c172_aero_model.set_module_input('delta_e', val=np.deg2rad(0))
+c172_forces, c172_moments = c172_aero_model.evaluate(ac_states=ac_states)
 cruise_model.register_output(c172_forces)
 cruise_model.register_output(c172_moments)
 
@@ -133,20 +140,29 @@ cruise_model.register_output(total_moments)
 
 # pass total forces/moments + mass properties into EoM model
 eom_m3l_model = cd.EoMM3LEuler6DOF()
-trim_residual = eom_m3l_model.evaluate(total_mass=total_mass, total_cg_vector=total_cg, total_inertia_tensor=total_inertia, total_forces=total_forces, total_moments=total_moments)
+trim_residual = eom_m3l_model.evaluate(
+    total_mass=total_mass, 
+    total_cg_vector=total_cg, 
+    total_inertia_tensor=total_inertia, 
+    total_forces=total_forces, 
+    total_moments=total_moments,
+    ac_states=ac_states
+)
 cruise_model.register_output(trim_residual)
 
-# Add cruise m3l model to cruise condition
-cruise_condition.add_m3l_model('cruise_model', cruise_model)
+caddee_csdl_model = cruise_model._assemble_csdl()
 
-# Add design condition to design scenario
-design_scenario.add_design_condition(cruise_condition)
+# # Add cruise m3l model to cruise condition
+# cruise_condition.add_m3l_model('cruise_model', cruise_model)
 
-# Add design scenario to system_model
-system_model.add_design_scenario(design_scenario=design_scenario)
+# # Add design condition to design scenario
+# design_scenario.add_design_condition(cruise_condition)
 
-# get final caddee csdl model
-caddee_csdl_model = caddee.assemble_csdl()
+# # Add design scenario to system_model
+# system_model.add_design_scenario(design_scenario=design_scenario)
+
+# # get final caddee csdl model
+# caddee_csdl_model = caddee.assemble_csdl()
 
 # create and run simulator
 sim = Simulator(caddee_csdl_model, analytics=True)

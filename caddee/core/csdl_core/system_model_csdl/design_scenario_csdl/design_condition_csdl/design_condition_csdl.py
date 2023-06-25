@@ -109,9 +109,11 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
         self.register_module_output('y', y * 1)
         self.register_module_output('z', z * 1)
         
-        m3l_models = cruise_condition.m3l_models
-        for m3l_model_name, m3l_model in m3l_models:
-            self.add_module(m3l_model._assemble_csdl(), m3l_model_name)
+        # m3l_models = cruise_condition.m3l_models
+        # for m3l_model_name, m3l_model in m3l_models.items():
+        #     print(m3l_model_name)
+        #     print(m3l_model.outputs.keys())
+        #     self.add_module(m3l_model._assemble_csdl(), m3l_model_name, promotes=[])
 
         # Loop over models added and create inputs for any model-specific inputs 
         

@@ -12,12 +12,18 @@ class InertialLoadsM3L(m3l.ExplicitOperation):
     def compute(self):
         return InertialLoadsModel(num_nodes=self.num_nodes)
     
-    def evaluate(self, total_cg_vector, totoal_mass):
+    def evaluate(self, total_cg_vector, totoal_mass, ac_states):
         operation_csdl = self.compute()
         arguments = {
             'total_cg_vector' : total_cg_vector,
             'total_mass' : totoal_mass
         }
+
+        phi = ac_states['phi']
+        theta = ac_states['theta']
+
+        arguments['phi'] = phi
+        arguments['theta'] = theta
 
         inertial_loads_operation = m3l.CSDLOperation(name='inertial_loads', arguments=arguments, operation_csdl=operation_csdl)
         F_inertial = m3l.Variable(name='F_inertial', shape=(self.num_nodes, 3), operation=inertial_loads_operation)
@@ -38,7 +44,7 @@ class InertialLoadsModel(BaseModelCSDL):
         cgx = cg_vector[0]
         cgy = cg_vector[1]
         cgz = cg_vector[2]        
-        m = self.register_module_input('totoal_mass', shape=(1, ), units='kg')
+        m = self.register_module_input('total_mass', shape=(1, ), units='kg')
         mass = csdl.expand(var=m, shape=(num_nodes, 1))
 
         ref_pt = self.register_module_input(name='ref_pt', shape=(3, ), val=np.array([0, 0, 0]), units='m')
@@ -67,7 +73,7 @@ class InertialLoadsModel(BaseModelCSDL):
         
         M = self.register_module_output(name='M_inertial', shape=(num_nodes, 3))
         for n in range(num_nodes):
-            M[n, :] = csdl.cross(r_vec, F[n, :], axis=1)
+            M[n, :] = csdl.cross(r_vec, F[n, :], axis=1) * 0
         
         # self.print_var(F)
         # self.print_var(r_vec)

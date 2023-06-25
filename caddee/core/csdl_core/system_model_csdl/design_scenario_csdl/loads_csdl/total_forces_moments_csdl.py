@@ -29,7 +29,7 @@ class TotalForcesMomentsM3L(m3l.ExplicitOperation):
                 moments_names.append(f"{arg_model_name}.{arg_name}")
                 arguments[f"{arg_model_name}.{arg_name}"] = arg
             elif arg_name == 'F_inertial':
-                moments_names.append(f"{arg_model_name}.{arg_name}")
+                forces_names.append(f"{arg_model_name}.{arg_name}")
                 arguments[f"{arg_model_name}.{arg_name}"] = arg
             elif arg_name == 'M_inertial':
                 moments_names.append(f"{arg_model_name}.{arg_name}")
@@ -57,9 +57,9 @@ class TotalForcesMomentsCSDL(BaseModelCSDL):
         num_nodes = self.parameters['num_nodes']
         forces_names = self.parameters['forces_names']
         moments_names = self.parameters['moments_names']
-
-        F_total = self.register_module_input('F_total', val=0, shape=(num_nodes, 3))
-        M_total = self.register_module_input('F_total', val=0, shape=(num_nodes, 3))
+        print('forces_names', forces_names)
+        F_total = self.create_input('F_total', val=0, shape=(num_nodes, 3))
+        M_total = self.create_input('M_total', val=0, shape=(num_nodes, 3))
 
 
         for i in range(len(forces_names)):

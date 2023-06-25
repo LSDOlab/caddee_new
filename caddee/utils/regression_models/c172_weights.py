@@ -1,15 +1,36 @@
 ##ex all
 from caddee.core.caddee_core.system_model.sizing_group.sizing_models.sizing_model import SizingModel
 from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
+import m3l
+import csdl
 
-class C172MassProperties(SizingModel):
+
+class C172MassProperties(m3l.ExplicitOperation):
     def initialize(self, kwargs):
         # parameters
         self.parameters.declare('component', default=None, types=None)
 
-    def _assemble_csdl(self):
+    def compute(self):
         csdl_model = C172MassPropertiesCSDL()
+
         return csdl_model
+    
+
+    def evaluate(self):
+        operation_csdl = self.compute()
+        arguments = {}
+
+        c172_sizing_operation = m3l.CSDLOperation(name='c172_sizing', arguments=arguments, operation_csdl=operation_csdl)
+
+        mass = m3l.Variable(name='mass', shape=(1, ), operation=c172_sizing_operation)
+        cg_vector = m3l.Variable(name='cg_vector', shape=(3, ), operation=c172_sizing_operation)
+        inertia_tensor = m3l.Variable(name='inertia_tensor', shape=(3, 3), operation=c172_sizing_operation)
+
+        return mass, cg_vector, inertia_tensor
+
+    # def _assemble_csdl(self):
+    #     csdl_model = C172MassPropertiesCSDL()
+    #     return csdl_model
 
 
 
@@ -36,29 +57,20 @@ class C172MassPropertiesCSDL(ModuleCSDL):
 
         self.register_module_output(
             name='mass',
-            var=m)
-        self.register_module_output(
-            name='cgx',
-            var=cgx)
-        self.register_module_output(
-            name='cgy',
-            var=cgy)
-        self.register_module_output(
-            name='cgz',
-            var=cgz)
-        self.register_module_output(
-            name='ixx',
-            var=Ixx)
-        self.register_module_output(
-            name='iyy',
-            var=Iyy)
-        self.register_module_output(
-            name='izz',
-            var=Izz)
-        self.register_module_output(
-            name='ixz',
-            var=Ixz)
-        return
+            var=m)        
+        
+        inertia_tensor = self.register_module_output('inertia_tensor', shape=(3, 3), val=0)
+        inertia_tensor[0, 0] = csdl.reshape(Ixx, (1, 1))
+        inertia_tensor[0, 2] = csdl.reshape(Ixz, (1, 1))
+        inertia_tensor[1, 1] = csdl.reshape(Iyy, (1, 1))
+        inertia_tensor[2, 0] = csdl.reshape(Ixz, (1, 1))
+        inertia_tensor[2, 2] = csdl.reshape(Izz, (1, 1))
+        
+        cg_vector = self.register_module_output('cg_vector', shape=(3, ), val=0)
+        cg_vector[0] = cgx
+        cg_vector[1] = cgy
+        cg_vector[2] = cgz
+
 
 
 if __name__ == "__main__":

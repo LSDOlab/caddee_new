@@ -2,6 +2,7 @@ import m3l
 import csdl
 import caddee as cd
 from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.equations_of_motion_csdl.equations_of_motion_csdl import EulerFlatEarth6DoFGenRef
+import copy
 
 
 class EoMM3LEuler6DOF(m3l.ExplicitOperation):
@@ -17,16 +18,22 @@ class EoMM3LEuler6DOF(m3l.ExplicitOperation):
 
         return EulerFlatEarth6DoFGenRef(name, num_nodes)
 
-    def evaluate(self, total_mass, total_cg_vector, total_inertia_tensor, total_forces, total_moments) -> m3l.Variable:
+    def evaluate(self, total_mass, total_cg_vector, total_inertia_tensor, total_forces, total_moments, ac_states) -> m3l.Variable:
         csdl_operation = self.compute()
 
-        arguments = {
+        mps_forces = {
             'total_mass' : total_mass,
             'total_cg_vector' : total_cg_vector,
             'total_inertia_tensor' : total_inertia_tensor,
             'total_forces' : total_forces,
             'total_moments' : total_moments,
         }
+
+        ac_states_copy = copy.deepcopy(ac_states)
+        del ac_states_copy['gamma']
+        arguments = {**mps_forces, **ac_states_copy}
+
+
         
         # print(total_mass_1.name)
         # print(total_mass_2.name)
