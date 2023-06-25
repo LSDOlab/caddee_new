@@ -6,45 +6,52 @@ from python_csdl_backend import Simulator
 from caddee import IMPORTS_FILES_FOLDER
 import array_mapper as am
 
+# TODO:
+# 1) Figure out geometry bugs 
+# 2) Strategy for geometry/parameterization/represanation m3l models
+# 3) num_nodes: important!
+# 4) mesh_evaluation -> How about one per (vectorized) mission segment? Seems most straight-forward 
 
 caddee = cd.CADDEE()
 
-# caddee.system_representation = system_rep = cd.SystemRepresentation()
-# caddee.system_parameterization = system_param = cd.SystemParameterization(system_representation=system_rep)
+caddee.system_representation = system_rep = cd.SystemRepresentation()
+caddee.system_parameterization = system_param = cd.SystemParameterization(system_representation=system_rep)
 
-# file_name = 'LPC_test.stp'
-# spatial_rep = system_rep.spatial_representation
-# spatial_rep.import_file(file_name=file_name)
-
-
-# # Main wing
-# wing_primitive_names = list(spatial_rep.get_geometry_primitives(search_names=['Wing']))
-# wing = cd.LiftingSurface(name='wing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)
-
-# # Horizontal tail
-# tail_primitive_names = list(spatial_rep.get_primitives(search_names=['Tail_1']).keys())
-# horizontal_stabilizer = cd.LiftingSurface(name='h_tail', spatial_representation=spatial_rep, primitive_names=tail_primitive_names)
-
-# # Rotor: pusher
-# pusher_prop_primitive_names = list(spatial_rep.get_primitives(search_names=['Rotor-9-disk']).keys())
-# pusher_prop = cd.Rotor(name='pusher_prop', spatial_representation=spatial_rep, primitive_names=pusher_prop_primitive_names)
+file_name = 'LPC_test.stp'
+spatial_rep = system_rep.spatial_representation
+spatial_rep.import_file(file_name=file_name)
 
 
-# # add components
-# system_rep.add_component(wing)
+# Main wing
+wing_primitive_names = list(spatial_rep.get_geometry_primitives(search_names=['Wing']))
+wing = cd.LiftingSurface(name='wing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)
 
-# num_spanwise_vlm = 22
-# num_chordwise_vlm = 5
-# leading_edge = wing.project(am.linspace(am.array([7.5, -13.5, 2.5]), am.array([7.5, 13.5, 2.5]), num_spanwise_vlm),
-#                             direction=am.array([0., 0., -1.]))  # returns MappedArray
-# trailing_edge = wing.project(np.linspace(np.array([13., -13.5, 2.5]), np.array([13., 13.5, 2.5]), num_spanwise_vlm),
-#                              direction=np.array([0., 0., -1.]))   # returns MappedArray
-# chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
-# wing_upper_surface_wireframe = wing.project(chord_surface.value + np.array([0., 0., 1.5]), direction=np.array([0., 0., -1.]), grid_search_n=25)
-# wing_lower_surface_wireframe = wing.project(chord_surface.value - np.array([0., 0., 1.5]), direction=np.array([0., 0., 1.]), grid_search_n=25)
-# wing_camber_surface = am.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1) # this linspace will return average when n=1
-# wing_camber_surface = wing_camber_surface.reshape((num_chordwise_vlm, num_spanwise_vlm, 3))
-# system_rep.add_output(name='chord_distribution', quantity=am.norm(leading_edge-trailing_edge))
+# Horizontal tail
+tail_primitive_names = list(spatial_rep.get_primitives(search_names=['Tail_1']).keys())
+horizontal_stabilizer = cd.LiftingSurface(name='h_tail', spatial_representation=spatial_rep, primitive_names=tail_primitive_names)
+
+# Rotor: pusher
+pusher_prop_primitive_names = list(spatial_rep.get_primitives(search_names=['Rotor-9-disk']).keys())
+pusher_prop = cd.Rotor(name='pusher_prop', spatial_representation=spatial_rep, primitive_names=pusher_prop_primitive_names)
+
+
+# add components
+system_rep.add_component(wing)
+
+num_spanwise_vlm = 22
+num_chordwise_vlm = 5
+leading_edge = wing.project(am.linspace(am.array([7.5, -13.5, 2.5]), am.array([7.5, 13.5, 2.5]), num_spanwise_vlm),
+                            direction=am.array([0., 0., -1.]))  # returns MappedArray
+trailing_edge = wing.project(np.linspace(np.array([13., -13.5, 2.5]), np.array([13., 13.5, 2.5]), num_spanwise_vlm),
+                             direction=np.array([0., 0., -1.]))   # returns MappedArray
+chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
+wing_upper_surface_wireframe = wing.project(chord_surface.value + np.array([0., 0., 1.5]), direction=np.array([0., 0., -1.]), grid_search_n=25)
+wing_lower_surface_wireframe = wing.project(chord_surface.value - np.array([0., 0., 1.5]), direction=np.array([0., 0., 1.]), grid_search_n=25)
+wing_camber_surface = am.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1) # this linspace will return average when n=1
+wing_camber_surface = wing_camber_surface.reshape((num_chordwise_vlm, num_spanwise_vlm, 3))
+system_rep.add_output(name='chord_distribution', quantity=am.norm(leading_edge-trailing_edge))
+
+exit()
 
 # from VAST.vlm import VLMMesh, VLMM3L
 # vlm_mesh = VLMMesh(wing_camber_surface)

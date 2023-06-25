@@ -2,11 +2,10 @@ import numpy as np
 import scipy.sparse as sps
 import array_mapper as am
 import vedo
-
 from lsdo_geo.cython.basis_matrix_surface_py import get_basis_surface_matrix
 from lsdo_geo.cython.surface_projection_py import compute_surface_projection
-
 from caddee.core.primitives.bsplines.bspline import BSpline
+
 
 class BSplineSurface(BSpline):
     def __init__(self, name:str, order_u:int, order_v:int, knots_u:np.ndarray, knots_v:np.ndarray, shape:tuple, control_points:np.ndarray):
@@ -89,7 +88,7 @@ class BSplineSurface(BSpline):
 
 
     def project(self, points:np.ndarray, direction:np.ndarray=None, grid_search_n:int=50,
-                    max_iter:int=100, return_option:str='spatial', plot:bool=False):
+                    max_iter:int=100, return_parametric_coordinates:bool=False, plot:bool=False):
         
         if type(points) is am.MappedArray:
             points = points.value

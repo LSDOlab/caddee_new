@@ -28,7 +28,7 @@ system_model.add_m3l_model('sizing_model', sizing_model)
 # design scenario
 design_scenario = cd.DesignScenario(name='aircraft_trim')
 
-# design condition
+# cruise condition
 cruise_model = m3l.Model()
 cruise_condition = cd.CruiseCondition(name="cruise_1")
 cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
@@ -37,7 +37,7 @@ cruise_condition.set_module_input(name='altitude', val=1000)
 cruise_condition.set_module_input(name='mach_number', val=0.17, dv_flag=True, lower=0.17, upper=0.19)
 cruise_condition.set_module_input(name='range', val=40000)
 cruise_condition.set_module_input(name='wing_incidence_angle', val=np.deg2rad(0), dv_flag=False)
-cruise_condition.set_module_input(name='pitch_angle', val=2, dv_flag=True, lower=np.deg2rad(2), upper=np.deg2rad(5))
+cruise_condition.set_module_input(name='pitch_angle', val=0, dv_flag=True, lower=np.deg2rad(0), upper=np.deg2rad(5))
 cruise_condition.set_module_input(name='flight_path_angle', val=0)
 cruise_condition.set_module_input(name='roll_angle', val=0)
 cruise_condition.set_module_input(name='yaw_angle', val=0)
@@ -98,7 +98,6 @@ trim_residual = eom_m3l_model.evaluate(
 cruise_model.register_output(trim_residual)
 
 caddee_csdl_model = cruise_model._assemble_csdl()
-
 caddee_csdl_model.add_objective('EulerEoMGenRefPt.trim_residual')
 # # Add cruise m3l model to cruise condition
 # cruise_condition.add_m3l_model('cruise_model', cruise_model)
@@ -124,7 +123,7 @@ prob = CSDLProblem(problem_name='c172_trim', simulator=sim)
 optimizer = SLSQP(
     prob,
     maxiter=100, 
-    ftol=1e-10,
+    ftol=1e-15,
 )
 optimizer.solve()
 optimizer.print_results()

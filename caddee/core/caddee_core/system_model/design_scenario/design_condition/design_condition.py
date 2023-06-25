@@ -180,6 +180,7 @@ class VectorizedDesignCondition(SteadyDesignCondition):
     that contain exactly the same m3l model group 
     """
     def initialize(self, kwargs):
+        self.num_nodes = 1
         return super().initialize(kwargs)
     
     def add_subcondition(self, subcondition):
@@ -189,3 +190,6 @@ class VectorizedDesignCondition(SteadyDesignCondition):
         """
         name = subcondition.parameters['name']
         self.sub_conditions[name] = subcondition
+
+    def evaluate_ac_states(self):
+        self.num_nodes = len(self.sub_conditions)

@@ -69,7 +69,7 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
 
         gamma = self.register_module_input(name='gamma',
                                       shape=(num_nodes, 1), units='rad', val=0.)
-        psiw = self.register_module_input(name='Psi_W',
+        psiw = self.declare_variable(name='Psi_W',
                                      shape=(num_nodes, 1), units='rad', val=0)
 
         delta_e = self.register_module_input(name='delta_e',
@@ -203,14 +203,14 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
         n = qBar * wing_area * wing_span * Cn
 
         F_wind = self.create_output(name='F_wind', shape=(num_nodes, 3))
-        F_wind[:, 0] = -D * 0  
-        F_wind[:, 1] = Y * 0
+        F_wind[:, 0] = -D   
+        F_wind[:, 1] = Y 
         F_wind[:, 2] = -L 
 
         M_wind = self.create_output(name='M_wind', shape=(num_nodes, 3))
-        M_wind[:, 0] = l * 0
-        M_wind[:, 1] = m * 0
-        M_wind[:, 2] = n * 0
+        M_wind[:, 0] = l 
+        M_wind[:, 1] = m 
+        M_wind[:, 2] = n 
 
         F = self.register_module_output(name='F', shape=(num_nodes, 3))
         M = self.register_module_output(name='M', shape=(num_nodes, 3))
@@ -229,7 +229,7 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
             DCM_bw[2:3, 2:3] = csdl.cos(alpha[ii, 0])
 
             F[ii, :] = csdl.reshape(csdl.matvec(csdl.transpose(DCM_bw), csdl.reshape(F_wind[ii, :], (3,))), (1, 3))
-            M[ii, :] = csdl.reshape(csdl.matvec(csdl.transpose(DCM_bw), csdl.reshape(M_wind[ii, :], (3,))), (1, 3))
+            M[ii, :] = csdl.reshape(csdl.matvec(csdl.transpose(DCM_bw), csdl.reshape(M_wind[ii, :], (3,))), (1, 3)) 
         
         # F[:, 1] = Y * 0
         
