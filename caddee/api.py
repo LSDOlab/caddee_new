@@ -21,9 +21,10 @@ from caddee.core.csdl_core.system_model_csdl.mass_properties_csdl.constant_mass_
 from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.loads_csdl.inertial_loads_csdl import InertialLoadsM3L
 from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.loads_csdl.total_forces_moments_csdl import TotalForcesMomentsM3L
 
-# from core.system_parameterization.free_form_deformation.ffd_functions import create_cartesian_enclosure_volume
-# from core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock
-# from core.system_parameterization.free_form_deformation.ffd_set import SRBGFFDSet
+from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_functions import create_cartesian_enclosure_volume
+from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock
+from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_set import SRBGFFDSet
+
 # from core.system_configuration.networks.networks import PowerSystemsArchitecture
 # from core.system_configuration.component.component import Component, Rotor, MotorComp, BatteryComp, LiftingSurface
 # from core.system_model.system_model import SystemModel

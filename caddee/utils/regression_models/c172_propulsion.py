@@ -16,6 +16,7 @@ class C172PropulsionModel(m3l.ExplicitOperation):
     def compute(self) -> csdl.Model:
         return C172PropulsionModelCSDL(
             module=self,
+            # prepend=self.parameters['component'].parameters['name'],
         )
     
     def evaluate(self, ac_states):

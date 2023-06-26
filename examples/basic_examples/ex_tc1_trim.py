@@ -8,7 +8,7 @@ import array_mapper as am
 
 # TODO:
 # 1) Figure out geometry bugs 
-# 2) Strategy for geometry/parameterization/represanation m3l models
+# 2) Strategy for geometry/parameterization/representation m3l models
 # 3) num_nodes: important!
 # 4) mesh_evaluation -> How about one per (vectorized) mission segment? Seems most straight-forward 
 
@@ -17,9 +17,10 @@ caddee = cd.CADDEE()
 caddee.system_representation = system_rep = cd.SystemRepresentation()
 caddee.system_parameterization = system_param = cd.SystemParameterization(system_representation=system_rep)
 
-file_name = 'LPC_test.stp'
+file_name = IMPORTS_FILES_FOLDER / 'LPC_test.stp'
 spatial_rep = system_rep.spatial_representation
 spatial_rep.import_file(file_name=file_name)
+spatial_rep.refit_geometry(file_name=file_name)
 
 
 # Main wing
@@ -37,19 +38,60 @@ pusher_prop = cd.Rotor(name='pusher_prop', spatial_representation=spatial_rep, p
 
 # add components
 system_rep.add_component(wing)
+system_rep.add_component(pusher_prop)
 
-num_spanwise_vlm = 22
+
+# FFD
+# Tail FFD
+horizontal_stabilizer_geometry_primitives = horizontal_stabilizer.get_geometry_primitives()
+horizontal_stabilizer_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(horizontal_stabilizer_geometry_primitives, num_control_points=(11, 2, 2), order=(4,2,2), xyz_to_uvw_indices=(1,0,2))
+horizontal_stabilizer_ffd_block = cd.SRBGFFDBlock(name='horizontal_stabilizer_ffd_block', primitive=horizontal_stabilizer_ffd_bspline_volume, embedded_entities=horizontal_stabilizer_geometry_primitives)
+horizontal_stabilizer_ffd_block.add_scale_v(name='horizontal_stabilizer_linear_taper', order=2, num_dof=3, value=np.array([0., 0., 0.]), cost_factor=1.)
+horizontal_stabilizer_ffd_block.add_rotation_u(name='horizontal_stabilizer_twist_distribution', connection_name='h_tail_act', order=1, num_dof=1, value=np.array([0]))
+
+# ffd_set = cd.SRBGFFDSet(name='ffd_set', ffd_blocks={wing_ffd_block.name : wing_ffd_block, horizontal_stabilizer_ffd_block.name : horizontal_stabilizer_ffd_block})
+ffd_set = cd.SRBGFFDSet(name='ffd_set', ffd_blocks={horizontal_stabilizer_ffd_block.name : horizontal_stabilizer_ffd_block})
+
+# Define meshes
+# Wing mesh
+num_spanwise_vlm = 15
 num_chordwise_vlm = 5
-leading_edge = wing.project(am.linspace(am.array([7.5, -13.5, 2.5]), am.array([7.5, 13.5, 2.5]), num_spanwise_vlm),
-                            direction=am.array([0., 0., -1.]))  # returns MappedArray
-trailing_edge = wing.project(np.linspace(np.array([13., -13.5, 2.5]), np.array([13., 13.5, 2.5]), num_spanwise_vlm),
-                             direction=np.array([0., 0., -1.]))   # returns MappedArray
+leading_edge = wing.project(np.linspace(np.array([8., -26., 7.5]), np.array([8., 26., 7.5]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), plot=False)  # returns MappedArray
+trailing_edge = wing.project(np.linspace(np.array([15., -26., 7.5]), np.array([15., 26., 7.5]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), plot=False)   # returns MappedArray
 chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
-wing_upper_surface_wireframe = wing.project(chord_surface.value + np.array([0., 0., 1.5]), direction=np.array([0., 0., -1.]), grid_search_n=25)
-wing_lower_surface_wireframe = wing.project(chord_surface.value - np.array([0., 0., 1.5]), direction=np.array([0., 0., 1.]), grid_search_n=25)
+# spatial_rep.plot_meshes([chord_surface])
+wing_upper_surface_wireframe = wing.project(chord_surface.value + np.array([0., 0., 1.]), direction=np.array([0., 0., -1.]), grid_search_n=50, plot=False)
+wing_lower_surface_wireframe = wing.project(chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_n=50, plot=False)
 wing_camber_surface = am.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1) # this linspace will return average when n=1
-wing_camber_surface = wing_camber_surface.reshape((num_chordwise_vlm, num_spanwise_vlm, 3))
-system_rep.add_output(name='chord_distribution', quantity=am.norm(leading_edge-trailing_edge))
+spatial_rep.plot_meshes([wing_camber_surface])
+# exit()
+# Tail mesh
+num_spanwise_vlm = 5
+num_chordwise_vlm = 3
+leading_edge = horizontal_stabilizer.project(np.linspace(np.array([27., -6.5, 6.]), np.array([27., 6.75, 6.]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), grid_search_n=15)  # returns MappedArray
+trailing_edge = horizontal_stabilizer.project(np.linspace(np.array([31.5, -6.5, 6.]), np.array([31.5, 6.75, 6.]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), grid_search_n=15)   # returns MappedArray
+chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
+horizontal_stabilizer_upper_surface_wireframe = horizontal_stabilizer.project(chord_surface.value + np.array([0., 0., 1.]), direction=np.array([0., 0., -1.]), grid_search_n=15)
+horizontal_stabilizer_lower_surface_wireframe = horizontal_stabilizer.project(chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_n=15)
+horizontal_stabilizer_camber_surface = am.linspace(horizontal_stabilizer_upper_surface_wireframe, horizontal_stabilizer_lower_surface_wireframe, 1) 
+spatial_rep.plot_meshes([horizontal_stabilizer_camber_surface])
+
+
+# Rotor mesh: pusher
+y11 = pusher_prop.project(np.array([31.94, 0.00, 3.29]), direction=np.array([-1., 0., 0.]), plot=False)
+y12 = pusher_prop.project(np.array([31.94, 0.00, 12.29]), direction=np.array([-1., 0., 0.]), plot=False)
+y21 = pusher_prop.project(np.array([31.94, -4.50, 7.79]), direction=np.array([-1., 0., 0.]), plot=False)
+y22 = pusher_prop.project(np.array([31.94, 4.45, 7.79]), direction=np.array([-1., 0., 0.]), plot=False)
+pusher_prop_in_plane_y = am.subtract(y11, y12)
+pusher_prop_in_plane_x = am.subtract(y21, y22)
+pusher_prop_origin = pusher_prop.project(np.array([32.625, 0, 7.79]))
+
+
+system_rep.add_output(name='horizontal_stabilizer_camber_surface', quantity=horizontal_stabilizer_camber_surface)
+system_rep.add_output(name='wing_camber_surface', quantity=wing_camber_surface)
+system_rep.add_output(name='pusher_disk_in_plane_1', quantity=pusher_prop_in_plane_y)
+system_rep.add_output(name='pusher_disk_in_plane_2', quantity=pusher_prop_in_plane_x)
+system_rep.add_output(name='pusher_prop_origin', quantity=pusher_prop_origin)
 
 exit()
 
@@ -132,6 +174,12 @@ c172_aero_model.set_module_input('delta_e', val=np.deg2rad(0))
 c172_forces, c172_moments = c172_aero_model.evaluate(ac_states=ac_states)
 cruise_model.register_output(c172_forces)
 cruise_model.register_output(c172_moments)
+
+# BEM prop forces and moments
+from lsdo_rotor import BEMM3L, BEMMesh
+bem_model = BEMM3L(component=pusher_prop, mesh=bem_mesh)
+bem_model.set_module_input('rpm', val=1500)
+bem_forces, bem_moments = bem_model.evaluate(ac_states=ac_states)
 
 # inertial forces and moments
 inertial_loads_model = cd.InertialLoadsM3L()
