@@ -27,11 +27,11 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
        
         # Required variables (user needs to provide these)
         # TODO: don't require all of these, e.g., provide default values 
-        phi = self.register_module_input(f'{cruise_name}_roll_angle', shape=(1, ), computed_upstream=False)
+        # phi = self.register_module_input(f'{cruise_name}_roll_angle', shape=(1, ), computed_upstream=False)
         theta = self.register_module_input(f'{cruise_name}_pitch_angle', shape=(1, ), computed_upstream=False)
-        psi = self.register_module_input(f'{cruise_name}_yaw_angle', shape=(1, ), computed_upstream=False)
-        gamma = self.register_module_input(f'{cruise_name}_flight_path_angle', shape=(1, ), computed_upstream=False)
-        psi_w = self.register_module_input(f'{cruise_name}_wind_angle', shape=(1, ), computed_upstream=False)
+        # psi = self.register_module_input(f'{cruise_name}_yaw_angle', shape=(1, ), computed_upstream=False)
+        # gamma = self.register_module_input(f'{cruise_name}_flight_path_angle', shape=(1, ), computed_upstream=False)
+        # psi_w = self.register_module_input(f'{cruise_name}_wind_angle', shape=(1, ), computed_upstream=False)
         # altitude = self.register_module_input(f'{cruise_name}_altitude', shape=(1, ), computed_upstream=False)
         observer_location = self.register_module_input(f'{cruise_name}_observer_location', shape=(3, ), computed_upstream=False)
 
@@ -81,6 +81,11 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
         
         
         # Compute aircraft states
+        phi = observer_location[2] * 0
+        gamma = observer_location[2] * 0
+        psi = observer_location[2] * 0
+        psi_w = observer_location[2] * 0
+
         alfa = theta - gamma
         beta = psi + psi_w
         u = speed * csdl.cos(alfa) * csdl.cos(beta)

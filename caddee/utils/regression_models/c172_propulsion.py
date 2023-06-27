@@ -43,7 +43,7 @@ class C172PropulsionModelCSDL(ModuleCSDL):
 
         # Inputs constant across conditions (segments)
         prop_radius = self.register_module_input(name='propeller_radius', shape=(1,), units='m', computed_upstream=False)
-        ref_pt = self.declare_variable(name='ref_pt', shape=(3, ), val=np.array([0, 0, 0]), units='m')
+        ref_pt = self.register_module_input(name='ref_pt', shape=(3, ), units='m', computed_upstream=False)
         thrust_origin = self.register_module_input(name='thrust_origin', shape=(3,), units='m', computed_upstream=False)
 
         # Inputs changing across conditions (segments)
@@ -80,27 +80,6 @@ class C172PropulsionModelCSDL(ModuleCSDL):
         z = self.declare_variable(name='z',
                                   shape=(num_nodes, 1), units='rad', val=0)
 
-
-        junk_computation = p * q * r * phi * theta * psi * gamma * x * y * z * 0
-        self.register_output('junk_output', junk_computation)
-
-
-        # region Atmosisa
-        # self.register_output(name='h_for_atmosisa', var=z + 0.)
-        # atmosisa = AtmosphereModel(
-        #     num_nodes=num_nodes
-        # )
-        #
-        # self.add(submodel=atmosisa,
-        #          name=CaddeeModelNames.AtmosisaModel.value,
-        #          promotes=[])
-        #
-        # self.connect('h_for_atmosisa', f'{CaddeeModelNames.AtmosisaModel.value}.altitude')
-        #
-        # rho = self.declare_variable(name='rho', shape=(num_nodes, 1))
-        # self.connect(f'{CaddeeModelNames.AtmosisaModel.value}.density', 'rho')
-
-        # self.print_var(var=rho)
         rho = 1.225
         # endregion
 
@@ -110,24 +89,23 @@ class C172PropulsionModelCSDL(ModuleCSDL):
         V = (u ** 2 + v ** 2 + w ** 2) ** 0.5
         J = (np.pi * V) / (omega_RAD * rad)  # non-dimensional
         self.register_module_output('advance_ratio', J)
-        self.print_var(J)
-
         Ct_interp = -0.1692121 * J ** 2 + 0.03545196 * J + 0.10446359  # non-dimensional
-        self.print_var(Ct_interp)
 
         T = (2 / np.pi) ** 2 * rho * \
-            (omega_RAD * rad) ** 2 * Ct_interp  # N
+            (omega_RAD * rad) ** 2 * Ct_interp + \
+            p*q*r*phi*theta*psi*gamma*x*y*z * 0  # N
+
         self.register_output(name='T', var=T)
 
         F = self.create_output(name='F', shape=(num_nodes, 3), val=0)
-        F[:, 0] = T * 1
-        # for i in range(3):
-        #     if thrust_vector[i] == 1 or thrust_vector[i] == -1:
-        #         F[:, i] = T * 1 # thrust_vector[i]
-        #     elif thrust_vector[i] == 0:
-        #         F[:, i] = T * 0
-        #     else:
-        #         raise ValueError
+        # F[:, 0] = T * 1
+        for i in range(3):
+            if thrust_vector[i] == 1 or thrust_vector[i] == -1:
+                F[:, i] = T * 1 # thrust_vector[i]
+            elif thrust_vector[i] == 0:
+                F[:, i] = T * 0
+            else:
+                raise ValueError
 
         offset = ref_pt - thrust_origin
         M = self.create_output(name='M', shape=(num_nodes, 3))

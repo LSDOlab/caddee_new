@@ -230,13 +230,7 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
             DCM_bw[2:3, 2:3] = csdl.cos(alpha[ii, 0])
 
             F[ii, :] = csdl.reshape(csdl.matvec(csdl.transpose(DCM_bw), csdl.reshape(F_wind[ii, :], (3,))), (1, 3))
-            M[ii, :] = csdl.reshape(csdl.matvec(csdl.transpose(DCM_bw), csdl.reshape(M_wind[ii, :], (3,))), (1, 3)) 
-        
-        # F[:, 1] = Y * 0
-        
-        # M[:, 0] = Y * 0
-        # M[:, 1] = Y * 0
-        # M[:, 2] = Y * 0
+            M[ii, :] = csdl.reshape(csdl.matvec(csdl.transpose(DCM_bw), csdl.reshape(M_wind[ii, :], (3,))), (1, 3))
         
         return
 
