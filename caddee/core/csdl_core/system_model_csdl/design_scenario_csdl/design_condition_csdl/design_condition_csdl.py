@@ -7,10 +7,10 @@ import numpy as np
 
 class SteadyDesignConditionCSDL(BaseModelCSDL):
     def initialize(self):
-        self.parameters.declare('cruise_condition', types=SteadyDesignCondition)
+        self.parameters.declare('steady_condition', types=SteadyDesignCondition)
         
     def define(self):
-        design_condition = self.parameters['cruise_condition']
+        design_condition = self.parameters['steady_condition']
         pass
     
 
@@ -32,7 +32,7 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
         psi = self.register_module_input(f'{cruise_name}_yaw_angle', shape=(1, ), computed_upstream=False)
         gamma = self.register_module_input(f'{cruise_name}_flight_path_angle', shape=(1, ), computed_upstream=False)
         psi_w = self.register_module_input(f'{cruise_name}_wind_angle', shape=(1, ), computed_upstream=False)
-        altitude = self.register_module_input(f'{cruise_name}_altitude', shape=(1, ), computed_upstream=False)
+        # altitude = self.register_module_input(f'{cruise_name}_altitude', shape=(1, ), computed_upstream=False)
         observer_location = self.register_module_input(f'{cruise_name}_observer_location', shape=(3, ), computed_upstream=False)
 
         if cruise_condition.atmosphere_model:
@@ -81,9 +81,11 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
         
         
         # Compute aircraft states
-        u = speed * csdl.cos(theta)
-        v = speed * csdl.sin(psi - psi_w)
-        w = speed * csdl.sin(theta)
+        alfa = theta - gamma
+        beta = psi + psi_w
+        u = speed * csdl.cos(alfa) * csdl.cos(beta)
+        v = speed * csdl.sin(beta)
+        w = speed * csdl.sin(alfa) * csdl.cos(beta)
         p = u * 0
         q = u * 0
         r = u * 0
@@ -169,7 +171,7 @@ class HoverConditionCSDL(SteadyDesignConditionCSDL):
         hover_module = self.module 
         hover_name = self.prepend
 
-        h = self.register_module_input(f'{hover_name}_altitude', shape=(1, ), computed_upstream=False)
+        # h = self.register_module_input(f'{hover_name}_altitude', shape=(1, ), computed_upstream=False)
         t = self.register_module_input(f'{hover_name}_time', shape=(1, ), computed_upstream=False)
         obs_loc = self.register_module_input(f'{hover_name}_observer_location', shape=(3, ), computed_upstream=False)
 
@@ -177,7 +179,7 @@ class HoverConditionCSDL(SteadyDesignConditionCSDL):
         y = obs_loc[1]
         z = obs_loc[2]
 
-        # NOTE: still need to register the 12 aircraft states but all excep location should be zero
+        # NOTE: still need to register the 12 aircraft states but all except location should be zero
         self.register_module_output('u', x * 0)
         self.register_module_output('v', x * 0)
         self.register_module_output('w', x * 0)

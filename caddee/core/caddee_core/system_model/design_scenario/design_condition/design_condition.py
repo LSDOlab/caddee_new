@@ -8,6 +8,23 @@ class SteadyDesignCondition(CADDEEBase):
     """
     Class for steady-state analyses (e.g., steady cruise segment).
 
+    state vector x = [x_d, x_k]
+    x_d = [u, v, w, p, q, r]
+    x_k = [x, y, z, φ, θ, ψ]
+    with
+        - (u, v, w) and (p, q, r) the body-axis frame components of aircraft center
+        of mass velocity and of the aircraft angular velocity respectively
+        - (x, y, z) the evolving coordinates of the center of mass into the chosen
+        inertial reference frame. The standard NED (North-East-Down).
+        - (φ, θ, ψ) the standard aircraft Euler angles representing the evolving body
+        attitude with respect to the inertial reference frame
+
+    Steady-state flight is defined as a condition in which all of the aircraft motion
+     variables are constant or zero. That is, the linear and angular velocities are
+     constant or zero and all the acceleration components are zero.
+    accelerations ⇒ ˙u, ˙v, ˙w (or ˙V , ˙α, ˙β ) ≡ 0 , ˙p, ˙q, ˙r ≡ 0
+    linear velocities ⇒ u, v, w ( or V, α, β) = prescribed constant values
+    angular velocities ⇒ p, q, r = prescribed constant values
     Parameters:
     ---
         stability_flag : perform static stability analysis if True
@@ -53,7 +70,7 @@ class CruiseCondition(SteadyDesignCondition):
     CADDEE inputs (set by set_module_input()):
     ---
         - range : range of a cruise condition
-        - time : time of a hover condition
+        - time : time of a cruise condition
         - mach_number : aircraft free-stream Mach number  (can't be specified if cruise_speed)
         - cruise_speed : aircraft cruise speed (can't be specified if mach_number)
         - altitude : aircraft altitude 
@@ -65,9 +82,6 @@ class CruiseCondition(SteadyDesignCondition):
     """
     def initialize(self, kwargs):
         return super().initialize(kwargs)
-    
-    # NOTE: p, q, r will be part of the 12 aircraft states but don't affect the steady analysis 
-    # as they are pitch, roll, yaw rates 
 
     def compute(self): 
         from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import CruiseConditionCSDL
