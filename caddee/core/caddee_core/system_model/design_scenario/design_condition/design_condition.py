@@ -129,15 +129,19 @@ class CruiseCondition(SteadyDesignCondition):
 
     def _assemble_csdl(self):
         from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import CruiseConditionCSDL
-        csdl_model = CruiseConditionCSDL(
-            module=self,
-            prepend=self.parameters['name'],
-            cruise_condition=self,
-        )
+        # csdl_model = CruiseConditionCSDL(
+        #     module=self,
+        #     prepend=self.parameters['name'],
+        #     cruise_condition=self,
+        # )
         # GraphRepresentation(csdl_model)
         # print(self.inputs)
-        # print('#################3', csdl_model.module_inputs)
-        # print('\n')
+        # print('#################3', self.m3l_models)
+        if len(self.m3l_models) > 1:
+            raise Exception(f"More than one m3l model added to design condition {self.parameters['name']}")
+        else:
+            for m3l_model_name, m3l_model in self.m3l_models.items():
+                csdl_model = m3l_model._assemble_csdl()
 
         return csdl_model
 

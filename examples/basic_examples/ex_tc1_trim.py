@@ -60,10 +60,10 @@ leading_edge = wing.project(np.linspace(np.array([8., -26., 7.5]), np.array([8.,
 trailing_edge = wing.project(np.linspace(np.array([15., -26., 7.5]), np.array([15., 26., 7.5]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), plot=False)   # returns MappedArray
 chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
 # spatial_rep.plot_meshes([chord_surface])
-wing_upper_surface_wireframe = wing.project(chord_surface.value + np.array([0., 0., 1.]), direction=np.array([0., 0., -1.]), grid_search_n=50, plot=False)
-wing_lower_surface_wireframe = wing.project(chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_n=50, plot=False)
+wing_upper_surface_wireframe = wing.project(chord_surface.value + np.array([0., 0., 1.]), direction=np.array([0., 0., -1.]), grid_search_n=20, plot=False)
+wing_lower_surface_wireframe = wing.project(chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_n=20, plot=False)
 wing_camber_surface = am.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1) # this linspace will return average when n=1
-spatial_rep.plot_meshes([wing_camber_surface])
+# spatial_rep.plot_meshes([wing_camber_surface])
 # exit()
 # Tail mesh
 num_spanwise_vlm = 5
@@ -74,7 +74,7 @@ chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
 horizontal_stabilizer_upper_surface_wireframe = horizontal_stabilizer.project(chord_surface.value + np.array([0., 0., 1.]), direction=np.array([0., 0., -1.]), grid_search_n=15)
 horizontal_stabilizer_lower_surface_wireframe = horizontal_stabilizer.project(chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_n=15)
 horizontal_stabilizer_camber_surface = am.linspace(horizontal_stabilizer_upper_surface_wireframe, horizontal_stabilizer_lower_surface_wireframe, 1) 
-spatial_rep.plot_meshes([horizontal_stabilizer_camber_surface])
+# spatial_rep.plot_meshes([horizontal_stabilizer_camber_surface])
 
 
 # Rotor mesh: pusher
@@ -87,13 +87,13 @@ pusher_prop_in_plane_x = am.subtract(y21, y22)
 pusher_prop_origin = pusher_prop.project(np.array([32.625, 0, 7.79]))
 
 
-system_rep.add_output(name='horizontal_stabilizer_camber_surface', quantity=horizontal_stabilizer_camber_surface)
 system_rep.add_output(name='wing_camber_surface', quantity=wing_camber_surface)
+system_rep.add_output(name='horizontal_stabilizer_camber_surface', quantity=horizontal_stabilizer_camber_surface)
 system_rep.add_output(name='pusher_disk_in_plane_1', quantity=pusher_prop_in_plane_y)
 system_rep.add_output(name='pusher_disk_in_plane_2', quantity=pusher_prop_in_plane_x)
 system_rep.add_output(name='pusher_prop_origin', quantity=pusher_prop_origin)
 
-exit()
+# exit()
 
 # from VAST.vlm import VLMMesh, VLMM3L
 # vlm_mesh = VLMMesh(wing_camber_surface)
@@ -166,6 +166,27 @@ cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 
 ac_states = cruise_condition.evaluate_ac_states()
 cruise_model.register_output(ac_states)
 
+from VAST.core.vast_solver import VASTFluidSover
+from VAST.core.fluid_problem import FluidProblem
+
+# print( (1, ) + wing_camber_surface.evaluate().shape[1:])
+# print((1, ) + horizontal_stabilizer_camber_surface.evaluate().shape[1:])
+# exit()
+
+vlm_model = VASTFluidSover(
+    surface_names=[
+        wing.parameters['name'],
+        horizontal_stabilizer.parameters['name'],
+    ],
+    surface_shapes=[
+        (1, ) + wing_camber_surface.evaluate().shape[1:],
+        (1, ) + horizontal_stabilizer_camber_surface.evaluate().shape[1:],
+    ],
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+)
+vlm_forces = vlm_model.evaluate(ac_states=ac_states)
+cruise_model.register_output(vlm_forces)
+
 # aero forces and moments
 c172_aero_model = cd.C172AeroM3L()
 c172_aero_model.set_module_input('delta_a', val=np.deg2rad(0))
@@ -176,20 +197,31 @@ cruise_model.register_output(c172_forces)
 cruise_model.register_output(c172_moments)
 
 # BEM prop forces and moments
-from lsdo_rotor import BEMM3L, BEMMesh
-bem_model = BEMM3L(component=pusher_prop, mesh=bem_mesh)
-bem_model.set_module_input('rpm', val=1500)
+from lsdo_rotor.core.BEM_caddee.BEM_caddee import BEM, BEMMesh
+pusher_bem_mesh = BEMMesh(
+    meshes=dict(
+    pusher_prop_in_plane_y=pusher_prop_in_plane_y,
+    pusher_prop_in_plane_x=pusher_prop_in_plane_x,
+    pusher_prop_origin=pusher_prop_origin,
+    ),
+    airfoil='NACA_4412', 
+    num_blades=3,
+    chord_b_spline_rep=True,
+    twist_b_spline_rep=True,
+)
+bem_model = BEM(component=pusher_prop, mesh=pusher_bem_mesh)
+bem_model.set_module_input('rpm', val=1200)
 bem_forces, bem_moments = bem_model.evaluate(ac_states=ac_states)
 
 # inertial forces and moments
 inertial_loads_model = cd.InertialLoadsM3L()
-inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass)
+inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass, ac_states=ac_states)
 cruise_model.register_output(inertial_forces)
 cruise_model.register_output(inertial_moments)
 
 # total forces and moments 
 total_forces_moments_model = cd.TotalForcesMomentsM3L()
-total_forces, total_moments = total_forces_moments_model.evaluate(c172_forces, c172_moments, inertial_forces, inertial_moments)
+total_forces, total_moments = total_forces_moments_model.evaluate(c172_forces, c172_moments, bem_forces, bem_moments, inertial_forces, inertial_moments)
 cruise_model.register_output(total_forces)
 cruise_model.register_output(total_moments)
 
@@ -205,22 +237,28 @@ trim_residual = eom_m3l_model.evaluate(
 )
 cruise_model.register_output(trim_residual)
 
-caddee_csdl_model = cruise_model._assemble_csdl()
+# caddee_csdl_model = cruise_model._assemble_csdl()
 
-# # Add cruise m3l model to cruise condition
-# cruise_condition.add_m3l_model('cruise_model', cruise_model)
+# Add cruise m3l model to cruise condition
+cruise_condition.add_m3l_model('cruise_model', cruise_model)
 
-# # Add design condition to design scenario
-# design_scenario.add_design_condition(cruise_condition)
+# Add design condition to design scenario
+design_scenario.add_design_condition(cruise_condition)
 
-# # Add design scenario to system_model
-# system_model.add_design_scenario(design_scenario=design_scenario)
+# Add design scenario to system_model
+system_model.add_design_scenario(design_scenario=design_scenario)
 
-# # get final caddee csdl model
-# caddee_csdl_model = caddee.assemble_csdl()
+# get final caddee csdl model
+caddee_csdl_model = caddee.assemble_csdl()
+
+caddee_csdl_model.connect('system_representation.nonlinear_outputs_model.pusher_disk_in_plane_1', 'system_model.aircraft_trim.cruise_1.cruise_1.pusher_prop_bem.pusher_prop_in_plane_y')
+caddee_csdl_model.connect('system_representation.nonlinear_outputs_model.pusher_disk_in_plane_2', 'system_model.aircraft_trim.cruise_1.cruise_1.pusher_prop_bem.pusher_prop_in_plane_x')
+
+# caddee_csdl_model.connect('system_representation.nonlinear_outputs_model.horizontal_stabilizer_camber_surface', 'system_model.aircraft_trim.cruise_1.cruise_1.vast_fluid_model.vast.h_tail_undef_mesh')
+# caddee_csdl_model.connect('system_representation.nonlinear_outputs_model.wing_camber_surface', 'system_model.aircraft_trim.cruise_1.cruise_1.vast_fluid_model.vast.wing_undef_mesh')
 
 # create and run simulator
-sim = Simulator(caddee_csdl_model, analytics=True)
+sim = Simulator(caddee_csdl_model, analytics=True, display_scripts=True)
 sim.run()
 
 

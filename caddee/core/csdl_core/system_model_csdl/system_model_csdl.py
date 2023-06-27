@@ -38,7 +38,7 @@ class SystemModelCSDL(BaseModelCSDL):
                 self.add_module(design_scenario._assemble_csdl(
                     system_config=system_config,
                     system_param=system_param,
-                ), name, promotes=['system_representation_geometry'])
+                ), name, promotes=[])
             else:
                 self.add_module(design_scenario._assemble_csdl(
                     system_config=system_config,

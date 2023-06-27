@@ -20,7 +20,7 @@ class SystemRepresentationAssemblyCSDL(csdl.Model):
         system_representation = system_parameterization.system_representation
 
         # system_representation_geometry = self.create_output('system_representation_geometry', val=system_representation.spatial_representation.control_points)
-        initial_system_representation_geometry = self.create_input('initial_system_representation_geometry', val=system_representation.spatial_representation.control_points)
+        initial_system_representation_geometry = self.create_input('initial_system_representation_geometry', val=system_representation.spatial_representation.control_points['geometry'])
 
         geometry_parameterizations = system_parameterization.geometry_parameterizations
         for geometry_parameterization in list(geometry_parameterizations.values()):

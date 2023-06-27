@@ -65,7 +65,6 @@ c172_prop_forces, c172_prop_moments = c172_prop_model.evaluate(ac_states=ac_stat
 cruise_model.register_output(c172_prop_forces)
 cruise_model.register_output(c172_prop_forces)
 
-
 # inertial forces and moments
 inertial_loads_model = cd.InertialLoadsM3L()
 inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=c172_cg, totoal_mass=c172_mass, ac_states=ac_states)

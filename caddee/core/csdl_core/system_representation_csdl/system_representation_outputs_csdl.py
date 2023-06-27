@@ -24,7 +24,7 @@ class SystemRepresentationOutputsCSDL(csdl.Model):
                 num_nonlinear_outputs += 1
 
         # Declare input
-        system_representation_geometry = self.declare_variable('system_representation_geometry', val=spatial_rep.control_points)
+        system_representation_geometry = self.declare_variable('system_representation_geometry', val=spatial_rep.control_points['geometry'])
 
         nonlinear_outputs = csdl.custom(system_representation_geometry, op=NonlinearOutputsOperation(system_representation=system_representation))
 
@@ -68,7 +68,7 @@ class NonlinearOutputsOperation(csdl.CustomExplicitOperation):
         system_representation = self.parameters['system_representation']
         spatial_rep = system_representation.spatial_representation
 
-        self.add_input('system_representation_geometry', val=spatial_rep.control_points.copy())
+        self.add_input('system_representation_geometry', val=spatial_rep.control_points['geometry'].copy())
         
         for output_name in list(spatial_rep.outputs):
             output = spatial_rep.outputs[output_name]

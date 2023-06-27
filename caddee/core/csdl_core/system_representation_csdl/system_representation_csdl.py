@@ -2,11 +2,11 @@ import csdl
 from csdl_om import Simulator
 import numpy as np
 import scipy.sparse as sps
-
+from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
 from caddee.core.csdl_core.system_representation_csdl.system_representation_outputs_csdl import SystemRepresentationOutputsCSDL
 
 
-class SystemRepresentationCSDL(csdl.Model):
+class SystemRepresentationCSDL(ModuleCSDL):
     '''
     Evaluates the full system configuration from an initial set of parameterized values.
     '''

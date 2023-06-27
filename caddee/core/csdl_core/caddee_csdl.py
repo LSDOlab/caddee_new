@@ -35,8 +35,11 @@ class CADDEECSDL(ModuleCSDL):
             )
             self.add_module(system_parameterization_csdl, 'system_parameterization')
 
+       
         if system_representation is not None:
-            if system_representation.outputs:
+            print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$', system_representation.spatial_representation.outputs)
+            if system_representation.spatial_representation.outputs:
+                
                 system_representation_csdl = SystemRepresentationCSDL(
                     system_representation=system_representation,
                 )
