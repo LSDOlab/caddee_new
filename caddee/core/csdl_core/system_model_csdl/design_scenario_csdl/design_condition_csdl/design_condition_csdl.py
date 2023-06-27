@@ -32,7 +32,7 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
         # psi = self.register_module_input(f'{cruise_name}_yaw_angle', shape=(1, ), computed_upstream=False)
         # gamma = self.register_module_input(f'{cruise_name}_flight_path_angle', shape=(1, ), computed_upstream=False)
         # psi_w = self.register_module_input(f'{cruise_name}_wind_angle', shape=(1, ), computed_upstream=False)
-        # altitude = self.register_module_input(f'{cruise_name}_altitude', shape=(1, ), computed_upstream=False)
+        altitude = self.register_module_input(f'{cruise_name}_altitude', shape=(1, ), computed_upstream=False)
         observer_location = self.register_module_input(f'{cruise_name}_observer_location', shape=(3, ), computed_upstream=False)
 
         if cruise_condition.atmosphere_model:
@@ -205,7 +205,7 @@ class HoverConditionCSDL(SteadyDesignConditionCSDL):
 
 
 
-class ClimbCondition(SteadyDesignConditionCSDL):
+class ClimbConditionCSDL(SteadyDesignConditionCSDL):
     def initialize(self):
         self.parameters.declare('climb_condition', types=ClimbCondition)
 
@@ -214,27 +214,49 @@ class ClimbCondition(SteadyDesignConditionCSDL):
         climb_module = self.module 
         climb_name = self.prepend 
         
-        if set(['climb_gradient', 'gamma', 'pitch_angle', 'final_altitude']).issubset(climb_module.inputs):
+        if set(['climb_gradient', 'gamma', 'pitch_angle', 'pitch_angle']).issubset(climb_module.inputs):
             gamma = self.register_module_input(f'{climb_name}_flight_path_angle', shape=(1, ), computed_upstream=False)
-            fh = self.register_module_input(f'{climb_name}_final_altitude', shape=(1, ), computed_upstream=False)
             cg = self.register_module_input(f'{climb_name}_climb_gradient', shape=(1, ), computed_upstream=False)
+            theta = self.register_module_input(f'{climb_name}_pitch_angle', shape=(1,), computed_upstream=False)
 
             V = cg / csdl.sin(gamma)
             self.register_module_output(f'{climb_name}_speed', V)
 
-        elif set(['speed', 'pitch_angle', 'inital_altitude', 'final_altitude', 'time']).issubset(climb_module.inputs):
-            t = self.register_module_input(f'{climb_name}_time', shape=(1,), computed_upstream=False)
-            V = self.register_module_input(f'{climb_name}_speed', shape=(1,), computed_upstream=False)
+
+        elif set(['mach_number', 'pitch_angle', 'inital_altitude', 'final_altitude', 'time']).issubset(climb_module.inputs):
+            a = self.register_module_input(f'{climb_name}_speed_of_sound', shape=(1,))
+
+            M = self.register_module_input(f'{climb_name}_mach_number', shape=(1,), computed_upstream=False)
+            theta = self.register_module_input(f'{climb_name}_pitch_angle', shape=(1,), computed_upstream=False)
             ih = self.register_module_input(f'{climb_name}_initial_altitude', shape=(1,), computed_upstream=False) 
             fh = self.register_module_input(f'{climb_name}_final_altitude', shape=(1, ), computed_upstream=False)
-            
+            t = self.register_module_input(f'{climb_name}_time', shape=(1,), computed_upstream=False)
+
+            V = a * M
             total_distance_traveled = V * t
             vertical_distance_gained = fh - ih
             gamma = csdl.arcsin(vertical_distance_gained / total_distance_traveled)
-            
+            self.register_module_output(f'{climb_name}_speed', V)
+            self.register_module_output(f'{climb_name}_flight_path_angle', gamma)
+
+        elif set(['mach_number', 'pitch_angle', 'inital_altitude', 'final_altitude', 'gamma']).issubset(climb_module.inputs):
+            a = self.register_module_input(f'{climb_name}_speed_of_sound', shape=(1,))
+
+            M = self.register_module_input(f'{climb_name}_mach_number', shape=(1,), computed_upstream=False)
+            theta = self.register_module_input(f'{climb_name}_pitch_angle', shape=(1,), computed_upstream=False)
+            ih = self.register_module_input(f'{climb_name}_initial_altitude', shape=(1,), computed_upstream=False)
+            fh = self.register_module_input(f'{climb_name}_final_altitude', shape=(1,), computed_upstream=False)
+            gamma = self.register_module_input(f'{climb_name}_flight_path_angle', shape=(1,), computed_upstream=False)
+
+            V = a * M
+            cg = V*csdl.sin(gamma)
+            t = ((fh - ih) / cg)
+            self.register_module_output(f'{climb_name}_speed', V)
+            self.register_module_output(f'{climb_name}_time', t)
+        else:
+            raise NotImplementedError
 
         obs_loc = self.register_module_input(f'{climb_name}_observer_location', shape=(3, ), computed_upstream=False)
-        theta = self.register_module_input(f'{climb_name}_pitch_angle', shape=(1, ), computed_upstream=False)
         alfa = theta - gamma
         
         u = V * csdl.cos(alfa)

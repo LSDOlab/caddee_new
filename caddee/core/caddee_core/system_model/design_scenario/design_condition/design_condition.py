@@ -43,6 +43,7 @@ class SteadyDesignCondition(CADDEEBase):
         # Parameters
         self.parameters.declare(name='stability_flag', default=False, types=bool)
         self.parameters.declare(name='dynamic_flag', default=False, types=bool)
+        return
 
 
     def add_m3l_model(self, name, model):
@@ -51,51 +52,11 @@ class SteadyDesignCondition(CADDEEBase):
             raise TypeError("model_group must be of type 'm3l.Model' ")
         else:
             self.m3l_models[name] = model
+        return
 
-
-    # def _assemble_csdl(self):
-    #     from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import DesignConditionCSDL
-    #     csdl_model = DesignConditionCSDL(
-    #         module=self,
-    #         cruise_condition=self,
-    #     )
-
-    #     return csdl_model
-    
-
-class CruiseCondition(SteadyDesignCondition):
-    """
-    Subclass of SteadyDesignCondition intended to define cruise mission segmenst of air vehicles.
-    
-    CADDEE inputs (set by set_module_input()):
-    ---
-        - range : range of a cruise condition
-        - time : time of a cruise condition
-        - mach_number : aircraft free-stream Mach number  (can't be specified if cruise_speed)
-        - cruise_speed : aircraft cruise speed (can't be specified if mach_number)
-        - altitude : aircraft altitude 
-        - theta : aircraft pitch angle
-        - gamma : aircraft flight path angle 
-        - psi : yaw angle 
-        - psi_w : wind angle 
-        - observer_location : x, y, z location of aircraft (if specified, z must be equal to altitude)
-    """
-    def initialize(self, kwargs):
-        return super().initialize(kwargs)
-
-    def compute(self): 
-        from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import CruiseConditionCSDL
-        csdl_model = CruiseConditionCSDL(
-            module=self,
-            prepend=self.parameters['name'],
-            cruise_condition=self,
-        ) 
-
-        return csdl_model
-
-    def evaluate_ac_states(self): 
+    def evaluate_ac_states(self):
         operation_csdl = self.compute()
-        arguments = {} 
+        arguments = {}
 
         ac_state_operation = m3l.CSDLOperation(
             name=f"{self.parameters['name']}_ac_states_operation",
@@ -121,42 +82,55 @@ class CruiseCondition(SteadyDesignCondition):
         z = m3l.Variable(name='z', shape=(self.num_nodes, ), operation=ac_state_operation)
 
         ac_states = {
-            'u' : u, 
-            'v' : v, 
-            'w' : w, 
-            'p' : p, 
-            'q' : q, 
-            'r' : r, 
-            'phi' : phi, 
-            'gamma' : gamma, 
-            'psi' : psi, 
-            'theta' : theta, 
-            'x' : x, 
-            'y' : y, 
+            'u' : u,
+            'v' : v,
+            'w' : w,
+            'p' : p,
+            'q' : q,
+            'r' : r,
+            'phi' : phi,
+            'gamma' : gamma,
+            'psi' : psi,
+            'theta' : theta,
+            'x' : x,
+            'y' : y,
             'z' : z
         }
-
         return ac_states
-
-
-
-
     def _assemble_csdl(self):
-        from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import CruiseConditionCSDL
-        # csdl_model = CruiseConditionCSDL(
-        #     module=self,
-        #     prepend=self.parameters['name'],
-        #     cruise_condition=self,
-        # )
-        # GraphRepresentation(csdl_model)
-        # print(self.inputs)
-        # print('#################3', self.m3l_models)
         if len(self.m3l_models) > 1:
             raise Exception(f"More than one m3l model added to design condition {self.parameters['name']}")
         else:
             for m3l_model_name, m3l_model in self.m3l_models.items():
                 csdl_model = m3l_model._assemble_csdl()
 
+        return csdl_model
+    
+
+class CruiseCondition(SteadyDesignCondition):
+    """
+    Subclass of SteadyDesignCondition intended to define cruise mission segmenst of air vehicles.
+    
+    CADDEE inputs (set by set_module_input()):
+    ---
+        - range : range of a cruise condition
+        - time : time of a cruise condition
+        - altitude: altitude at cruise
+        - mach_number : aircraft free-stream Mach number  (can't be specified if cruise_speed)
+        - cruise_speed : aircraft cruise speed (can't be specified if mach_number)
+        - theta : aircraft pitch angle
+        - observer_location : x, y, z location of aircraft; z can be different from altitude
+    """
+    def initialize(self, kwargs):
+        return super().initialize(kwargs)
+
+    def compute(self): 
+        from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import CruiseConditionCSDL
+        csdl_model = CruiseConditionCSDL(
+            module=self,
+            prepend=self.parameters['name'],
+            cruise_condition=self,
+        )
         return csdl_model
 
 class HoverCondition(SteadyDesignCondition):
@@ -187,10 +161,19 @@ class ClimbCondition(SteadyDesignCondition):
         - flight path angle 
         - climb gradient 
         - pitch angle
-        - yaw angle 
+        - gamma
     """
     def initialize(self, kwargs):
         return super().initialize(kwargs)
+
+    def compute(self):
+        from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import ClimbConditionCSDL
+        csdl_model = ClimbConditionCSDL(
+            module=self,
+            prepend=self.parameters['name'],
+            cruise_condition=self,
+        )
+        return csdl_model
     
 class VectorizedDesignCondition(SteadyDesignCondition):
     """
