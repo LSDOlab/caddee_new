@@ -155,13 +155,15 @@ class ClimbCondition(SteadyDesignCondition):
     ---
         - initial_altitude : initial altitude of a climb condition
         - final_altitude : final altitude of a climb condition
-        - speed
-        - mach number 
-        - time
-        - flight path angle 
-        - climb gradient 
-        - pitch angle
-        - gamma
+        - altitude : a necessary input for now to get correct atmosisa
+        - mach_number : aircraft free-stream Mach number  (can't be specified if speed is specified)
+        - speed : aircraft speed during climb (can't be specified if mach_number is specified)
+        - time : duration of the climb
+        - climb gradient : vertical distance aircraft covers in m/s
+        - pitch_angle: theta; one of the aircraft states
+        - flight_path_angle: gamma;
+        - observer_location : x, y, z location of aircraft; z can be different from altitude
+
     """
     def initialize(self, kwargs):
         return super().initialize(kwargs)
@@ -171,7 +173,7 @@ class ClimbCondition(SteadyDesignCondition):
         csdl_model = ClimbConditionCSDL(
             module=self,
             prepend=self.parameters['name'],
-            cruise_condition=self,
+            climb_condition=self,
         )
         return csdl_model
     

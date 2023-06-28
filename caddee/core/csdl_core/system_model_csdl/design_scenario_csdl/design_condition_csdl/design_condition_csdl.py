@@ -32,7 +32,7 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
         # psi = self.register_module_input(f'{cruise_name}_yaw_angle', shape=(1, ), computed_upstream=False)
         # gamma = self.register_module_input(f'{cruise_name}_flight_path_angle', shape=(1, ), computed_upstream=False)
         # psi_w = self.register_module_input(f'{cruise_name}_wind_angle', shape=(1, ), computed_upstream=False)
-        altitude = self.register_module_input(f'{cruise_name}_altitude', shape=(1, ), computed_upstream=False)
+
         observer_location = self.register_module_input(f'{cruise_name}_observer_location', shape=(3, ), computed_upstream=False)
 
         if cruise_condition.atmosphere_model:
@@ -50,6 +50,7 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
             time = self.register_module_input(f'{cruise_name}_time', shape=(1, ), computed_upstream=False)
             speed = range/time
             self.register_module_output(f'{cruise_name}_speed', speed)
+            raise Exception("This part of if-else has not been tested")
         elif set(['mach_number', 'time']).issubset(ac_module.inputs):
             a = self.register_module_input(f'{cruise_name}_speed_of_sound', shape=(1, ))
             time = self.register_module_input(f'{cruise_name}_time', shape=(1, ), computed_upstream=False)
@@ -58,6 +59,7 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
             range = speed * time
             self.register_module_output(f'{cruise_name}_range', range)
             self.register_module_output(f'{cruise_name}_speed', speed)
+            raise Exception("This part of if-else has not been tested")
         elif set(['mach_number', 'range']).issubset(ac_module.inputs):
             a = self.register_module_input(f'{cruise_name}_speed_of_sound', shape=(1, ))
             range = self.register_module_input(f'{cruise_name}_range', shape=(1, ), computed_upstream=False)
@@ -71,11 +73,13 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
             time = self.register_module_input(f'{cruise_name}_time', shape=(1, ), computed_upstream=False)
             range = speed * time
             self.register_module_output(f'{cruise_name}_range', range)
+            raise Exception("This part of if-else has not been tested")
         elif set(['speed', 'range']).issubset(ac_module.inputs):
             speed = self.register_module_input(f'{cruise_name}_speed', shape=(1, ), computed_upstream=False)
             range = self.register_module_input(f'{cruise_name}_range', shape=(1, ), computed_upstream=False)
             time = range / speed 
             self.register_module_output(f'{cruise_name}_time', time)
+            raise Exception("This part of if-else has not been tested")
         else:
             raise Exception(f"Not enough information to determine 'speed', 'range', and 'time' for design condition '{cruise_name}'. Please specify either ('speed', 'range'), ('speed', 'time'), ('mach_number', 'range'), ('mach_number', 'time'), or ('range', 'time').")
         
@@ -212,18 +216,20 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
     def define(self):
         climb_condition = self.parameters['climb_condition']
         climb_module = self.module 
-        climb_name = self.prepend 
+        climb_name = self.prepend
+
+        if climb_condition.atmosphere_model:
+            self.add_module(climb_condition.atmosphere_model._assemble_csdl(climb_name), 'atmosphere_model')
         
-        if set(['climb_gradient', 'gamma', 'pitch_angle', 'pitch_angle']).issubset(climb_module.inputs):
+        if set(['climb_gradient', 'gamma', 'pitch_angle']).issubset(climb_module.inputs):
             gamma = self.register_module_input(f'{climb_name}_flight_path_angle', shape=(1, ), computed_upstream=False)
             cg = self.register_module_input(f'{climb_name}_climb_gradient', shape=(1, ), computed_upstream=False)
             theta = self.register_module_input(f'{climb_name}_pitch_angle', shape=(1,), computed_upstream=False)
 
             V = cg / csdl.sin(gamma)
             self.register_module_output(f'{climb_name}_speed', V)
-
-
-        elif set(['mach_number', 'pitch_angle', 'inital_altitude', 'final_altitude', 'time']).issubset(climb_module.inputs):
+            raise Exception("This part of if-else has not been tested")
+        elif set(['mach_number', 'pitch_angle', 'initial_altitude', 'final_altitude', 'time']).issubset(climb_module.inputs):
             a = self.register_module_input(f'{climb_name}_speed_of_sound', shape=(1,))
 
             M = self.register_module_input(f'{climb_name}_mach_number', shape=(1,), computed_upstream=False)
@@ -238,8 +244,8 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
             gamma = csdl.arcsin(vertical_distance_gained / total_distance_traveled)
             self.register_module_output(f'{climb_name}_speed', V)
             self.register_module_output(f'{climb_name}_flight_path_angle', gamma)
-
-        elif set(['mach_number', 'pitch_angle', 'inital_altitude', 'final_altitude', 'gamma']).issubset(climb_module.inputs):
+            raise Exception("This part of if-else has not been tested")
+        elif set(['mach_number', 'pitch_angle', 'initial_altitude', 'final_altitude', 'flight_path_angle']).issubset(climb_module.inputs):
             a = self.register_module_input(f'{climb_name}_speed_of_sound', shape=(1,))
 
             M = self.register_module_input(f'{climb_name}_mach_number', shape=(1,), computed_upstream=False)
@@ -253,27 +259,47 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
             t = ((fh - ih) / cg)
             self.register_module_output(f'{climb_name}_speed', V)
             self.register_module_output(f'{climb_name}_time', t)
+            # self.register_module_output(f'{climb_name}_altitude', (ih+fh)/2)
         else:
             raise NotImplementedError
 
-        obs_loc = self.register_module_input(f'{climb_name}_observer_location', shape=(3, ), computed_upstream=False)
-        alfa = theta - gamma
-        
-        u = V * csdl.cos(alfa)
-        v = 0 * V
-        w = -V * csdl.sin(alfa)
-        
-        x = obs_loc[0]
-        y = obs_loc[1]
-        z = obs_loc[2]
+        observer_location = self.register_module_input(f'{climb_name}_observer_location', shape=(3, ), computed_upstream=False)
 
+        # Compute aircraft states
+        phi = observer_location[2] * 0
+        psi = observer_location[2] * 0
+        psi_w = observer_location[2] * 0
+
+        alfa = theta - gamma
+        beta = psi + psi_w
+        u = V * csdl.cos(alfa) * csdl.cos(beta)
+        v = V * csdl.sin(beta)
+        w = V * csdl.sin(alfa) * csdl.cos(beta)
+        p = u * 0
+        q = u * 0
+        r = u * 0
+        x = observer_location[0]
+        y = observer_location[1]
+        z = observer_location[2]
+
+        # NOTE: below, we don't need to pre_pend the aircraft condition name any more since the vectorization will be handled by m3l
         self.register_module_output('u', u)
         self.register_module_output('v', v)
         self.register_module_output('w', w)
 
+        self.register_module_output('p', p)
+        self.register_module_output('q', q)
+        self.register_module_output('r', r)
+
+        self.register_module_output('phi', phi * 1)
+        self.register_module_output('gamma', gamma * 1)
+        self.register_module_output('psi', psi * 1)
+        self.register_module_output('theta', theta * 1)
+
         self.register_module_output('x', x * 1)
         self.register_module_output('y', y * 1)
         self.register_module_output('z', z * 1)
+        return
 
         
         
