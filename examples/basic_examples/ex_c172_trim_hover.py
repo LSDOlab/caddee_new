@@ -31,7 +31,6 @@ hover_model = m3l.Model()
 hover_condition = cd.HoverCondition(name="hover")
 hover_condition.atmosphere_model = cd.SimpleAtmosphereModel()
 
-hover_condition.set_module_input(name='range', val=40000)
 hover_condition.set_module_input(name='altitude', val=500)
 hover_condition.set_module_input(name='hover_time', val=60)
 hover_condition.set_module_input(name='observer_location', val=np.array([0, 0, 500]))
@@ -52,8 +51,8 @@ hover_model.register_output(inertial_moments)
 # prop forces and moments
 c172_prop_model = cd.C172PropulsionModel()
 c172_prop_model.set_module_input('propeller_radius', val=1.)
-c172_prop_model.set_module_input('omega', val=2800, dv_flag=True, lower=2000, upper=2800, scaler=1e-3)
-c172_prop_model.set_module_input('thrust_origin', val=np.array([0., 0., 5.]))
+c172_prop_model.set_module_input('omega', val=4000, dv_flag=True, lower=2000, upper=4500, scaler=1e-3)
+c172_prop_model.set_module_input('thrust_origin', val=np.array([4.5, 0., 5.]))
 c172_prop_model.set_module_input('ref_pt', val=ref_pt)
 c172_prop_forces, c172_prop_moments = c172_prop_model.evaluate(ac_states=ac_states)
 hover_model.register_output(c172_prop_forces)
@@ -64,8 +63,8 @@ total_forces_moments_model = cd.TotalForcesMomentsM3L()
 total_forces, total_moments = total_forces_moments_model.evaluate(
     c172_prop_forces,
     c172_prop_moments,
-    # inertial_forces,
-    # inertial_moments
+    inertial_forces,
+    inertial_moments
 )
 hover_model.register_output(total_forces)
 hover_model.register_output(total_moments)
@@ -89,8 +88,6 @@ caddee_csdl_model.add_objective('EulerEoMGenRefPt.trim_residual')
 sim = Simulator(caddee_csdl_model, analytics=True)
 sim.run()
 
-exit()
-
 sim.check_totals()
 
 prob = CSDLProblem(problem_name='c172_hover_trim', simulator=sim)
@@ -101,4 +98,4 @@ optimizer = SLSQP(
 )
 optimizer.solve()
 optimizer.print_results()
-print("Hover lift rotor RPM", optimizer.outputs['x'][-1, 1]*1000)
+print("Hover lift rotor RPM", optimizer.outputs['x'][-1, 0]*1000)
