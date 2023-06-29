@@ -5,7 +5,11 @@ from caddee.core.caddee_core.system_model.system_model import SystemModel
 
 from caddee.core.caddee_core.system_model.sizing_group.sizing_models.m4_regressions import M4Regressions
 from caddee.core.caddee_core.system_model.design_scenario.design_scenario import DesignScenario
-from caddee.core.caddee_core.system_model.design_scenario.design_condition.design_condition import CruiseCondition, ClimbCondition
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.design_condition import (
+    CruiseCondition,
+    ClimbCondition,
+    HoverCondition
+)
 from caddee.core.caddee_core.system_model.design_scenario.design_condition.atmosphere.atmosphere import SimpleAtmosphereModel
 from caddee.core.caddee_core.system_representation.component.component import Component, LiftingSurface, Rotor
 

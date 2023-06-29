@@ -22,17 +22,10 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
         cruise_condition = self.parameters['cruise_condition']
         ac_module = self.module # self.parameters['aircraft_condition_module']
         cruise_name = self.prepend
-        
-        # modules_dict = ac_module.mechanics_group.models_dictionary
-       
-        # Required variables (user needs to provide these)
-        # TODO: don't require all of these, e.g., provide default values 
-        # phi = self.register_module_input(f'{cruise_name}_roll_angle', shape=(1, ), computed_upstream=False)
-        theta = self.register_module_input(f'{cruise_name}_pitch_angle', shape=(1, ), computed_upstream=False)
-        # psi = self.register_module_input(f'{cruise_name}_yaw_angle', shape=(1, ), computed_upstream=False)
-        # gamma = self.register_module_input(f'{cruise_name}_flight_path_angle', shape=(1, ), computed_upstream=False)
-        # psi_w = self.register_module_input(f'{cruise_name}_wind_angle', shape=(1, ), computed_upstream=False)
 
+        # Required variables (user needs to provide these)
+        theta = self.register_module_input(f'{cruise_name}_pitch_angle', shape=(1, ), computed_upstream=False)
+        h = self.register_module_input(f'{cruise_name}_altitude', shape=(1, ), computed_upstream=False)
         observer_location = self.register_module_input(f'{cruise_name}_observer_location', shape=(3, ), computed_upstream=False)
 
         if cruise_condition.atmosphere_model:
@@ -119,56 +112,7 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
         self.register_module_output('x', x * 1)
         self.register_module_output('y', y * 1)
         self.register_module_output('z', z * 1)
-        
-        # m3l_models = cruise_condition.m3l_models
-        # for m3l_model_name, m3l_model in m3l_models.items():
-        #     print(m3l_model_name)
-        #     print(m3l_model.outputs.keys())
-        #     self.add_module(m3l_model._assemble_csdl(), m3l_model_name, promotes=[])
-
-        # Loop over models added and create inputs for any model-specific inputs 
-        
-        # NOTE: below is no longer needed 
-        # module_inputs = []
-        # compent_inputs = []
-        # for module_name, module_info in modules_dict.items():
-        #     # Check if the module has a component
-        #     # (e.g., BEM would have a rotor component)
-        #     if module_info.parameters.__contains__('component'):
-        #         comp = module_info.parameters['component']
-        #         # Check if the component has any variables 
-        #         # (e.g., rotor could have 'rpm')
-        #         if comp:
-        #             if comp.parameters['component_vars']:
-        #                 for module_input, input_info in module_info.inputs.items():
-        #                     if module_input in comp.parameters['component_vars']:
-        #                         compent_inputs.append(module_input)
-        #                         var_name = f"{module_input}_{comp.parameters['name']}"
-        #                         module_inputs.append(var_name)
-        #                         ac_module.inputs[var_name] = input_info
-                            
-        #     else:
-        #         for module_input, input_info in module_info.inputs.items():
-        #             if module_input not in compent_inputs:
-        #                 module_inputs.append(module_input)
-        #                 ac_module.inputs[module_input] = input_info
-
-        # bem_module_csdl = module._assemble_csdl()
-        # bem_inputs = bem_module_csdl.module_inputs
-        # bem_declared_vars = bem_module_csdl.module_declared_vars
-        # print('\n')
-        # print('bem_inputs', bem_inputs)
-        # print('bem_declared_vars', bem_declared_vars)
-        # # print('ac_module.inputs', ac_module.inputs)
-        # # print('ac_module_module_inputs', self.module_inputs)
-        # # print('ac_module_declared_vars', self.module_declared_vars)
-        # if modules_dict['rotor_1_dummy_bem_modules'].parameters['componenet']:
-        #     print('modules_dict', modules_dict['rotor_1_dummy_bem_modules'].parameters['componenet'])
-        
-        # NOTE: below is no longer needed as there is no more mechanics_group
-        # ac_module.mechanics_group._all_model_inputs = module_inputs
-        # for module_input in module_inputs:
-        #     self.register_module_input(f'{ac_name}_{module_input}', computed_upstream=False)
+        return
 
 
 class HoverConditionCSDL(SteadyDesignConditionCSDL):
@@ -180,9 +124,17 @@ class HoverConditionCSDL(SteadyDesignConditionCSDL):
         hover_module = self.module 
         hover_name = self.prepend
 
-        # h = self.register_module_input(f'{hover_name}_altitude', shape=(1, ), computed_upstream=False)
-        t = self.register_module_input(f'{hover_name}_time', shape=(1, ), computed_upstream=False)
+        if not set(hover_module.inputs).issubset(set(['altitude', 'hover_time', 'observer_location'])):
+            raise Exception("The only allowed inputs are altitude, hover_time, and observer_location")
+
+        if hover_condition.atmosphere_model:
+            self.add_module(hover_condition.atmosphere_model._assemble_csdl(hover_name), 'atmosphere_model')
+
+        h = self.register_module_input(f'{hover_name}_altitude', shape=(1, ), computed_upstream=False)
+        t = self.register_module_input(f'{hover_name}_hover_time', shape=(1, ), computed_upstream=False)
         obs_loc = self.register_module_input(f'{hover_name}_observer_location', shape=(3, ), computed_upstream=False)
+
+        self.register_module_output(f'{hover_name}_time', t * 1.)
 
         x = obs_loc[0]
         y = obs_loc[1]
@@ -205,8 +157,7 @@ class HoverConditionCSDL(SteadyDesignConditionCSDL):
         self.register_module_output('x', x * 1)
         self.register_module_output('y', y * 1)
         self.register_module_output('z', z * 1)
-
-
+        return
 
 
 class ClimbConditionCSDL(SteadyDesignConditionCSDL):
@@ -217,6 +168,18 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
         climb_condition = self.parameters['climb_condition']
         climb_module = self.module 
         climb_name = self.prepend
+
+        if not set(climb_module.inputs).issubset(set(['initial_altitude', 'final_altitude',
+                                                      'altitude', 'mach_number',
+                                                      'speed', 'time', 'climb_gradient',
+                                                      'pitch_angle', 'flight_path_angle',
+                                                      'observer_location'])):
+            raise Exception("Provided an input that's not acceptable")
+
+        if set(['initial_altitude', 'final_altitude']).issubset(climb_module.inputs):
+            ih = self.register_module_input(f'{climb_name}_initial_altitude', shape=(1,), computed_upstream=False)
+            fh = self.register_module_input(f'{climb_name}_final_altitude', shape=(1,), computed_upstream=False)
+            self.register_module_output(f'{climb_name}_altitude', (ih + fh) / 2)
 
         if climb_condition.atmosphere_model:
             self.add_module(climb_condition.atmosphere_model._assemble_csdl(climb_name), 'atmosphere_model')
@@ -231,11 +194,8 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
             raise Exception("This part of if-else has not been tested")
         elif set(['mach_number', 'pitch_angle', 'initial_altitude', 'final_altitude', 'time']).issubset(climb_module.inputs):
             a = self.register_module_input(f'{climb_name}_speed_of_sound', shape=(1,))
-
             M = self.register_module_input(f'{climb_name}_mach_number', shape=(1,), computed_upstream=False)
             theta = self.register_module_input(f'{climb_name}_pitch_angle', shape=(1,), computed_upstream=False)
-            ih = self.register_module_input(f'{climb_name}_initial_altitude', shape=(1,), computed_upstream=False) 
-            fh = self.register_module_input(f'{climb_name}_final_altitude', shape=(1, ), computed_upstream=False)
             t = self.register_module_input(f'{climb_name}_time', shape=(1,), computed_upstream=False)
 
             V = a * M
@@ -250,8 +210,6 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
 
             M = self.register_module_input(f'{climb_name}_mach_number', shape=(1,), computed_upstream=False)
             theta = self.register_module_input(f'{climb_name}_pitch_angle', shape=(1,), computed_upstream=False)
-            ih = self.register_module_input(f'{climb_name}_initial_altitude', shape=(1,), computed_upstream=False)
-            fh = self.register_module_input(f'{climb_name}_final_altitude', shape=(1,), computed_upstream=False)
             gamma = self.register_module_input(f'{climb_name}_flight_path_angle', shape=(1,), computed_upstream=False)
 
             V = a * M
@@ -259,11 +217,11 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
             t = ((fh - ih) / cg)
             self.register_module_output(f'{climb_name}_speed', V)
             self.register_module_output(f'{climb_name}_time', t)
-            # self.register_module_output(f'{climb_name}_altitude', (ih+fh)/2)
         else:
             raise NotImplementedError
 
         observer_location = self.register_module_input(f'{climb_name}_observer_location', shape=(3, ), computed_upstream=False)
+        # h = self.register_module_input(f'{climb_name}_altitude', shape=(1, ), computed_upstream=False)
 
         # Compute aircraft states
         phi = observer_location[2] * 0

@@ -115,7 +115,7 @@ class CruiseCondition(SteadyDesignCondition):
     ---
         - range : range of a cruise condition
         - time : time of a cruise condition
-        - altitude: altitude at cruise
+        - altitude : altitude at cruise
         - mach_number : aircraft free-stream Mach number  (can't be specified if cruise_speed)
         - cruise_speed : aircraft cruise speed (can't be specified if mach_number)
         - theta : aircraft pitch angle
@@ -139,13 +139,22 @@ class HoverCondition(SteadyDesignCondition):
 
     Acceptable inputs
     ---
-        - altitude
-        - time
-        - observer location 
+        - altitude : altitude at hover
+        - hover_time : duration of hover
+        - observer_location : x, y, z location of aircraft; z can be different from altitude
 
     """
     def initialize(self, kwargs):
         return super().initialize(kwargs)
+
+    def compute(self):
+        from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import HoverConditionCSDL
+        csdl_model = HoverConditionCSDL(
+            module=self,
+            prepend=self.parameters['name'],
+            hover_condition=self,
+        )
+        return csdl_model
     
 class ClimbCondition(SteadyDesignCondition):
     """
@@ -159,7 +168,7 @@ class ClimbCondition(SteadyDesignCondition):
         - mach_number : aircraft free-stream Mach number  (can't be specified if speed is specified)
         - speed : aircraft speed during climb (can't be specified if mach_number is specified)
         - time : duration of the climb
-        - climb gradient : vertical distance aircraft covers in m/s
+        - climb_gradient : vertical distance aircraft covers in m/s
         - pitch_angle: theta; one of the aircraft states
         - flight_path_angle: gamma;
         - observer_location : x, y, z location of aircraft; z can be different from altitude
