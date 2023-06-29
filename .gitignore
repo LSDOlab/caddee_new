@@ -139,4 +139,6 @@ top_level_req.txt
 _autosummary
 _conf_master.py
 *.out
-*/SUMMARY_GRAPH.txt
+*.xml
+*.iml
+**/SUMMARY_GRAPH*
