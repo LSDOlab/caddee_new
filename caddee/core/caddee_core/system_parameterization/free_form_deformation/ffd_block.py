@@ -2,12 +2,15 @@ from dataclasses import dataclass
 import numpy as np
 import scipy.sparse as sps
 import array_mapper as am
-
+from pathlib import Path
+import pickle
 from caddee.core.primitives.bsplines.bspline_curve import BSplineCurve
 from caddee.core.primitives.bsplines.bspline_surface import BSplineSurface
 from caddee.core.primitives.bsplines.bspline_volume import BSplineVolume
-
 import vedo
+from caddee import FFD_PROJECTIONS_FOLDER
+import os
+
 
 # TODO consider adding constructor to construct section propery map here
 @dataclass
@@ -475,8 +478,136 @@ class SRBGFFDBlock(FFDBlock):
 
     def project(self, points:np.ndarray, direction:np.ndarray=None, grid_search_n:int=50,
                     max_iter:int=100, return_parametric_coordinates:bool=False, plot:bool=False):
-        return self.primitive.project(points=points, direction=direction, grid_search_n=grid_search_n,
-                    max_iter=max_iter, return_parametric_coordinates=return_parametric_coordinates, plot=plot)
+        
+        if direction is not None:
+            projections = FFD_PROJECTIONS_FOLDER / f'{self.name}_points_{str(round(np.linalg.norm(points), 2))}_direction_{str(round(np.linalg.norm(direction)))}_gridsearch_{grid_search_n}.pickle'
+        else:
+            projections = FFD_PROJECTIONS_FOLDER / f'{self.name}_points_{str(round(np.linalg.norm(points), 2))}_gridsearch_{grid_search_n}.pickle'
+        
+        my_file = Path(projections)
+        
+        # print('FFD PROJECTION 2')
+        # print(type(self.primitive))
+        # print(self.name)
+        # print(self.parameters.keys())
+        # print(self.parameters.values())
+        
+
+        if my_file.is_file():
+            with open(projections, 'rb') as f:
+                projections_dict = pickle.load(f)
+
+
+            new_projections = False
+            if np.array_equiv(points, projections_dict['function_input']['points']):
+                pass
+            else:
+                new_projections = True
+          
+            if np.array_equiv(projections_dict['function_input']['direction'], direction):
+                pass
+            else:
+                new_projections = True
+          
+            if projections_dict['function_input']['grid_search_n'] == grid_search_n:
+                pass
+            else:
+                new_projections = True
+
+            # if projections_dict['function_input']['parameters'] == self.parameters:
+            #     pass
+            # else:
+            #     new_projections = True
+          
+            if self.parameters.keys() == projections_dict['function_input']['parameters'].keys():
+                for key in self.parameters.keys():
+                    val_stored = projections_dict['function_input']['parameters'][key]
+                    val_func = self.parameters[key]
+                    
+                    if val_stored.property_type == val_func.property_type:
+                        pass
+                    else:
+                        new_projections = True
+                    
+                    if val_stored.order == val_func.order:
+                        pass
+                    else:
+                        new_projections = True
+
+                    if val_stored.num_dof == val_func.num_dof:
+                        pass
+                    else:
+                        new_projections = True
+
+                    if np.array_equiv(val_stored.value, val_func.value):
+                        pass
+                    else:
+                        new_projections = True
+
+                    if val_stored.connection_name == val_func.connection_name:
+                        pass
+                    else:
+                        new_projections = True
+
+                    if val_stored.cost_factor == val_func.cost_factor:
+                        pass
+                    else:
+                        new_projections = True
+
+            else:
+                new_projections = True
+
+            if new_projections:
+                print(f"Stored FFD projections do not exist for block '{self.name}'. Proceed with projection algorithm.")
+                data_dict = dict()
+                data_dict['function_input'] = {
+                    'points' : points,
+                    'direction' : direction,
+                    'grid_search_n' : grid_search_n,
+                    'parameters' : self.parameters,
+                }
+                
+                ffd_block = self.primitive.project(points=points, direction=direction, grid_search_n=grid_search_n,
+                            max_iter=max_iter, return_parametric_coordinates=return_parametric_coordinates, plot=plot)
+                
+                data_dict['ffd_projection'] = ffd_block
+                if direction is not None:
+                    save_file = FFD_PROJECTIONS_FOLDER / f'{self.name}_points_{str(round(np.linalg.norm(points), 2))}_direction_{str(round(np.linalg.norm(direction)))}_gridsearch_{grid_search_n}.pickle'
+                else:
+                    save_file = FFD_PROJECTIONS_FOLDER / f'{self.name}_points_{str(round(np.linalg.norm(points), 2))}_gridsearch_{grid_search_n}.pickle'
+                with open(save_file, 'wb+') as handle:
+                    pickle.dump(data_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+            else:
+                print(f"Stored FFD projections exist for block '{self.name}'.")
+                ffd_block = projections_dict['ffd_projection']
+        
+        else:
+            print(f"Stored FFD projections do not exist for block '{self.name}'. Proceed with projection algorithm.")
+            data_dict = dict()
+            data_dict['function_input'] = {
+                'points' : points,
+                'direction' : direction,
+                'grid_search_n' : grid_search_n,
+                'parameters' : self.parameters,
+            }
+            
+            ffd_block = self.primitive.project(points=points, direction=direction, grid_search_n=grid_search_n,
+                        max_iter=max_iter, return_parametric_coordinates=return_parametric_coordinates, plot=plot)
+            
+            data_dict['ffd_projection'] = ffd_block
+            if direction is not None:
+                save_file = FFD_PROJECTIONS_FOLDER / f'{self.name}_points_{str(round(np.linalg.norm(points), 2))}_direction_{str(round(np.linalg.norm(direction)))}_gridsearch_{grid_search_n}.pickle'
+            else:
+                save_file = FFD_PROJECTIONS_FOLDER / f'{self.name}_points_{str(round(np.linalg.norm(points), 2))}_gridsearch_{grid_search_n}.pickle'
+            with open(save_file, 'wb+') as handle:
+                    pickle.dump(data_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+        # print(ffd_block)
+        # exit()
+        return ffd_block
 
 
     def plot(self, plot_embedded_entities:bool=True, plot_types:list=['mesh','point_cloud'], opacity:float=0.3, 

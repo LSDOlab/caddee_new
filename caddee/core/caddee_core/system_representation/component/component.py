@@ -64,8 +64,10 @@ class Component(CADDEEBase):
         plot : bool
             A boolean on whether or not to plot the projection result.
         '''
+        
+        comp_name = self.parameters['name']
         projected_points = self.spatial_representation.project(points=points, targets=self.primitive_names.copy(), 
-                direction=direction, grid_search_n=grid_search_n, max_iterations=max_iterations, offset=offset, plot=plot)
+                direction=direction, grid_search_n=grid_search_n, max_iterations=max_iterations, offset=offset, plot=plot, comp_name=comp_name)
 
         return projected_points
 

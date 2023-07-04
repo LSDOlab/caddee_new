@@ -9,6 +9,7 @@ from caddee.core.caddee_core.system_representation.system_primitive.system_primi
 from caddee.core.caddee_core.system_representation.utils.io.step_io import read_openvsp_stp, write_step, read_gmsh_stp
 from caddee.core.caddee_core.system_representation.utils.io.iges_io import read_iges, write_iges
 from caddee import IMPORTS_FILES_FOLDER
+from caddee import PROJECTIONS_FOLDER
 
 class SpatialRepresentation:
     '''
@@ -23,7 +24,7 @@ class SpatialRepresentation:
         self.primitives = primitives.copy()     # NOTE: This is one of those "I can't believe it" moments.
         self.primitive_indices = primitive_indices.copy()
         self.control_points = None  # Will be instantiated during assemble()
-
+        self.file_name = ''
         self.inputs = {}
         self.outputs = {}
 
@@ -56,7 +57,7 @@ class SpatialRepresentation:
 
     def project(self, points:np.ndarray, targets:list=None, direction:np.ndarray=None,
                 grid_search_n:int=25, max_iterations=100, properties:list=['geometry'],
-                offset:np.ndarray=None, plot:bool=False):
+                offset:np.ndarray=None, plot:bool=False, comp_name:str=''):
         '''
         Projects points onto the system.
 
@@ -81,83 +82,270 @@ class SpatialRepresentation:
         '''
         #  TODO Consider parallelizing using Numba, or using the FFD method or in Cython.
 
-        if targets is None:
-            targets = list(self.primitives.values())
-        elif type(targets) is dict:
-            pass    # get objects is list
-        elif type(targets) is list:
-            for i, target in enumerate(targets):
-                if isinstance(target, str):
-                    targets[i] = self.primitives[target]
-
-        if type(points) is am.MappedArray:
-            points = points.value
-        if type(direction) is am.MappedArray:
-            direction = direction.value
-
-        if len(points.shape) == 1:
-            points = points.reshape((1, -1))    # Last axis is reserved for dimensionality of physical space
+        fn = os.path.basename(self.file_name)
+        fn_wo_ext = f"{fn[:fn.rindex('.')]}_{comp_name}"
         
-        num_targets = len(targets)
-        projected_points_on_each_target = []
-        # Project all points onto each target
-        for target in targets:   # TODO Parallelize this for loop
-            target_projected_points = target.project(points=points, direction=direction, grid_search_n=grid_search_n,
-                    max_iter=max_iterations, properties=['geometry', 'parametric_coordinates'])
-                    # properties are not passed in here because we NEED geometry
-            projected_points_on_each_target.append(target_projected_points)
+        projections = PROJECTIONS_FOLDER / f'{fn_wo_ext}_points_{str(round(np.linalg.norm(points), 4))}_direction_{str(round(np.linalg.norm(direction)))}_gridsearch_{grid_search_n}.pickle'
+        my_file = Path(projections) 
+        
+        if my_file.is_file():
+            with open(projections, 'rb') as f:
+                projections_dict = pickle.load(f)
+            
+            new_projections = False
+            if np.array_equiv(points, projections_dict['function_input']['points']):
+                pass
+            else:
+                new_projections = True
+          
+            if projections_dict['function_input']['targets'] == targets:
+                pass
+            else:
+                new_projections = True
+          
+            if np.array_equiv(projections_dict['function_input']['direction'], direction):
+                pass
+            else:
+                new_projections = True
+          
+            if projections_dict['function_input']['grid_search_n'] == grid_search_n:
+                pass
+            else:
+                new_projections = True
+          
+            if projections_dict['function_input']['max_iterations'] == max_iterations:
+                pass
+            else:
+                new_projections = True
+            
+            if projections_dict['function_input']['properties'] == properties:
+                pass
+            else:
+                new_projections = True
 
-        projected_points_on_each_target_numpy = np.zeros(tuple((num_targets,)) + points.shape)
-        for i in range(num_targets):
-                projected_points_on_each_target_numpy[i] = projected_points_on_each_target[i]['geometry'].value
+            if projections_dict['function_input']['properties'] == properties:
+                pass
+            else:
+                new_projections = True
 
-        # Compare results across targets to keep best result
-        distances = np.linalg.norm(projected_points_on_each_target_numpy - points, axis=-1)   # Computes norm across spatial axis
-        closest_surfaces_indices = np.argmin(distances, axis=0) # Take argmin across surfaces
-        if len(points.shape) == 1:
-            num_points = 1
-        else:
-            num_points = np.cumprod(points.shape[:-1])[-1]
-        flattened_surface_indices = closest_surfaces_indices.flatten()
-        # num_control_points = np.cumprod(self.control_points.shape[:-1])[-1]
-        # linear_map = sps.lil_array((num_points, num_control_points))
-        projection_receiving_primitives = []
-        projection_outputs = {}
-        # for i in range(num_points): # for each point, assign the closest the projection result
-        #     target_index = flattened_surface_indices[i]
-        #     receiving_target = targets[target_index]
-        #     if receiving_target not in projection_receiving_primitives:
-        #         projection_receiving_primitives.append(receiving_target)
-        #     # receiving_target_control_point_indices = self.primitive_indices[receiving_target.name]
-        #     # point_map_on_receiving_target = projected_points_on_each_target[target_index].linear_map[i,:]
-        #     # linear_map[i, receiving_target_control_point_indices] = point_map_on_receiving_target
+            if projections_dict['function_input']['offset'] == offset:
+                pass
+            else:
+                new_projections = True
 
-        # for i in range(num_points):
-        #     target_index = flattened_surface_indices[i]
-        #     receiving_target = targets[target_index]
-        #     if receiving_target not in projection_receiving_primitives:
-        #         projection_receiving_primitives.append(receiving_target)
+            if new_projections:
+                print(f"Stored projections do not exist for component '{comp_name}' contained in file '{fn}'. Proceed with projection algorithm.")
+                targets_list = []
+                for target in targets:
+                    targets_list.append(target)
+                data_dict = dict()
+                data_dict['function_input'] = {
+                    'points' : points,
+                    'targets' : targets_list,
+                    'direction' : direction,
+                    'grid_search_n' : grid_search_n,
+                    'max_iterations' : max_iterations,
+                    'properties' :  properties,
+                    'offset' : offset,
+                }
 
-        for property in properties:
-            num_control_points = np.cumprod(self.control_points[property].shape[:-1])[-1]
-            linear_map = sps.lil_array((num_points, num_control_points))
+                # Proceed with code 
+                if targets is None:
+                    targets = list(self.primitives.values())
+                elif type(targets) is dict:
+                    pass    # get objects is list
+                elif type(targets) is list:
+                    for i, target in enumerate(targets):
+                        if isinstance(target, str):
+                            targets[i] = self.primitives[target]
 
-            for i in range(num_points):
-                target_index = flattened_surface_indices[i]
-                receiving_target = targets[target_index]
-                receiving_target_control_point_indices = self.primitive_indices[receiving_target.name][property]
-                point_parametric_coordinates = projected_points_on_each_target[target_index]['parametric_coordinates']
-                if property == 'geometry':
-                    point_map_on_receiving_target = receiving_target.geometry_primitive.compute_evaluation_map(u_vec=np.array([point_parametric_coordinates[0][i]]), 
-                                                                                        v_vec=np.array([point_parametric_coordinates[1][i]]))
+                if type(points) is am.MappedArray:
+                    points = points.value
+                if type(direction) is am.MappedArray:
+                    direction = direction.value
+
+                if len(points.shape) == 1:
+                    points = points.reshape((1, -1))    # Last axis is reserved for dimensionality of physical space
+                
+                num_targets = len(targets)
+                projected_points_on_each_target = []
+                # Project all points onto each target
+                for target in targets:   # TODO Parallelize this for loop
+                    target_projected_points = target.project(points=points, direction=direction, grid_search_n=grid_search_n,
+                            max_iter=max_iterations, properties=['geometry', 'parametric_coordinates'])
+                            # properties are not passed in here because we NEED geometry
+                    projected_points_on_each_target.append(target_projected_points)
+
+                projected_points_on_each_target_numpy = np.zeros(tuple((num_targets,)) + points.shape)
+                for i in range(num_targets):
+                        projected_points_on_each_target_numpy[i] = projected_points_on_each_target[i]['geometry'].value
+
+                # Compare results across targets to keep best result
+                distances = np.linalg.norm(projected_points_on_each_target_numpy - points, axis=-1)   # Computes norm across spatial axis
+                closest_surfaces_indices = np.argmin(distances, axis=0) # Take argmin across surfaces
+                if len(points.shape) == 1:
+                    num_points = 1
                 else:
-                    point_map_on_receiving_target = receiving_target.material_primitives[property].compute_evaluation_map(u_vec=np.array([point_parametric_coordinates[0][i]]), 
-                                                                                        v_vec=np.array([point_parametric_coordinates[1][i]]))
-                linear_map[i, receiving_target_control_point_indices] = point_map_on_receiving_target
+                    num_points = np.cumprod(points.shape[:-1])[-1]
+                flattened_surface_indices = closest_surfaces_indices.flatten()
+                # num_control_points = np.cumprod(self.control_points.shape[:-1])[-1]
+                # linear_map = sps.lil_array((num_points, num_control_points))
+                projection_receiving_primitives = []
+                projection_outputs = {}
+                # for i in range(num_points): # for each point, assign the closest the projection result
+                #     target_index = flattened_surface_indices[i]
+                #     receiving_target = targets[target_index]
+                #     if receiving_target not in projection_receiving_primitives:
+                #         projection_receiving_primitives.append(receiving_target)
+                #     # receiving_target_control_point_indices = self.primitive_indices[receiving_target.name]
+                #     # point_map_on_receiving_target = projected_points_on_each_target[target_index].linear_map[i,:]
+                #     # linear_map[i, receiving_target_control_point_indices] = point_map_on_receiving_target
 
-            property_shape = points.shape[:-1] + (self.control_points[property].shape[-1],)
-            property_mapped_array = am.array(self.control_points[property], linear_map=linear_map.tocsc(), offset=offset, shape=property_shape)
-            projection_outputs[property] = property_mapped_array
+                # for i in range(num_points):
+                #     target_index = flattened_surface_indices[i]
+                #     receiving_target = targets[target_index]
+                #     if receiving_target not in projection_receiving_primitives:
+                #         projection_receiving_primitives.append(receiving_target)
+
+                for property in properties:
+                    num_control_points = np.cumprod(self.control_points[property].shape[:-1])[-1]
+                    linear_map = sps.lil_array((num_points, num_control_points))
+
+                    for i in range(num_points):
+                        target_index = flattened_surface_indices[i]
+                        receiving_target = targets[target_index]
+                        receiving_target_control_point_indices = self.primitive_indices[receiving_target.name][property]
+                        point_parametric_coordinates = projected_points_on_each_target[target_index]['parametric_coordinates']
+                        if property == 'geometry':
+                            point_map_on_receiving_target = receiving_target.geometry_primitive.compute_evaluation_map(u_vec=np.array([point_parametric_coordinates[0][i]]), 
+                                                                                                v_vec=np.array([point_parametric_coordinates[1][i]]))
+                        else:
+                            point_map_on_receiving_target = receiving_target.material_primitives[property].compute_evaluation_map(u_vec=np.array([point_parametric_coordinates[0][i]]), 
+                                                                                                v_vec=np.array([point_parametric_coordinates[1][i]]))
+                        linear_map[i, receiving_target_control_point_indices] = point_map_on_receiving_target
+
+                    property_shape = points.shape[:-1] + (self.control_points[property].shape[-1],)
+                    property_mapped_array = am.array(self.control_points[property], linear_map=linear_map.tocsc(), offset=offset, shape=property_shape)
+                    projection_outputs[property] = property_mapped_array
+
+                data_dict['projection_outputs'] = projection_outputs
+                if direction is not None:
+                    save_file = PROJECTIONS_FOLDER / f'{fn_wo_ext}_points_{str(round(np.linalg.norm(points), 4))}_direction_{str(round(np.linalg.norm(direction)))}_gridsearch_{grid_search_n}.pickle'
+                else:
+                    save_file = PROJECTIONS_FOLDER / f'{fn_wo_ext}_points_{str(round(np.linalg.norm(points), 4))}_gridsearch_{grid_search_n}.pickle'
+                with open(save_file, 'wb+') as handle:
+                    pickle.dump(data_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            
+            else:
+                print(f"Stored projections exist for component '{comp_name}' contained in file '{fn}'.")
+                projection_outputs = projections_dict['projection_outputs']
+                if len(points.shape) == 1:
+                    num_points = 1
+                else:
+                    num_points = np.cumprod(points.shape[:-1])[-1]
+
+        else:
+            print(f"Stored projections do not exist for component '{comp_name}' contained in file '{fn}'. Proceed with projection algorithm.")
+            targets_list = []
+            for target in targets:
+                targets_list.append(target)
+            data_dict = dict()
+            data_dict['function_input'] = {
+                'points' : points,
+                'targets' : targets_list,
+                'direction' : direction,
+                'grid_search_n' : grid_search_n,
+                'max_iterations' : max_iterations,
+                'properties' :  properties,
+                'offset' : offset,
+            }
+
+            # Proceed with code 
+            if targets is None:
+                targets = list(self.primitives.values())
+            elif type(targets) is dict:
+                pass    # get objects is list
+            elif type(targets) is list:
+                for i, target in enumerate(targets):
+                    if isinstance(target, str):
+                        targets[i] = self.primitives[target]
+
+            if type(points) is am.MappedArray:
+                points = points.value
+            if type(direction) is am.MappedArray:
+                direction = direction.value
+
+            if len(points.shape) == 1:
+                points = points.reshape((1, -1))    # Last axis is reserved for dimensionality of physical space
+            
+            num_targets = len(targets)
+            projected_points_on_each_target = []
+            # Project all points onto each target
+            for target in targets:   # TODO Parallelize this for loop
+                target_projected_points = target.project(points=points, direction=direction, grid_search_n=grid_search_n,
+                        max_iter=max_iterations, properties=['geometry', 'parametric_coordinates'])
+                        # properties are not passed in here because we NEED geometry
+                projected_points_on_each_target.append(target_projected_points)
+
+            projected_points_on_each_target_numpy = np.zeros(tuple((num_targets,)) + points.shape)
+            for i in range(num_targets):
+                    projected_points_on_each_target_numpy[i] = projected_points_on_each_target[i]['geometry'].value
+
+            # Compare results across targets to keep best result
+            distances = np.linalg.norm(projected_points_on_each_target_numpy - points, axis=-1)   # Computes norm across spatial axis
+            closest_surfaces_indices = np.argmin(distances, axis=0) # Take argmin across surfaces
+            if len(points.shape) == 1:
+                num_points = 1
+            else:
+                num_points = np.cumprod(points.shape[:-1])[-1]
+            flattened_surface_indices = closest_surfaces_indices.flatten()
+            # num_control_points = np.cumprod(self.control_points.shape[:-1])[-1]
+            # linear_map = sps.lil_array((num_points, num_control_points))
+            projection_receiving_primitives = []
+            projection_outputs = {}
+            # for i in range(num_points): # for each point, assign the closest the projection result
+            #     target_index = flattened_surface_indices[i]
+            #     receiving_target = targets[target_index]
+            #     if receiving_target not in projection_receiving_primitives:
+            #         projection_receiving_primitives.append(receiving_target)
+            #     # receiving_target_control_point_indices = self.primitive_indices[receiving_target.name]
+            #     # point_map_on_receiving_target = projected_points_on_each_target[target_index].linear_map[i,:]
+            #     # linear_map[i, receiving_target_control_point_indices] = point_map_on_receiving_target
+
+            # for i in range(num_points):
+            #     target_index = flattened_surface_indices[i]
+            #     receiving_target = targets[target_index]
+            #     if receiving_target not in projection_receiving_primitives:
+            #         projection_receiving_primitives.append(receiving_target)
+
+            for property in properties:
+                num_control_points = np.cumprod(self.control_points[property].shape[:-1])[-1]
+                linear_map = sps.lil_array((num_points, num_control_points))
+
+                for i in range(num_points):
+                    target_index = flattened_surface_indices[i]
+                    receiving_target = targets[target_index]
+                    receiving_target_control_point_indices = self.primitive_indices[receiving_target.name][property]
+                    point_parametric_coordinates = projected_points_on_each_target[target_index]['parametric_coordinates']
+                    if property == 'geometry':
+                        point_map_on_receiving_target = receiving_target.geometry_primitive.compute_evaluation_map(u_vec=np.array([point_parametric_coordinates[0][i]]), 
+                                                                                            v_vec=np.array([point_parametric_coordinates[1][i]]))
+                    else:
+                        point_map_on_receiving_target = receiving_target.material_primitives[property].compute_evaluation_map(u_vec=np.array([point_parametric_coordinates[0][i]]), 
+                                                                                            v_vec=np.array([point_parametric_coordinates[1][i]]))
+                    linear_map[i, receiving_target_control_point_indices] = point_map_on_receiving_target
+
+                property_shape = points.shape[:-1] + (self.control_points[property].shape[-1],)
+                property_mapped_array = am.array(self.control_points[property], linear_map=linear_map.tocsc(), offset=offset, shape=property_shape)
+                projection_outputs[property] = property_mapped_array
+
+            data_dict['projection_outputs'] = projection_outputs
+            if direction is not None:
+                save_file = PROJECTIONS_FOLDER / f'{fn_wo_ext}_points_{str(round(np.linalg.norm(points), 4))}_direction_{str(round(np.linalg.norm(direction)))}_gridsearch_{grid_search_n}.pickle'
+            else:
+                save_file = PROJECTIONS_FOLDER / f'{fn_wo_ext}_points_{str(round(np.linalg.norm(points), 4))}_gridsearch_{grid_search_n}.pickle'
+            with open(save_file, 'wb+') as handle:
+                pickle.dump(data_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
         projection_receiving_primitives = list(targets)
 
@@ -206,6 +394,7 @@ class SpatialRepresentation:
             The name of the file (with path) that containts the geometric information.
         
         '''
+        self.file_name = file_name
         fn = os.path.basename(file_name)
         fn_wo_ext = fn[:fn.rindex('.')]
         control_points = IMPORTS_FILES_FOLDER / f'{fn_wo_ext}_control_points.pickle'
@@ -239,12 +428,12 @@ class SpatialRepresentation:
             self.assemble()
             save_file_name = os.path.basename(file_name)
             filename_without_ext = save_file_name[:save_file_name.rindex('.')]
-            with open(f'imports/{filename_without_ext}_control_points.pickle', 'wb+') as handle:
+            with open(IMPORTS_FILES_FOLDER / f'{filename_without_ext}_control_points.pickle', 'wb+') as handle:
                 pickle.dump(self.control_points, handle, protocol=pickle.HIGHEST_PROTOCOL)
                 # np.save(f, self.control_points)
-            with open(f'imports/{filename_without_ext}_primitive_indices.pickle', 'wb+') as handle:
+            with open(IMPORTS_FILES_FOLDER / f'{filename_without_ext}_primitive_indices.pickle', 'wb+') as handle:
                 pickle.dump(self.primitive_indices, handle, protocol=pickle.HIGHEST_PROTOCOL)
-            with open(f'imports/{filename_without_ext}_primitives.pickle', 'wb+') as handle:
+            with open(IMPORTS_FILES_FOLDER / f'{filename_without_ext}_primitives.pickle', 'wb+') as handle:
                 pickle.dump(self.primitives, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     def refit_geometry(self, num_control_points:int=25, fit_resolution:int=50, only_non_differentiable:bool=False, file_name=None):

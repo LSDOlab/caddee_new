@@ -116,7 +116,7 @@ sim.run()
 
 sim.check_totals()
 
-# exit()
+exit()
 
 prob = CSDLProblem(problem_name='c172_trim', simulator=sim)
 optimizer = SLSQP(

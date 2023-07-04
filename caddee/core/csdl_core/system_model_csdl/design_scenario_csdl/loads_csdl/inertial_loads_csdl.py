@@ -73,7 +73,7 @@ class InertialLoadsModel(BaseModelCSDL):
         
         M = self.register_module_output(name='M_inertial', shape=(num_nodes, 3))
         for n in range(num_nodes):
-            M[n, :] = csdl.cross(r_vec, F[n, :], axis=1) * 0
+            M[n, :] = csdl.cross(r_vec, F[n, :], axis=1) 
         
         # self.print_var(F)
         # self.print_var(r_vec)

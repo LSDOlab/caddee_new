@@ -173,6 +173,9 @@ class HoverConditionCSDL(SteadyDesignConditionCSDL):
         t = self.register_module_input(f'{hover_name}_time', shape=(1, ), computed_upstream=False)
         obs_loc = self.register_module_input(f'{hover_name}_observer_location', shape=(3, ), computed_upstream=False)
 
+        if hover_condition.atmosphere_model:
+            self.add_module(hover_condition.atmosphere_model._assemble_csdl(hover_name), 'atmosphere_model')
+
         x = obs_loc[0]
         y = obs_loc[1]
         z = obs_loc[2]

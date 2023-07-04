@@ -89,8 +89,10 @@ class TotalMassPropertiesCSDL(BaseModelCSDL):
         izz = izz + izz_v + m_v * (pos_x**2 + pos_y**2)
         ixz = ixz + ixz_v + m_v * (pos_x * pos_z)
 
+
+        m_fudge = self.declare_variable('m_fudge', shape=(1, ), val=562)
         # Compute total mass
-        m = m + m_v
+        m = m + m_v #+ m_fudge
 
         # Register total system mass properties 
         self.print_var(m)

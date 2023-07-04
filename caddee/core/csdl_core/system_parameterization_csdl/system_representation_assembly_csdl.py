@@ -33,7 +33,7 @@ class SystemRepresentationAssemblyCSDL(csdl.Model):
                     ffd_block_embedded_primitive_names = list(ffd_block.embedded_entities.keys())
                     ffd_block_embedded_primitive_indices = []
                     for primitive_name in ffd_block_embedded_primitive_names:
-                        ffd_block_embedded_primitive_indices.extend(list(system_representation.spatial_representation.primitive_indices[primitive_name]))
+                        ffd_block_embedded_primitive_indices.extend(list(system_representation.spatial_representation.primitive_indices[primitive_name]['geometry']))
                     parameterization_indices.extend(ffd_block_embedded_primitive_indices)
 
                 # # system_representation_geometry[parameterization_indices] = parameterization_output   # NOTE: Approach 1
@@ -43,6 +43,9 @@ class SystemRepresentationAssemblyCSDL(csdl.Model):
                 # NOTE: Approach 3: TODO!!! This doesn't work for multiple parameterizations!!
                 num_points_system_representation = initial_system_representation_geometry.shape[0]
                 data = np.ones((len(parameterization_indices)))
+                print('ffd_block_embedded_primitive_indices', ffd_block_embedded_primitive_indices)
+                print('parameterization_indices', parameterization_indices)
+                print('data', np.array(parameterization_indices))
                 indexing_map = sps.coo_matrix((data, (np.array(parameterization_indices), np.arange(len(parameterization_indices)))),
                                               shape=(num_points_system_representation, len(parameterization_indices)))
                 indexing_map = indexing_map.tocsc()

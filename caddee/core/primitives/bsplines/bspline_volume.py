@@ -8,6 +8,8 @@ from lsdo_geo.cython.volume_projection_py import compute_volume_projection
 from caddee.core.primitives.bsplines.bspline import BSpline
 
 import vedo
+from caddee import PROJECTIONS_FOLDER
+
 
 class BSplineVolume(BSpline):
     def __init__(self, name, order_u, order_v, order_w, knots_u, knots_v, knots_w, shape, control_points):
@@ -110,6 +112,10 @@ class BSplineVolume(BSpline):
         v_vec_flattened = np.zeros(num_points)
         w_vec_flattened = np.zeros(num_points)
         num_control_points = np.cumprod(self.shape[:-1])[-1]
+
+        # print('FFD PROJECTION')
+        # print(self.name)
+        # exit()
 
         compute_volume_projection(
             self.order_u, self.shape[0],
