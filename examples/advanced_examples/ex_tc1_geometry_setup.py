@@ -895,18 +895,18 @@ fri_v_dist_te = am.subtract(fri_blade_2_te_high_res, fri_te_proj_disk)
 fri_tot_v_dist = am.subtract(fri_v_dist_le, fri_v_dist_te)
 # endregion
 
-spatial_rep.plot_meshes([
-    wing_camber_surface, htail_camber_surface,
-    flo_blade_1_ll_mesh, flo_blade_2_ll_mesh,
-    fli_blade_1_ll_mesh, fli_blade_2_ll_mesh,
-    fri_blade_1_ll_mesh, fri_blade_2_ll_mesh,
-    fro_blade_1_ll_mesh, fro_blade_2_ll_mesh,
-    rlo_blade_1_ll_mesh, rlo_blade_2_ll_mesh,
-    rli_blade_1_ll_mesh, rli_blade_2_ll_mesh,
-    rri_blade_1_ll_mesh, rri_blade_2_ll_mesh,
-    rro_blade_1_ll_mesh, rro_blade_2_ll_mesh,
-    ]
-)
+# spatial_rep.plot_meshes([
+#     wing_camber_surface, htail_camber_surface,
+#     flo_blade_1_ll_mesh, flo_blade_2_ll_mesh,
+#     fli_blade_1_ll_mesh, fli_blade_2_ll_mesh,
+#     fri_blade_1_ll_mesh, fri_blade_2_ll_mesh,
+#     fro_blade_1_ll_mesh, fro_blade_2_ll_mesh,
+#     rlo_blade_1_ll_mesh, rlo_blade_2_ll_mesh,
+#     rli_blade_1_ll_mesh, rli_blade_2_ll_mesh,
+#     rri_blade_1_ll_mesh, rri_blade_2_ll_mesh,
+#     rro_blade_1_ll_mesh, rro_blade_2_ll_mesh,
+#     ]
+# )
 # endregion
 
 

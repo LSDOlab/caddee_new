@@ -8,40 +8,38 @@ class TotalForcesMomentsM3L(m3l.ExplicitOperation):
     def initialize(self, kwargs):
         self.num_nodes = 1
 
-    def compute(self, forces_names, moments_names):
+    def compute(self):
         return TotalForcesMomentsCSDL(
             num_nodes=self.num_nodes,
-            forces_names=forces_names,
-            moments_names=moments_names, 
+            forces_names=self.forces_names,
+            moments_names=self.moments_names, 
         )
     
     def evaluate(self, *args):
-        forces_names = []
-        moments_names = []
-        arguments = dict()
+        self.name = 'total_forces_moments_model'
+        self.forces_names = []
+        self.moments_names = []
+        self.arguments = dict()
         for arg in args:
             arg_name = arg.name
             arg_model_name = arg.operation.name
             if arg_name == 'F':
-                forces_names.append(f"{arg_model_name}.{arg_name}")
-                arguments[f"{arg_model_name}.{arg_name}"] = arg
+                self.forces_names.append(f"{arg_model_name}.{arg_name}")
+                self.arguments[f"{arg_model_name}.{arg_name}"] = arg
             elif arg_name == 'M':
-                moments_names.append(f"{arg_model_name}.{arg_name}")
-                arguments[f"{arg_model_name}.{arg_name}"] = arg
+                self.moments_names.append(f"{arg_model_name}.{arg_name}")
+                self.arguments[f"{arg_model_name}.{arg_name}"] = arg
             elif arg_name == 'F_inertial':
-                forces_names.append(f"{arg_model_name}.{arg_name}")
-                arguments[f"{arg_model_name}.{arg_name}"] = arg
+                self.forces_names.append(f"{arg_model_name}.{arg_name}")
+                self.arguments[f"{arg_model_name}.{arg_name}"] = arg
             elif arg_name == 'M_inertial':
-                moments_names.append(f"{arg_model_name}.{arg_name}")
-                arguments[f"{arg_model_name}.{arg_name}"] = arg
+                self.moments_names.append(f"{arg_model_name}.{arg_name}")
+                self.arguments[f"{arg_model_name}.{arg_name}"] = arg
             else:
                 raise Exception(f"Inputs to total forces/moments model must be either 'F', 'M', 'F_inertial', or 'M_inertial'. Received {arg_name}")
 
-        operation_csdl = self.compute(forces_names=forces_names, moments_names=moments_names)
-
-        total_forces_moments_operation = m3l.CSDLOperation(name='total_forces_moments', arguments=arguments, operation_csdl=operation_csdl)
-        total_forces = m3l.Variable(name='total_forces', shape=(self.num_nodes, 3), operation=total_forces_moments_operation)
-        total_moments = m3l.Variable(name='total_moments', shape=(self.num_nodes, 3), operation=total_forces_moments_operation)
+        total_forces = m3l.Variable(name='total_forces', shape=(self.num_nodes, 3), operation=self)
+        total_moments = m3l.Variable(name='total_moments', shape=(self.num_nodes, 3), operation=self)
 
         return total_forces, total_moments
 

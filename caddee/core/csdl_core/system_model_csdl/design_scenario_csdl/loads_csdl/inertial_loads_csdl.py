@@ -13,8 +13,8 @@ class InertialLoadsM3L(m3l.ExplicitOperation):
         return InertialLoadsModel(num_nodes=self.num_nodes)
     
     def evaluate(self, total_cg_vector, totoal_mass, ac_states):
-        operation_csdl = self.compute()
-        arguments = {
+        self.name = 'inertial_loads_model'
+        self.arguments = {
             'total_cg_vector' : total_cg_vector,
             'total_mass' : totoal_mass
         }
@@ -22,12 +22,11 @@ class InertialLoadsM3L(m3l.ExplicitOperation):
         phi = ac_states['phi']
         theta = ac_states['theta']
 
-        arguments['phi'] = phi
-        arguments['theta'] = theta
+        self.arguments['phi'] = phi
+        self.arguments['theta'] = theta
 
-        inertial_loads_operation = m3l.CSDLOperation(name='inertial_loads', arguments=arguments, operation_csdl=operation_csdl)
-        F_inertial = m3l.Variable(name='F_inertial', shape=(self.num_nodes, 3), operation=inertial_loads_operation)
-        M_inertial = m3l.Variable(name='M_inertial', shape=(self.num_nodes, 3), operation=inertial_loads_operation)
+        F_inertial = m3l.Variable(name='F_inertial', shape=(self.num_nodes, 3), operation=self)
+        M_inertial = m3l.Variable(name='M_inertial', shape=(self.num_nodes, 3), operation=self)
 
         return F_inertial, M_inertial
 

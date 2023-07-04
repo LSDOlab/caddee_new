@@ -18,7 +18,7 @@ caddee.system_model = system_model = cd.SystemModel()
 caddee.system_representation = sys_rep = cd.SystemRepresentation()
 caddee.system_parameterization = sys_param = cd.SystemParameterization(system_representation=sys_rep)
 
-file_name = 'LPC_test.stp'
+file_name = 'lift_plus_cruise_final.stp'
 
 spatial_rep = sys_rep.spatial_representation
 spatial_rep.import_file(file_name=GEOMETRY_FILES_FOLDER / file_name)
@@ -141,16 +141,16 @@ dummy_b_spline_space = lg.BSplineSpace(name='dummy_b_spline_space', order=(order
 dummy_function_space = lg.BSplineSetSpace(name='dummy_space', b_spline_spaces={'dummy_b_spline_space': dummy_b_spline_space})
 
 cruise_wing_pressure_coefficients = m3l.Variable(name='cruise_wing_pressure_coefficients', shape=(num_control_points_u,3), value = np.zeros((num_control_points_u,3)))
-cruise_wing_pressure = m3l.Function(name='cruise_wing_pressure', function_space=dummy_function_space, coefficients=cruise_wing_pressure_coefficients)
+cruise_wing_pressure = m3l.Function(name='cruise_wing_pressure', space=dummy_function_space, coefficients=cruise_wing_pressure_coefficients)
 
 cruise_wing_displacement_coefficients = m3l.Variable(name='cruise_wing_displacement_coefficients', shape=(num_control_points_u,3))
-cruise_wing_displacement = m3l.Function(name='cruise_wing_displacement', function_space=dummy_function_space, coefficients=cruise_wing_displacement_coefficients)
+cruise_wing_displacement = m3l.Function(name='cruise_wing_displacement', space=dummy_function_space, coefficients=cruise_wing_displacement_coefficients)
 
 ### Start defining computational graph ###
 
 cruise_structural_wing_nodal_forces = cruise_wing_pressure(mesh=cruise_wing_structural_nodal_force_mesh)
 
-beam_force_map_model = ebbeam.EBBeamForces(mesh=beam_mesh, beams=beams)
+beam_force_map_model = ebbeam.EBBeamForces(component=wing, beam_mesh=beam_mesh, beams=beams)
 cruise_structural_wing_mesh_forces = beam_force_map_model.evaluate(nodal_forces=cruise_structural_wing_nodal_forces,
                                                                    nodal_forces_mesh=cruise_wing_structural_nodal_force_mesh)
 
@@ -162,11 +162,11 @@ cruise_structural_wing_mesh_displacements, cruise_structural_wing_mesh_rotations
     forces=cruise_structural_wing_mesh_forces)
 
 
-beam_displacement_map_model = ebbeam.EBBeamNodalDisplacements(mesh=beam_mesh, beams=beams)
+beam_displacement_map_model = ebbeam.EBBeamNodalDisplacements(component=wing, beam_mesh=beam_mesh, beams=beams)
 cruise_structural_wing_nodal_displacements = beam_displacement_map_model.evaluate(beam_displacements=cruise_structural_wing_mesh_displacements,
                                                                         nodal_displacements_mesh=cruise_wing_structural_nodal_displacements_mesh)
 
-test = cruise_structural_wing_nodal_displacements + cruise_structural_wing_nodal_forces
+# test = cruise_structural_wing_nodal_displacements + cruise_structural_wing_nodal_forces
 
 cruise_model = m3l.Model()
 cruise_model.register_output(cruise_structural_wing_nodal_displacements)
@@ -227,17 +227,17 @@ caddee_csdl_model = caddee.assemble_csdl()
 
 
 # caddee_csdl_model.add_objective('EulerEoMGenRefPt.trim_residual')
-caddee_csdl_model.add_constraint('system_model.struct.cruise_1.cruise_1.eb_beam_model.Aframe.max_stress',upper=500E6/1,scaler=1E-8)
 
 
-caddee_csdl_model.add_objective('system_model.struct.cruise_1.cruise_1.total_mass_properties.total_mass', scaler=1e-3)
+caddee_csdl_model.add_constraint('system_model.struct.cruise_1.cruise_1.wing_eb_beam_model.Aframe.max_stress',upper=500E6/1,scaler=1E-8)
+caddee_csdl_model.add_objective('system_model.struct.cruise_1.cruise_1.total_constant_mass_properties.total_mass', scaler=1e-3)
 
 
 # create and run simulator
 sim = Simulator(caddee_csdl_model, analytics=True)
 sim.run()
-print(sim['system_model.struct.cruise_1.cruise_1.eb_beam_model.Aframe.vm_stress'])
-print(sim['system_model.struct.cruise_1.cruise_1.eb_beam_model.Aframe.wing_beam_forces'])
+print(sim['system_model.struct.cruise_1.cruise_1.wing_eb_beam_model.Aframe.vm_stress'])
+print(sim['system_model.struct.cruise_1.cruise_1.wing_eb_beam_model.Aframe.wing_beam_forces'])
 
 
 # sim.compute_total_derivatives()
@@ -248,4 +248,3 @@ prob = CSDLProblem(problem_name='lpc', simulator=sim)
 optimizer = SLSQP(prob, maxiter=1000, ftol=1E-6)
 optimizer.solve()
 optimizer.print_results()
-

@@ -37,7 +37,7 @@ class CADDEECSDL(ModuleCSDL):
 
        
         if system_representation is not None:
-            print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$', system_representation.spatial_representation.outputs)
+            # print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$', system_representation.spatial_representation.outputs)
             if system_representation.spatial_representation.outputs:
                 
                 system_representation_csdl = SystemRepresentationCSDL(

@@ -6,7 +6,7 @@ import copy
 
 
 class EoMM3LEuler6DOF(m3l.ExplicitOperation):
-    eom_model_name = 'EulerEoMGenRefPt'
+    eom_model_name = 'euler_eom_gen_ref_pt'
     
     def initialize(self, kwargs):
         self.parameters.declare(name='name', default=self.eom_model_name)
@@ -19,8 +19,7 @@ class EoMM3LEuler6DOF(m3l.ExplicitOperation):
         return EulerFlatEarth6DoFGenRef(name, num_nodes)
 
     def evaluate(self, total_mass, total_cg_vector, total_inertia_tensor, total_forces, total_moments, ac_states) -> m3l.Variable:
-        csdl_operation = self.compute()
-
+        self.name = self.eom_model_name
         mps_forces = {
             'total_mass' : total_mass,
             'total_cg_vector' : total_cg_vector,
@@ -31,15 +30,14 @@ class EoMM3LEuler6DOF(m3l.ExplicitOperation):
 
         ac_states_copy = copy.deepcopy(ac_states)
         del ac_states_copy['gamma']
-        arguments = {**mps_forces, **ac_states_copy}
+        self.arguments = {**mps_forces, **ac_states_copy}
 
 
         
         # print(total_mass_1.name)
         # print(total_mass_2.name)
 
-        eom_operation = m3l.CSDLOperation(name=self.eom_model_name, arguments=arguments, operation_csdl=csdl_operation)
-        trim_residual = m3l.Variable(name='trim_residual', shape=(1, ), operation=eom_operation)
+        trim_residual = m3l.Variable(name='trim_residual', shape=(1, ), operation=self)
         return trim_residual
         
     def compute_derivatives(self): pass

@@ -36,7 +36,8 @@ caddee.system_model = system_model = cd.SystemModel()
 sizing_model = m3l.Model()
 
 # Battery sizing
-simple_battery_sizing = cd.SimpleBatterySizingM3L()
+battery_component = cd.Component(name='battery')
+simple_battery_sizing = cd.SimpleBatterySizingM3L(component=battery_component)
 
 simple_battery_sizing.set_module_input('battery_mass', val=800)
 simple_battery_sizing.set_module_input('battery_position', val=np.array([3.5, 0, 0.5]))
@@ -374,7 +375,7 @@ caddee_csdl_model = caddee.assemble_csdl()
 
 
 
-caddee_csdl_model.add_objective('system_model.aircraft_trim.hover_1.hover_1.EulerEoMGenRefPt.trim_residual')
+caddee_csdl_model.add_objective('system_model.aircraft_trim.hover_1.hover_1.euler_eom_gen_ref_pt.trim_residual')
 
 # create and run simulator
 sim = Simulator(caddee_csdl_model, analytics=True, display_scripts=True)

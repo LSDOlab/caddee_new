@@ -4,7 +4,7 @@ from csdl import GraphRepresentation
 import m3l
 
 
-class SteadyDesignCondition(CADDEEBase):
+class SteadyDesignCondition(m3l.ExplicitOperation):
     """
     Class for steady-state analyses (e.g., steady cruise segment).
 
@@ -55,31 +55,25 @@ class SteadyDesignCondition(CADDEEBase):
         return
 
     def evaluate_ac_states(self):
-        operation_csdl = self.compute()
-        arguments = {}
+        self.arguments = {}
+        self.name = f"{self.parameters['name']}_ac_states_operation"
 
-        ac_state_operation = m3l.CSDLOperation(
-            name=f"{self.parameters['name']}_ac_states_operation",
-            arguments=arguments,
-            operation_csdl=operation_csdl,
-        )
+        u = m3l.Variable(name='u', shape=(self.num_nodes, ), operation=self)
+        v = m3l.Variable(name='v', shape=(self.num_nodes, ), operation=self)
+        w = m3l.Variable(name='w', shape=(self.num_nodes, ), operation=self)
 
-        u = m3l.Variable(name='u', shape=(self.num_nodes, ), operation=ac_state_operation)
-        v = m3l.Variable(name='v', shape=(self.num_nodes, ), operation=ac_state_operation)
-        w = m3l.Variable(name='w', shape=(self.num_nodes, ), operation=ac_state_operation)
+        p = m3l.Variable(name='p', shape=(self.num_nodes, ), operation=self)
+        q = m3l.Variable(name='q', shape=(self.num_nodes, ), operation=self)
+        r = m3l.Variable(name='r', shape=(self.num_nodes, ), operation=self)
 
-        p = m3l.Variable(name='p', shape=(self.num_nodes, ), operation=ac_state_operation)
-        q = m3l.Variable(name='q', shape=(self.num_nodes, ), operation=ac_state_operation)
-        r = m3l.Variable(name='r', shape=(self.num_nodes, ), operation=ac_state_operation)
+        phi = m3l.Variable(name='phi', shape=(self.num_nodes, ), operation=self)
+        gamma = m3l.Variable(name='gamma', shape=(self.num_nodes, ), operation=self)
+        psi = m3l.Variable(name='psi', shape=(self.num_nodes, ), operation=self)
+        theta = m3l.Variable(name='theta', shape=(self.num_nodes, ), operation=self)
 
-        phi = m3l.Variable(name='phi', shape=(self.num_nodes, ), operation=ac_state_operation)
-        gamma = m3l.Variable(name='gamma', shape=(self.num_nodes, ), operation=ac_state_operation)
-        psi = m3l.Variable(name='psi', shape=(self.num_nodes, ), operation=ac_state_operation)
-        theta = m3l.Variable(name='theta', shape=(self.num_nodes, ), operation=ac_state_operation)
-
-        x = m3l.Variable(name='x', shape=(self.num_nodes, ), operation=ac_state_operation)
-        y = m3l.Variable(name='y', shape=(self.num_nodes, ), operation=ac_state_operation)
-        z = m3l.Variable(name='z', shape=(self.num_nodes, ), operation=ac_state_operation)
+        x = m3l.Variable(name='x', shape=(self.num_nodes, ), operation=self)
+        y = m3l.Variable(name='y', shape=(self.num_nodes, ), operation=self)
+        z = m3l.Variable(name='z', shape=(self.num_nodes, ), operation=self)
 
         ac_states = {
             'u' : u,
@@ -97,12 +91,13 @@ class SteadyDesignCondition(CADDEEBase):
             'z' : z
         }
         return ac_states
+    
     def _assemble_csdl(self):
         if len(self.m3l_models) > 1:
             raise Exception(f"More than one m3l model added to design condition {self.parameters['name']}")
         else:
             for m3l_model_name, m3l_model in self.m3l_models.items():
-                csdl_model = m3l_model._assemble_csdl()
+                csdl_model = m3l_model.assemble_csdl()
 
         return csdl_model
     
@@ -132,6 +127,7 @@ class CruiseCondition(SteadyDesignCondition):
             cruise_condition=self,
         )
         return csdl_model
+    
 
 class HoverCondition(SteadyDesignCondition):
     """
@@ -145,17 +141,7 @@ class HoverCondition(SteadyDesignCondition):
 
     """
     def initialize(self, kwargs):
-        return super().initialize(kwargs)
-
-    def compute(self):
-        from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import HoverConditionCSDL
-        csdl_model = HoverConditionCSDL(
-            module=self,
-            prepend=self.parameters['name'],
-            hover_condition=self,
-        )
-        return csdl_model
-    
+        return super().initialize(kwargs)    
 
     def compute(self): 
         from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import HoverConditionCSDL
@@ -167,59 +153,6 @@ class HoverCondition(SteadyDesignCondition):
 
         return csdl_model
 
-    def evaluate_ac_states(self): 
-        operation_csdl = self.compute()
-        arguments = {} 
-
-        ac_state_operation = m3l.CSDLOperation(
-            name=f"{self.parameters['name']}_ac_states_operation",
-            arguments=arguments,
-            operation_csdl=operation_csdl,
-        )
-
-        u = m3l.Variable(name='u', shape=(self.num_nodes, ), operation=ac_state_operation)
-        v = m3l.Variable(name='v', shape=(self.num_nodes, ), operation=ac_state_operation)
-        w = m3l.Variable(name='w', shape=(self.num_nodes, ), operation=ac_state_operation)
-
-        p = m3l.Variable(name='p', shape=(self.num_nodes, ), operation=ac_state_operation)
-        q = m3l.Variable(name='q', shape=(self.num_nodes, ), operation=ac_state_operation)
-        r = m3l.Variable(name='r', shape=(self.num_nodes, ), operation=ac_state_operation)
-
-        phi = m3l.Variable(name='phi', shape=(self.num_nodes, ), operation=ac_state_operation)
-        gamma = m3l.Variable(name='gamma', shape=(self.num_nodes, ), operation=ac_state_operation)
-        psi = m3l.Variable(name='psi', shape=(self.num_nodes, ), operation=ac_state_operation)
-        theta = m3l.Variable(name='theta', shape=(self.num_nodes, ), operation=ac_state_operation)
-
-        x = m3l.Variable(name='x', shape=(self.num_nodes, ), operation=ac_state_operation)
-        y = m3l.Variable(name='y', shape=(self.num_nodes, ), operation=ac_state_operation)
-        z = m3l.Variable(name='z', shape=(self.num_nodes, ), operation=ac_state_operation)
-
-        ac_states = {
-            'u' : u, 
-            'v' : v, 
-            'w' : w, 
-            'p' : p, 
-            'q' : q, 
-            'r' : r, 
-            'phi' : phi, 
-            'gamma' : gamma, 
-            'psi' : psi, 
-            'theta' : theta, 
-            'x' : x, 
-            'y' : y, 
-            'z' : z
-        }
-
-        return ac_states
-    
-    def _assemble_csdl(self):
-        if len(self.m3l_models) > 1:
-            raise Exception(f"More than one m3l model added to design condition {self.parameters['name']}")
-        else:
-            for m3l_model_name, m3l_model in self.m3l_models.items():
-                hover_model = m3l_model._assemble_csdl()
-
-        return hover_model
     
 class ClimbCondition(SteadyDesignCondition):
     """

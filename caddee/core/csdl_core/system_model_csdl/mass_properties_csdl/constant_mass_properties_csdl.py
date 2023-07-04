@@ -10,39 +10,42 @@ class TotalMassPropertiesM3L(m3l.ExplicitOperation):
     def initialize(self, kwargs):
         pass
 
-    def compute(self, mass_input_names, cg_input_names, inertia_input_names) -> csdl.Model:
+    def compute(self) -> csdl.Model:
         return ConstantMassPropertiesCSDL(
-            mass_input_names=mass_input_names,
-            cg_input_names=cg_input_names,
-            inertia_input_names=inertia_input_names,
+            mass_input_names=self.mass_input_names,
+            cg_input_names=self.cg_input_names,
+            inertia_input_names=self.inertia_input_names,
         )
     
     def evaluate(self, *args):
-        mass_input_names = []
-        cg_input_names = []
-        inertia_input_names = []
-        arguments = dict()
+        self.mass_input_names = []
+        self.cg_input_names = []
+        self.inertia_input_names = []
+        self.name = 'total_constant_mass_properties'
+        
+        self.arguments = dict()
         for arg in args:
             arg_name = arg.name
             arg_model_name = arg.operation.name
             if arg_name == "mass":
-                mass_input_names.append(f"{arg_model_name}.{arg_name}")
-                arguments[f"{arg_model_name}.{arg_name}"] = arg
+                self.mass_input_names.append(f"{arg_model_name}.{arg_name}")
+                self.arguments[f"{arg_model_name}.{arg_name}"] = arg
             elif arg_name == "inertia_tensor": 
-                inertia_input_names.append(f"{arg_model_name}.{arg_name}")
-                arguments[f"{arg_model_name}.{arg_name}"] = arg
+                self.inertia_input_names.append(f"{arg_model_name}.{arg_name}")
+                self.arguments[f"{arg_model_name}.{arg_name}"] = arg
             elif arg_name == "cg_vector":
-                cg_input_names.append(f"{arg_model_name}.{arg_name}")
-                arguments[f"{arg_model_name}.{arg_name}"] = arg
+                self.cg_input_names.append(f"{arg_model_name}.{arg_name}")
+                self.arguments[f"{arg_model_name}.{arg_name}"] = arg
             else:
                 raise Exception(f"Inputs muss either by 'mass', 'inertia_tensor', or 'cg_vector'. Received {arg_name}")
         
-        operation_csdl = self.compute(mass_input_names=mass_input_names, cg_input_names=cg_input_names, inertia_input_names=inertia_input_names)
+        # operation_csdl = self.compute(mass_input_names=mass_input_names, cg_input_names=cg_input_names, inertia_input_names=inertia_input_names)
 
-        total_mass_operation = m3l.CSDLOperation(name='total_mass_properties', arguments=arguments, operation_csdl=operation_csdl)
-        mass = m3l.Variable(name='total_mass', shape=(1, ), operation=total_mass_operation)
-        cg_vector = m3l.Variable(name='total_cg_vector', shape=(3, ), operation=total_mass_operation)
-        inertia_tensor = m3l.Variable(name='total_inertia_tensor', shape=(3, 3), operation=total_mass_operation)
+        # total_mass_operation = m3l.CSDLOperation(name='total_mass_properties', arguments=arguments, operation_csdl=operation_csdl)
+
+        mass = m3l.Variable(name='total_mass', shape=(1, ), operation=self)
+        cg_vector = m3l.Variable(name='total_cg_vector', shape=(3, ), operation=self)
+        inertia_tensor = m3l.Variable(name='total_inertia_tensor', shape=(3, 3), operation=self)
         
         return mass, cg_vector, inertia_tensor
 

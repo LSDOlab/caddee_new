@@ -10,16 +10,17 @@ class M4RegressionsM3L(m3l.ExplicitOperation):
         return M4RegressionsCSDL()
     
     def evaluate(self,  battery_mass):
-        operation_csdl = self.compute()
-        arguments = {
+        # operation_csdl = self.compute()
+
+        self.name = 'm4_regression'
+
+        self.arguments = {
             'battery_mass' : battery_mass
         }
 
-        m4_regression_operation = m3l.CSDLOperation(name='m4_regression', arguments=arguments, operation_csdl=operation_csdl)
-
-        mass = m3l.Variable(name='mass', shape=(1, ), operation=m4_regression_operation)
-        cg_vector = m3l.Variable(name='cg_vector', shape=(3, ), operation=m4_regression_operation)
-        inertia_tensor = m3l.Variable(name='inertia_tensor', shape=(3, 3), operation=m4_regression_operation)
+        mass = m3l.Variable(name='mass', shape=(1, ), operation=self)
+        cg_vector = m3l.Variable(name='cg_vector', shape=(3, ), operation=self)
+        inertia_tensor = m3l.Variable(name='inertia_tensor', shape=(3, 3), operation=self)
 
         return mass, cg_vector, inertia_tensor
 
