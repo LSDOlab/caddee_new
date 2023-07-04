@@ -18,7 +18,7 @@ caddee.system_model = system_model = cd.SystemModel()
 caddee.system_representation = sys_rep = cd.SystemRepresentation()
 caddee.system_parameterization = sys_param = cd.SystemParameterization(system_representation=sys_rep)
 
-file_name = 'LPC_test.stp'
+file_name = 'lift_plus_cruise_final.stp'
 
 spatial_rep = sys_rep.spatial_representation
 spatial_rep.import_file(file_name=GEOMETRY_FILES_FOLDER / file_name)
@@ -141,16 +141,16 @@ dummy_b_spline_space = lg.BSplineSpace(name='dummy_b_spline_space', order=(order
 dummy_function_space = lg.BSplineSetSpace(name='dummy_space', b_spline_spaces={'dummy_b_spline_space': dummy_b_spline_space})
 
 cruise_wing_pressure_coefficients = m3l.Variable(name='cruise_wing_pressure_coefficients', shape=(num_control_points_u,3), value = np.zeros((num_control_points_u,3)))
-cruise_wing_pressure = m3l.Function(name='cruise_wing_pressure', function_space=dummy_function_space, coefficients=cruise_wing_pressure_coefficients)
+cruise_wing_pressure = m3l.Function(name='cruise_wing_pressure', space=dummy_function_space, coefficients=cruise_wing_pressure_coefficients)
 
 cruise_wing_displacement_coefficients = m3l.Variable(name='cruise_wing_displacement_coefficients', shape=(num_control_points_u,3))
-cruise_wing_displacement = m3l.Function(name='cruise_wing_displacement', function_space=dummy_function_space, coefficients=cruise_wing_displacement_coefficients)
+cruise_wing_displacement = m3l.Function(name='cruise_wing_displacement', space=dummy_function_space, coefficients=cruise_wing_displacement_coefficients)
 
 ### Start defining computational graph ###
 
 cruise_structural_wing_nodal_forces = cruise_wing_pressure(mesh=cruise_wing_structural_nodal_force_mesh)
 
-beam_force_map_model = ebbeam.EBBeamForces(mesh=beam_mesh, beams=beams)
+beam_force_map_model = ebbeam.EBBeamForces(component=wing, beam_mesh=beam_mesh, beams=beams)
 cruise_structural_wing_mesh_forces = beam_force_map_model.evaluate(nodal_forces=cruise_structural_wing_nodal_forces,
                                                                    nodal_forces_mesh=cruise_wing_structural_nodal_force_mesh)
 
@@ -162,11 +162,11 @@ cruise_structural_wing_mesh_displacements, cruise_structural_wing_mesh_rotations
     forces=cruise_structural_wing_mesh_forces)
 
 
-beam_displacement_map_model = ebbeam.EBBeamNodalDisplacements(mesh=beam_mesh, beams=beams)
+beam_displacement_map_model = ebbeam.EBBeamNodalDisplacements(component=wing, beam_mesh=beam_mesh, beams=beams)
 cruise_structural_wing_nodal_displacements = beam_displacement_map_model.evaluate(beam_displacements=cruise_structural_wing_mesh_displacements,
                                                                         nodal_displacements_mesh=cruise_wing_structural_nodal_displacements_mesh)
 
-test = cruise_structural_wing_nodal_displacements + cruise_structural_wing_nodal_forces
+# test = cruise_structural_wing_nodal_displacements + cruise_structural_wing_nodal_forces
 
 cruise_model = m3l.Model()
 cruise_model.register_output(cruise_structural_wing_nodal_displacements)
