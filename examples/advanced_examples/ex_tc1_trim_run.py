@@ -157,7 +157,7 @@ hover_model = m3l.Model()
 hover_condition = cd.HoverCondition(name='hover_1')
 hover_condition.atmosphere_model = cd.SimpleAtmosphereModel()
 hover_condition.set_module_input('altitude', val=500)
-hover_condition.set_module_input('time', val=90)
+hover_condition.set_module_input('hover_time', val=90)
 hover_condition.set_module_input('observer_location', val=np.array([0, 0 ,0]))
 
 ac_states = hover_condition.evaluate_ac_states()
@@ -373,41 +373,15 @@ caddee_csdl_model = caddee.assemble_csdl()
 # caddee_csdl_model.add_objective('total_trim')
 
 
-# rri_rpm = caddee_csdl_model.declare_variable('rear_right_inner_rpm', shape=(1, ))
-# caddee_csdl_model.connect('system_model.aircraft_trim.hover_1.hover_1.rri_disk_bem.rpm', 'rear_right_inner_rpm')
-# rli_rpm = caddee_csdl_model.declare_variable('rear_left_inner_rpm', shape=(1, ))
-# caddee_csdl_model.connect('system_model.aircraft_trim.hover_1.hover_1.rli_disk_bem.rpm', 'rear_left_inner_rpm')
-# caddee_csdl_model.register_output('ri_rpm_contraint', rri_rpm-rli_rpm)
-
-# rro_rpm = caddee_csdl_model.declare_variable('rear_right_outer_rpm', shape=(1, ))
-# caddee_csdl_model.connect('system_model.aircraft_trim.hover_1.hover_1.rro_disk_bem.rpm', 'rear_right_outer_rpm')
-# rlo_rpm = caddee_csdl_model.declare_variable('rear_left_outer_rpm', shape=(1, ))
-# caddee_csdl_model.connect('system_model.aircraft_trim.hover_1.hover_1.rlo_disk_bem.rpm', 'rear_left_outer_rpm')
-# caddee_csdl_model.register_output('ro_rpm_contraint', rro_rpm-rlo_rpm)
-
-# fri_rpm = caddee_csdl_model.declare_variable('front_right_inner_rpm', shape=(1, ))
-# caddee_csdl_model.connect('system_model.aircraft_trim.hover_1.hover_1.fri_disk_bem.rpm', 'front_right_inner_rpm')
-# fli_rpm = caddee_csdl_model.declare_variable('front_left_inner_rpm', shape=(1, ))
-# caddee_csdl_model.connect('system_model.aircraft_trim.hover_1.hover_1.fli_disk_bem.rpm', 'front_left_inner_rpm')
-# caddee_csdl_model.register_output('fi_rpm_contraint', fri_rpm-fli_rpm)
-
-# fro_rpm = caddee_csdl_model.declare_variable('front_right_outer_rpm', shape=(1, ))
-# caddee_csdl_model.connect('system_model.aircraft_trim.hover_1.hover_1.fro_disk_bem.rpm', 'front_right_outer_rpm')
-# flo_rpm = caddee_csdl_model.declare_variable('front_left_outer_rpm', shape=(1, ))
-# caddee_csdl_model.connect('system_model.aircraft_trim.hover_1.hover_1.flo_disk_bem.rpm', 'front_left_outer_rpm')
-# caddee_csdl_model.register_output('fo_rpm_contraint', fro_rpm-flo_rpm)
 
 caddee_csdl_model.add_objective('system_model.aircraft_trim.hover_1.hover_1.EulerEoMGenRefPt.trim_residual')
-# caddee_csdl_model.add_constraint('fo_rpm_contraint', equals=0)
-# caddee_csdl_model.add_constraint('fi_rpm_contraint', equals=0)
-# caddee_csdl_model.add_constraint('ro_rpm_contraint', equals=0)
-# caddee_csdl_model.add_constraint('ri_rpm_contraint', equals=0)
+
 # create and run simulator
 sim = Simulator(caddee_csdl_model, analytics=True, display_scripts=True)
 sim.run()
 
 # sim.check_totals(step=1e-10)
-exit()
+
 
 prob = CSDLProblem(problem_name='LPC_trim', simulator=sim)
 optimizer = SLSQP(

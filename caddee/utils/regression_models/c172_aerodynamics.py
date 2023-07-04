@@ -90,7 +90,7 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
 
 
         # self.print_var(var=rho)
-        rho = 1.225
+        rho = 1.225  # todo: compute as a function of altitude
 
         alpha = Theta - gamma
         alpha_deg = alpha * 57.2958
@@ -178,7 +178,7 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
         )
         Cl = (
                 0.1 * Cl_beta * beta_deg +
-                Cl_delta_aile +
+                Cl_delta_aile * delta_a_deg +
                 0.075 * Cl_delta_rud * delta_r_deg +
                 wing_span / (2 * V) * (Cl_p * p + Cl_r * r)
         )
@@ -195,10 +195,11 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
         )
 
         qBar = 0.5 * rho * V ** 2
-        L = qBar * wing_area * CL + x * 0.
-        D = qBar * wing_area * CD + y * 0.
-        Y = qBar * wing_area * CY + z * 0.
-        l = qBar * wing_area * wing_span * Cl + Phi * 0.
+        L = qBar * wing_area * CL \
+            + x * 0. + y * 0. + z * 0. + Phi * 0. # Need to use these variables "somewhere" or CSDL throws an error
+        D = qBar * wing_area * CD
+        Y = qBar * wing_area * CY
+        l = qBar * wing_area * wing_span * Cl
         m = qBar * wing_area * wing_chord * Cm
         n = qBar * wing_area * wing_span * Cn
 
@@ -229,13 +230,7 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
             DCM_bw[2:3, 2:3] = csdl.cos(alpha[ii, 0])
 
             F[ii, :] = csdl.reshape(csdl.matvec(csdl.transpose(DCM_bw), csdl.reshape(F_wind[ii, :], (3,))), (1, 3))
-            M[ii, :] = csdl.reshape(csdl.matvec(csdl.transpose(DCM_bw), csdl.reshape(M_wind[ii, :], (3,))), (1, 3)) 
-        
-        # F[:, 1] = Y * 0
-        
-        # M[:, 0] = Y * 0
-        # M[:, 1] = Y * 0
-        # M[:, 2] = Y * 0
+            M[ii, :] = csdl.reshape(csdl.matvec(csdl.transpose(DCM_bw), csdl.reshape(M_wind[ii, :], (3,))), (1, 3))
         
         return
 

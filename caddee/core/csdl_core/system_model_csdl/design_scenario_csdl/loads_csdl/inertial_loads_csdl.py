@@ -60,7 +60,7 @@ class InertialLoadsModel(BaseModelCSDL):
         cg[1] = cgy * 0 # NOTE: cgy should be exactly zero (even small deviations, e.g. 1e-4 will cause non-zero moments)
         cg[2] = cgz
 
-        g = 9.81 # Earth acceleration hard-coded here
+        g = 9.81  # todo: compute as a function of altitude
 
         F = self.register_module_output(name='F_inertial', shape=(num_nodes, 3))
 
