@@ -403,9 +403,9 @@ class SpatialRepresentation:
             primitive_indices = IMPORTS_FILES_FOLDER / f'{fn_wo_ext}_primitive_indices.pickle'
             primitives = IMPORTS_FILES_FOLDER / f'{fn_wo_ext}_primitives.pickle'
         else:
-            control_points = file_path + f'{fn_wo_ext}_control_points.pickle'
-            primitive_indices = file_path + f'{fn_wo_ext}_primitive_indices.pickle'
-            primitives = file_path + f'{fn_wo_ext}_primitives.pickle'
+            control_points = file_path + f'/{fn_wo_ext}_control_points.pickle'
+            primitive_indices = file_path + f'/{fn_wo_ext}_primitive_indices.pickle'
+            primitives = file_path + f'/{fn_wo_ext}_primitives.pickle'
         my_file = Path(control_points) 
         if my_file.is_file():
             with open(primitives, 'rb') as f:
@@ -443,12 +443,12 @@ class SpatialRepresentation:
                 with open(IMPORTS_FILES_FOLDER / f'{filename_without_ext}_primitives.pickle', 'wb+') as handle:
                     pickle.dump(self.primitives, handle, protocol=pickle.HIGHEST_PROTOCOL)
             else:
-                with open(file_path + f'{filename_without_ext}_control_points.pickle', 'wb+') as handle:
+                with open(file_path + f'/{filename_without_ext}_control_points.pickle', 'wb+') as handle:
                     pickle.dump(self.control_points, handle, protocol=pickle.HIGHEST_PROTOCOL)
                     # np.save(f, self.control_points)
-                with open(file_path + f'{filename_without_ext}_primitive_indices.pickle', 'wb+') as handle:
+                with open(file_path + f'/{filename_without_ext}_primitive_indices.pickle', 'wb+') as handle:
                     pickle.dump(self.primitive_indices, handle, protocol=pickle.HIGHEST_PROTOCOL)
-                with open(file_path + f'{filename_without_ext}_primitives.pickle', 'wb+') as handle:
+                with open(file_path + f'/{filename_without_ext}_primitives.pickle', 'wb+') as handle:
                     pickle.dump(self.primitives, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     def refit_geometry(self, num_control_points:int=25, fit_resolution:int=50, only_non_differentiable:bool=False, file_name=None, file_path=None):
@@ -462,9 +462,9 @@ class SpatialRepresentation:
                 primitive_indices = IMPORTS_FILES_FOLDER / f'{fn_wo_ext}_primitive_indices_{num_control_points}_{fit_resolution}.pickle'
                 primitives = IMPORTS_FILES_FOLDER / f'{fn_wo_ext}_primitives_{num_control_points}_{fit_resolution}.pickle'
             else:
-                control_points = file_path + f'{fn_wo_ext}_control_points_{num_control_points}_{fit_resolution}.pickle'
-                primitive_indices = file_path + f'{fn_wo_ext}_primitive_indices_{num_control_points}_{fit_resolution}.pickle'
-                primitives = file_path + f'{fn_wo_ext}_primitives_{num_control_points}_{fit_resolution}.pickle'
+                control_points = file_path + f'/{fn_wo_ext}_control_points_{num_control_points}_{fit_resolution}.pickle'
+                primitive_indices = file_path + f'/{fn_wo_ext}_primitive_indices_{num_control_points}_{fit_resolution}.pickle'
+                primitives = file_path + f'/{fn_wo_ext}_primitives_{num_control_points}_{fit_resolution}.pickle'
             my_file = Path(control_points) 
         if file_name is not None and my_file.is_file():
             with open(primitives, 'rb') as f:
@@ -500,11 +500,11 @@ class SpatialRepresentation:
                     with open(IMPORTS_FILES_FOLDER / f'{filename_without_ext}_primitives_{num_control_points}_{fit_resolution}.pickle', 'wb+') as handle:
                         pickle.dump(self.primitives, handle, protocol=pickle.HIGHEST_PROTOCOL)
                 else:
-                    with open(file_path + f'{filename_without_ext}_control_points_{num_control_points}_{fit_resolution}.pickle', 'wb+') as handle:                    pickle.dump(self.control_points, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                    with open(file_path + f'/{filename_without_ext}_control_points_{num_control_points}_{fit_resolution}.pickle', 'wb+') as handle:                    pickle.dump(self.control_points, handle, protocol=pickle.HIGHEST_PROTOCOL)
                         # np.save(f, self.control_points)
-                    with open(file_path + f'{filename_without_ext}_primitive_indices_{num_control_points}_{fit_resolution}.pickle', 'wb+') as handle:
+                    with open(file_path + f'/{filename_without_ext}_primitive_indices_{num_control_points}_{fit_resolution}.pickle', 'wb+') as handle:
                         pickle.dump(self.primitive_indices, handle, protocol=pickle.HIGHEST_PROTOCOL)
-                    with open(file_path + f'{filename_without_ext}_primitives_{num_control_points}_{fit_resolution}.pickle', 'wb+') as handle:
+                    with open(file_path + f'/{filename_without_ext}_primitives_{num_control_points}_{fit_resolution}.pickle', 'wb+') as handle:
                         pickle.dump(self.primitives, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     def read_openvsp_stp(self, file_name):
