@@ -102,7 +102,7 @@ vlm_model = VASTFluidSover(
 )
 
 # aero forces and moments
-vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=ac_states)
+_, vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=ac_states)
 cruise_model.register_output(vlm_forces)
 cruise_model.register_output(vlm_moments)
 

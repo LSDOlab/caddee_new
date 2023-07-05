@@ -7,10 +7,12 @@ import m3l
 class InertialLoadsM3L(m3l.ExplicitOperation):
     def initialize(self, kwargs):
         self.num_nodes = 1
+        self.parameters.declare('load_factor', default=1.)
         pass
 
     def compute(self):
-        return InertialLoadsModel(num_nodes=self.num_nodes)
+        load_factor = self.parameters['load_factor']
+        return InertialLoadsModel(num_nodes=self.num_nodes, load_factor=load_factor)
     
     def evaluate(self, total_cg_vector, totoal_mass, ac_states):
         self.name = 'inertial_loads_model'
@@ -33,10 +35,13 @@ class InertialLoadsM3L(m3l.ExplicitOperation):
 class InertialLoadsModel(BaseModelCSDL):
     def initialize(self):
         self.parameters.declare('num_nodes', default=1)
+        self.parameters.declare('load_factor', default=1.)
+        
         return
 
     def define(self):
         num_nodes = self.parameters['num_nodes']
+        load_factor = self.parameters['load_factor']
 
         # Inputs constant across conditions (segments)
         cg_vector = self.register_module_input('total_cg_vector', shape=(3, ))
@@ -59,7 +64,7 @@ class InertialLoadsModel(BaseModelCSDL):
         cg[1] = cgy * 0 # NOTE: cgy should be exactly zero (even small deviations, e.g. 1e-4 will cause non-zero moments)
         cg[2] = cgz
 
-        g = 9.81  # todo: compute as a function of altitude
+        g = 9.81*load_factor  # todo: compute as a function of altitude
 
         F = self.register_module_output(name='F_inertial', shape=(num_nodes, 3))
 

@@ -137,8 +137,8 @@ knots_u = np.hstack((knots_u_beginning, knots_u_middle, knots_u_end))
 order_v = 1
 knots_v = np.array([0., 0.5, 1.])
 
-dummy_b_spline_space = lg.BSplineSpace(name='dummy_b_spline_space', order=(order_u,1), knots=(knots_u,knots_v))
-dummy_function_space = lg.BSplineSetSpace(name='dummy_space', b_spline_spaces={'dummy_b_spline_space': dummy_b_spline_space})
+dummy_b_spline_space = lg.BSplineSpace(name='dummy_b_spline_space', order=(order_u,1), control_points_shape=((num_control_points_u,1)))
+dummy_function_space = lg.BSplineSetSpace(name='dummy_space', spaces={'dummy_b_spline_space': dummy_b_spline_space})
 
 cruise_wing_pressure_coefficients = m3l.Variable(name='cruise_wing_pressure_coefficients', shape=(num_control_points_u,3), value = np.zeros((num_control_points_u,3)))
 cruise_wing_pressure = m3l.Function(name='cruise_wing_pressure', space=dummy_function_space, coefficients=cruise_wing_pressure_coefficients)
