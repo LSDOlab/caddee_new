@@ -24,7 +24,7 @@ caddee.system_parameterization = sys_param = cd.SystemParameterization(system_re
 file_name = 'lift_plus_cruise_final.stp'
 
 spatial_rep = sys_rep.spatial_representation
-spatial_rep.import_file(file_name=GEOMETRY_FILES_FOLDER / file_name)
+spatial_rep.import_file(file_name=file_name)
 spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
 
 # wing
@@ -183,6 +183,10 @@ top = wing.project(wing_beam.value+offset, direction=np.array([0., 0., -1.]), pl
 bot = wing.project(wing_beam.value-offset, direction=np.array([0., 0., 1.]), plot=do_plots)
 height = am.norm((top - bot)*1)
 # height = am.subtract(top, bot)
+
+sys_rep.add_output(name='wing_beam_mesh', quantity=wing_beam)
+sys_rep.add_output(name='wing_beam_width', quantity=width)
+sys_rep.add_output(name='wing_beam_height', quantity=height)
 
 # pass the beam meshes to aframe:
 beam_mesh = LinearBeamMesh(
@@ -388,7 +392,7 @@ print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Afram
 
 
 prob = CSDLProblem(problem_name='lpc', simulator=sim)
-optimizer = SLSQP(prob, maxiter=1000, ftol=1E-10)
+optimizer = SLSQP(prob, maxiter=1000, ftol=1E-5)
 optimizer.solve()
 optimizer.print_results()
 

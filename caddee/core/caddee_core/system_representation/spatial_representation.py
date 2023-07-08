@@ -84,6 +84,11 @@ class SpatialRepresentation:
 
         fn = os.path.basename(self.file_name)
         fn_wo_ext = f"{fn[:fn.rindex('.')]}_{comp_name}"
+
+        if type(points) is am.MappedArray:
+                points = points.value
+        if type(direction) is am.MappedArray:
+                direction = direction.value
         
         projections = PROJECTIONS_FOLDER / f'{fn_wo_ext}_points_{str(round(np.linalg.norm(points), 4))}_direction_{str(round(np.linalg.norm(direction)))}_gridsearch_{grid_search_n}.pickle'
         my_file = Path(projections) 
