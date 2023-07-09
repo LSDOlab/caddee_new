@@ -121,14 +121,14 @@ class SystemRepresentation(CADDEEBase):
         self.spatial_representation.add_output(name=name, quantity=quantity)
 
 
-    def create_instances(self, names:list):
+    def declare_configurations(self, names:list):
         '''
         Create new configurations based on the design configuration.
         '''
         # NOTE: This should return pointers to some sort of dummy objects that can store their additional information.
         #   -- These dummy objects must have methods for taking in the new information like transform or whatever its long term name is.
         for name in names:
-            configuration = SystemConfiguration(system_representation=self)
+            configuration = SystemConfiguration(system_representation=self, name=name)
             self.configurations[name] = configuration    # TODO replace name with dummy return object!!
         return self.configurations
     
@@ -156,12 +156,16 @@ class SystemConfiguration(CADDEEBase):
 
     def initialize(self, kwargs):
         self.parameters.declare(name='system_representation', allow_none=False, types=SystemRepresentation)
+        self.parameters.declare(name='name', allow_none=False, types=str)
 
-        self.transformations = []
+        self.transformations = {}
 
     def assign_attributes(self):
         self.system_representation = self.parameters['system_representation']
+        self.name = self.parameters['name']
 
-    def transform(self, transformation:PrescribedActuation):
-        self.transformations.append(transformation)
-        
+    def transform(self, name:str, transformation:PrescribedActuation):
+        self.transformations[name] = transformation
+
+    def add_output(self, name, output):
+        self.outputs[name] = output

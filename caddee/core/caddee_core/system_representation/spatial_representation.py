@@ -90,7 +90,11 @@ class SpatialRepresentation:
         if type(direction) is am.MappedArray:
                 direction = direction.value
         
-        projections = PROJECTIONS_FOLDER / f'{fn_wo_ext}_points_{str(round(np.linalg.norm(points), 4))}_direction_{str(round(np.linalg.norm(direction)))}_gridsearch_{grid_search_n}.pickle'
+        if direction is not None:
+            projections = PROJECTIONS_FOLDER / f'{fn_wo_ext}_points_{str(round(np.linalg.norm(points), 4))}_direction_{str(round(np.linalg.norm(direction)))}_gridsearch_{grid_search_n}.pickle'
+        else:
+            projections = PROJECTIONS_FOLDER / f'{fn_wo_ext}_points_{str(round(np.linalg.norm(points), 4))}_gridsearch_{grid_search_n}.pickle'
+
         my_file = Path(projections) 
         
         if my_file.is_file():

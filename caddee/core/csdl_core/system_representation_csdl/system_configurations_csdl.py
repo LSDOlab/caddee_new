@@ -3,13 +3,10 @@ from csdl_om import Simulator
 import numpy as np
 import scipy.sparse as sps
 
-from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
-
-from caddee.core.csdl_core.system_representation_csdl.system_representation_outputs_csdl import SystemRepresentationOutputsCSDL
-from caddee.core.csdl_core.system_representation_csdl.system_configurations_csdl import SystemConfigurationsCSDL
+from caddee.core.csdl_core.system_representation_csdl.prescribed_rotation_csdl import PrescribedRotationCSDL
 
 
-class SystemRepresentationCSDL(ModuleCSDL):
+class SystemConfigurationsCSDL(csdl.Model):
     '''
     Evaluates the full system configuration from an initial set of parameterized values.
     '''
@@ -20,18 +17,13 @@ class SystemRepresentationCSDL(ModuleCSDL):
     def define(self):
         system_representation = self.parameters['system_representation']
 
-        # System configurations model (expands system to create different configurations and perform prescribed transformations)
-        if system_representation.configurations:
-            system_configurations_model = SystemConfigurationsCSDL(system_representation=system_representation)
-            self.add(submodel=system_configurations_model, name='system_configurations_model')
+        for configuration_name, configuration in system_representation.configurations.items():
+            for transformation_name, transformation in configuration.transformations.items():
+                precribed_rotation_model = PrescribedRotationCSDL(configuration=configuration, prescribed_rotation=transformation)
+                self.add(submodel=precribed_rotation_model, name=transformation_name, promotes=[configuration_name])
+                # NOTE: This will likely break with multiple actuations due to the configuration name being redundant.
 
-        # Dependent components model
-        # TODO
-
-        # outputs evaluation model
-        if system_representation.spatial_representation.outputs or system_representation.configurations:
-            nonlinear_outputs_model = SystemRepresentationOutputsCSDL(system_representation=system_representation)
-            self.add(submodel=nonlinear_outputs_model, name='outputs_model')
+            # note: add configuration outputs to the outputs model
 
 
 
