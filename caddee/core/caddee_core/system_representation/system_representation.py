@@ -164,8 +164,8 @@ class SystemConfiguration(CADDEEBase):
         self.system_representation = self.parameters['system_representation']
         self.name = self.parameters['name']
 
-    def transform(self, name:str, transformation:PrescribedActuation):
-        self.transformations[name] = transformation
+    def transform(self, transformation:PrescribedActuation):
+        self.transformations[transformation.name] = transformation
 
     def add_output(self, name, output):
         self.outputs[name] = output

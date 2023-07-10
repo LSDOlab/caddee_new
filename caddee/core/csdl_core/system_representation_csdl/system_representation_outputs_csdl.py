@@ -14,23 +14,57 @@ class SystemRepresentationOutputsCSDL(csdl.Model):
 
     def define(self):
         system_representation = self.parameters['system_representation']
+        
+        design_outputs_model = ConfigurationOutputsModel(configuration_name='design', configuration=system_representation)
+        self.add(design_outputs_model, name='design_outputs_model')
+
+        for configuration_name, configuration in system_representation.configurations.items():
+            if configuration.outputs:
+                configuration_outputs_model = ConfigurationOutputsModel(configuration_name=configuration_name,
+                                                                        configuration=configuration)
+                self.add(configuration_outputs_model, name=f'{configuration_name}_outputs_model')
+        
+
+
+class ConfigurationOutputsModel(csdl.Model):
+    '''
+    Evaluates the outputs of a specific configuraiton.
+    '''
+    def initialize(self):
+        self.parameters.declare('configuration_name')
+        self.parameters.declare('configuration')
+
+    def define(self):
+        configuration_name = self.parameters['configuration_name']
+        configuration = self.parameters['configuration']
+
+        if configuration_name == 'design':
+            system_representation = configuration
+        else:
+            system_representation = configuration.system_representation
         spatial_rep = system_representation.spatial_representation
 
         # Count number of nonlinear outputs
+        if configuration_name == 'design':
+            outputs = spatial_rep.outputs
+        else:
+            outputs = configuration.outputs
+
         num_nonlinear_outputs = 0
-        for mech_output_name in list(spatial_rep.outputs):
-            mech_output = spatial_rep.outputs[mech_output_name]
-            if type(mech_output) is am.NonlinearMappedArray:
+        for output_name, output in outputs.items():
+            if type(output) is am.NonlinearMappedArray:
                 num_nonlinear_outputs += 1
 
         # Declare input
-        system_representation_geometry = self.declare_variable('system_representation_geometry', val=spatial_rep.control_points['geometry'])
+        configuration_geometry = self.declare_variable(f'{configuration_name}_geometry', val=spatial_rep.control_points['geometry'])
 
-        nonlinear_outputs = csdl.custom(system_representation_geometry, op=NonlinearOutputsOperation(system_representation=system_representation))
+        nonlinear_outputs = csdl.custom(configuration_geometry,
+                                        op=NonlinearOutputsOperation(configuration_name=configuration_name, configuration=configuration))
 
         nonlinear_output_counter = 0
-        for output_name in list(spatial_rep.outputs):
-            output = spatial_rep.outputs[output_name]
+        for output_name, output in outputs.items():
+            # if configuration_name != 'design':
+            #     # output_name = configuration_name + output_name
 
             # mesh output
             if type(output) is am.MappedArray:
@@ -39,10 +73,10 @@ class SystemRepresentationOutputsCSDL(csdl.Model):
                 # Option 2
                 mesh_linear_map = output.linear_map
                 mesh_offset_map = output.offset_map
-                updated_mesh_csdl_without_offset = csdl.sparsematmat(system_representation_geometry, sparse_mat=mesh_linear_map)
+                updated_mesh_csdl_without_offset = csdl.sparsematmat(configuration_geometry, sparse_mat=mesh_linear_map)
 
                 if mesh_offset_map is not None:
-                    mesh_offset_map_csdl = self.create_output(f'{output_name}_offset_map', mesh_offset_map)
+                    mesh_offset_map_csdl = self.create_output(f'{configuration_name}_{output_name}_offset_map', mesh_offset_map)
                     updated_mesh_csdl = updated_mesh_csdl_without_offset + mesh_offset_map_csdl
                 else:
                     updated_mesh_csdl = updated_mesh_csdl_without_offset
@@ -59,20 +93,30 @@ class SystemRepresentationOutputsCSDL(csdl.Model):
                 nonlinear_output_counter += 1
 
 
+
 class NonlinearOutputsOperation(csdl.CustomExplicitOperation):
     def initialize(self):
-        self.parameters.declare('system_representation')
+        self.parameters.declare('configuration_name')
+        self.parameters.declare('configuration')
 
 
     def define(self):
-        system_representation = self.parameters['system_representation']
+        configuration_name = self.parameters['configuration_name']
+        configuration = self.parameters['configuration']
+        if configuration_name == 'design':
+            system_representation = configuration
+        else:
+            system_representation = configuration.system_representation
         spatial_rep = system_representation.spatial_representation
 
-        self.add_input('system_representation_geometry', val=spatial_rep.control_points['geometry'].copy())
+        self.add_input(f'{configuration_name}_geometry', val=spatial_rep.control_points['geometry'].copy())
         
-        for output_name in list(spatial_rep.outputs):
-            output = spatial_rep.outputs[output_name]
+        if configuration_name == 'design':
+            outputs = spatial_rep.outputs
+        else:
+            outputs = configuration.outputs
 
+        for output_name, output in outputs.items():
             if type(output) is am.NonlinearMappedArray:
                 self.add_output(name=output_name, val=output.value)
 
@@ -80,25 +124,42 @@ class NonlinearOutputsOperation(csdl.CustomExplicitOperation):
 
 
     def compute(self, inputs, outputs):
-        system_representation = self.parameters['system_representation']
+        configuration_name = self.parameters['configuration_name']
+        configuration = self.parameters['configuration']
+        if configuration_name == 'design':
+            system_representation = configuration
+        else:
+            system_representation = configuration.system_representation
         spatial_rep = system_representation.spatial_representation
 
-        input = inputs['system_representation_geometry']
-        for output_name in list(spatial_rep.outputs):
-            output = spatial_rep.outputs[output_name]
+        input = inputs[f'{configuration_name}_geometry']
+        if configuration_name == 'design':
+            outputs = spatial_rep.outputs
+        else:
+            outputs = configuration.outputs
 
+        for output_name, output in outputs.items():
             if type(output) is am.NonlinearMappedArray:
                 outputs[output_name] = output.evaluate(input)
     
 
 
     def compute_derivatives(self, inputs, derivatives):
-        system_representation = self.parameters['system_representation']
+        configuration_name = self.parameters['configuration_name']
+        configuration = self.parameters['configuration']
+        if configuration_name == 'design':
+            system_representation = configuration
+        else:
+            system_representation = configuration.system_representation
         spatial_rep = system_representation.spatial_representation
 
-        input = inputs['system_representation_geometry']
-        for output_name in list(spatial_rep.outputs):
-            output = spatial_rep.outputs[output_name]
+        input = inputs[f'{configuration_name}_geometry']
+        if configuration_name == 'design':
+            outputs = spatial_rep.outputs
+        else:
+            outputs = configuration.outputs
+
+        for output_name, output in outputs.items():
 
             if type(output) is am.NonlinearMappedArray:
                 derivatives[output_name, 'system_representation_geometry'] = output.evaluate_derivative(input)

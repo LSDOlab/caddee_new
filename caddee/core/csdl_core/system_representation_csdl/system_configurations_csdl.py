@@ -16,11 +16,19 @@ class SystemConfigurationsCSDL(csdl.Model):
 
     def define(self):
         system_representation = self.parameters['system_representation']
+        spatial_representation = system_representation.spatial_representation
+
+        system_representation_geometry = self.declare_variable('system_representation_geometry',
+                                                               val=spatial_representation.control_points['geometry'])
+        design_geometry = system_representation_geometry*1
+        self.register_output('design_geometry', design_geometry)
+        # self.register_output('design_geometry_copy', design_geometry*1)
 
         for configuration_name, configuration in system_representation.configurations.items():
             for transformation_name, transformation in configuration.transformations.items():
                 precribed_rotation_model = PrescribedRotationCSDL(configuration=configuration, prescribed_rotation=transformation)
-                self.add(submodel=precribed_rotation_model, name=transformation_name, promotes=[configuration_name])
+                self.add(submodel=precribed_rotation_model, name=transformation_name,
+                         promotes=[configuration_name + '_geometry', 'system_representation_geometry'])
                 # NOTE: This will likely break with multiple actuations due to the configuration name being redundant.
 
             # note: add configuration outputs to the outputs model
@@ -35,10 +43,10 @@ if __name__ == "__main__":
     from vedo import Points, Plotter
     import array_mapper as am
 
-    from caddee.caddee_core.system_representation.system_representation import SystemRepresentation
+    from caddee.core.caddee_core.system_representation.system_representation import SystemRepresentation
     system_representation = SystemRepresentation()
     spatial_rep = system_representation.spatial_representation
-    from caddee.caddee_core.system_parameterization.system_parameterization import SystemParameterization
+    from caddee.core.caddee_core.system_parameterization.system_parameterization import SystemParameterization
     system_parameterization = SystemParameterization(system_representation=system_representation)
 
     '''
@@ -48,7 +56,7 @@ if __name__ == "__main__":
     spatial_rep.import_file(file_name=file_path+'rect_wing.stp')
 
     # Create Components
-    from caddee.caddee_core.system_representation.component.component import LiftingSurface, Component
+    from caddee.core.caddee_core.system_representation.component.component import LiftingSurface, Component
     wing_primitive_names = list(spatial_rep.get_primitives(search_names=['Wing']).keys())
     wing = LiftingSurface(name='wing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)  # TODO add material arguments
     system_representation.add_component(wing)
@@ -77,8 +85,8 @@ if __name__ == "__main__":
     # spatial_rep.add_output(name='wing_root_chord', quantity=root_chord)
 
     # # Parameterization
-    from caddee.caddee_core.system_parameterization.free_form_deformation.ffd_functions import create_cartesian_enclosure_volume
-    from caddee.caddee_core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock
+    from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_functions import create_cartesian_enclosure_volume
+    from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock
 
     wing_geometry_primitives = wing.get_geometry_primitives()
     wing_ffd_bspline_volume = create_cartesian_enclosure_volume(wing_geometry_primitives, num_control_points=(11, 2, 2), order=(4,2,2), xyz_to_uvw_indices=(1,0,2))
@@ -88,7 +96,7 @@ if __name__ == "__main__":
     wing_ffd_block.add_rotation_v(name='wingtip_twist', order=4, num_dof=10, value=-np.array([np.pi/2, 0., 0., 0., 0., 0., 0., 0., 0., -np.pi/2]))
     wing_ffd_block.add_translation_w(name='wingtip_translation', order=4, num_dof=10, value=np.array([2., 0., 0., 0., 0., 0., 0., 0., 0., 2.]))
 
-    from caddee.caddee_core.system_parameterization.free_form_deformation.ffd_set import SRBGFFDSet
+    from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_set import SRBGFFDSet
     ffd_set = SRBGFFDSet(name='ffd_set', ffd_blocks={wing_ffd_block.name : wing_ffd_block})
 
     ffd_set.setup(project_embedded_entities=True)
@@ -102,7 +110,7 @@ if __name__ == "__main__":
 
     updated_wing_camber_surface = wing_camber_surface.evaluate()
 
-    sim = Simulator(SystemRepresentationCSDL(system_representation=system_representation))
+    sim = Simulator(SystemConfigurationsCSDL(system_representation=system_representation))
     sim.run()
 
     print('wingspan', sim['wingspan'])
@@ -124,7 +132,7 @@ if __name__ == "__main__":
     spatial_rep.import_file(file_name=file_path+'lift_plus_cruise_final_3.stp')
 
     # Create Components
-    from caddee.caddee_core.system_representation.component.component import LiftingSurface
+    from caddee.core.caddee_core.system_representation.component.component import LiftingSurface
     wing_primitive_names = list(spatial_rep.get_primitives(search_names=['Wing']).keys())
     wing = LiftingSurface(name='wing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)  # TODO add material arguments
     tail_primitive_names = list(spatial_rep.get_primitives(search_names=['Tail_1']).keys())
@@ -165,8 +173,8 @@ if __name__ == "__main__":
     spatial_rep.add_output(name='wing_root_chord', quantity=root_chord)
 
     # # Parameterization
-    from caddee.caddee_core.system_parameterization.free_form_deformation.ffd_functions import create_cartesian_enclosure_volume
-    from caddee.caddee_core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock
+    from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_functions import create_cartesian_enclosure_volume
+    from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock
 
     wing_geometry_primitives = wing.get_geometry_primitives()
     wing_ffd_bspline_volume = create_cartesian_enclosure_volume(wing_geometry_primitives, num_control_points=(11, 2, 2), order=(4,2,2), xyz_to_uvw_indices=(1,0,2))
@@ -181,7 +189,7 @@ if __name__ == "__main__":
     horizontal_stabilizer_ffd_block.add_scale_v(name='horizontal_stabilizer_linear_taper', order=2, num_dof=3, value=np.array([0.5, 0.5, 0.5]), cost_factor=1.)
     horizontal_stabilizer_ffd_block.add_rotation_u(name='horizontal_stabilizer_twist_distribution', order=1, num_dof=1, value=np.array([np.pi/10]))
 
-    from caddee.caddee_core.system_parameterization.free_form_deformation.ffd_set import SRBGFFDSet
+    from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_set import SRBGFFDSet
     ffd_set = SRBGFFDSet(name='ffd_set', ffd_blocks={wing_ffd_block.name : wing_ffd_block, horizontal_stabilizer_ffd_block.name : horizontal_stabilizer_ffd_block})
 
     ffd_set.setup(project_embedded_entities=True)
@@ -199,7 +207,7 @@ if __name__ == "__main__":
     wing_camber_surface.evaluate(spatial_rep.control_points)
     horizontal_stabilizer_camber_surface.evaluate(spatial_rep.control_points)
 
-    sim = Simulator(SystemRepresentationCSDL(system_representation=system_representation))
+    sim = Simulator(SystemConfigurationsCSDL(system_representation=system_representation))
     sim.run()
 
     print('wingspan', sim['wingspan'])

@@ -4,6 +4,10 @@ import numpy as np
 import scipy.sparse as sps
 import array_mapper as am
 
+'''
+NOTE: As of now, this only works for one actuation per configuration (and doesn't expand across time!)
+'''
+
 class PrescribedRotationCSDL(csdl.Model):
     '''
     Evaluates the system configuration outputs including meshes and user-specified quantities.
@@ -21,100 +25,126 @@ class PrescribedRotationCSDL(csdl.Model):
 
         rotation_name = prescribed_rotation.name
         component = prescribed_rotation.component
-        axis = prescribed_rotation.axis
+        axis_origin = prescribed_rotation.axis_origin
+        axis_vector = prescribed_rotation.axis_vector
         default_value = prescribed_rotation.value
         units = prescribed_rotation.units
 
         # Input this configuration's copy of geometry
-        initial_geometry_control_points_csdl = self.declare_variable(f'{configuration.name}_geometry', val=initial_geometry_control_points)
-
-        # Evaluate actuation axis
-        axis_linear_map = axis.linear_map
-        axis_offset_map = axis.offset_map
-        updated_axis_csdl_without_offset = csdl.sparsematmat(initial_geometry_control_points_csdl, sparse_mat=axis_linear_map)
-
-        if axis_offset_map is not None:
-            axis_offset_map_csdl = self.create_output(f'{rotation_name}_axis_offset_map', axis_offset_map)
-            axis_csdl = updated_axis_csdl_without_offset + axis_offset_map_csdl
-        else:
-            axis_csdl = updated_axis_csdl_without_offset
-
-        axis_csdl = csdl.reshape(axis_csdl, axis.shape)
-
+        initial_geometry_control_points_csdl = self.declare_variable('system_representation_geometry', val=initial_geometry_control_points)
         num_control_points = initial_geometry_control_points.shape[0]   # geometry already has to be in shape (ncp,3)
 
-        rotation_value = self.declare_variable(name='rotation_name', val=default_value)
+        # Evaluate actuation origin
+        axis_origin_linear_map = axis_origin.linear_map
+        axis_origin_offset_map = axis_origin.offset_map
+        updated_axis_origin_csdl_without_offset = csdl.sparsematmat(initial_geometry_control_points_csdl, sparse_mat=axis_origin_linear_map)
 
-        normalize_axis = axis_point / csdl.expand(csdl.pnorm(axis_point), axis_point.shape, 'i->ij')
-
-        quat = self.create_output(f'quat_{actuation_name}', shape=(num_actuating_ms, num_ind) + (4,))
-
-        # print('NORMALIZE AXIS SHAPE: ', normalize_axis[0,0].shape)
-        # print('THETAS shape: ', thetas.shape)
-
-        normalize_axis_x = csdl.expand(csdl.reshape(normalize_axis[0, 0],
-                                                    new_shape=(1,)),
-                                        act_profile.shape, 'i->j')
-        normalize_axis_y = csdl.expand(csdl.reshape(normalize_axis[0, 1],
-                                                    new_shape=(1,)),
-                                        act_profile.shape, 'i->j')
-        normalize_axis_z = csdl.expand(csdl.reshape(normalize_axis[0, 2],
-                                                    new_shape=(1,)),
-                                        act_profile.shape, 'i->j')
-
-        quat[:, :, 0] = csdl.expand(csdl.cos(act_profile / 2), (num_actuating_ms, num_ind) + (1,), 't->tij')
-        quat[:, :, 1] = csdl.expand(csdl.sin(act_profile / 2) * normalize_axis_x, (num_actuating_ms, num_ind) + (1,),
-                                    't->tij')
-        quat[:, :, 2] = csdl.expand(csdl.sin(act_profile / 2) * normalize_axis_y, (num_actuating_ms, num_ind) + (1,),
-                                    't->tij')
-        quat[:, :, 3] = csdl.expand(csdl.sin(act_profile / 2) * normalize_axis_z, (num_actuating_ms, num_ind) + (1,),
-                                    't->tij')
-
-        temp_quat = csdl.reshape(quat[t, :, :], new_shape=(num_ind, 4))
-        rotated_control_points_origin_frame = csdl.quatrotvec(temp_quat, control_points_origin_frame)
-        origin_point = csdl.reshape(origin_point, new_shape=rotated_control_points_origin_frame.shape)
-
-        temp_control_points = rotated_control_points_origin_frame + origin_point
-        self.register_output(f'temp_cp_{act_counter}_{t}', temp_control_points)
-
-        if act_counter == 0 and num_points == num_ind:
-            actuated_control_points[t, :, :] = csdl.reshape(
-                csdl.sparsematmat(temp_control_points, sparse_mat=sprs.transpose()),
-                new_shape=(1, num_points, 3))
-            act_list.append(actuated_control_points)
-        # elif act_counter == 0 and num_points != num_ind:
+        if axis_origin_offset_map is not None:
+            axis_offset_map_csdl = self.create_output(f'{rotation_name}_axis_origin_offset_map', axis_origin_offset_map)
+            axis_origin_csdl = updated_axis_origin_csdl_without_offset + axis_offset_map_csdl
         else:
+            axis_origin_csdl = updated_axis_origin_csdl_without_offset
+        axis_origin_csdl = csdl.reshape(axis_origin_csdl, axis_origin.shape)
 
-            actuated_control_points[t, :, :] = csdl.reshape(
-                csdl.sparsematmat(temp_control_points, sparse_mat=sprs.transpose()) + \
-                csdl.sparsematmat(non_actuating_points, sparse_mat=sprs_mat_non_act.transpose()),
-                new_shape=(1, num_points, 3))
-            act_list.append(actuated_control_points)
+        # Evaluate actuation axis
+        axis_vector_linear_map = axis_vector.linear_map
+        axis_vector_offset_map = axis_vector.offset_map
+        updated_axis_vector_csdl_without_offset = csdl.sparsematmat(initial_geometry_control_points_csdl, sparse_mat=axis_vector_linear_map)
 
+        if axis_vector_offset_map is not None:
+            axis_offset_map_csdl = self.create_output(f'{rotation_name}_axis_vector_offset_map', axis_vector_offset_map)
+            axis_vector_csdl = updated_axis_vector_csdl_without_offset + axis_offset_map_csdl
+        else:
+            axis_vector_csdl = updated_axis_vector_csdl_without_offset
+        axis_vector_csdl = csdl.reshape(axis_vector_csdl, axis_vector.shape)
+        normalized_axis = axis_vector_csdl / csdl.expand(csdl.pnorm(axis_vector_csdl), axis_vector_csdl.shape, 'i->ij')
+        normalized_axis = csdl.reshape(normalized_axis, new_shape=(normalized_axis.shape[-1],))
+
+        # Get the control points that are going to be affected by the actuation
+        primitive_names = component.primitive_names
+        spatial_representation = configuration.system_representation.spatial_representation
+        rotating_control_points_indices = []
+        for primitive_name in primitive_names:
+            primitive_indices = list(spatial_representation.primitive_indices[primitive_name]['geometry'])
+            rotating_control_points_indices = rotating_control_points_indices + primitive_indices
+        num_rotating_points = len(rotating_control_points_indices)
+        data = np.ones((num_rotating_points))
+        indexing_map = sps.coo_matrix((data, (np.arange(num_rotating_points), np.array(rotating_control_points_indices))),
+                                        shape=(num_rotating_points, num_control_points))
+        indexing_map = indexing_map.tocsc()
+        rotating_control_points = csdl.sparsematmat(initial_geometry_control_points_csdl, sparse_mat=indexing_map)
+
+        # Translate control points into actuation origin frame
+        axis_origin_csdl_expanded = csdl.expand(csdl.reshape(axis_origin_csdl, new_shape=(axis_origin_csdl.shape[-1],)),
+                                                 shape=(num_rotating_points,axis_origin_csdl.shape[-1]), indices='i->ji')
+        control_points_origin_frame = rotating_control_points - axis_origin_csdl_expanded
+
+        # Construct quaternion from rotation value
+        rotation_value = self.declare_variable(name=rotation_name, val=default_value)
+        if units == 'deg':
+            rotation_value = rotation_value * 2*np.pi/180
+
+        quaternion = self.create_output(f'quat_{rotation_name}', shape=(num_rotating_points,) + (4,))
+        quaternion[:, 0] = csdl.expand(csdl.cos(rotation_value / 2), (num_rotating_points,) + (1,), 'i->ij')
+        quaternion[:, 1] = csdl.expand(csdl.sin(rotation_value / 2) * normalized_axis[0], (num_rotating_points,) + (1,), 'i->ij')
+        quaternion[:, 2] = csdl.expand(csdl.sin(rotation_value / 2) * normalized_axis[1], (num_rotating_points,) + (1,), 'i->ij')
+        quaternion[:, 3] = csdl.expand(csdl.sin(rotation_value / 2) * normalized_axis[2], (num_rotating_points,) + (1,), 'i->ij')
+
+        # Apply rotation
+        rotated_control_points_origin_frame = csdl.quatrotvec(quaternion, control_points_origin_frame)
+
+        # Translate rotated control points back into original coordinate frame
+        rotated_control_points = rotated_control_points_origin_frame + axis_origin_csdl_expanded
+
+        # Assemble full geometry
+        # -- Expand actuated points to size of full geometry (zeros for non-actuated points)
+        data = np.ones((num_rotating_points))
+        indexing_map = sps.coo_matrix((data, (np.array(rotating_control_points_indices), np.arange(num_rotating_points))),
+                                        shape=(num_control_points, num_rotating_points))
+        indexing_map = indexing_map.tocsc()
+        if num_rotating_points != 0:
+            updated_geometry_component = csdl.sparsematmat(rotated_control_points, sparse_mat=indexing_map)
+
+        num_unchanged_points = num_control_points - num_rotating_points
+        if num_unchanged_points == 0:
+            configuration_geometry = updated_geometry_component
+        elif num_rotating_points == 0:
+            configuration_geometry = initial_geometry_control_points_csdl*1
+        else:
+            data = np.ones((num_unchanged_points,))
+            unchanged_indices = np.delete(np.arange(num_control_points), rotating_control_points_indices)
+            indexing_map = sps.coo_matrix((data, (unchanged_indices, unchanged_indices)),
+                                        shape=(num_control_points, num_control_points))
+            unchanged_indexing_map = indexing_map.tocsc()
+            initial_geometry_component = csdl.sparsematmat(initial_geometry_control_points_csdl, sparse_mat=unchanged_indexing_map)
+            configuration_geometry = updated_geometry_component + initial_geometry_component
+                
+        self.register_output(f'{configuration.name}_geometry', configuration_geometry)
+
+        
 
 
 if __name__ == "__main__":
     import csdl
-    # from csdl_om import Simulator
     from python_csdl_backend import Simulator
     import numpy as np
-    from vedo import Points, Plotter
+    import vedo
     import array_mapper as am
 
-    from caddee.caddee_core.system_representation.system_representation import SystemRepresentation
+    from caddee.core.caddee_core.system_representation.system_representation import SystemRepresentation
     system_representation = SystemRepresentation()
     spatial_rep = system_representation.spatial_representation
-    from caddee.caddee_core.system_parameterization.system_parameterization import SystemParameterization
+    from caddee.core.caddee_core.system_parameterization.system_parameterization import SystemParameterization
     system_parameterization = SystemParameterization(system_representation=system_representation)
 
     '''
-    Single FFD Block
+    Single wing
     '''
     file_path = 'models/stp/'
     spatial_rep.import_file(file_name=file_path+'rect_wing.stp')
 
     # Create Components
-    from caddee.caddee_core.system_representation.component.component import LiftingSurface, Component
+    from caddee.core.caddee_core.system_representation.component.component import LiftingSurface, Component
     wing_primitive_names = list(spatial_rep.get_primitives(search_names=['Wing']).keys())
     wing = LiftingSurface(name='wing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)  # TODO add material arguments
     system_representation.add_component(wing)
@@ -143,8 +173,8 @@ if __name__ == "__main__":
     # spatial_rep.add_output(name='wing_root_chord', quantity=root_chord)
 
     # # Parameterization
-    from caddee.caddee_core.system_parameterization.free_form_deformation.ffd_functions import create_cartesian_enclosure_volume
-    from caddee.caddee_core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock
+    from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_functions import create_cartesian_enclosure_volume
+    from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock
 
     wing_geometry_primitives = wing.get_geometry_primitives()
     wing_ffd_bspline_volume = create_cartesian_enclosure_volume(wing_geometry_primitives, num_control_points=(11, 2, 2), order=(4,2,2), xyz_to_uvw_indices=(1,0,2))
@@ -154,7 +184,7 @@ if __name__ == "__main__":
     wing_ffd_block.add_rotation_v(name='wingtip_twist', order=4, num_dof=10, value=-np.array([np.pi/2, 0., 0., 0., 0., 0., 0., 0., 0., -np.pi/2]))
     wing_ffd_block.add_translation_w(name='wingtip_translation', order=4, num_dof=10, value=np.array([2., 0., 0., 0., 0., 0., 0., 0., 0., 2.]))
 
-    from caddee.caddee_core.system_parameterization.free_form_deformation.ffd_set import SRBGFFDSet
+    from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_set import SRBGFFDSet
     ffd_set = SRBGFFDSet(name='ffd_set', ffd_blocks={wing_ffd_block.name : wing_ffd_block})
 
     ffd_set.setup(project_embedded_entities=True)
@@ -190,7 +220,7 @@ if __name__ == "__main__":
     spatial_rep.import_file(file_name=file_path+'lift_plus_cruise_final_3.stp')
 
     # Create Components
-    from caddee.caddee_core.system_representation.component.component import LiftingSurface
+    from caddee.core.caddee_core.system_representation.component.component import LiftingSurface
     wing_primitive_names = list(spatial_rep.get_primitives(search_names=['Wing']).keys())
     wing = LiftingSurface(name='wing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)  # TODO add material arguments
     tail_primitive_names = list(spatial_rep.get_primitives(search_names=['Tail_1']).keys())
@@ -231,8 +261,8 @@ if __name__ == "__main__":
     spatial_rep.add_output(name='wing_root_chord', quantity=root_chord)
 
     # # Parameterization
-    from caddee.caddee_core.system_parameterization.free_form_deformation.ffd_functions import create_cartesian_enclosure_volume
-    from caddee.caddee_core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock
+    from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_functions import create_cartesian_enclosure_volume
+    from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock
 
     wing_geometry_primitives = wing.get_geometry_primitives()
     wing_ffd_bspline_volume = create_cartesian_enclosure_volume(wing_geometry_primitives, num_control_points=(11, 2, 2), order=(4,2,2), xyz_to_uvw_indices=(1,0,2))
@@ -247,7 +277,7 @@ if __name__ == "__main__":
     horizontal_stabilizer_ffd_block.add_scale_v(name='horizontal_stabilizer_linear_taper', order=2, num_dof=3, value=np.array([0.5, 0.5, 0.5]), cost_factor=1.)
     horizontal_stabilizer_ffd_block.add_rotation_u(name='horizontal_stabilizer_twist_distribution', order=1, num_dof=1, value=np.array([np.pi/10]))
 
-    from caddee.caddee_core.system_parameterization.free_form_deformation.ffd_set import SRBGFFDSet
+    from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_set import SRBGFFDSet
     ffd_set = SRBGFFDSet(name='ffd_set', ffd_blocks={wing_ffd_block.name : wing_ffd_block, horizontal_stabilizer_ffd_block.name : horizontal_stabilizer_ffd_block})
 
     ffd_set.setup(project_embedded_entities=True)
