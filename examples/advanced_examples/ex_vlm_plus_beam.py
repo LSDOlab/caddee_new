@@ -178,7 +178,7 @@ if do_plots:
 
 wing_beam = wing_beam.reshape((11,3))
 
-offset = np.array([0,0,50])
+offset = np.array([0,0,0.5])
 top = wing.project(wing_beam.value+offset, direction=np.array([0., 0., -1.]), plot=do_plots)
 bot = wing.project(wing_beam.value-offset, direction=np.array([0., 0., 1.]), plot=do_plots)
 height = am.norm((top - bot)*1)
@@ -295,9 +295,9 @@ beams['wing_beam'] = {'E': 69E9,'G': 26E9,'rho': 2700,'cs': 'box','nodes': list(
 bounds['wing_root'] = {'beam': 'wing_beam','node': 5,'fdim': [1,1,1,1,1,1]}
 
 # create the beam model:
-beam = EBBeam(component=wing, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints)
-beam.set_module_input('wing_beamt_cap_in', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
-beam.set_module_input('wing_beamt_web_in', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
+beam = EBBeam(component=wing, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints, mesh_units='ft')
+#beam.set_module_input('wing_beamt_cap_in', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
+#beam.set_module_input('wing_beamt_web_in', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
 
 cruise_wing_structural_nodal_displacements_mesh = am.vstack((wing_upper_surface_wireframe, wing_lower_surface_wireframe))
 cruise_wing_aero_nodal_displacements_mesh = cruise_wing_structural_nodal_displacements_mesh
@@ -316,8 +316,8 @@ cruise_structural_wing_mesh_forces = beam_force_map_model.evaluate(nodal_forces=
                                                                    nodal_forces_mesh=oml_mesh)
 
 beam_displacements_model = ebbeam.EBBeam(component=wing, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints)
-beam_displacements_model.set_module_input('wing_beamt_cap_in', val=0.01, dv_flag=True, lower=0.0001, upper=0.04, scaler=1E3)
-beam_displacements_model.set_module_input('wing_beamt_web_in', val=0.01, dv_flag=True, lower=0.0001, upper=0.04, scaler=1E3)
+beam_displacements_model.set_module_input('wing_beamt_cap_in', val=0.01, dv_flag=True, lower=0.001, upper=0.04, scaler=1E3)
+beam_displacements_model.set_module_input('wing_beamt_web_in', val=0.01, dv_flag=True, lower=0.001, upper=0.04, scaler=1E3)
 
 cruise_structural_wing_mesh_displacements, cruise_structural_wing_mesh_rotations, wing_mass, wing_cg, wing_inertia_tensor = beam_displacements_model.evaluate(
     forces=cruise_structural_wing_mesh_forces)
@@ -385,6 +385,7 @@ sim = Simulator(caddee_csdl_model, analytics=True)
 sim.run()
 print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.vm_stress'])
 print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.wing_beam_forces'])
+
 
 
 # sim.compute_total_derivatives()

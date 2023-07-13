@@ -112,11 +112,11 @@ class NonlinearOutputsOperation(csdl.CustomExplicitOperation):
         self.add_input(f'{configuration_name}_geometry', val=spatial_rep.control_points['geometry'].copy())
         
         if configuration_name == 'design':
-            outputs = spatial_rep.outputs
+            geo_outputs = spatial_rep.outputs
         else:
-            outputs = configuration.outputs
+            geo_outputs = configuration.outputs
 
-        for output_name, output in outputs.items():
+        for output_name, output in geo_outputs.items():
             if type(output) is am.NonlinearMappedArray:
                 self.add_output(name=output_name, val=output.value)
 
@@ -134,11 +134,11 @@ class NonlinearOutputsOperation(csdl.CustomExplicitOperation):
 
         input = inputs[f'{configuration_name}_geometry']
         if configuration_name == 'design':
-            outputs = spatial_rep.outputs
+            geo_outputs = spatial_rep.outputs
         else:
-            outputs = configuration.outputs
+            geo_outputs = configuration.outputs
 
-        for output_name, output in outputs.items():
+        for output_name, output in geo_outputs.items():
             if type(output) is am.NonlinearMappedArray:
                 outputs[output_name] = output.evaluate(input)
     
@@ -155,14 +155,14 @@ class NonlinearOutputsOperation(csdl.CustomExplicitOperation):
 
         input = inputs[f'{configuration_name}_geometry']
         if configuration_name == 'design':
-            outputs = spatial_rep.outputs
+            geo_outputs = spatial_rep.outputs
         else:
-            outputs = configuration.outputs
+            geo_outputs = configuration.outputs
 
-        for output_name, output in outputs.items():
+        for output_name, output in geo_outputs.items():
 
             if type(output) is am.NonlinearMappedArray:
-                derivatives[output_name, 'system_representation_geometry'] = output.evaluate_derivative(input)
+                derivatives[output_name, f'{configuration_name}_geometry'] = output.evaluate_derivative(input)
 
 
 if __name__ == "__main__":

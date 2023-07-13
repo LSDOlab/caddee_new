@@ -21,9 +21,9 @@ class SystemRepresentationCSDL(ModuleCSDL):
         system_representation = self.parameters['system_representation']
 
         # System configurations model (expands system to create different configurations and perform prescribed transformations)
-        if system_representation.configurations:
-            system_configurations_model = SystemConfigurationsCSDL(system_representation=system_representation)
-            self.add(submodel=system_configurations_model, name='system_configurations_model')
+        # if system_representation.configurations:
+        system_configurations_model = SystemConfigurationsCSDL(system_representation=system_representation)
+        self.add(submodel=system_configurations_model, name='system_configurations_model')
 
         # Dependent components model
         # TODO

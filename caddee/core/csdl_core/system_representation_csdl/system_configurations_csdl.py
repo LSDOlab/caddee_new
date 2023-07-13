@@ -22,7 +22,6 @@ class SystemConfigurationsCSDL(csdl.Model):
                                                                val=spatial_representation.control_points['geometry'])
         design_geometry = system_representation_geometry*1
         self.register_output('design_geometry', design_geometry)
-        # self.register_output('design_geometry_copy', design_geometry*1)
 
         for configuration_name, configuration in system_representation.configurations.items():
             for transformation_name, transformation in configuration.transformations.items():
