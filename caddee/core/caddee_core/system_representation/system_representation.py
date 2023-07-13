@@ -163,8 +163,18 @@ class SystemConfiguration(CADDEEBase):
     def assign_attributes(self):
         self.system_representation = self.parameters['system_representation']
         self.name = self.parameters['name']
+        self.num_nodes = 1
 
-    def transform(self, transformation:PrescribedActuation):
+    def set_num_nodes(self, num_nodes:int):
+        self.num_nodes = num_nodes
+
+    def actuate(self, transformation:PrescribedActuation):
+        if self.num_nodes != 1:
+            if np.isscalar(transformation.value) or len(transformation.value) != self.num_nodes:
+                raise Exception(f"For {self.name} transformation, please input an actuation profile with the same length as num nodes.")
+        else:
+            if not np.isscalar(transformation.value):
+                raise Exception(f"For {self.name} transformation, please input a scalar rotation value since it is not a transient configuration.")
         self.transformations[transformation.name] = transformation
 
     def add_output(self, name, output):

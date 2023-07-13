@@ -4,6 +4,7 @@ import numpy as np
 import scipy.sparse as sps
 
 from caddee.core.csdl_core.system_representation_csdl.prescribed_rotation_csdl import PrescribedRotationCSDL
+from caddee.core.csdl_core.system_representation_csdl.transient_configuration_csdl import TransientConfigurationCSDL
 
 
 class SystemConfigurationsCSDL(csdl.Model):
@@ -24,14 +25,32 @@ class SystemConfigurationsCSDL(csdl.Model):
         self.register_output('design_geometry', design_geometry)
 
         for configuration_name, configuration in system_representation.configurations.items():
+            if configuration.num_nodes != 1:
+                transient_configuration_model = TransientConfigurationCSDL(configuration=configuration)
+                self.add(submodel=transient_configuration_model, name='expanded_transient_'+configuration_name+'_model', promotes=[])
+
+        for configuration_name, configuration in system_representation.configurations.items():
+            counter = 1
             for transformation_name, transformation in configuration.transformations.items():
                 precribed_rotation_model = PrescribedRotationCSDL(configuration=configuration, prescribed_rotation=transformation)
-                self.add(submodel=precribed_rotation_model, name=transformation_name,
-                         promotes=[configuration_name + '_geometry', 'system_representation_geometry'])
-                # NOTE: This will likely break with multiple actuations due to the configuration name being redundant.
-
-            # note: add configuration outputs to the outputs model
-
+                # self.add(submodel=precribed_rotation_model, name=transformation_name,
+                #          promotes=[configuration_name + '_geometry', 'system_representation_geometry'])
+                if counter < len(configuration.transformations):
+                    self.add(submodel=precribed_rotation_model, name=transformation_name,
+                            promotes=[])
+                else:   # last one, promote output
+                    self.add(submodel=precribed_rotation_model, name=transformation_name,
+                            promotes=[configuration_name + '_geometry'])
+                if counter == 1 and configuration.num_nodes == 1:
+                    self.connect('system_representation_geometry', transformation_name + '.initial_geometry')
+                elif counter == 1 and configuration.num_nodes != 1:
+                    self.connect('expanded_transient_'+configuration_name+'_model.' + configuration_name+'_geometry',
+                                  transformation_name + '.initial_geometry')
+                else:
+                    self.connect(previous_tranformation_name + '.' + configuration_name + '_geometry',
+                                 transformation_name + '.' + 'initial_geometry')
+                previous_tranformation_name = transformation_name
+                counter += 1
 
 
 if __name__ == "__main__":
