@@ -191,10 +191,11 @@ sys_rep.add_output(name='wing_beam_height', quantity=height)
 
 # pass the beam meshes to aframe:
 beam_mesh = LinearBeamMesh(
-meshes = dict(
-wing_beam = wing_beam*0.304,
-wing_beam_width = width,
-wing_beam_height = height,
+    meshes = dict(
+    wing_beam = wing_beam*0.304,
+    wing_beam_width = width,
+    wing_beam_height = height,
+    mesh_units='ft'
 )
 )
 
@@ -284,11 +285,13 @@ pusher_bem_mesh = BEMMesh(
     airfoil='NACA_4412',
     num_blades=4,
     num_radial=25,
+    use_airfoil_ml=False,
+    mesh_units='ft'
 )
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=2000, scaler=1e-3)
-bem_forces, bem_moments = bem_model.evaluate(ac_states=ac_states)
+bem_forces, bem_moments, _, _, _ = bem_model.evaluate(ac_states=ac_states)
 
 # create the aframe dictionaries:
 joints, bounds, beams = {}, {}, {}
@@ -387,7 +390,7 @@ sim.run()
 print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.vm_stress'])
 print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.wing_beam_forces'])
 
-exit()
+# exit()
 
 # sim.compute_total_derivatives()
 # sim.check_totals()
