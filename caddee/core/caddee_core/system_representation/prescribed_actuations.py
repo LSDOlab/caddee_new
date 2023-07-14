@@ -10,9 +10,10 @@ class PrescribedActuation:
     not provide functionality.
     '''
 
-    def __init__(self, component:Component, axis:am.MappedArray, value:np.ndarray=None) -> None:
+    def __init__(self, component:Component, axis_origin:am.MappedArray, axis_vector:am.MappedArray, value:np.ndarray=None) -> None:
         self.component = component
-        self.axis = axis
+        self.axis_origin = axis_origin
+        self.axis_vector = axis_vector
         self.value = value
 
 
@@ -22,13 +23,15 @@ class PrescribedRotation(PrescribedActuation):
     which is just prescribing the value of the rotation.
     '''
 
-    def __init__(self, component: Component, axis: am.MappedArray, value:np.ndarray=None) -> None:
-        super().__init__(component, axis, value)
+    def __init__(self, component: Component, axis_origin: am.MappedArray, axis_vector:am.MappedArray, value:np.ndarray=None) -> None:
+        super().__init__(component, axis_origin, axis_vector, value)
 
-        self.value = 0.
+        if self.value is None:
+            self.value = 0.
         self.units = 'radians'
 
     def set_rotation(self, name:str, value:np.ndarray, units:str='radians'):
+        self.name = name
         self.value = value
         self.units = units
 
@@ -91,7 +94,7 @@ class PrescribedTranslation(PrescribedActuation):
 #         '''
 #         Assembles the CSDL model to perform this operation.
 #         '''
-#         from caddee.core.csdl_core.system_representation_csdl.system_representation_csdl import SystemRepresentationCSDL
+#         from caddee.csdl_core.system_representation_csdl.system_representation_csdl import SystemRepresentationCSDL
 #         return SystemRepresentationCSDL(system_representation = self)
 
 

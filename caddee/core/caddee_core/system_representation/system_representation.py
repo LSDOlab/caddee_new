@@ -121,14 +121,14 @@ class SystemRepresentation(CADDEEBase):
         self.spatial_representation.add_output(name=name, quantity=quantity)
 
 
-    def create_instances(self, names:list):
+    def declare_configurations(self, names:list):
         '''
         Create new configurations based on the design configuration.
         '''
         # NOTE: This should return pointers to some sort of dummy objects that can store their additional information.
         #   -- These dummy objects must have methods for taking in the new information like transform or whatever its long term name is.
         for name in names:
-            configuration = SystemConfiguration(system_representation=self)
+            configuration = SystemConfiguration(system_representation=self, name=name)
             self.configurations[name] = configuration    # TODO replace name with dummy return object!!
         return self.configurations
     
@@ -156,12 +156,26 @@ class SystemConfiguration(CADDEEBase):
 
     def initialize(self, kwargs):
         self.parameters.declare(name='system_representation', allow_none=False, types=SystemRepresentation)
+        self.parameters.declare(name='name', allow_none=False, types=str)
 
-        self.transformations = []
+        self.transformations = {}
 
     def assign_attributes(self):
         self.system_representation = self.parameters['system_representation']
+        self.name = self.parameters['name']
+        self.num_nodes = 1
 
-    def transform(self, transformation:PrescribedActuation):
-        self.transformations.append(transformation)
-        
+    def set_num_nodes(self, num_nodes:int):
+        self.num_nodes = num_nodes
+
+    def actuate(self, transformation:PrescribedActuation):
+        if self.num_nodes != 1:
+            if np.isscalar(transformation.value) or len(transformation.value) != self.num_nodes:
+                raise Exception(f"For {self.name} transformation, please input an actuation profile with the same length as num nodes.")
+        else:
+            if not np.isscalar(transformation.value):
+                raise Exception(f"For {self.name} transformation, please input a scalar rotation value since it is not a transient configuration.")
+        self.transformations[transformation.name] = transformation
+
+    def add_output(self, name, output):
+        self.outputs[name] = output

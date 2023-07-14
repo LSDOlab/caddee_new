@@ -229,7 +229,7 @@ caddee_csdl_model = caddee.assemble_csdl()
 # caddee_csdl_model.add_objective('EulerEoMGenRefPt.trim_residual')
 
 
-caddee_csdl_model.add_constraint('system_model.struct.cruise_1.cruise_1.wing_eb_beam_model.Aframe.max_stress',upper=500E6/1,scaler=1E-8)
+caddee_csdl_model.add_constraint('system_model.struct.cruise_1.cruise_1.wing_eb_beam_model.Aframe.new_stress',upper=500E6/1,scaler=1E-8)
 caddee_csdl_model.add_objective('system_model.struct.cruise_1.cruise_1.total_constant_mass_properties.total_mass', scaler=1e-3)
 
 

@@ -43,9 +43,6 @@ class SystemRepresentationAssemblyCSDL(csdl.Model):
                 # NOTE: Approach 3: TODO!!! This doesn't work for multiple parameterizations!!
                 num_points_system_representation = initial_system_representation_geometry.shape[0]
                 data = np.ones((len(parameterization_indices)))
-                print('ffd_block_embedded_primitive_indices', ffd_block_embedded_primitive_indices)
-                print('parameterization_indices', parameterization_indices)
-                print('data', np.array(parameterization_indices))
                 indexing_map = sps.coo_matrix((data, (np.array(parameterization_indices), np.arange(len(parameterization_indices)))),
                                               shape=(num_points_system_representation, len(parameterization_indices)))
                 indexing_map = indexing_map.tocsc()
@@ -66,6 +63,7 @@ class SystemRepresentationAssemblyCSDL(csdl.Model):
                     initial_geometry_component = csdl.sparsematmat(initial_system_representation_geometry, sparse_mat=unchanged_indexing_map)
                     system_representation_geometry = updated_geometry_component + initial_geometry_component
                 self.register_output('system_representation_geometry', system_representation_geometry)
+                self.register_output('system_representation_geometry_copy', system_representation_geometry*1)
             else:
                 continue
 

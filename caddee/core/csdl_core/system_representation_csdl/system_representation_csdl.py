@@ -2,8 +2,11 @@ import csdl
 from csdl_om import Simulator
 import numpy as np
 import scipy.sparse as sps
+
 from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
+
 from caddee.core.csdl_core.system_representation_csdl.system_representation_outputs_csdl import SystemRepresentationOutputsCSDL
+from caddee.core.csdl_core.system_representation_csdl.system_configurations_csdl import SystemConfigurationsCSDL
 
 
 class SystemRepresentationCSDL(ModuleCSDL):
@@ -17,15 +20,19 @@ class SystemRepresentationCSDL(ModuleCSDL):
     def define(self):
         system_representation = self.parameters['system_representation']
 
-        # Actuation model
-        # TODO
+        # System configurations model (expands system to create different configurations and perform prescribed transformations)
+        # if system_representation.configurations:
+        system_configurations_model = SystemConfigurationsCSDL(system_representation=system_representation)
+        self.add(submodel=system_configurations_model, name='system_configurations_model')
 
         # Dependent components model
         # TODO
 
-        # Quantity evaluation model
-        nonlinear_outputs_model = SystemRepresentationOutputsCSDL(system_representation=system_representation)
-        self.add(submodel=nonlinear_outputs_model, name='nonlinear_outputs_model')
+        # outputs evaluation model
+        if system_representation.spatial_representation.outputs or system_representation.configurations:
+            # NOTE: If statement could be more robust. For some reason, there could be a configuration with no ouput...
+            outputs_model = SystemRepresentationOutputsCSDL(system_representation=system_representation)
+            self.add(submodel=outputs_model, name='outputs_model')
 
 
 

@@ -179,8 +179,8 @@ if do_plots:
 wing_beam = wing_beam.reshape((11,3))#*0.304
 
 offset = np.array([0,0,0.5])
-top = wing.project(wing_beam.value+offset, direction=np.array([0., 0., -1.]), plot=False)
-bot = wing.project(wing_beam.value-offset, direction=np.array([0., 0., 1.]), plot=False)
+top = wing.project(wing_beam.value+offset, direction=np.array([0., 0., -1.]), plot=do_plots)
+bot = wing.project(wing_beam.value-offset, direction=np.array([0., 0., 1.]), plot=do_plots)
 height = am.norm((top - bot)*1)
 print('HEIGHT IN FEET', height.evaluate())
 # height = am.subtract(top, bot)
@@ -296,7 +296,7 @@ beams['wing_beam'] = {'E': 69E9,'G': 26E9,'rho': 2700,'cs': 'box','nodes': list(
 bounds['wing_root'] = {'beam': 'wing_beam','node': 5,'fdim': [1,1,1,1,1,1]}
 
 # create the beam model:
-beam = EBBeam(component=wing, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints)
+beam = EBBeam(component=wing, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints, mesh_units='ft')
 #beam.set_module_input('wing_beamt_cap_in', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
 #beam.set_module_input('wing_beamt_web_in', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
 
@@ -317,8 +317,8 @@ cruise_structural_wing_mesh_forces = beam_force_map_model.evaluate(nodal_forces=
                                                                    nodal_forces_mesh=oml_mesh)
 
 beam_displacements_model = ebbeam.EBBeam(component=wing, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints)
-beam_displacements_model.set_module_input('wing_beamt_cap_in', val=0.01, dv_flag=True, lower=0.0001, upper=0.04, scaler=1E3)
-beam_displacements_model.set_module_input('wing_beamt_web_in', val=0.01, dv_flag=True, lower=0.0001, upper=0.04, scaler=1E3)
+beam_displacements_model.set_module_input('wing_beamt_cap_in', val=0.01, dv_flag=True, lower=0.001, upper=0.04, scaler=1E3)
+beam_displacements_model.set_module_input('wing_beamt_web_in', val=0.01, dv_flag=True, lower=0.001, upper=0.04, scaler=1E3)
 
 cruise_structural_wing_mesh_displacements, cruise_structural_wing_mesh_rotations, wing_mass, wing_cg, wing_inertia_tensor = beam_displacements_model.evaluate(
     forces=cruise_structural_wing_mesh_forces)
