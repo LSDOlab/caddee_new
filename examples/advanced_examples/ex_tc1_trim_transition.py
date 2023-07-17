@@ -14,7 +14,8 @@ from modopt.csdl_library import CSDLProblem
 caddee = cd.CADDEE()
 
 # Import representation and the geometry from another file for brevity
-from ex_tc1_geometry_setup import lpc_rep, lpc_param, wing_camber_surface, htail_camber_surface, \
+from examples.advanced_examples.TC2_problem.ex_tc2_geometry_setup import lpc_rep, lpc_param, wing_camber_surface, htail_camber_surface, \
+    wing_vlm_mesh_name, htail_vlm_mesh_name, \
     pp_disk_in_plane_x, pp_disk_in_plane_y, pp_disk_origin, pp_disk, \
     rlo_in_plane_x, rlo_in_plane_y, rlo_origin, rlo_disk, \
     rli_in_plane_x, rli_in_plane_y, rli_origin, rli_disk, \
@@ -33,7 +34,7 @@ caddee.system_parameterization = lpc_param
 caddee.system_model = system_model = cd.SystemModel()
 
 # m3l sizing model
-sizing_model = m3l.Model()
+system_m3l_model = m3l.Model()
 
 # Battery sizing
 battery_component = cd.Component(name='battery')
@@ -44,49 +45,48 @@ simple_battery_sizing.set_module_input('battery_position', val=np.array([3.5, 0,
 simple_battery_sizing.set_module_input('battery_energy_density', val=400)
 
 battery_mass, cg_battery, I_battery = simple_battery_sizing.evaluate()
-sizing_model.register_output(battery_mass)
-sizing_model.register_output(cg_battery)
-sizing_model.register_output(I_battery)
+system_m3l_model.register_output(battery_mass)
+system_m3l_model.register_output(cg_battery)
+system_m3l_model.register_output(I_battery)
 
 
 # M4 regressions
 m4_regression = cd.M4RegressionsM3L()
 
 mass_m4, cg_m4, I_m4 = m4_regression.evaluate(battery_mass=battery_mass)
-sizing_model.register_output(mass_m4)
-sizing_model.register_output(cg_m4)
-sizing_model.register_output(I_m4)
+system_m3l_model.register_output(mass_m4)
+system_m3l_model.register_output(cg_m4)
+system_m3l_model.register_output(I_m4)
 
-total_mass_properties = cd.TotalMassPropertiesM3L()
+total_mass_properties = cd.TotalConstantMassPropertiesM3L()
 total_mass, total_cg, total_inertia = total_mass_properties.evaluate(battery_mass, mass_m4, cg_battery, cg_m4, I_battery, I_m4)
 
-sizing_model.register_output(total_mass)
-sizing_model.register_output(total_cg)
-sizing_model.register_output(total_inertia)
+system_m3l_model.register_output(total_mass)
+system_m3l_model.register_output(total_cg)
+system_m3l_model.register_output(total_inertia)
 
-system_model.add_m3l_model('sizing_model', sizing_model)
 
 # design scenario
 design_scenario = cd.DesignScenario(name='aircraft_trim')
 
 # region transition condition
-transition_model = m3l.Model()
+# system_m3l_model = m3l.Model()
 cruise_condition = cd.CruiseCondition(name="cruise_1")
 cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
 cruise_condition.set_module_input(name='altitude', val=1000)
-cruise_condition.set_module_input(name='speed', val=20, dv_flag=False)
+cruise_condition.set_module_input(name='mach_number', val=0.17, dv_flag=False)
 cruise_condition.set_module_input(name='range', val=40000)
 cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0))
 cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 500]))
 
 ac_states = cruise_condition.evaluate_ac_states()
-transition_model.register_output(ac_states)
+system_m3l_model.register_output(ac_states, design_condition=cruise_condition)
 
 
 vlm_model = VASTFluidSover(
     surface_names=[
-        'wing',
-        'h_tail',
+        wing_vlm_mesh_name,
+        htail_vlm_mesh_name,
     ],
     surface_shapes=[
         (1, ) + wing_camber_surface.evaluate().shape[1:],
@@ -98,9 +98,9 @@ vlm_model = VASTFluidSover(
 )
 
 # aero forces and moments
-vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=ac_states)
-transition_model.register_output(vlm_forces)
-transition_model.register_output(vlm_moments)
+forces, vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=ac_states, design_condition=cruise_condition)
+system_m3l_model.register_output(vlm_forces, design_condition=cruise_condition)
+system_m3l_model.register_output(vlm_moments, design_condition=cruise_condition)
 
 # BEM prop forces and moments
 from lsdo_rotor.core.BEM_caddee.BEM_caddee import BEM, BEMMesh
@@ -113,22 +113,23 @@ pusher_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=4,
     num_radial=25,
+    mesh_units='ft',
 )
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
-bem_model.set_module_input('rpm', val=1350, dv_flag=False, lower=800, upper=2000, scaler=1e-3)
-bem_forces, bem_moments = bem_model.evaluate(ac_states=ac_states)
+bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=2000, scaler=1e-3)
+bem_forces, bem_moments, _, _, _ = bem_model.evaluate(ac_states=ac_states, design_condition=cruise_condition)
 
 # inertial forces and moments
 inertial_loads_model = cd.InertialLoadsM3L()
-inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass, ac_states=ac_states)
-transition_model.register_output(inertial_forces)
-transition_model.register_output(inertial_moments)
+inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass, ac_states=ac_states, design_condition=cruise_condition)
+system_m3l_model.register_output(inertial_forces, design_condition=cruise_condition)
+system_m3l_model.register_output(inertial_moments, design_condition=cruise_condition)
 
 # total forces and moments 
 total_forces_moments_model = cd.TotalForcesMomentsM3L()
-total_forces, total_moments = total_forces_moments_model.evaluate(vlm_forces, vlm_moments, bem_forces, bem_moments, inertial_forces, inertial_moments)
-transition_model.register_output(total_forces)
-transition_model.register_output(total_moments)
+total_forces, total_moments = total_forces_moments_model.evaluate(vlm_forces, vlm_moments, bem_forces, bem_moments, inertial_forces, inertial_moments, design_condition=cruise_condition)
+system_m3l_model.register_output(total_forces, design_condition=cruise_condition)
+system_m3l_model.register_output(total_moments, design_condition=cruise_condition)
 
 # pass total forces/moments + mass properties into EoM model
 eom_m3l_model = cd.EoMM3LEuler6DOF()
@@ -138,19 +139,20 @@ trim_residual = eom_m3l_model.evaluate(
     total_inertia_tensor=total_inertia, 
     total_forces=total_forces, 
     total_moments=total_moments,
-    ac_states=ac_states
+    ac_states=ac_states,
+    design_condition=cruise_condition,
 )
-transition_model.register_output(trim_residual)
+system_m3l_model.register_output(trim_residual, design_condition=cruise_condition)
 
 # Add cruise m3l model to cruise condition
-cruise_condition.add_m3l_model('transition_model', transition_model)
+# cruise_condition.add_m3l_model('transition_model', transition_model)
 
 # Add design condition to design scenario
 design_scenario.add_design_condition(cruise_condition)
 # endregion
 
 # region hover condition
-hover_model = m3l.Model()
+# system_m3l_model = m3l.Model()
 hover_condition = cd.HoverCondition(name='hover_1')
 hover_condition.atmosphere_model = cd.SimpleAtmosphereModel()
 hover_condition.set_module_input('altitude', val=500)
@@ -158,7 +160,7 @@ hover_condition.set_module_input('hover_time', val=90)
 hover_condition.set_module_input('observer_location', val=np.array([0, 0 ,0]))
 
 ac_states = hover_condition.evaluate_ac_states()
-hover_model.register_output(ac_states)
+system_m3l_model.register_output(ac_states)
 
 # BEM instances
 
@@ -172,10 +174,11 @@ rlo_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    mesh_units='ft',
 )
 rlo_bem_model = BEM(disk_prefix='rlo_disk', blade_prefix='rlo', component=rlo_disk, mesh=rlo_bem_mesh)
-rlo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
-rlo_bem_forces, rlo_bem_moments = rlo_bem_model.evaluate(ac_states=ac_states)
+rlo_bem_model.set_module_input('rpm', val=1350, dv_flag=False, lower=800, upper=4000, scaler=1e-3)
+rlo_bem_forces, rlo_bem_moments,_ ,_ ,_ = rlo_bem_model.evaluate(ac_states=ac_states, design_condition=hover_condition)
 
 # rli
 rli_bem_mesh = BEMMesh(
@@ -187,10 +190,11 @@ rli_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    mesh_units='ft',
 )
 rli_bem_model = BEM(disk_prefix='rli_disk', blade_prefix='rlo', component=rli_disk, mesh=rli_bem_mesh)
-rli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
-rli_bem_forces, rli_bem_moments = rli_bem_model.evaluate(ac_states=ac_states)
+rli_bem_model.set_module_input('rpm', val=1350, dv_flag=False, lower=800, upper=4000, scaler=1e-3)
+rli_bem_forces, rli_bem_moments,_ ,_ ,_ = rli_bem_model.evaluate(ac_states=ac_states, design_condition=hover_condition)
 
 # rri
 rri_bem_mesh = BEMMesh(
@@ -202,10 +206,11 @@ rri_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    mesh_units='ft',
 )
 rri_bem_model = BEM(disk_prefix='rri_disk', blade_prefix='rri', component=rri_disk, mesh=rri_bem_mesh)
-rri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
-rri_bem_forces, rri_bem_moments = rri_bem_model.evaluate(ac_states=ac_states)
+rri_bem_model.set_module_input('rpm', val=1350, dv_flag=False, lower=800, upper=4000, scaler=1e-3)
+rri_bem_forces, rri_bem_moments,_ ,_ ,_ = rri_bem_model.evaluate(ac_states=ac_states, design_condition=hover_condition)
 
 # rro
 rro_bem_mesh = BEMMesh(
@@ -217,10 +222,11 @@ rro_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    mesh_units='ft',
 )
 rro_bem_model = BEM(disk_prefix='rro_disk', blade_prefix='rro', component=rro_disk, mesh=rro_bem_mesh)
-rro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
-rro_bem_forces, rro_bem_moments = rro_bem_model.evaluate(ac_states=ac_states)
+rro_bem_model.set_module_input('rpm', val=1350, dv_flag=False, lower=800, upper=4000, scaler=1e-3)
+rro_bem_forces, rro_bem_moments,_ ,_ ,_ = rro_bem_model.evaluate(ac_states=ac_states, design_condition=hover_condition)
 
 # flo
 flo_bem_mesh = BEMMesh(
@@ -232,10 +238,11 @@ flo_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    mesh_units='ft',
 )
 flo_bem_model = BEM(disk_prefix='flo_disk', blade_prefix='flo', component=flo_disk, mesh=flo_bem_mesh)
-flo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
-flo_bem_forces, flo_bem_moments = flo_bem_model.evaluate(ac_states=ac_states)
+flo_bem_model.set_module_input('rpm', val=1350, dv_flag=False, lower=800, upper=4000, scaler=1e-3)
+flo_bem_forces, flo_bem_moments,_ ,_ ,_ = flo_bem_model.evaluate(ac_states=ac_states, design_condition=hover_condition)
 
 # fli
 fli_bem_mesh = BEMMesh(
@@ -247,10 +254,11 @@ fli_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    mesh_units='ft',
 )
 fli_bem_model = BEM(disk_prefix='fli_disk', blade_prefix='fli', component=fli_disk, mesh=fli_bem_mesh)
-fli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
-fli_bem_forces, fli_bem_moments = fli_bem_model.evaluate(ac_states=ac_states)
+fli_bem_model.set_module_input('rpm', val=1350, dv_flag=False, lower=800, upper=4000, scaler=1e-3)
+fli_bem_forces, fli_bem_moments,_ ,_ ,_ = fli_bem_model.evaluate(ac_states=ac_states, design_condition=hover_condition)
 
 # fri
 fri_bem_mesh = BEMMesh(
@@ -262,10 +270,11 @@ fri_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    mesh_units='ft',
 )
 fri_bem_model = BEM(disk_prefix='fri_disk', blade_prefix='fri', component=fri_disk, mesh=fri_bem_mesh)
-fri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
-fri_bem_forces, fri_bem_moments = fri_bem_model.evaluate(ac_states=ac_states)
+fri_bem_model.set_module_input('rpm', val=1350, dv_flag=False, lower=800, upper=4000, scaler=1e-3)
+fri_bem_forces, fri_bem_moments,_ ,_ ,_ = fri_bem_model.evaluate(ac_states=ac_states, design_condition=hover_condition)
 
 # fro
 fro_bem_mesh = BEMMesh(
@@ -277,16 +286,17 @@ fro_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    mesh_units='ft',
 )
 fro_bem_model = BEM(disk_prefix='fro_disk', blade_prefix='fro', component=fro_disk, mesh=fro_bem_mesh)
-fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
-fro_bem_forces, fro_bem_moments = fro_bem_model.evaluate(ac_states=ac_states)
+fro_bem_model.set_module_input('rpm', val=1350, dv_flag=False, lower=800, upper=4000, scaler=1e-3)
+fro_bem_forces, fro_bem_moments,_ ,_ ,_ = fro_bem_model.evaluate(ac_states=ac_states, design_condition=hover_condition)
 
 # inertial forces and moments
 inertial_loads_model = cd.InertialLoadsM3L()
-inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass, ac_states=ac_states)
-hover_model.register_output(inertial_forces)
-hover_model.register_output(inertial_moments)
+inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass, ac_states=ac_states, design_condition=hover_condition)
+system_m3l_model.register_output(inertial_forces, hover_condition)
+system_m3l_model.register_output(inertial_moments, hover_condition)
 
 # total forces and moments 
 total_forces_moments_model = cd.TotalForcesMomentsM3L()
@@ -308,11 +318,11 @@ total_forces, total_moments = total_forces_moments_model.evaluate(
     fro_bem_forces, 
     fro_bem_moments,  
     inertial_forces, 
-    inertial_moments
-
+    inertial_moments,
+    design_condition=hover_condition,
 )
-hover_model.register_output(total_forces)
-hover_model.register_output(total_moments)
+system_m3l_model.register_output(total_forces,hover_condition)
+system_m3l_model.register_output(total_moments, hover_condition)
 
 # pass total forces/moments + mass properties into EoM model
 eom_m3l_model = cd.EoMM3LEuler6DOF()
@@ -322,12 +332,13 @@ trim_residual = eom_m3l_model.evaluate(
     total_inertia_tensor=total_inertia, 
     total_forces=total_forces, 
     total_moments=total_moments,
-    ac_states=ac_states
+    ac_states=ac_states,
+    design_condition=hover_condition,
 )
-hover_model.register_output(trim_residual)
+system_m3l_model.register_output(trim_residual, hover_condition)
 
 # Add cruise m3l model to cruise condition
-hover_condition.add_m3l_model('hover_model', hover_model)
+# hover_condition.add_m3l_model('hover_model', hover_model)
 
 # Add design condition to design scenario
 design_scenario.add_design_condition(hover_condition)
@@ -337,10 +348,19 @@ design_scenario.add_design_condition(hover_condition)
 
 # Add design scenario to system_model
 system_model.add_design_scenario(design_scenario=design_scenario)
+system_model.add_m3l_model('system_m3l_model', system_m3l_model)
 
 # get final caddee csdl model
 caddee_csdl_model = caddee.assemble_csdl()
 
+cruise_htail_actuation = caddee_csdl_model.create_input('cruise_tail_actuation', val=np.deg2rad(-0.5))
+caddee_csdl_model.add_design_variable('cruise_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
+
+cruise_htail_actuation = caddee_csdl_model.create_input('cruise_wing_actuation', val=np.deg2rad(-0.5))
+caddee_csdl_model.add_design_variable('cruise_wing_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
+
+caddee_csdl_model.connect('cruise_tail_actuation', 'system_representation.system_configurations_model.cruise_tail_actuation.cruise_tail_actuation')
+caddee_csdl_model.connect('cruise_wing_actuation', 'system_representation.system_configurations_model.cruise_wing_actuation.cruise_wing_actuation')
 # h_tail_act = caddee_csdl_model.create_input('h_tail_act', val=np.deg2rad(-0.5))
 # caddee_csdl_model.add_design_variable('h_tail_act', 
 #                                 lower=np.deg2rad(-10),
@@ -371,21 +391,21 @@ caddee_csdl_model = caddee.assemble_csdl()
 
 
 
-caddee_csdl_model.add_objective('system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual')
+caddee_csdl_model.add_objective('system_model.system_m3l_model.cruise_1_euler_eom_gen_ref_pt.trim_residual')
 
 # create and run simulator
 sim = Simulator(caddee_csdl_model, analytics=True, display_scripts=True)
 sim.run()
 
-# sim.check_totals(step=1e-10)
+sim.check_totals(step=1e-5)
 
 
-prob = CSDLProblem(problem_name='LPC_trim', simulator=sim)
-optimizer = SLSQP(
-    prob,
-    maxiter=100, 
-    ftol=1e-8,
-)
-optimizer.solve()
-optimizer.print_results()
+# prob = CSDLProblem(problem_name='LPC_trim', simulator=sim)
+# optimizer = SLSQP(
+#     prob,
+#     maxiter=100, 
+#     ftol=1e-8,
+# )
+# optimizer.solve()
+# optimizer.print_results()
 

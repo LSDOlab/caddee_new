@@ -61,6 +61,14 @@ sys_rep.add_component(pp_blade_2)
 sys_rep.add_component(pp_blade_3)
 sys_rep.add_component(pp_blade_4)
 
+
+# Wing FFD
+wing_geometry_primitives = wing.get_geometry_primitives()
+wing_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(wing_geometry_primitives, num_control_points=(11, 2, 2), order=(4,2,2), xyz_to_uvw_indices=(1,0,2))
+wing_ffd_block = cd.SRBGFFDBlock(name='wing_ffd_block', primitive=wing_ffd_bspline_volume, embedded_entities=wing_geometry_primitives)
+wing_ffd_block.add_scale_v(name='wing_linear_taper', order=2, num_dof=3, value=np.array([0., 0., 0.]), cost_factor=1.)
+wing_ffd_block.add_rotation_u(name='wing_twist_distribution', connection_name='wing_incidence', order=1, num_dof=1, value=np.array([np.deg2rad(0)]))
+
 # Tail FFD
 htail_geometry_primitives = htail.get_geometry_primitives()
 htail_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(htail_geometry_primitives, num_control_points=(11, 2, 2), order=(4,2,2), xyz_to_uvw_indices=(1,0,2))
@@ -71,16 +79,31 @@ htail_ffd_block.add_rotation_u(name='htail_twist_distribution', connection_name=
 
 ffd_set = cd.SRBGFFDSet(
     name='ffd_set', 
-    ffd_blocks={htail_ffd_block.name : htail_ffd_block}
+    ffd_blocks={
+        htail_ffd_block.name : htail_ffd_block,
+        wing_ffd_block.name : wing_ffd_block
+}
 )
 
+# ffd_set.setup()
+# affine_section_properties = ffd_set.evaluate_affine_section_properties()
+# rotational_section_properties = ffd_set.evaluate_rotational_section_properties()
+# affine_ffd_control_points_local_frame = ffd_set.evaluate_affine_block_deformations(plot=False)
+# ffd_control_points_local_frame = ffd_set.evaluate_rotational_block_deformations(plot=False)
+# ffd_control_points = ffd_set.evaluate_control_points(plot=False)
+# updated_geometry = ffd_set.evaluate_embedded_entities(plot=False)
+# updated_primitives_names = htail.primitive_names.copy() + wing.primitive_names.copy()
 
+# spatial_rep.update(updated_geometry, updated_primitives_names)
+# spatial_rep.plot()
+
+# exit()
 sys_param.add_geometry_parameterization(ffd_set)
 sys_param.setup()
 
 # wing mesh
-num_wing_vlm = 11
-num_chordwise_vlm = 5
+num_wing_vlm = 25
+num_chordwise_vlm = 2
 point00 = np.array([12.356, 25.250, 7.618 + 0.1]) # * ft2m # Right tip leading edge
 point01 = np.array([13.400, 25.250, 7.617 + 0.1]) # * ft2m # Right tip trailing edge
 point10 = np.array([8.892,    0.000, 8.633 + 0.1]) # * ft2m # Center Leading Edge
@@ -110,7 +133,7 @@ sys_rep.add_output(wing_oml_mesh_name, oml_mesh)
 
 # region tail mesh
 plot_tail_mesh = False
-num_spanwise_vlm = 10
+num_spanwise_vlm = 15
 num_chordwise_vlm = 2
 leading_edge = htail.project(np.linspace(np.array([27., -6.75, 6.]), np.array([27., 6.75, 6.]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), grid_search_n=25, plot=plot_tail_mesh)  # returns MappedArray
 trailing_edge = htail.project(np.linspace(np.array([31.5, -6.75, 6.]), np.array([31.5, 6.75, 6.]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), grid_search_n=25, plot=plot_tail_mesh)   # returns MappedArray
@@ -167,10 +190,14 @@ sys_rep.add_output(name='pp_twist', quantity=pp_tot_v_dist)
 
 # wing beam mesh
 num_wing_beam = 11
+
+leading_edge_points = np.concatenate((np.linspace(point00, point10, int(num_wing_beam/2+1))[0:-1,:], np.linspace(point10, point20, int(num_wing_beam/2+1))), axis=0)
+trailing_edge_points = np.concatenate((np.linspace(point01, point11, int(num_wing_beam/2+1))[0:-1,:], np.linspace(point11, point21, int(num_wing_beam/2+1))), axis=0)
+
 leading_edge = wing.project(leading_edge_points, direction=np.array([-1., 0., 0.]), plot=do_plots)
 trailing_edge = wing.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=do_plots)
 wing_beam = am.linear_combination(leading_edge,trailing_edge,1,start_weights=np.ones((num_wing_beam,))*0.75,stop_weights=np.ones((num_wing_beam,))*0.25)
-width = am.norm((leading_edge - trailing_edge)*0.5*0.304)
+width = am.norm((leading_edge - trailing_edge)*0.5)
 # width = am.subtract(leading_edge, trailing_edge)
 
 if do_plots:
@@ -182,7 +209,7 @@ offset = np.array([0,0,0.5])
 top = wing.project(wing_beam.value+offset, direction=np.array([0., 0., -1.]), plot=do_plots)
 bot = wing.project(wing_beam.value-offset, direction=np.array([0., 0., 1.]), plot=do_plots)
 height = am.norm((top - bot)*1)
-print('HEIGHT IN FEET', height.evaluate())
+# print('HEIGHT IN FEET', height.evaluate())
 # height = am.subtract(top, bot)
 # exit()
 sys_rep.add_output(name='wing_beam_mesh', quantity=wing_beam)
@@ -192,7 +219,7 @@ sys_rep.add_output(name='wing_beam_height', quantity=height)
 # pass the beam meshes to aframe:
 beam_mesh = LinearBeamMesh(
 meshes = dict(
-wing_beam = wing_beam*0.304,
+wing_beam = wing_beam,
 wing_beam_width = width,
 wing_beam_height = height,
 )
@@ -206,13 +233,13 @@ battery_component = cd.Component(name='battery')
 simple_battery_sizing = cd.SimpleBatterySizingM3L(component=battery_component)
 
 simple_battery_sizing.set_module_input('battery_mass', val=800)
-simple_battery_sizing.set_module_input('battery_position', val=np.array([3.5, 0, 0.5]))
+simple_battery_sizing.set_module_input('battery_position', val=np.array([3.8, 0, 0.5]), dv_flag=False, lower=np.array([3.5, -1e-4, 0.5 - 1e-4]), upper=np.array([4, +1e-4, 0.5 + 1e-4]), scaler=1e-1)
 simple_battery_sizing.set_module_input('battery_energy_density', val=400)
 
 battery_mass, cg_battery, I_battery = simple_battery_sizing.evaluate()
 
 # M4 regressions
-m4_regression = cd.M4RegressionsM3L()
+m4_regression = cd.M4RegressionsM3L(exclude_wing=True)
 
 mass_m4, cg_m4, I_m4 = m4_regression.evaluate(battery_mass=battery_mass)
 
@@ -224,9 +251,9 @@ cruise_model = m3l.Model()
 cruise_condition = cd.CruiseCondition(name="cruise_1")
 cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
 cruise_condition.set_module_input(name='altitude', val=1000)
-cruise_condition.set_module_input(name='mach_number', val=0.17, dv_flag=True, lower=0.17, upper=0.19)
+cruise_condition.set_module_input(name='mach_number', val=0.2, dv_flag=False, lower=0.17, upper=0.19)
 cruise_condition.set_module_input(name='range', val=40000)
-cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=0., upper=np.deg2rad(10))
+cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-20), upper=np.deg2rad(20))
 cruise_condition.set_module_input(name='flight_path_angle', val=0)
 cruise_condition.set_module_input(name='roll_angle', val=0)
 cruise_condition.set_module_input(name='yaw_angle', val=0)
@@ -247,7 +274,7 @@ vlm_model = VASTFluidSover(
     ],
     fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
     mesh_unit='ft',
-    cl0=[0.43, 0]
+    cl0=[0.4, 0]
 )
 
 # aero forces and moments
@@ -284,11 +311,14 @@ pusher_bem_mesh = BEMMesh(
     airfoil='NACA_4412',
     num_blades=4,
     num_radial=25,
+    mesh_units='ft',
+    use_airfoil_ml=False,
+
 )
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
-bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=2000, scaler=1e-3)
-bem_forces, bem_moments = bem_model.evaluate(ac_states=ac_states)
+bem_model.set_module_input('rpm', val=2000, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
+bem_forces, bem_moments, _, _, _ = bem_model.evaluate(ac_states=ac_states)
 
 # create the aframe dictionaries:
 joints, bounds, beams = {}, {}, {}
@@ -297,8 +327,8 @@ bounds['wing_root'] = {'beam': 'wing_beam','node': 5,'fdim': [1,1,1,1,1,1]}
 
 # create the beam model:
 beam = EBBeam(component=wing, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints, mesh_units='ft')
-#beam.set_module_input('wing_beamt_cap_in', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
-#beam.set_module_input('wing_beamt_web_in', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
+beam.set_module_input('wing_beamt_cap_in', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
+beam.set_module_input('wing_beamt_web_in', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
 
 cruise_wing_structural_nodal_displacements_mesh = am.vstack((wing_upper_surface_wireframe, wing_lower_surface_wireframe))
 cruise_wing_aero_nodal_displacements_mesh = cruise_wing_structural_nodal_displacements_mesh
@@ -334,7 +364,7 @@ cruise_model.register_output(total_cg)
 cruise_model.register_output(total_inertia)
 
 # inertial forces and moments
-inertial_loads_model = cd.InertialLoadsM3L(load_factor=1.)
+inertial_loads_model = cd.InertialLoadsM3L(load_factor=-1)
 inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass, ac_states=ac_states)
 cruise_model.register_output(inertial_forces)
 cruise_model.register_output(inertial_moments)
@@ -368,12 +398,19 @@ system_model.add_design_scenario(design_scenario=design_scenario)
 
 caddee_csdl_model = caddee.assemble_csdl()
 
-h_tail_act = caddee_csdl_model.create_input('h_tail_act', val=np.deg2rad(-0.5))
+h_tail_act = caddee_csdl_model.create_input('h_tail_act', val=np.deg2rad(0))
 caddee_csdl_model.add_design_variable('h_tail_act', 
-                                lower=np.deg2rad(-10),
-                                upper=np.deg2rad(10),
+                                lower=np.deg2rad(-25),
+                                upper=np.deg2rad(25),
                                 scaler=1,
                             )
+
+wing_incidence = caddee_csdl_model.create_input('wing_incidence', val=np.deg2rad(4))
+# caddee_csdl_model.add_design_variable('wing_incidence', 
+#                                 lower=np.deg2rad(-5),
+#                                 upper=np.deg2rad(6),
+#                                 scaler=1,
+#                             )
 
 caddee_csdl_model.add_constraint('system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.new_stress',upper=500E6/1,scaler=1E-8)
 caddee_csdl_model.add_constraint('system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual', equals=0.)
@@ -384,10 +421,10 @@ caddee_csdl_model.add_objective('system_model.aircraft_trim.cruise_1.cruise_1.to
 # create and run simulator
 sim = Simulator(caddee_csdl_model, analytics=True)
 sim.run()
-print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.vm_stress'])
-print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.wing_beam_forces'])
+# print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.vm_stress'])
+# print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.wing_beam_forces'])
 
-exit()
+# exit()
 
 # sim.compute_total_derivatives()
 # sim.check_totals()

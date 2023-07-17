@@ -1,13 +1,23 @@
 import m3l 
 import csdl
-from caddee.core.csdl_core.system_model_csdl.sizing_group_csdl.sizing_models_csdl.M4_regressions_csdl import M4RegressionsCSDL
+from caddee.core.csdl_core.system_model_csdl.sizing_group_csdl.sizing_models_csdl.M4_regressions_csdl_full import M4RegressionsCSDL
+from caddee.core.csdl_core.system_model_csdl.sizing_group_csdl.sizing_models_csdl.M4_regressions_csdl_minus_wing import M4RegressionsMinusWingCSDL
 
 
 class M4RegressionsM3L(m3l.ExplicitOperation):
-    def initialize(self, kwargs): pass
+    def initialize(self, kwargs): 
+        # self.parameters.declare('fully_empirical', types=bool, default=True)
+        self.parameters.declare('exclude_wing', types=bool, default=False)
+
 
     def compute(self) -> csdl.Model:
-        return M4RegressionsCSDL()
+        exclude_wing = self.parameters['exclude_wing']
+        if exclude_wing is True:
+            csdl_model = M4RegressionsMinusWingCSDL()
+        else:
+            csdl_model = M4RegressionsCSDL()
+        
+        return csdl_model
     
     def evaluate(self,  battery_mass):
         # operation_csdl = self.compute()

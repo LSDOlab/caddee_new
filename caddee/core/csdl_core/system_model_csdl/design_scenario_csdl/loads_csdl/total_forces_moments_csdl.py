@@ -15,31 +15,63 @@ class TotalForcesMomentsM3L(m3l.ExplicitOperation):
             moments_names=self.moments_names, 
         )
     
-    def evaluate(self, *args):
-        self.name = 'total_forces_moments_model'
-        self.forces_names = []
-        self.moments_names = []
-        self.arguments = dict()
-        for arg in args:
-            arg_name = arg.name
-            arg_model_name = arg.operation.name
-            if arg_name == 'F':
-                self.forces_names.append(f"{arg_model_name}.{arg_name}")
-                self.arguments[f"{arg_model_name}.{arg_name}"] = arg
-            elif arg_name == 'M':
-                self.moments_names.append(f"{arg_model_name}.{arg_name}")
-                self.arguments[f"{arg_model_name}.{arg_name}"] = arg
-            elif arg_name == 'F_inertial':
-                self.forces_names.append(f"{arg_model_name}.{arg_name}")
-                self.arguments[f"{arg_model_name}.{arg_name}"] = arg
-            elif arg_name == 'M_inertial':
-                self.moments_names.append(f"{arg_model_name}.{arg_name}")
-                self.arguments[f"{arg_model_name}.{arg_name}"] = arg
-            else:
-                raise Exception(f"Inputs to total forces/moments model must be either 'F', 'M', 'F_inertial', or 'M_inertial'. Received {arg_name}")
+    def evaluate(self, *args, design_condition=None):
+        if design_condition:
+            dc_name =  design_condition.parameters['name']
+            self.name = f"{dc_name}_total_forces_moments_model"
 
-        total_forces = m3l.Variable(name='total_forces', shape=(self.num_nodes, 3), operation=self)
-        total_moments = m3l.Variable(name='total_moments', shape=(self.num_nodes, 3), operation=self)
+            self.forces_names = []
+            self.moments_names = []
+            self.arguments = dict()
+            for arg in args:
+                arg_name = arg.name
+                arg_model_name = arg.operation.name
+                if arg_name == 'F':
+                    self.forces_names.append(f"{arg_model_name}.{arg_name}")
+                    self.arguments[f"{arg_model_name}.{arg_name}"] = arg
+                elif arg_name == 'M':
+                    self.moments_names.append(f"{arg_model_name}.{arg_name}")
+                    self.arguments[f"{arg_model_name}.{arg_name}"] = arg
+                elif arg_name == 'F_inertial':
+                    self.forces_names.append(f"{arg_model_name}.{arg_name}")
+                    self.arguments[f"{arg_model_name}.{arg_name}"] = arg
+                elif arg_name == 'M_inertial':
+                    self.moments_names.append(f"{arg_model_name}.{arg_name}")
+                    self.arguments[f"{arg_model_name}.{arg_name}"] = arg
+                else:
+                    raise Exception(f"Inputs to total forces/moments model must be either '{dc_name}_F', '{dc_name}_M', '{dc_name}_F_inertial', or '{dc_name}_M_inertial'. Received {arg_name}")
+
+        else:
+            self.name = 'total_forces_moments_model'
+          
+            self.forces_names = []
+            self.moments_names = []
+            self.arguments = dict()
+            for arg in args:
+                arg_name = arg.name
+                arg_model_name = arg.operation.name
+                if arg_name == 'F':
+                    self.forces_names.append(f"{arg_model_name}.{arg_name}")
+                    self.arguments[f"{arg_model_name}.{arg_name}"] = arg
+                elif arg_name == 'M':
+                    self.moments_names.append(f"{arg_model_name}.{arg_name}")
+                    self.arguments[f"{arg_model_name}.{arg_name}"] = arg
+                elif arg_name == 'F_inertial':
+                    self.forces_names.append(f"{arg_model_name}.{arg_name}")
+                    self.arguments[f"{arg_model_name}.{arg_name}"] = arg
+                elif arg_name == 'M_inertial':
+                    self.moments_names.append(f"{arg_model_name}.{arg_name}")
+                    self.arguments[f"{arg_model_name}.{arg_name}"] = arg
+                else:
+                    raise Exception(f"Inputs to total forces/moments model must be either 'F', 'M', 'F_inertial', or 'M_inertial'. Received {arg_name}")
+
+        if False: #design_condition:
+            prepend =  design_condition.parameters['name']
+            total_forces = m3l.Variable(name=f'{prepend}total_forces', shape=(self.num_nodes, 3), operation=self)
+            total_moments = m3l.Variable(name=f'{prepend}total_moments', shape=(self.num_nodes, 3), operation=self)
+        else:
+            total_forces = m3l.Variable(name='total_forces', shape=(self.num_nodes, 3), operation=self)
+            total_moments = m3l.Variable(name='total_moments', shape=(self.num_nodes, 3), operation=self)
 
         return total_forces, total_moments
 

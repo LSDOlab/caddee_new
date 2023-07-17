@@ -38,9 +38,15 @@ class DesignScenarioCSDL(BaseModelCSDL):
 
         # Add different design scenarios
         for design_condition_name, design_condition in design_condition_dictionary.items():
-            module_csdl = ModuleCSDL()
-            module_csdl.add_module(design_condition._assemble_csdl(), design_condition_name)
-            self.add_module(module_csdl, design_condition_name, promotes=[])
+            if design_condition.m3l_models:
+                module_csdl = ModuleCSDL()
+                module_csdl.add_module(design_condition._assemble_csdl(), design_condition_name)
+                self.add_module(module_csdl, design_condition_name, promotes=[])
+            else:
+                dummy_input = self.create_input(f'{design_condition_name}_dummy_input', val=1.)
+                dummy_output = self.register_output(f'{design_condition_name}_dummy_output',dummy_input * 1.)
+
+        
 
         
 

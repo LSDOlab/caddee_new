@@ -14,7 +14,7 @@ from modopt.csdl_library import CSDLProblem
 caddee = cd.CADDEE()
 
 # Import representation and the geometry from another file for brevity
-from ex_tc1_geometry_setup import lpc_rep, lpc_param, wing_camber_surface, htail_camber_surface, \
+from examples.advanced_examples.TC2_problem.ex_tc2_geometry_setup import lpc_rep, lpc_param, wing_camber_surface, htail_camber_surface, \
     pp_disk_in_plane_x, pp_disk_in_plane_y, pp_disk_origin, pp_disk, \
     rlo_in_plane_x, rlo_in_plane_y, rlo_origin, rlo_disk, \
     rli_in_plane_x, rli_in_plane_y, rli_origin, rli_disk, \

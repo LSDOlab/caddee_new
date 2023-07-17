@@ -37,13 +37,6 @@ class CADDEE(CADDEEBase):
             caddee_csdl = CADDEECSDL(
                 caddee=self,
             )
-        
-        # Some random csdl computation for testing 
-        test_input = caddee_csdl.create_input('caddee_test_input', val=10)
-        caddee_csdl.register_output('caddee_test_output', test_input*10)
-        
-        # caddee_csdl.connect('u', 
-        #                     'bem_dummy_model.u')
 
         return caddee_csdl
     

@@ -5,7 +5,7 @@ from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
 
 
 class EulerFlatEarth6DoFGenRef(BaseModelCSDL):
-    eom_model_name = 'EulerEoMGenRefPt'
+    eom_model_name = 'euler_eom_gen_ref_pt'
 
     def initialize(self):
         self.parameters.declare(name='name', default=self.eom_model_name)

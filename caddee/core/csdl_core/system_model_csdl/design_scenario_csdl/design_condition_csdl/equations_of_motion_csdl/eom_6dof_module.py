@@ -18,8 +18,11 @@ class EoMM3LEuler6DOF(m3l.ExplicitOperation):
 
         return EulerFlatEarth6DoFGenRef(name, num_nodes)
 
-    def evaluate(self, total_mass, total_cg_vector, total_inertia_tensor, total_forces, total_moments, ac_states) -> m3l.Variable:
-        self.name = self.eom_model_name
+    def evaluate(self, total_mass, total_cg_vector, total_inertia_tensor, total_forces, total_moments, ac_states, design_condition=None) -> m3l.Variable:
+        if design_condition:
+            self.name = f"{design_condition.parameters['name']}_{self.eom_model_name}"
+        else:
+            self.name = self.eom_model_name
         mps_forces = {
             'total_mass' : total_mass,
             'total_cg_vector' : total_cg_vector,
@@ -37,7 +40,12 @@ class EoMM3LEuler6DOF(m3l.ExplicitOperation):
         # print(total_mass_1.name)
         # print(total_mass_2.name)
 
-        trim_residual = m3l.Variable(name='trim_residual', shape=(1, ), operation=self)
+        if False: #design_condition:
+            prepend = design_condition.parameters['name']
+            trim_residual = m3l.Variable(name=f'{prepend}trim_residual', shape=(1, ), operation=self)
+        else:
+            trim_residual = m3l.Variable(name=f'trim_residual', shape=(1, ), operation=self)
+
         return trim_residual
         
     def compute_derivatives(self): pass

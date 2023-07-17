@@ -14,8 +14,11 @@ class InertialLoadsM3L(m3l.ExplicitOperation):
         load_factor = self.parameters['load_factor']
         return InertialLoadsModel(num_nodes=self.num_nodes, load_factor=load_factor)
     
-    def evaluate(self, total_cg_vector, totoal_mass, ac_states):
-        self.name = 'inertial_loads_model'
+    def evaluate(self, total_cg_vector, totoal_mass, ac_states, design_condition=None):
+        if design_condition:
+            self.name = f"{design_condition.parameters['name']}_inertial_loads_model"
+        else:
+            self.name = 'inertial_loads_model'
         self.arguments = {
             'total_cg_vector' : total_cg_vector,
             'total_mass' : totoal_mass
@@ -27,8 +30,14 @@ class InertialLoadsM3L(m3l.ExplicitOperation):
         self.arguments['phi'] = phi
         self.arguments['theta'] = theta
 
-        F_inertial = m3l.Variable(name='F_inertial', shape=(self.num_nodes, 3), operation=self)
-        M_inertial = m3l.Variable(name='M_inertial', shape=(self.num_nodes, 3), operation=self)
+
+        if False: #design_condition:
+            prepend = design_condition.parameters['name']
+            F_inertial = m3l.Variable(name=f'{prepend}F_inertial', shape=(self.num_nodes, 3), operation=self)
+            M_inertial = m3l.Variable(name=f'{prepend}M_inertial', shape=(self.num_nodes, 3), operation=self)
+        else:
+            F_inertial = m3l.Variable(name='F_inertial', shape=(self.num_nodes, 3), operation=self)
+            M_inertial = m3l.Variable(name='M_inertial', shape=(self.num_nodes, 3), operation=self)
 
         return F_inertial, M_inertial
 
