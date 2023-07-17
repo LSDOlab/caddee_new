@@ -63,7 +63,6 @@ class SystemRepresentationAssemblyCSDL(csdl.Model):
                     initial_geometry_component = csdl.sparsematmat(initial_system_representation_geometry, sparse_mat=unchanged_indexing_map)
                     system_representation_geometry = updated_geometry_component + initial_geometry_component
                 self.register_output('system_representation_geometry', system_representation_geometry)
-                self.register_output('system_representation_geometry_copy', system_representation_geometry*1)
             else:
                 continue
 

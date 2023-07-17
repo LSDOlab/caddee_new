@@ -37,12 +37,13 @@ class SystemConfigurationsCSDL(csdl.Model):
                 #          promotes=[configuration_name + '_geometry', 'system_representation_geometry'])
                 if counter < len(configuration.transformations):
                     self.add(submodel=precribed_rotation_model, name=transformation_name,
-                            promotes=[])
+                            promotes=[transformation.name])
                 else:   # last one, promote output
                     self.add(submodel=precribed_rotation_model, name=transformation_name,
-                            promotes=[configuration_name + '_geometry'])
+                            promotes=[configuration_name + '_geometry', transformation.name])
                 if counter == 1 and configuration.num_nodes == 1:
                     self.connect('design_geometry', transformation_name + '.initial_geometry')
+                    # self.connect('system_representation_geometry', transformation_name + '.initial_geometry')
                 elif counter == 1 and configuration.num_nodes != 1:
                     self.connect('expanded_transient_'+configuration_name+'_model.' + configuration_name+'_geometry',
                                   transformation_name + '.initial_geometry')
