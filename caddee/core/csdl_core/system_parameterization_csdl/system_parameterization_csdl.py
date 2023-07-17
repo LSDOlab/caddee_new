@@ -33,11 +33,12 @@ import numpy as np
 import scipy.sparse as sps
 
 from caddee.core.csdl_core.system_parameterization_csdl.system_representation_assembly_csdl import SystemRepresentationAssemblyCSDL
+# from caddee.core.csdl_core.system_parameterization_csdl.geometry_parameterization_solver_csdl import GeometryParameterizationSolverCSDL
 
 
 class SystemParameterizationCSDL(BaseModelCSDL):
     '''
-    Evaluates the parameterization of the system configuration.
+    Evaluates the parameterization of the system representation.
     '''
 
     def initialize(self):
@@ -46,7 +47,12 @@ class SystemParameterizationCSDL(BaseModelCSDL):
     def define(self):
         system_parameterization = self.parameters['system_parameterization']
 
-        # TODO wrap parameterization in optimization so any free dof are manipulated to achieve inputs.
+        # Call setup on all parameterizations
+        for geometry_parameterization_name, geometry_parameterization in system_parameterization.geometry_parameterizations.items():
+            geometry_parameterization.setup()
+
+        # geometry_parameterization_solver = GeometryParameterizationSolverCSDL(system_parameterization=system_parameterization)
+        # self.add(submodel=geometry_parameterization_solver, name='geometry_parameterization_solver_model')
 
         for geometry_parameterization_name in system_parameterization.geometry_parameterizations:
             parameterization_model = system_parameterization.geometry_parameterizations[geometry_parameterization_name].assemble_csdl()
