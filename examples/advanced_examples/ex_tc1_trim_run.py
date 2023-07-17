@@ -108,6 +108,16 @@ cruise_model.register_output(vlm_moments)
 
 # BEM prop forces and moments
 from lsdo_rotor.core.BEM_caddee.BEM_caddee import BEM, BEMMesh
+
+airfoil_polar = {
+    'Cl_0': 0.25,
+    'Cl_alpha': 5.1566,
+    'Cd_0': 0.01,
+    'Cl_stall': [-1, 1.5], 
+    'Cd_stall': [0.02, 0.06],
+    'alpha_Cl_stall': [-10, 15],
+}
+
 pusher_bem_mesh = BEMMesh(
     meshes=dict(
     pp_disk_in_plane_1=pp_disk_in_plane_y,
@@ -117,6 +127,8 @@ pusher_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=4,
     num_radial=25,
+    airfoil_polar=airfoil_polar,
+    # units='ft',
 )
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 bem_model.set_module_input('rpm', val=1350, dv_flag=False, lower=800, upper=2000, scaler=1e-3)
@@ -176,6 +188,8 @@ rlo_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    airfoil_polar=airfoil_polar,
+    # units='ft',
 )
 rlo_bem_model = BEM(disk_prefix='rlo_disk', blade_prefix='rlo', component=rlo_disk, mesh=rlo_bem_mesh)
 rlo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
@@ -191,6 +205,8 @@ rli_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    airfoil_polar=airfoil_polar,
+    # units='ft',
 )
 rli_bem_model = BEM(disk_prefix='rli_disk', blade_prefix='rlo', component=rli_disk, mesh=rli_bem_mesh)
 rli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
@@ -206,6 +222,8 @@ rri_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    airfoil_polar=airfoil_polar,
+    # units='ft',
 )
 rri_bem_model = BEM(disk_prefix='rri_disk', blade_prefix='rri', component=rri_disk, mesh=rri_bem_mesh)
 rri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
@@ -221,6 +239,8 @@ rro_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    airfoil_polar=airfoil_polar,
+    # units='ft',
 )
 rro_bem_model = BEM(disk_prefix='rro_disk', blade_prefix='rro', component=rro_disk, mesh=rro_bem_mesh)
 rro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
@@ -236,6 +256,8 @@ flo_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    airfoil_polar=airfoil_polar,
+    # units='ft',
 )
 flo_bem_model = BEM(disk_prefix='flo_disk', blade_prefix='flo', component=flo_disk, mesh=flo_bem_mesh)
 flo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
@@ -251,6 +273,8 @@ fli_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    airfoil_polar=airfoil_polar,
+    # units='ft',
 )
 fli_bem_model = BEM(disk_prefix='fli_disk', blade_prefix='fli', component=fli_disk, mesh=fli_bem_mesh)
 fli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
@@ -266,6 +290,8 @@ fri_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    airfoil_polar=airfoil_polar,
+    # units='ft',
 )
 fri_bem_model = BEM(disk_prefix='fri_disk', blade_prefix='fri', component=fri_disk, mesh=fri_bem_mesh)
 fri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
@@ -281,6 +307,8 @@ fro_bem_mesh = BEMMesh(
     airfoil='NACA_4412', 
     num_blades=2,
     num_radial=25,
+    airfoil_polar=airfoil_polar,
+    # units='ft',
 )
 fro_bem_model = BEM(disk_prefix='fro_disk', blade_prefix='fro', component=fro_disk, mesh=fro_bem_mesh)
 fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
@@ -381,6 +409,7 @@ caddee_csdl_model.add_objective('system_model.aircraft_trim.hover_1.hover_1.eule
 sim = Simulator(caddee_csdl_model, analytics=True, display_scripts=True)
 sim.run()
 
+exit()
 # sim.check_totals(step=1e-10)
 
 
