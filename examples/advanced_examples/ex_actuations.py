@@ -122,7 +122,7 @@ horizontal_stabilizer_actuation_axis = horizontal_stabilizer_quarter_chord_starb
 from caddee.core.caddee_core.system_representation.prescribed_actuations import PrescribedRotation
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=horizontal_stabilizer, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuation_profile = np.linspace(0., -1., cruise_num_nodes)
-horizontal_stabilizer_actuator_solver.set_rotation(name='cruise_tail_actuation', value=horizontal_stabilizer_actuation_profile, units='radians')
+horizontal_stabilizer_actuator_solver.set_rotation(name='cruise_tail_actuation', value=np.zeros((cruise_num_nodes,)), units='radians')
 # horizontal_stabilizer_actuator_solver.set_rotation(name='cruise_tail_actuation', value=-0.5 , units='radians')
 cruise_configuration.actuate(transformation=horizontal_stabilizer_actuator_solver)
 
@@ -143,12 +143,7 @@ my_model.add(system_parameterization_model, 'system_parameterization')
 my_model.add(system_representation_model, 'system_representation')
 # my_model.add(solver_model, 'solver_model_name')
 
-# initial_guess_linear_taper = np.array([0., 2., 0.])
-# my_model.create_input('linear_taper', val=initial_guess_linear_taper)
-# my_model.add_design_variable('linear_taper')
-# my_model.add_objective('wing_camber_surface')
-# my_model.add_objective('chord_distribution')
-
+my_model.create_input(name='cruise_tail_actuation', val=horizontal_stabilizer_actuation_profile)
 sim = Simulator(my_model, analytics=True, display_scripts=True)
 sim.run()
 # sim.compute_total_derivatives()
