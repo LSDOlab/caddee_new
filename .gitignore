@@ -142,3 +142,7 @@ _conf_master.py
 *.xml
 *.iml
 **/SUMMARY_GRAPH*
+
+# IGNORE THE pickle FILES
+*.pickle
+
