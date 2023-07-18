@@ -11,7 +11,7 @@ from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.loads_csdl.tot
 from caddee.core.csdl_core.system_representation_csdl.mesh_evaluation_csdl import MeshEvaluationCSDL
 from caddee.core.csdl_core.system_model_csdl.mass_properties_csdl.varying_mass_properties_csdl import VaryingMassPropertiesCSDL
 from caddee.core.csdl_core.system_model_csdl.mass_properties_csdl.total_mass_properties_csdl import TotalMassPropertiesCSDL
-from caddee.core.csdl_core.system_model_csdl.mass_properties_csdl.constant_mass_properties_csdl import ConstantMassPropertiesCSDL
+# from caddee.core.csdl_core.system_model_csdl.mass_properties_csdl.constant_mass_properties_csdl import ConstantMassPropertiesCSDL
 
 
 class DesignScenarioCSDL(BaseModelCSDL):

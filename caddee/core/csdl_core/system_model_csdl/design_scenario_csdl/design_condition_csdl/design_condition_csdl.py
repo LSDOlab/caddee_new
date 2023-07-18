@@ -213,7 +213,7 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
             gamma = self.register_module_input(f'{climb_name}_flight_path_angle', shape=(1,), computed_upstream=False)
 
             V = a * M
-            cg = V*csdl.sin(gamma)
+            cg = V*csdl.sin(gamma) + 1e-4
             t = ((fh - ih) / cg)
             self.register_module_output(f'{climb_name}_speed', V)
             self.register_module_output(f'{climb_name}_time', t)

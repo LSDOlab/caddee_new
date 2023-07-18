@@ -2,7 +2,6 @@ from csdl import Model
 from caddee.utils.base_model_csdl import BaseModelCSDL
 from caddee.core.caddee_core.system_model.system_model import SystemModel
 from caddee.core.caddee_core.system_representation.system_representation import SystemRepresentation
-from caddee.core.csdl_core.system_model_csdl.mass_properties_csdl.constant_mass_properties_csdl import ConstantMassPropertiesCSDL
 
 from caddee.core.caddee_core.system_parameterization.system_parameterization import SystemParameterization
 

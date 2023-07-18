@@ -147,8 +147,12 @@ my_model.create_input(name='cruise_tail_actuation', val=horizontal_stabilizer_ac
 sim = Simulator(my_model, analytics=True, display_scripts=True)
 sim.run()
 # sim.compute_total_derivatives()
-# sim.check_totals()
 
+
+sim.check_totals(of='wing_to_tail_distance', wrt='cruise_tail_actuation')
+
+
+exit()
 # affine_section_properties = ffd_set.evaluate_affine_section_properties(prescribed_affine_dof=np.append(initial_guess_linear_taper, np.zeros(4,)))
 affine_section_properties = ffd_set.evaluate_affine_section_properties()
 rotational_section_properties = ffd_set.evaluate_rotational_section_properties()

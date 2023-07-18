@@ -46,7 +46,6 @@ battery_mass, cg_battery, I_battery = simple_battery_sizing.evaluate()
 m4_regression = cd.M4RegressionsM3L(exclude_wing=True)
 mass_m4, cg_m4, I_m4 = m4_regression.evaluate(battery_mass=battery_mass)
 
-
 # beam sizing
 # create the aframe dictionaries:
 joints, bounds, beams = {}, {}, {}
@@ -63,13 +62,11 @@ beam_mass_mesh = MassMesh(
 beam_mass = Mass(component=wing, mesh=beam_mass_mesh, beams=beams, mesh_units='ft')
 mass_model_wing_mass = beam_mass.evaluate()
 
-# total constant mass properties
-constant_mps = cd.TotalConstantMassPropertiesM3L()
-total_constant_mass, total_constant_cg, total_constant_inertia = constant_mps.evaluate(mass_model_wing_mass, battery_mass, mass_m4, cg_battery, cg_m4, I_battery, I_m4)
+# total constant mass 
+constant_mps = cd.TotalConstantMassM3L()
+total_constant_mass = constant_mps.evaluate(mass_model_wing_mass, battery_mass, mass_m4)
 
 system_m3l_model.register_output(total_constant_mass)
-system_m3l_model.register_output(total_constant_cg)
-system_m3l_model.register_output(total_constant_inertia)
 # endregion
 
 
@@ -123,8 +120,8 @@ system_m3l_model.register_output(ac_states)
 
 vlm_model = VASTFluidSover(
     surface_names=[
-        wing_vlm_mesh_name,
-        htail_vlm_mesh_name,
+        f'{wing_vlm_mesh_name}_plus_3g',
+       f'{htail_vlm_mesh_name}_plus_3g',
     ],
     surface_shapes=[
         (1, ) + wing_camber_surface.evaluate().shape[1:],
@@ -136,9 +133,9 @@ vlm_model = VASTFluidSover(
 )
 
 # aero forces and moments
-vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states)
-system_m3l_model.register_output(vlm_force)
-system_m3l_model.register_output(vlm_moment)
+vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states, design_condition=plus_3g_condition)
+system_m3l_model.register_output(vlm_force, plus_3g_condition)
+system_m3l_model.register_output(vlm_moment, plus_3g_condition)
 
 vlm_force_mapping_model = VASTNodalForces(
     surface_names=[
@@ -154,7 +151,7 @@ vlm_force_mapping_model = VASTNodalForces(
         htail_camber_surface]
 )
 
-oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces, nodal_force_meshes=[wing_oml_mesh, wing_oml_mesh])
+oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces, nodal_force_meshes=[wing_oml_mesh, wing_oml_mesh], design_condition=plus_3g_condition)
 wing_forces = oml_forces[0]
 htail_forces = oml_forces[1]
 
@@ -176,7 +173,7 @@ pusher_bem_mesh = BEMMesh(
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 bem_model.set_module_input('rpm', val=2000, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
-bem_forces, bem_moments, _, _, _ = bem_model.evaluate(ac_states=ac_states)
+bem_forces, bem_moments, _, _, _ = bem_model.evaluate(ac_states=ac_states, design_condition=plus_3g_condition)
 
 # create the aframe dictionaries:
 joints, bounds, beams = {}, {}, {}
@@ -208,37 +205,39 @@ cruise_wing_displacement = m3l.Function(name='cruise_wing_displacement', space=d
 
 beam_force_map_model = ebbeam.EBBeamForces(component=wing, beam_mesh=beam_mesh, beams=beams)
 cruise_structural_wing_mesh_forces = beam_force_map_model.evaluate(nodal_forces=wing_forces,
-                                                                   nodal_forces_mesh=wing_oml_mesh)
+                                                                   nodal_forces_mesh=wing_oml_mesh,
+                                                                   design_condition=plus_3g_condition)
 
 beam_displacements_model = ebbeam.EBBeam(component=wing, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints)
 beam_displacements_model.set_module_input('wing_beamt_cap_in', val=0.01, dv_flag=True, lower=0.001, upper=0.04, scaler=1E3)
 beam_displacements_model.set_module_input('wing_beamt_web_in', val=0.01, dv_flag=True, lower=0.001, upper=0.04, scaler=1E3)
 
 cruise_structural_wing_mesh_displacements, cruise_structural_wing_mesh_rotations, wing_mass, wing_cg, wing_inertia_tensor = beam_displacements_model.evaluate(
-    forces=cruise_structural_wing_mesh_forces)
+    forces=cruise_structural_wing_mesh_forces,
+    design_condition=plus_3g_condition)
 
-system_m3l_model.register_output(cruise_structural_wing_mesh_displacements)
+system_m3l_model.register_output(cruise_structural_wing_mesh_displacements, plus_3g_condition)
 
 # Total mass properties
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(total_constant_mass, total_constant_cg, total_constant_inertia, wing_cg, wing_inertia_tensor)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=plus_3g_condition)
 # total_mass, total_cg, total_inertia = total_mass_properties.evaluate(battery_mass, mass_m4, cg_battery, cg_m4, I_battery, I_m4)
 
-# system_m3l_model.register_output(total_mass)
-# system_m3l_model.register_output(total_cg)
-# system_m3l_model.register_output(total_inertia)
+system_m3l_model.register_output(total_mass, plus_3g_condition)
+system_m3l_model.register_output(total_cg, plus_3g_condition)
+system_m3l_model.register_output(total_inertia, plus_3g_condition)
 
 # inertial forces and moments
 inertial_loads_model = cd.InertialLoadsM3L(load_factor=3)
-inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass, ac_states=ac_states)
-# system_m3l_model.register_output(inertial_forces)
-# system_m3l_model.register_output(inertial_moments)
+inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass, ac_states=ac_states, design_condition=plus_3g_condition)
+system_m3l_model.register_output(inertial_forces, plus_3g_condition)
+system_m3l_model.register_output(inertial_moments, plus_3g_condition)
 
 # total forces and moments 
 total_forces_moments_model = cd.TotalForcesMomentsM3L()
-total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment, bem_forces, bem_moments, inertial_forces, inertial_moments)
-# system_m3l_model.register_output(total_forces)
-# system_m3l_model.register_output(total_moments)
+total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment, bem_forces, bem_moments, inertial_forces, inertial_moments, design_condition=plus_3g_condition)
+system_m3l_model.register_output(total_forces, plus_3g_condition)
+system_m3l_model.register_output(total_moments, plus_3g_condition)
 
 # pass total forces/moments + mass properties into EoM model
 eom_m3l_model = cd.EoMM3LEuler6DOF()
@@ -248,10 +247,11 @@ trim_residual = eom_m3l_model.evaluate(
     total_inertia_tensor=total_inertia, 
     total_forces=total_forces, 
     total_moments=total_moments,
-    ac_states=ac_states
+    ac_states=ac_states,
+    design_condition=plus_3g_condition,
 )
 
-system_m3l_model.register_output(trim_residual)
+system_m3l_model.register_output(trim_residual, plus_3g_condition)
 
 # Add cruise m3l model to cruise condition
 # plus_3g_condition.add_m3l_model('plus_3g_sizing_model', plus_3g_model)
@@ -276,8 +276,8 @@ system_m3l_model.register_output(ac_states)
 
 vlm_model = VASTFluidSover(
     surface_names=[
-        wing_vlm_mesh_name,
-        htail_vlm_mesh_name,
+        f'{wing_vlm_mesh_name}_minus_1g',
+        f'{htail_vlm_mesh_name}_minus_1g',
     ],
     surface_shapes=[
         (1, ) + wing_camber_surface.evaluate().shape[1:],
@@ -289,14 +289,14 @@ vlm_model = VASTFluidSover(
 )
 
 # aero forces and moments
-vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states)
-system_m3l_model.register_output(vlm_force)
-system_m3l_model.register_output(vlm_moment)
+vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states, design_condition=minus_1g_condition)
+system_m3l_model.register_output(vlm_force, minus_1g_condition)
+system_m3l_model.register_output(vlm_moment, minus_1g_condition)
 
 vlm_force_mapping_model = VASTNodalForces(
     surface_names=[
-        wing_vlm_mesh_name,
-        htail_vlm_mesh_name,
+        f'{wing_vlm_mesh_name}',
+        f'{htail_vlm_mesh_name}',
     ],
     surface_shapes=[
         (1, ) + wing_camber_surface.evaluate().shape[1:],
@@ -307,7 +307,7 @@ vlm_force_mapping_model = VASTNodalForces(
         htail_camber_surface]
 )
 
-oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces, nodal_force_meshes=[wing_oml_mesh, wing_oml_mesh])
+oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces, nodal_force_meshes=[wing_oml_mesh, wing_oml_mesh], design_condition=minus_1g_condition)
 wing_forces = oml_forces[0]
 htail_forces = oml_forces[1]
 
@@ -329,7 +329,7 @@ pusher_bem_mesh = BEMMesh(
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 bem_model.set_module_input('rpm', val=2000, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
-bem_forces, bem_moments, _, _, _ = bem_model.evaluate(ac_states=ac_states)
+bem_forces, bem_moments, _, _, _ = bem_model.evaluate(ac_states=ac_states, design_condition=minus_1g_condition)
 
 # create the aframe dictionaries:
 joints, bounds, beams = {}, {}, {}
@@ -355,37 +355,39 @@ cruise_wing_displacement = m3l.Function(name='cruise_wing_displacement', space=d
 
 beam_force_map_model = ebbeam.EBBeamForces(component=wing, beam_mesh=beam_mesh, beams=beams)
 cruise_structural_wing_mesh_forces = beam_force_map_model.evaluate(nodal_forces=wing_forces,
-                                                                   nodal_forces_mesh=wing_oml_mesh)
+                                                                   nodal_forces_mesh=wing_oml_mesh,
+                                                                   design_condition=minus_1g_condition)
 
 beam_displacements_model = ebbeam.EBBeam(component=wing, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints)
 beam_displacements_model.set_module_input('wing_beamt_cap_in', val=0.01, dv_flag=True, lower=0.001, upper=0.04, scaler=1E3)
 beam_displacements_model.set_module_input('wing_beamt_web_in', val=0.01, dv_flag=True, lower=0.001, upper=0.04, scaler=1E3)
 
 cruise_structural_wing_mesh_displacements, cruise_structural_wing_mesh_rotations, wing_mass, wing_cg, wing_inertia_tensor = beam_displacements_model.evaluate(
-    forces=cruise_structural_wing_mesh_forces)
+    forces=cruise_structural_wing_mesh_forces,
+    design_condition=plus_3g_condition)
 
-system_m3l_model.register_output(cruise_structural_wing_mesh_displacements)
+system_m3l_model.register_output(cruise_structural_wing_mesh_displacements, minus_1g_condition)
 
 # Total mass properties
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(total_constant_mass, total_constant_cg, total_constant_inertia, wing_cg, wing_inertia_tensor)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=minus_1g_condition)
 # total_mass, total_cg, total_inertia = total_mass_properties.evaluate(battery_mass, mass_m4, cg_battery, cg_m4, I_battery, I_m4)
-# system_m3l_model.register_output(total_mass)
-# system_m3l_model.register_output(total_cg)
-# system_m3l_model.register_output(total_inertia)
+system_m3l_model.register_output(total_mass, minus_1g_condition)
+system_m3l_model.register_output(total_cg, minus_1g_condition)
+system_m3l_model.register_output(total_inertia, minus_1g_condition)
 
 
 # inertial forces and moments
 inertial_loads_model = cd.InertialLoadsM3L(load_factor=-1)
-inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass, ac_states=ac_states)
-# minus_1g_model.register_output(inertial_forces)
-# minus_1g_model.register_output(inertial_moments)
+inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass, ac_states=ac_states, design_condition=minus_1g_condition)
+system_m3l_model.register_output(inertial_forces, minus_1g_condition)
+system_m3l_model.register_output(inertial_moments, minus_1g_condition)
 
 # total forces and moments 
 total_forces_moments_model = cd.TotalForcesMomentsM3L()
-total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment, bem_forces, bem_moments, inertial_forces, inertial_moments)
-# minus_1g_model.register_output(total_forces)
-# minus_1g_model.register_output(total_moments)
+total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment, bem_forces, bem_moments, inertial_forces, inertial_moments, design_condition=minus_1g_condition)
+system_m3l_model.register_output(total_forces, minus_1g_condition)
+system_m3l_model.register_output(total_moments, minus_1g_condition)
 
 # pass total forces/moments + mass properties into EoM model
 eom_m3l_model = cd.EoMM3LEuler6DOF()
@@ -395,10 +397,11 @@ trim_residual = eom_m3l_model.evaluate(
     total_inertia_tensor=total_inertia, 
     total_forces=total_forces, 
     total_moments=total_moments,
-    ac_states=ac_states
+    ac_states=ac_states,
+    design_condition=minus_1g_condition,
 )
 
-system_m3l_model.register_output(trim_residual)
+system_m3l_model.register_output(trim_residual, minus_1g_condition)
 
 # Add cruise m3l model to cruise condition
 # minus_1g_condition.add_m3l_model('minus_1g_sizing_model', minus_1g_model)
@@ -408,9 +411,26 @@ design_scenario.add_design_condition(minus_1g_condition)
 # endregion
 
 system_model.add_design_scenario(design_scenario=design_scenario)
+system_model.add_m3l_model('system_m3l_model', system_m3l_model)
 # endregion
 
 caddee_csdl_model = caddee.assemble_csdl()
+
+h_tail_act_plus_3g = caddee_csdl_model.create_input('plus_3g_tail_actuation', val=np.deg2rad(-10))
+caddee_csdl_model.add_design_variable('plus_3g_tail_actuation', 
+                                lower=np.deg2rad(-25),
+                                upper=np.deg2rad(25),
+                                scaler=1,
+                            )
+wing_act_plus_3g = caddee_csdl_model.create_input('plus_3g_wing_actuation', val=np.deg2rad(4))
+
+h_tail_act_minus_1g = caddee_csdl_model.create_input('minus_1g_tail_actuation', val=np.deg2rad(10))
+caddee_csdl_model.add_design_variable('minus_1g_tail_actuation', 
+                                lower=np.deg2rad(-25),
+                                upper=np.deg2rad(25),
+                                scaler=1,
+                            )
+wing_act_minis_1g = caddee_csdl_model.create_input('minus_1g_wing_actuation', val=np.deg2rad(4))
 
 # h_tail_act = caddee_csdl_model.create_input('h_tail_act', val=np.deg2rad(0))
 # caddee_csdl_model.add_design_variable('h_tail_act', 
@@ -427,9 +447,9 @@ caddee_csdl_model = caddee.assemble_csdl()
 # #                             )
 
 # caddee_csdl_model.add_constraint('system_model.aircraft_trim.plus_3g_sizing.plus_3g_sizing.wing_eb_beam_model.Aframe.new_stress',upper=276E6/1.5,scaler=1E-8)
-# caddee_csdl_model.add_constraint('system_model.aircraft_trim.plus_3g_sizing.plus_3g_sizing.euler_eom_gen_ref_pt.trim_residual', equals=0.)
-# caddee_csdl_model.add_constraint('system_model.aircraft_trim.minus_1g_sizing.minus_1g_sizing.euler_eom_gen_ref_pt.trim_residual', equals=0.)
-# caddee_csdl_model.add_objective('system_model.aircraft_trim.plus_3g_sizing.plus_3g_sizing.total_constant_mass_properties.total_mass', scaler=1e-3)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_euler_eom_gen_ref_pt.trim_residual', equals=0.)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.minus_1g_sizing_euler_eom_gen_ref_pt.trim_residual', equals=0.)
+caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_mass_properties.total_constant_mass', scaler=1e-3)
 
 # caddee_csdl_model.add_objective('system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual')
 
@@ -439,10 +459,12 @@ sim.run()
 # print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.vm_stress'])
 # print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.wing_beam_forces'])
 
+sim.check_totals()
+
+
 exit()
 
 # sim.compute_total_derivatives()
-# sim.check_totals()
 
 
 prob = CSDLProblem(problem_name='lpc', simulator=sim)

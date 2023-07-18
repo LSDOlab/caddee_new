@@ -496,7 +496,7 @@ y11 = rlo_disk.project(np.array([19.2, -13.75, 9.01]), direction=np.array([0., 0
 y12 = rlo_disk.project(np.array([19.2, -23.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
 y21 = rlo_disk.project(np.array([14.2, -18.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
 y22 = rlo_disk.project(np.array([24.2, -18.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
-rlo_in_plane_y = am.subtract(y11, y12)
+rlo_in_plane_y = am.subtract(y12, y11)
 rlo_in_plane_x = am.subtract(y21, y22)
 rlo_origin = rlo_disk.project(np.array([19.2, -18.75, 9.01]), direction=np.array([0., 0., -1.]))
 
@@ -551,7 +551,7 @@ y11 = rro_disk.project(np.array([19.2, 23.75, 9.01]), direction=np.array([0., 0.
 y12 = rro_disk.project(np.array([19.2, 13.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
 y21 = rro_disk.project(np.array([14.2, 18.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
 y22 = rro_disk.project(np.array([24.2, 18.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
-rro_in_plane_y = am.subtract(y11, y12)
+rro_in_plane_y = am.subtract(y12, y11)
 rro_in_plane_x = am.subtract(y21, y22)
 rro_origin = rro_disk.project(np.array([19.2, 18.75, 9.01]), direction=np.array([0., 0., -1.]))
 
@@ -605,7 +605,7 @@ y11 = flo_disk.project(np.array([5.070, -13.750, 6.730]), direction=np.array([0.
 y12 = flo_disk.project(np.array([5.070, -23.750, 6.730]), direction=np.array([0., 0., -1.]), plot=False)
 y21 = flo_disk.project(np.array([0.070, -18.750, 6.730]), direction=np.array([0., 0., -1.]), plot=False)
 y22 = flo_disk.project(np.array([10.070, -18.750, 6.730]), direction=np.array([0., 0., -1.]), plot=False)
-flo_in_plane_y = am.subtract(y11, y12)
+flo_in_plane_y = am.subtract(y12, y11)
 flo_in_plane_x = am.subtract(y21, y22)
 flo_origin = flo_disk.project(np.array([5.07, -18.75, 6.73]), direction=np.array([0., 0., -1.]))
 
@@ -659,7 +659,7 @@ y11 = fro_disk.project(np.array([5.07, 23.75, 6.73]), direction=np.array([0., 0.
 y12 = fro_disk.project(np.array([5.07, 13.75, 6.73]), direction=np.array([0., 0., -1.]), plot=False)
 y21 = fro_disk.project(np.array([0.07, 18.75, 6.73]), direction=np.array([0., 0., -1.]), plot=False)
 y22 = fro_disk.project(np.array([10.07, 18.75, 6.73]), direction=np.array([0., 0., -1.]), plot=False)
-fro_in_plane_y = am.subtract(y11, y12)
+fro_in_plane_y = am.subtract(y12, y11)
 fro_in_plane_x = am.subtract(y21, y22)
 fro_origin = fro_disk.project(np.array([5.07, 18.75, 6.73]), direction=np.array([0., 0., -1.]))
 
@@ -713,7 +713,7 @@ y11 = rli_disk.project(np.array([18.760, -3.499, 9.996]), direction=np.array([0.
 y12 = rli_disk.project(np.array([18.760, -13.401, 8.604]), direction=np.array([0., 0., -1.]), plot=False)
 y21 = rli_disk.project(np.array([13.760, -8.450, 9.300]), direction=np.array([0., 0., -1.]), plot=False)
 y22 = rli_disk.project(np.array([23.760, -8.450, 9.300]), direction=np.array([0., 0., -1.]), plot=False)
-rli_in_plane_y = am.subtract(y11, y12)
+rli_in_plane_y = am.subtract(y12, y11)
 rli_in_plane_x = am.subtract(y21, y22)
 rli_origin = rli_disk.project(np.array([18.760, -8.537, 9.919]), direction=np.array([0., 0., -1.]))
 
@@ -766,7 +766,7 @@ y11 = rri_disk.project(np.array([18.760, 13.401, 8.604]), direction=np.array([0.
 y12 = rri_disk.project(np.array([18.760, 3.499, 9.996]), direction=np.array([0., 0., -1.]), plot=False)
 y21 = rri_disk.project(np.array([13.760, 8.450, 9.300]), direction=np.array([0., 0., -1.]), plot=False)
 y22 = rri_disk.project(np.array([23.760, 8.450, 9.300]), direction=np.array([0., 0., -1.]), plot=False)
-rri_in_plane_y = am.subtract(y11, y12)
+rri_in_plane_y = am.subtract(y12, y11)
 rri_in_plane_x = am.subtract(y21, y22)
 rri_origin = rri_disk.project(np.array([18.760, 8.537, 9.919]), direction=np.array([0., 0., -1.]))
 
@@ -821,7 +821,7 @@ y11 = fli_disk.project(np.array([4.630, -3.179, 7.736]), direction=np.array([0.,
 y12 = fli_disk.project(np.array([4.630, -13.081, 6.344]), direction=np.array([0., 0., -1.]), plot=False)
 y21 = fli_disk.project(np.array([-0.370, -8.130, 7.040]), direction=np.array([0., 0., -1.]), plot=False)
 y22 = fli_disk.project(np.array([9.630, -8.130, 7.040]), direction=np.array([0., 0., -1.]), plot=False)
-fli_in_plane_y = am.subtract(y11, y12)
+fli_in_plane_y = am.subtract(y12, y11)
 fli_in_plane_x = am.subtract(y21, y22)
 fli_origin = fli_disk.project(np.array([4.630, -8.217, 7.659]), direction=np.array([0., 0., -1.]), plot=False)
 
@@ -875,7 +875,7 @@ y11 = fri_disk.project(np.array([4.630, 13.081, 6.344]), direction=np.array([0.,
 y12 = fri_disk.project(np.array([4.630, 3.179, 7.736]), direction=np.array([0., 0., -1.]), plot=False)
 y21 = fri_disk.project(np.array([-0.370, 8.130, 7.040]), direction=np.array([0., 0., -1.]), plot=False)
 y22 = fri_disk.project(np.array([9.630, 8.130, 7.040]), direction=np.array([0., 0., -1.]), plot=False)
-fri_in_plane_y = am.subtract(y11, y12)
+fri_in_plane_y = am.subtract(y12, y11)
 fri_in_plane_x = am.subtract(y21, y22)
 fri_origin = fri_disk.project(np.array([4.630, 8.217, 7.659]), direction=np.array([0., 0., -1.]), plot=False)
 
@@ -965,11 +965,14 @@ wing_quarter_chord_starboard = wing.project(np.array([28.5, 10., 8.]))
 wing_actuation_axis = wing_quarter_chord_starboard - wing_quarter_chord_port
 # endregion
 
+wing_vlm_mesh_name = f"{wing.parameters['name']}_vlm_mesh"
+htail_vlm_mesh_name =  f"{htail.parameters['name']}_vlm_mesh"
+
 # region Cruise
 cruise_configuration = system_configurations['cruise_configuration']
 cruise_configuration.set_num_nodes(num_nodes=1)
-cruise_configuration.add_output('htail_camber_surface_cruise', htail_camber_surface)
-cruise_configuration.add_output('wing_camber_surface_cruise', wing_camber_surface)
+cruise_configuration.add_output(f"{htail_vlm_mesh_name}_cruise", htail_camber_surface)
+cruise_configuration.add_output(f"{wing_vlm_mesh_name}_cruise", wing_camber_surface)
 
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='cruise_tail_actuation', value=0, units='radians')
@@ -983,8 +986,8 @@ cruise_configuration.actuate(transformation=wing_actuator_solver)
 # region Climb 
 climb_configuration = system_configurations['climb_configuration']
 climb_configuration.set_num_nodes(num_nodes=1)
-climb_configuration.add_output('htail_camber_surface_climb', htail_camber_surface)
-climb_configuration.add_output('wing_camber_surface_climb', wing_camber_surface)
+climb_configuration.add_output(f"{htail_vlm_mesh_name}_climb", htail_camber_surface)
+climb_configuration.add_output(f'{wing_vlm_mesh_name}_climb', wing_camber_surface)
 
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='climb_tail_actuation', value=0, units='radians')
@@ -998,8 +1001,8 @@ climb_configuration.actuate(transformation=wing_actuator_solver)
 # region +3g 
 plus_3g_configuration = system_configurations['plus_3g_configuration']
 plus_3g_configuration.set_num_nodes(num_nodes=1)
-plus_3g_configuration.add_output('htail_camber_surface_plus_3g', htail_camber_surface)
-plus_3g_configuration.add_output('wing_camber_surface_plus_3g', wing_camber_surface)
+plus_3g_configuration.add_output(f'{htail_vlm_mesh_name}_plus_3g', htail_camber_surface)
+plus_3g_configuration.add_output(f'{wing_vlm_mesh_name}_plus_3g', wing_camber_surface)
 
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='plus_3g_tail_actuation', value=0, units='radians')
@@ -1013,8 +1016,8 @@ plus_3g_configuration.actuate(transformation=wing_actuator_solver)
 # region -1g 
 minus_1g_configuration = system_configurations['minus_1g_configuration']
 minus_1g_configuration.set_num_nodes(num_nodes=1)
-minus_1g_configuration.add_output('htail_camber_surface_minus_1g', htail_camber_surface)
-minus_1g_configuration.add_output('wing_camber_surface_minus_1g', wing_camber_surface)
+minus_1g_configuration.add_output(f'{htail_vlm_mesh_name}_minus_1g', htail_camber_surface)
+minus_1g_configuration.add_output(f'{wing_vlm_mesh_name}_minus_1g', wing_camber_surface)
 
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='minus_1g_tail_actuation', value=0, units='radians')
@@ -1028,8 +1031,8 @@ minus_1g_configuration.actuate(transformation=wing_actuator_solver)
 # region quasi_steady_transition_1
 qst_1_configuration = system_configurations['quasi_steady_transition_1']
 qst_1_configuration.set_num_nodes(num_nodes=1)
-qst_1_configuration.add_output('htail_camber_surface_qst_1', htail_camber_surface)
-qst_1_configuration.add_output('wing_camber_surface_qst_1', wing_camber_surface)
+qst_1_configuration.add_output(f'{htail_vlm_mesh_name}_qst_1', htail_camber_surface)
+qst_1_configuration.add_output(f'{wing_vlm_mesh_name}_qst_1', wing_camber_surface)
 
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='qst_1_tail_actuation', value=0, units='radians')
@@ -1043,8 +1046,8 @@ qst_1_configuration.actuate(transformation=wing_actuator_solver)
 # region quasi_steady_transition_2
 qst_2_configuration = system_configurations['quasi_steady_transition_2']
 qst_2_configuration.set_num_nodes(num_nodes=1)
-qst_2_configuration.add_output('htail_camber_surface_qst_2', htail_camber_surface)
-qst_2_configuration.add_output('wing_camber_surface_qst_2', wing_camber_surface)
+qst_2_configuration.add_output(f'{htail_vlm_mesh_name}_qst_2', htail_camber_surface)
+qst_2_configuration.add_output(f'{wing_vlm_mesh_name}_qst_2', wing_camber_surface)
 
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='qst_2_tail_actuation', value=0, units='radians')
@@ -1058,8 +1061,8 @@ qst_2_configuration.actuate(transformation=wing_actuator_solver)
 # region quasi_steady_transition_3
 qst_3_configuration = system_configurations['quasi_steady_transition_3']
 qst_3_configuration.set_num_nodes(num_nodes=1)
-qst_3_configuration.add_output('htail_camber_surface_qst_3', htail_camber_surface)
-qst_3_configuration.add_output('wing_camber_surface_qst_3', wing_camber_surface)
+qst_3_configuration.add_output(f'{htail_vlm_mesh_name}_qst_3', htail_camber_surface)
+qst_3_configuration.add_output(f'{wing_vlm_mesh_name}_qst_3', wing_camber_surface)
 
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='qst_3_tail_actuation', value=0, units='radians')
@@ -1073,8 +1076,8 @@ qst_3_configuration.actuate(transformation=wing_actuator_solver)
 # region quasi_steady_transition_4
 qst_4_configuration = system_configurations['quasi_steady_transition_4']
 qst_4_configuration.set_num_nodes(num_nodes=1)
-qst_4_configuration.add_output('htail_camber_surface_qst_4', htail_camber_surface)
-qst_4_configuration.add_output('wing_camber_surface_qst_4', wing_camber_surface)
+qst_4_configuration.add_output(f'{htail_vlm_mesh_name}_qst_4', htail_camber_surface)
+qst_4_configuration.add_output(f'{wing_vlm_mesh_name}_qst_4', wing_camber_surface)
 
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='qst_4_tail_actuation', value=0, units='radians')
@@ -1088,8 +1091,8 @@ qst_4_configuration.actuate(transformation=wing_actuator_solver)
 # region quasi_steady_transition_5
 qst_5_configuration = system_configurations['quasi_steady_transition_5']
 qst_5_configuration.set_num_nodes(num_nodes=1)
-qst_5_configuration.add_output('htail_camber_surface_qst_5', htail_camber_surface)
-qst_5_configuration.add_output('wing_camber_surface_qst_5', wing_camber_surface)
+qst_5_configuration.add_output(f'{htail_vlm_mesh_name}_qst_5', htail_camber_surface)
+qst_5_configuration.add_output(f'{wing_vlm_mesh_name}_qst_5', wing_camber_surface)
 
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='qst_5_tail_actuation', value=0, units='radians')
@@ -1103,8 +1106,8 @@ qst_5_configuration.actuate(transformation=wing_actuator_solver)
 # region quasi_steady_transition_6
 qst_6_configuration = system_configurations['quasi_steady_transition_6']
 qst_6_configuration.set_num_nodes(num_nodes=1)
-qst_6_configuration.add_output('htail_camber_surface_qst_6', htail_camber_surface)
-qst_6_configuration.add_output('wing_camber_surface_qst_6', wing_camber_surface)
+qst_6_configuration.add_output(f'{htail_vlm_mesh_name}_qst_6', htail_camber_surface)
+qst_6_configuration.add_output(f'{wing_vlm_mesh_name}_qst_6', wing_camber_surface)
 
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='qst_6_tail_actuation', value=0, units='radians')
@@ -1118,8 +1121,8 @@ qst_6_configuration.actuate(transformation=wing_actuator_solver)
 # region quasi_steady_transition_7
 qst_7_configuration = system_configurations['quasi_steady_transition_7']
 qst_7_configuration.set_num_nodes(num_nodes=1)
-qst_7_configuration.add_output('htail_camber_surface_qst_7', htail_camber_surface)
-qst_7_configuration.add_output('wing_camber_surface_qst_7', wing_camber_surface)
+qst_7_configuration.add_output(f'{htail_vlm_mesh_name}_qst_7', htail_camber_surface)
+qst_7_configuration.add_output(f'{wing_vlm_mesh_name}_qst_7', wing_camber_surface)
 
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='qst_7_tail_actuation', value=0, units='radians')
@@ -1133,8 +1136,8 @@ qst_7_configuration.actuate(transformation=wing_actuator_solver)
 # region quasi_steady_transition_8
 qst_8_configuration = system_configurations['quasi_steady_transition_8']
 qst_8_configuration.set_num_nodes(num_nodes=1)
-qst_8_configuration.add_output('htail_camber_surface_qst_8', htail_camber_surface)
-qst_8_configuration.add_output('wing_camber_surface_qst_8', wing_camber_surface)
+qst_8_configuration.add_output(f'{htail_vlm_mesh_name}_qst_8', htail_camber_surface)
+qst_8_configuration.add_output(f'{wing_vlm_mesh_name}_qst_8', wing_camber_surface)
 
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='qst_8_tail_actuation', value=0, units='radians')
@@ -1148,8 +1151,8 @@ qst_8_configuration.actuate(transformation=wing_actuator_solver)
 # region quasi_steady_transition_9
 qst_9_configuration = system_configurations['quasi_steady_transition_9']
 qst_9_configuration.set_num_nodes(num_nodes=1)
-qst_9_configuration.add_output('htail_camber_surface_qst_9', htail_camber_surface)
-qst_9_configuration.add_output('wing_camber_surface_qst_9', wing_camber_surface)
+qst_9_configuration.add_output(f'{htail_vlm_mesh_name}_qst_9', htail_camber_surface)
+qst_9_configuration.add_output(f'{wing_vlm_mesh_name}_qst_9', wing_camber_surface)
 
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='qst_9_tail_actuation', value=0, units='radians')
@@ -1160,11 +1163,11 @@ wing_actuator_solver.set_rotation(name='qst_9_wing_actuation', value=np.deg2rad(
 qst_9_configuration.actuate(transformation=wing_actuator_solver)
 # endregion
 
-# region quasi_steady_transition_9
+# region quasi_steady_transition_10
 qst_10_configuration = system_configurations['quasi_steady_transition_10']
 qst_10_configuration.set_num_nodes(num_nodes=1)
-qst_10_configuration.add_output('htail_camber_surface_qst_10', htail_camber_surface)
-qst_10_configuration.add_output('wing_camber_surface_qst_10', wing_camber_surface)
+qst_10_configuration.add_output(f'{htail_vlm_mesh_name}_qst_10', htail_camber_surface)
+qst_10_configuration.add_output(f'{wing_vlm_mesh_name}_qst_10', wing_camber_surface)
 
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='qst_10_tail_actuation', value=0, units='radians')
@@ -1180,11 +1183,11 @@ lpc_param.add_geometry_parameterization(ffd_set)
 lpc_param.setup()
 
 
-wing_vlm_mesh_name = f"{wing.parameters['name']}_vlm_mesh"
-lpc_rep.add_output(name=wing_vlm_mesh_name, quantity=wing_camber_surface)
+# lpc_rep.add_output(name=wing_vlm_mesh_name, quantity=wing_camber_surface)
+# lpc_rep.add_output(name=f"{wing_vlm_mesh_name}_cruise", quantity=wing_camber_surface)
 
-htail_vlm_mesh_name =  f"{htail.parameters['name']}_vlm_mesh"
-lpc_rep.add_output(name=htail_vlm_mesh_name, quantity=htail_camber_surface)
+# lpc_rep.add_output(name=htail_vlm_mesh_name, quantity=htail_camber_surface)
+# lpc_rep.add_output(name=f"{htail_vlm_mesh_name}_cruise", quantity=htail_camber_surface)
 
 lpc_rep.add_output(name=f"{wing.parameters['name']}_oml_mesh", quantity=wing_oml_mesh)
 # lpc_rep.add_output(name=f"{htail.parameters['name']}_oml_mesh", quantity=htail_camber_surface)
