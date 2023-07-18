@@ -1,9 +1,14 @@
 # region Imports
 import caddee.api as cd
+import m3l
+from python_csdl_backend import Simulator
 
 # Geometry
 from caddee.core.caddee_core.system_representation.component.component import LiftingSurface, Component
 import array_mapper as am
+
+# Solvers
+from lsdo_rotor.core.BEM_caddee.BEM_caddee import BEM, BEMMesh
 
 from caddee import GEOMETRY_FILES_FOLDER
 
@@ -11,7 +16,7 @@ import numpy as np
 # endregion
 
 
-plots_flag = True
+plots_flag = False
 
 caddee = cd.CADDEE()
 caddee.system_model = system_model = cd.SystemModel()
@@ -135,4 +140,134 @@ if plots_flag:
 # region Canard
 # endregion
 
+# region Pusher prop
+# y11 = pp_disk.project(np.array([23.500 + 0.1, 0.00, 0.800]), direction=np.array([-1., 0., 0.]), plot=False)
+# y12 = pp_disk.project(np.array([23.500 + 0.1, 0.00, 5.800]), direction=np.array([-1., 0., 0.]), plot=False)
+# y21 = pp_disk.project(np.array([23.500 + 0.1, -2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
+# y22 = pp_disk.project(np.array([23.500 + 0.1, 2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
+# pp_disk_in_plane_y = am.subtract(y11, y12)
+# pp_disk_in_plane_x = am.subtract(y21, y22)
+# pp_disk_origin = pp_disk.project(np.array([32.625, 0., 7.79]), direction=np.array([-1., 0., 0.]))
+# sys_rep.add_output(f"{pp_disk.parameters['name']}_in_plane_1", pp_disk_in_plane_y)
+# sys_rep.add_output(f"{pp_disk.parameters['name']}_in_plane_2", pp_disk_in_plane_x)
+# sys_rep.add_output(f"{pp_disk.parameters['name']}_origin", pp_disk_origin)
 # endregion
+
+
+
+
+# endregion
+
+# region Sizing
+from caddee.utils.aircraft_models.pav.pav_weight import PavMassProperties
+pav_wt = PavMassProperties()
+mass, cg, I = pav_wt.evaluate()
+
+total_mass_properties = cd.TotalMassPropertiesM3L()
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass, cg, I)
+
+
+# endregion
+
+# region Physics models
+
+# region Propulsion
+pusher_bem_mesh = BEMMesh(
+    airfoil='NACA_4412',
+    num_blades=5,
+    num_radial=25,
+    use_airfoil_ml=False,
+    use_rotor_geometry=False,
+    mesh_units='ft',
+    chord_b_spline_rep=True,
+    twist_b_spline_rep=True
+)
+
+bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
+bem_model.set_module_input('rpm', val=4000, dv_flag=True, lower=3500, upper=4500, scaler=1e-3)
+bem_model.set_module_input('propeller_radius', val=0.762)  # 2.5 ft
+bem_model.set_module_input('thrust_vector', val=np.array([1., 0., 0.]))
+bem_model.set_module_input('thrust_origin', val=np.array([23.500, 0., 3.300]))
+bem_model.set_module_input('chord_cp', val=np.linspace(0.2, 0.05, 4),
+                           dv_flag=True,
+                           upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]), scaler=1
+                           )
+bem_model.set_module_input('twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
+                           dv_flag=True,
+                           lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
+                           )
+
+# endregion
+
+# endregion
+
+# region Mission
+
+design_scenario = cd.DesignScenario(name='aircraft_trim')
+
+# region Cruise condition
+cruise_model = m3l.Model()
+cruise_condition = cd.CruiseCondition(name="cruise_1")
+cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
+cruise_condition.set_module_input(name='altitude', val=1000)
+cruise_condition.set_module_input(name='mach_number', val=0.17)
+cruise_condition.set_module_input(name='range', val=40000)
+cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=0., upper=np.deg2rad(10))
+cruise_condition.set_module_input(name='flight_path_angle', val=0)
+cruise_condition.set_module_input(name='roll_angle', val=0)
+cruise_condition.set_module_input(name='yaw_angle', val=0)
+cruise_condition.set_module_input(name='wind_angle', val=0)
+cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 500]))
+
+cruise_ac_states = cruise_condition.evaluate_ac_states()
+cruise_model.register_output(cruise_ac_states)
+
+# Propulsion loads
+bem_forces, bem_moments, _, _, _ = bem_model.evaluate(ac_states=cruise_ac_states)
+cruise_model.register_output(bem_forces)
+cruise_model.register_output(bem_moments)
+
+# Total loads
+total_forces_moments_model = cd.TotalForcesMomentsM3L()
+total_forces, total_moments = total_forces_moments_model.evaluate(bem_forces, bem_moments)
+cruise_model.register_output(total_forces)
+cruise_model.register_output(total_moments)
+
+# Equations of motions
+eom_m3l_model = cd.EoMM3LEuler6DOF()
+trim_residual = eom_m3l_model.evaluate(
+    total_mass=total_mass,
+    total_cg_vector=total_cg,
+    total_inertia_tensor=total_inertia,
+    total_forces=total_forces,
+    total_moments=total_moments,
+    ac_states=cruise_ac_states
+)
+
+cruise_model.register_output(trim_residual)
+
+# Add cruise m3l model to cruise condition
+cruise_condition.add_m3l_model('cruise_model', cruise_model)
+
+# Add design condition to design scenario
+design_scenario.add_design_condition(cruise_condition)
+# endregion
+
+system_model.add_design_scenario(design_scenario=design_scenario)
+# endregion
+
+caddee_csdl_model = caddee.assemble_csdl()
+
+# region Give a constraint on L/D
+
+# endregion
+
+# create and run simulator
+sim = Simulator(caddee_csdl_model, analytics=True)
+sim.run()
+
+print('Pusher prop RPM:', sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.BEM_external_inputs_model.rpm'])
+print('Total forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_forces'])
+print('Total moments:', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_moments'])
+
+# system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.induced_velocity_model.FOM
