@@ -79,6 +79,7 @@ pusher_bem_mesh = BEMMesh(
     num_radial=25,
     num_tangential=1,
     mesh_units='ft',
+    use_airfoil_ml=False,
 )
 
 rlo_bem_mesh = BEMMesh(
@@ -92,6 +93,7 @@ rlo_bem_mesh = BEMMesh(
     num_radial=25,
     num_tangential=25,
     mesh_units='ft',
+    use_airfoil_ml=False,
 )
 
 rli_bem_mesh = BEMMesh(
@@ -105,6 +107,7 @@ rli_bem_mesh = BEMMesh(
     num_radial=25,
     num_tangential=25,
     mesh_units='ft',
+    use_airfoil_ml=False,
 )
 
 rri_bem_mesh = BEMMesh(
@@ -118,6 +121,7 @@ rri_bem_mesh = BEMMesh(
     num_radial=25,
     num_tangential=25,
     mesh_units='ft',
+    use_airfoil_ml=False,
 )
 
 rro_bem_mesh = BEMMesh(
@@ -131,6 +135,7 @@ rro_bem_mesh = BEMMesh(
     num_radial=25,
     num_tangential=25,
     mesh_units='ft',
+    use_airfoil_ml=False,
 )
 
 flo_bem_mesh = BEMMesh(
@@ -144,6 +149,7 @@ flo_bem_mesh = BEMMesh(
     num_radial=25,
     num_tangential=25,
     mesh_units='ft',
+    use_airfoil_ml=False,
 )
 
 fli_bem_mesh = BEMMesh(
@@ -157,6 +163,7 @@ fli_bem_mesh = BEMMesh(
     num_radial=25,
     num_tangential=25,
     mesh_units='ft',
+    use_airfoil_ml=False,
 )
 
 fri_bem_mesh = BEMMesh(
@@ -170,6 +177,7 @@ fri_bem_mesh = BEMMesh(
     num_radial=25,
     num_tangential=25,
     mesh_units='ft',
+    use_airfoil_ml=False,
 )
 
 fro_bem_mesh = BEMMesh(
@@ -183,6 +191,7 @@ fro_bem_mesh = BEMMesh(
     num_radial=25,
     num_tangential=25,
     mesh_units='ft',
+    use_airfoil_ml=False,
 )
 # endregion
 
@@ -209,7 +218,7 @@ vlm_model = VASTFluidSover(
         (1, ) + wing_camber_surface.evaluate().shape[1:],
         (1, ) + htail_camber_surface.evaluate().shape[1:],
     ],
-    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
     mesh_unit='ft',
     cl0=[0.43, 0]
 )
@@ -327,7 +336,7 @@ vlm_model = VASTFluidSover(
         (1, ) + wing_camber_surface.evaluate().shape[1:],
         (1, ) + htail_camber_surface.evaluate().shape[1:],
     ],
-    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
     mesh_unit='ft',
     cl0=[0.43, 0]
 )
@@ -444,7 +453,7 @@ vlm_model = VASTFluidSover(
         (1, ) + wing_camber_surface.evaluate().shape[1:],
         (1, ) + htail_camber_surface.evaluate().shape[1:],
     ],
-    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
     mesh_unit='ft',
     cl0=[0.43, 0]
 )
@@ -562,7 +571,7 @@ vlm_model = VASTFluidSover(
         (1, ) + wing_camber_surface.evaluate().shape[1:],
         (1, ) + htail_camber_surface.evaluate().shape[1:],
     ],
-    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
     mesh_unit='ft',
     cl0=[0.43, 0]
 )
@@ -680,7 +689,7 @@ vlm_model = VASTFluidSover(
         (1, ) + wing_camber_surface.evaluate().shape[1:],
         (1, ) + htail_camber_surface.evaluate().shape[1:],
     ],
-    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
     mesh_unit='ft',
     cl0=[0.43, 0]
 )
@@ -797,7 +806,7 @@ vlm_model = VASTFluidSover(
         (1, ) + wing_camber_surface.evaluate().shape[1:],
         (1, ) + htail_camber_surface.evaluate().shape[1:],
     ],
-    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
     mesh_unit='ft',
     cl0=[0.43, 0]
 )
@@ -914,7 +923,7 @@ vlm_model = VASTFluidSover(
         (1, ) + wing_camber_surface.evaluate().shape[1:],
         (1, ) + htail_camber_surface.evaluate().shape[1:],
     ],
-    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
     mesh_unit='ft',
     cl0=[0.43, 0]
 )
@@ -1031,7 +1040,7 @@ vlm_model = VASTFluidSover(
         (1, ) + wing_camber_surface.evaluate().shape[1:],
         (1, ) + htail_camber_surface.evaluate().shape[1:],
     ],
-    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
     mesh_unit='ft',
     cl0=[0.43, 0]
 )
@@ -1148,7 +1157,7 @@ vlm_model = VASTFluidSover(
         (1, ) + wing_camber_surface.evaluate().shape[1:],
         (1, ) + htail_camber_surface.evaluate().shape[1:],
     ],
-    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
     mesh_unit='ft',
     cl0=[0.43, 0]
 )
@@ -1265,7 +1274,7 @@ vlm_model = VASTFluidSover(
         (1, ) + wing_camber_surface.evaluate().shape[1:],
         (1, ) + htail_camber_surface.evaluate().shape[1:],
     ],
-    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
     mesh_unit='ft',
     cl0=[0.43, 0]
 )
@@ -1418,5 +1427,23 @@ caddee_csdl_model.add_design_variable('qst_10_tail_actuation', lower=np.deg2rad(
 caddee_csdl_model.create_input('qst_10_wing_actuation', val=np.deg2rad(4))
 
 
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_1_euler_eom_gen_ref_pt.trim_residual', equals=0)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_2_euler_eom_gen_ref_pt.trim_residual', equals=0)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', equals=0)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_4_euler_eom_gen_ref_pt.trim_residual', equals=0)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_5_euler_eom_gen_ref_pt.trim_residual', equals=0)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_6_euler_eom_gen_ref_pt.trim_residual', equals=0)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_7_euler_eom_gen_ref_pt.trim_residual', equals=0)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_8_euler_eom_gen_ref_pt.trim_residual', equals=0)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_9_euler_eom_gen_ref_pt.trim_residual', equals=0)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_10_euler_eom_gen_ref_pt.trim_residual', equals=0)
+
+caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_mass_properties.total_mass', scaler=1e-3)
+
 sim = Simulator(caddee_csdl_model, analytics=True)
 sim.run()
+
+prob = CSDLProblem(problem_name='lpc', simulator=sim)
+optimizer = SLSQP(prob, maxiter=1000, ftol=1E-5)
+optimizer.solve()
+optimizer.print_results()

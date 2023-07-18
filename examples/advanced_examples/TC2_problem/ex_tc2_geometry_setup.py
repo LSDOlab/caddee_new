@@ -376,7 +376,7 @@ off_set_long_te_tip = 0.25
 
 # region wing mesh
 plot_wing_mesh = False
-num_spanwise_vlm = 30
+num_spanwise_vlm = 20
 num_chordwise_vlm = 2
 
 wing_surface_offset = np.zeros((num_spanwise_vlm, 3))
@@ -426,7 +426,7 @@ height = am.norm((top - bot)*1)
 
 # region tail mesh
 plot_tail_mesh = False
-num_spanwise_vlm = 10
+num_spanwise_vlm = 8
 num_chordwise_vlm = 2
 leading_edge = htail.project(np.linspace(np.array([27., -6.75, 6.]), np.array([27., 6.75, 6.]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), grid_search_n=25, plot=plot_tail_mesh)  # returns MappedArray
 trailing_edge = htail.project(np.linspace(np.array([31.5, -6.75, 6.]), np.array([31.5, 6.75, 6.]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), grid_search_n=25, plot=plot_tail_mesh)   # returns MappedArray
