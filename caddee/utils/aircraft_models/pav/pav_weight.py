@@ -45,9 +45,9 @@ class PavMassPropertiesCSDL(ModuleCSDL):
         Izz = 3000 + (1.7 * ar) * 0
         Ixz = 0. + (0.3 * ar) * 0
 
-        cgx = 10.562*ft2m + (0.21 * ar) * 0
+        cgx = 10.562*ft2m*0. + (0.21 * ar) * 0
         cgy = 0. + (0.2343 * ar) * 0
-        cgz = 2.217*ft2m + (0.2212 * ar) * 0
+        cgz = 2.217*ft2m*0. + (0.2212 * ar) * 0
 
         self.register_module_output(
             name='mass',
@@ -64,3 +64,4 @@ class PavMassPropertiesCSDL(ModuleCSDL):
         cg_vector[0] = cgx
         cg_vector[1] = cgy
         cg_vector[2] = cgz
+        return

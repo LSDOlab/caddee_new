@@ -9,12 +9,17 @@ import array_mapper as am
 
 # Solvers
 from lsdo_rotor.core.BEM_caddee.BEM_caddee import BEM, BEMMesh
+from VAST.core.vast_solver import VASTFluidSover
+from VAST.core.fluid_problem import FluidProblem
+from caddee.utils.aircraft_models.pav.pav_weight import PavMassProperties
 
 from caddee import GEOMETRY_FILES_FOLDER
 
 import numpy as np
 # endregion
 
+
+ft2m = 0.3048
 
 plots_flag = False
 
@@ -87,12 +92,12 @@ sys_param.setup()
 # region Wing
 num_wing_vlm = 21
 num_chordwise_vlm = 5
-point00 = np.array([10.261, 17.596,  2.500 + 0.1]) # * ft2m # Right tip leading edge
-point01 = np.array([13.276, 17.596,  2.500]) # * ft2m # Right tip trailing edge
-point10 = np.array([10.278, 0.0000,  2.500 + 0.1]) # * ft2m # Center Leading Edge
-point11 = np.array([17.030, 0.0000,  2.500]) # * ft2m # Center Trailing edge
-point20 = np.array([10.261, -17.596, 2.500 + 0.1]) # * ft2m # Left tip leading edge
-point21 = np.array([13.276, -17.596, 2.500]) # * ft2m # Left tip trailing edge
+point00 = np.array([8.167, 13.997,  1.989 + 0.1]) # * ft2m # Right tip leading edge
+point01 = np.array([10.565, 13.997,  1.989]) # * ft2m # Right tip trailing edge
+point10 = np.array([8.171, 0.0000,  1.989 + 0.1]) # * ft2m # Center Leading Edge
+point11 = np.array([13.549, 0.0000,  1.989]) # * ft2m # Center Trailing edge
+point20 = np.array([8.167, -13.997, 1.989 + 0.1]) # * ft2m # Left tip leading edge
+point21 = np.array([10.565, -13.997, 1.989]) # * ft2m # Left tip trailing edge
 
 leading_edge_points = np.concatenate(
     (np.linspace(point00, point10, int(num_wing_vlm/2+1))[0:-1,:],
@@ -159,7 +164,6 @@ if plots_flag:
 # endregion
 
 # region Sizing
-from caddee.utils.aircraft_models.pav.pav_weight import PavMassProperties
 pav_wt = PavMassProperties()
 mass, cg, I = pav_wt.evaluate()
 
@@ -184,10 +188,10 @@ pusher_bem_mesh = BEMMesh(
 )
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
-bem_model.set_module_input('rpm', val=2000, dv_flag=True, lower=3500, upper=4500, scaler=1e-3)
-bem_model.set_module_input('propeller_radius', val=0.762)  # 2.5 ft
+bem_model.set_module_input('rpm', val=4000, dv_flag=True, lower=3500, upper=4500, scaler=1e-3)
+bem_model.set_module_input('propeller_radius', val=2*ft2m)  # 2 ft radius propeller
 bem_model.set_module_input('thrust_vector', val=np.array([1., 0., 0.]))
-bem_model.set_module_input('thrust_origin', val=np.array([23.500, 0., 3.300]))
+bem_model.set_module_input('thrust_origin', val=np.array([18.693, 0., 2.625]))
 bem_model.set_module_input('chord_cp', val=np.linspace(0.2, 0.05, 4),
                            dv_flag=True,
                            upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]), scaler=1
@@ -197,6 +201,20 @@ bem_model.set_module_input('twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
                            lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
                            )
 
+# endregion
+
+# region Aerodynamics
+vlm_model = VASTFluidSover(
+    surface_names=[
+        wing_vlm_mesh_name,
+    ],
+    surface_shapes=[
+        (1, ) + wing_camber_surface.evaluate().shape[1:],
+        ],
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+    mesh_unit='ft',
+    cl0=[0.0, ]
+)
 # endregion
 
 # endregion
@@ -209,7 +227,7 @@ design_scenario = cd.DesignScenario(name='aircraft_trim')
 cruise_model = m3l.Model()
 cruise_condition = cd.CruiseCondition(name="cruise_1")
 cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
-cruise_condition.set_module_input(name='altitude', val=1000)
+cruise_condition.set_module_input(name='altitude', val=600*ft2m)
 cruise_condition.set_module_input(name='mach_number', val=0.17)
 cruise_condition.set_module_input(name='range', val=40000)
 cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=0., upper=np.deg2rad(10))
@@ -217,7 +235,7 @@ cruise_condition.set_module_input(name='flight_path_angle', val=0)
 cruise_condition.set_module_input(name='roll_angle', val=0)
 cruise_condition.set_module_input(name='yaw_angle', val=0)
 cruise_condition.set_module_input(name='wind_angle', val=0)
-cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 500]))
+cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 600*ft2m]))
 
 cruise_ac_states = cruise_condition.evaluate_ac_states()
 cruise_model.register_output(cruise_ac_states)
@@ -233,9 +251,14 @@ inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vecto
 cruise_model.register_output(inertial_forces)
 cruise_model.register_output(inertial_moments)
 
+# Aerodynamic loads
+vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=cruise_ac_states)
+cruise_model.register_output(vlm_force)
+cruise_model.register_output(vlm_moment)
+
 # Total loads
 total_forces_moments_model = cd.TotalForcesMomentsM3L()
-total_forces, total_moments = total_forces_moments_model.evaluate(bem_forces, bem_moments)
+total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment)
 cruise_model.register_output(total_forces)
 cruise_model.register_output(total_moments)
 
@@ -272,7 +295,7 @@ caddee_csdl_model = caddee.assemble_csdl()
 sim = Simulator(caddee_csdl_model, analytics=True)
 sim.run()
 
-print('Pusher prop RPM:', sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.BEM_external_inputs_model.rpm'])
+# print('Pusher prop RPM:', sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.BEM_external_inputs_model.rpm'])
 print('Total forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_forces'])
 print('Total moments:', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_moments'])
 
