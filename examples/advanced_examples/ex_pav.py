@@ -184,7 +184,7 @@ pusher_bem_mesh = BEMMesh(
 )
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
-bem_model.set_module_input('rpm', val=4000, dv_flag=True, lower=3500, upper=4500, scaler=1e-3)
+bem_model.set_module_input('rpm', val=2000, dv_flag=True, lower=3500, upper=4500, scaler=1e-3)
 bem_model.set_module_input('propeller_radius', val=0.762)  # 2.5 ft
 bem_model.set_module_input('thrust_vector', val=np.array([1., 0., 0.]))
 bem_model.set_module_input('thrust_origin', val=np.array([23.500, 0., 3.300]))
@@ -226,6 +226,12 @@ cruise_model.register_output(cruise_ac_states)
 bem_forces, bem_moments, _, _, _ = bem_model.evaluate(ac_states=cruise_ac_states)
 cruise_model.register_output(bem_forces)
 cruise_model.register_output(bem_moments)
+
+# Inertial loads
+inertial_loads_model = cd.InertialLoadsM3L(load_factor=1.)
+inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass, ac_states=cruise_ac_states)
+cruise_model.register_output(inertial_forces)
+cruise_model.register_output(inertial_moments)
 
 # Total loads
 total_forces_moments_model = cd.TotalForcesMomentsM3L()
