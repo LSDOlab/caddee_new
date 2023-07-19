@@ -21,7 +21,8 @@ import numpy as np
 
 ft2m = 0.3048
 
-plots_flag = True
+debug_geom_flag = False
+visualize_flag = False
 
 caddee = cd.CADDEE()
 caddee.system_model = system_model = cd.SystemModel()
@@ -39,14 +40,14 @@ spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
 # Wing
 wing_primitive_names = list(spatial_rep.get_primitives(search_names=['Wing']).keys())
 wing = LiftingSurface(name='Wing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)
-if plots_flag:
+if debug_geom_flag:
     wing.plot()
 sys_rep.add_component(wing)
 
 # Horizontal tail
 tail_primitive_names = list(spatial_rep.get_primitives(search_names=['Stabilizer']).keys())
 htail = cd.LiftingSurface(name='HTail', spatial_representation=spatial_rep, primitive_names=tail_primitive_names)
-if plots_flag:
+if debug_geom_flag:
     htail.plot()
 sys_rep.add_component(htail)
 # endregion
@@ -54,7 +55,7 @@ sys_rep.add_component(htail)
 # Canard
 canard_primitive_names = list(spatial_rep.get_primitives(search_names=['FrontSuport']).keys())
 canard = cd.LiftingSurface(name='Canard', spatial_representation=spatial_rep, primitive_names=canard_primitive_names)
-if plots_flag:
+if debug_geom_flag:
     canard.plot()
 sys_rep.add_component(canard)
 # endregion
@@ -63,7 +64,7 @@ sys_rep.add_component(canard)
 # Pusher prop
 pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropPusher']).keys())
 pp_disk = cd.Rotor(name='pp_disk', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
-if plots_flag:
+if debug_geom_flag:
     pp_disk.plot()
 sys_rep.add_component(pp_disk)
 # endregion
@@ -97,110 +98,106 @@ sys_param.setup()
 
 # region Meshes
 
-# # region Wing
-# num_wing_vlm = 21
-# num_chordwise_vlm = 5
-# point00 = np.array([8.796,  14.000,  1.989]) # * ft2m # Right tip leading edge
-# point01 = np.array([11.300, 14.000,  1.989]) # * ft2m # Right tip trailing edge
-# point10 = np.array([8.800,  0.000,   1.989]) # * ft2m # Center Leading Edge
-# point11 = np.array([15.170, 0.000,   1.989]) # * ft2m # Center Trailing edge
-# point20 = np.array([8.796,  -14.000, 1.989]) # * ft2m # Left tip leading edge
-# point21 = np.array([11.300, -14.000, 1.989]) # * ft2m # Left tip
-#
-# leading_edge_points = np.concatenate(
-#     (np.linspace(point00, point10, int(num_wing_vlm/2+1))[0:-1,:],
-#      np.linspace(point10, point20, int(num_wing_vlm/2+1))),
-#     axis=0)
-# trailing_edge_points = np.concatenate(
-#     (np.linspace(point01, point11, int(num_wing_vlm/2+1))[0:-1,:],
-#      np.linspace(point11, point21, int(num_wing_vlm/2+1))),
-#     axis=0)
-#
-# leading_edge = wing.project(leading_edge_points, direction=np.array([-1., 0., 0.]), plot=plots_flag)
-# trailing_edge = wing.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=plots_flag)
-#
-# # Chord Surface
-# wing_chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
-# if plots_flag:
-#     spatial_rep.plot_meshes([wing_chord_surface])
-#
-# # Upper and lower surface
-# wing_upper_surface_wireframe = wing.project(wing_chord_surface.value + np.array([0., 0., 0.5]),
-#                                             direction=np.array([0., 0., -1.]), grid_search_n=25,
-#                                             plot=plots_flag, max_iterations=200)
-# wing_lower_surface_wireframe = wing.project(wing_chord_surface.value - np.array([0., 0., 0.5]),
-#                                             direction=np.array([0., 0., 1.]), grid_search_n=25,
-#                                             plot=plots_flag, max_iterations=200)
-#
-# # Chamber surface
-# wing_camber_surface = am.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1)
-# wing_vlm_mesh_name = 'wing_vlm_mesh'
-# sys_rep.add_output(wing_vlm_mesh_name, wing_camber_surface)
-# if plots_flag:
-#     spatial_rep.plot_meshes([wing_camber_surface])
-#
-# # OML mesh
-# wing_oml_mesh = am.vstack((wing_upper_surface_wireframe, wing_lower_surface_wireframe))
-# wing_oml_mesh_name = 'wing_oml_mesh'
-# sys_rep.add_output(wing_oml_mesh_name, wing_oml_mesh)
-# if plots_flag:
-#     spatial_rep.plot_meshes([wing_oml_mesh])
-# # endregion
-#
-# # region Tail
-#
-# num_htail_vlm = 11
-# num_chordwise_vlm = 5
-# point00 = np.array([20.713-4., 8.474+1.5, 0.825+1.5]) # * ft2m # Right tip leading edge
-# point01 = np.array([22.916, 8.474, 0.825]) # * ft2m # Right tip trailing edge
-# point10 = np.array([18.085, 0.000, 0.825]) # * ft2m # Center Leading Edge
-# point11 = np.array([23.232, 0.000, 0.825]) # * ft2m # Center Trailing edge
-# point20 = np.array([20.713-4., -8.474-1.5, 0.825+1.5]) # * ft2m # Left tip leading edge
-# point21 = np.array([22.916, -8.474, 0.825]) # * ft2m # Left tip trailing edge
-#
-# leading_edge_points = np.linspace(point00, point20, num_htail_vlm)
-#
-# trailing_edge_points = np.concatenate(
-#     (np.linspace(point01, point11, int(num_htail_vlm/2+1))[0:-1,:],
-#      np.linspace(point11, point21, int(num_htail_vlm/2+1))),
-#     axis=0)
-#
-# leading_edge = htail.project(leading_edge_points, direction=np.array([0., 0., -1.]), plot=plots_flag)
-# trailing_edge = htail.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=plots_flag)
-#
-# # Chord Surface
-# htail_chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
-# if plots_flag:
-#     spatial_rep.plot_meshes([htail_chord_surface])
-#
-# # Upper and lower surface
-# htail_upper_surface_wireframe = htail.project(htail_chord_surface.value + np.array([0., 0., 0.5]),
-#                                             direction=np.array([0., 0., -1.]), grid_search_n=25,
-#                                             plot=plots_flag, max_iterations=200)
-# htail_lower_surface_wireframe = htail.project(htail_chord_surface.value - np.array([0., 0., 0.5]),
-#                                             direction=np.array([0., 0., 1.]), grid_search_n=25,
-#                                             plot=plots_flag, max_iterations=200)
-#
-# # Chamber surface
-# htail_camber_surface = am.linspace(htail_upper_surface_wireframe, htail_lower_surface_wireframe, 1)
-# htail_vlm_mesh_name = 'htail_vlm_mesh'
-# sys_rep.add_output(htail_vlm_mesh_name, htail_camber_surface)
-# if plots_flag:
-#     spatial_rep.plot_meshes([htail_camber_surface])
-#
-# # OML mesh
-# htail_oml_mesh = am.vstack((htail_upper_surface_wireframe, htail_lower_surface_wireframe))
-# htail_oml_mesh_name = 'htail_oml_mesh'
-# sys_rep.add_output(htail_oml_mesh_name, htail_oml_mesh)
-# if plots_flag:
-#     spatial_rep.plot_meshes([htail_oml_mesh])
-# # endregion
+# region Wing
+num_wing_vlm = 21
+num_chordwise_vlm = 5
+point00 = np.array([8.796,  14.000,  1.989]) # * ft2m # Right tip leading edge
+point01 = np.array([11.300, 14.000,  1.989]) # * ft2m # Right tip trailing edge
+point10 = np.array([8.800,  0.000,   1.989]) # * ft2m # Center Leading Edge
+point11 = np.array([15.170, 0.000,   1.989]) # * ft2m # Center Trailing edge
+point20 = np.array([8.796,  -14.000, 1.989]) # * ft2m # Left tip leading edge
+point21 = np.array([11.300, -14.000, 1.989]) # * ft2m # Left tip
+
+leading_edge_points = np.concatenate(
+    (np.linspace(point00, point10, int(num_wing_vlm/2+1))[0:-1,:],
+     np.linspace(point10, point20, int(num_wing_vlm/2+1))),
+    axis=0)
+trailing_edge_points = np.concatenate(
+    (np.linspace(point01, point11, int(num_wing_vlm/2+1))[0:-1,:],
+     np.linspace(point11, point21, int(num_wing_vlm/2+1))),
+    axis=0)
+
+leading_edge = wing.project(leading_edge_points, direction=np.array([-1., 0., 0.]), plot=debug_geom_flag)
+trailing_edge = wing.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=debug_geom_flag)
+
+# Chord Surface
+wing_chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
+if debug_geom_flag:
+    spatial_rep.plot_meshes([wing_chord_surface])
+
+# Upper and lower surface
+wing_upper_surface_wireframe = wing.project(wing_chord_surface.value + np.array([0., 0., 0.5]),
+                                            direction=np.array([0., 0., -1.]), grid_search_n=25,
+                                            plot=debug_geom_flag, max_iterations=200)
+wing_lower_surface_wireframe = wing.project(wing_chord_surface.value - np.array([0., 0., 0.5]),
+                                            direction=np.array([0., 0., 1.]), grid_search_n=25,
+                                            plot=debug_geom_flag, max_iterations=200)
+
+# Chamber surface
+wing_camber_surface = am.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1)
+wing_vlm_mesh_name = 'wing_vlm_mesh'
+sys_rep.add_output(wing_vlm_mesh_name, wing_camber_surface)
+if debug_geom_flag:
+    spatial_rep.plot_meshes([wing_camber_surface])
+
+# OML mesh
+wing_oml_mesh = am.vstack((wing_upper_surface_wireframe, wing_lower_surface_wireframe))
+wing_oml_mesh_name = 'wing_oml_mesh'
+sys_rep.add_output(wing_oml_mesh_name, wing_oml_mesh)
+if debug_geom_flag:
+    spatial_rep.plot_meshes([wing_oml_mesh])
+# endregion
+
+# region Tail
+
+num_htail_vlm = 13
+num_chordwise_vlm = 5
+point00 = np.array([20.713-4., 8.474+1.5, 0.825+1.5]) # * ft2m # Right tip leading edge
+point01 = np.array([22.916, 8.474, 0.825]) # * ft2m # Right tip trailing edge
+point10 = np.array([18.085, 0.000, 0.825]) # * ft2m # Center Leading Edge
+point11 = np.array([23.232, 0.000, 0.825]) # * ft2m # Center Trailing edge
+point20 = np.array([20.713-4., -8.474-1.5, 0.825+1.5]) # * ft2m # Left tip leading edge
+point21 = np.array([22.916, -8.474, 0.825]) # * ft2m # Left tip trailing edge
+
+leading_edge_points = np.linspace(point00, point20, num_htail_vlm)
+trailing_edge_points = np.linspace(point01, point21, num_htail_vlm)
+
+leading_edge = htail.project(leading_edge_points, direction=np.array([0., 0., -1.]), plot=debug_geom_flag)
+trailing_edge = htail.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=debug_geom_flag)
+
+# Chord Surface
+htail_chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
+if debug_geom_flag:
+    spatial_rep.plot_meshes([htail_chord_surface])
+
+# Upper and lower surface
+htail_upper_surface_wireframe = htail.project(htail_chord_surface.value + np.array([0., 0., 0.5]),
+                                              direction=np.array([0., 0., -1.]), grid_search_n=25,
+                                              plot=debug_geom_flag, max_iterations=200)
+htail_lower_surface_wireframe = htail.project(htail_chord_surface.value - np.array([0., 0., 0.5]),
+                                              direction=np.array([0., 0., 1.]), grid_search_n=25,
+                                              plot=debug_geom_flag, max_iterations=200)
+
+# Chamber surface
+htail_camber_surface = am.linspace(htail_upper_surface_wireframe, htail_lower_surface_wireframe, 1)
+htail_vlm_mesh_name = 'htail_vlm_mesh'
+sys_rep.add_output(htail_vlm_mesh_name, htail_camber_surface)
+if debug_geom_flag:
+    spatial_rep.plot_meshes([htail_camber_surface])
+
+# OML mesh
+htail_oml_mesh = am.vstack((htail_upper_surface_wireframe, htail_lower_surface_wireframe))
+htail_oml_mesh_name = 'htail_oml_mesh'
+sys_rep.add_output(htail_oml_mesh_name, htail_oml_mesh)
+if debug_geom_flag:
+    spatial_rep.plot_meshes([htail_oml_mesh])
+# endregion
 
 # region Canard
 
 # endregion
 
-if plots_flag:
+if visualize_flag:
     spatial_rep.plot_meshes([wing_camber_surface, htail_camber_surface])
 
 # region Canard
@@ -230,54 +227,6 @@ mass, cg, I = pav_wt.evaluate()
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
 total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass, cg, I)
-
-
-# endregion
-
-# region Physics models
-
-# region Propulsion
-pusher_bem_mesh = BEMMesh(
-    airfoil='NACA_4412',
-    num_blades=5,
-    num_radial=25,
-    use_airfoil_ml=False,
-    use_rotor_geometry=False,
-    mesh_units='ft',
-    chord_b_spline_rep=True,
-    twist_b_spline_rep=True
-)
-
-bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
-bem_model.set_module_input('rpm', val=4000, dv_flag=True, lower=3500, upper=4500, scaler=1e-3)
-bem_model.set_module_input('propeller_radius', val=2*ft2m)  # 2 ft radius propeller
-bem_model.set_module_input('thrust_vector', val=np.array([1., 0., 0.]))
-bem_model.set_module_input('thrust_origin', val=np.array([18.693, 0., 2.625]))
-bem_model.set_module_input('chord_cp', val=np.linspace(0.2, 0.05, 4),
-                           dv_flag=True,
-                           upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]), scaler=1
-                           )
-bem_model.set_module_input('twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
-                           dv_flag=True,
-                           lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
-                           )
-
-# endregion
-
-# region Aerodynamics
-vlm_model = VASTFluidSover(
-    surface_names=[
-        wing_vlm_mesh_name,
-    ],
-    surface_shapes=[
-        (1, ) + wing_camber_surface.evaluate().shape[1:],
-        ],
-    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
-    mesh_unit='ft',
-    cl0=[0.0, ]
-)
-# endregion
-
 # endregion
 
 # region Mission
@@ -301,25 +250,64 @@ cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 
 cruise_ac_states = cruise_condition.evaluate_ac_states()
 cruise_model.register_output(cruise_ac_states)
 
-# Propulsion loads
+# region Propulsion
+pusher_bem_mesh = BEMMesh(
+    airfoil='NACA_4412',
+    num_blades=5,
+    num_radial=25,
+    use_airfoil_ml=False,
+    use_rotor_geometry=False,
+    mesh_units='ft',
+    chord_b_spline_rep=True,
+    twist_b_spline_rep=True
+)
+bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
+bem_model.set_module_input('rpm', val=4000)
+bem_model.set_module_input('propeller_radius', val=3.97727/2*ft2m)
+bem_model.set_module_input('thrust_vector', val=np.array([1., 0., 0.]))
+bem_model.set_module_input('thrust_origin', val=np.array([19.700, 0., 2.625]))
+bem_model.set_module_input('chord_cp', val=np.linspace(0.2, 0.05, 4),
+                           dv_flag=True,
+                           upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]), scaler=1
+                           )
+bem_model.set_module_input('twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
+                           dv_flag=True,
+                           lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
+                           )
 bem_forces, bem_moments, _, _, _ = bem_model.evaluate(ac_states=cruise_ac_states)
 cruise_model.register_output(bem_forces)
 cruise_model.register_output(bem_moments)
+# endregion
 
-# Inertial loads
+# region Inertial loads
 inertial_loads_model = cd.InertialLoadsM3L(load_factor=1.)
 inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass, ac_states=cruise_ac_states)
 cruise_model.register_output(inertial_forces)
 cruise_model.register_output(inertial_moments)
+# endregion
 
-# Aerodynamic loads
+# region Aerodynamics
+vlm_model = VASTFluidSover(
+    surface_names=[
+        wing_vlm_mesh_name,
+        htail_vlm_mesh_name,
+    ],
+    surface_shapes=[
+        (1, ) + wing_camber_surface.evaluate().shape[1:],
+        (1, ) + htail_camber_surface.evaluate().shape[1:],
+        ],
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+    mesh_unit='ft',
+    cl0=[0.0, 0.0]
+)
 vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=cruise_ac_states)
 cruise_model.register_output(vlm_force)
 cruise_model.register_output(vlm_moment)
+# endregion
 
 # Total loads
 total_forces_moments_model = cd.TotalForcesMomentsM3L()
-total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment)
+total_forces, total_moments = total_forces_moments_model.evaluate(bem_forces, bem_moments)
 cruise_model.register_output(total_forces)
 cruise_model.register_output(total_moments)
 
@@ -348,11 +336,14 @@ system_model.add_design_scenario(design_scenario=design_scenario)
 
 caddee_csdl_model = caddee.assemble_csdl()
 
-# region Give a constraint on L/D
+caddee_csdl_model.create_input(name='h_tail_act', val=np.deg2rad(0.))
+caddee_csdl_model.add_design_variable(dv_name='h_tail_act', lower=np.deg2rad(-10), upper=np.deg2rad(10), scaler=1.)
+
+# region Optimization Setup
 
 # endregion
 
-# create and run simulator
+# Create and run simulator
 sim = Simulator(caddee_csdl_model, analytics=True)
 sim.run()
 
