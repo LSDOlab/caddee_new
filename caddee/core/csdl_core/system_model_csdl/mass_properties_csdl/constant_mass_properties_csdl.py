@@ -127,11 +127,12 @@ class TotalConstantMassCSDL(BaseModelCSDL):
             mass_name = mass_input_names[i]
             m_model = self.register_module_input(mass_name, shape=(1, ))
             
-            m_fudge = self.declare_variable('m_fudge', shape=(1, ), val=0)
 
             # Compute total mass
-            m = m + m_model + m_fudge
-
+            m = m + m_model #+ m_fudge
+        
+        m_fudge = self.declare_variable('m_fudge', shape=(1, ), val=562)
+        m = m + m_model + m_fudge
 
 
         # models_dict = sizing_group.models_dictionary
@@ -254,10 +255,12 @@ class VaryingMassPropertiesCSDL(BaseModelCSDL):
             izz = izz + izz_model # + m_model * (pos_x**2 + pos_y**2)
             ixz = ixz + ixz_model #+ m_model * (-pos_x * pos_z)
 
-            m_fudge = self.declare_variable('m_fudge', shape=(1, ), val=0)
 
             # Compute total mass
-            m = m + m_model + m_fudge
+            m = m + m_model
+
+        m_fudge = self.declare_variable('m_fudge', shape=(1, ), val=562)
+        m = m + m_fudge
 
 
         inertia_tensor = self.register_module_output('total_inertia_tensor', shape=(3, 3), val=0)

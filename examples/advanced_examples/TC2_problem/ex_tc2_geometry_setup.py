@@ -376,7 +376,7 @@ off_set_long_te_tip = 0.25
 
 # region wing mesh
 plot_wing_mesh = False
-num_spanwise_vlm = 20
+num_spanwise_vlm = 25
 num_chordwise_vlm = 2
 
 wing_surface_offset = np.zeros((num_spanwise_vlm, 3))
@@ -393,6 +393,29 @@ wing_upper_surface_wireframe = wing.project(wing_chord_surface.value + np.array(
 wing_lower_surface_wireframe = wing.project(wing_chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_n=50, plot=plot_wing_mesh)
 wing_camber_surface = am.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1)
 wing_oml_mesh = am.vstack((wing_upper_surface_wireframe, wing_lower_surface_wireframe))
+
+
+# OML mesh for ML pressures wing
+num_ml_points = 100
+chord_surface_ml = am.linspace(wing_leading_edge, wing_trailing_edge, num_ml_points)
+i_vec = np.arange(0, len(chord_surface_ml.value))
+x_range = np.linspace(0, 1, num_ml_points)
+
+x_interp_x = wing_chord_surface.value[1,:, 0].reshape(num_spanwise_vlm, 1) - ((wing_chord_surface.value[1, :, 0] - wing_chord_surface.value[0, :, 0]).reshape(num_spanwise_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
+x_interp_y = wing_chord_surface.value[1,:, 1].reshape(num_spanwise_vlm, 1) - ((wing_chord_surface.value[1, :, 1] - wing_chord_surface.value[0, :, 1]).reshape(num_spanwise_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
+x_interp_z = wing_chord_surface.value[1,:, 2].reshape(num_spanwise_vlm, 1) - ((wing_chord_surface.value[1, :, 2] - wing_chord_surface.value[0, :, 2]).reshape(num_spanwise_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
+
+new_chord_surface = np.zeros((num_ml_points, num_spanwise_vlm, 3))
+new_chord_surface[:, :, 0] = x_interp_x.T
+new_chord_surface[:, :, 1] = x_interp_y.T
+new_chord_surface[:, :, 2] = x_interp_z.T
+
+wing_upper_surface_ml = wing.project(new_chord_surface + np.array([0., 0., 0.5]), direction=np.array([0., 0., -1.]), grid_search_n=75, plot=False, max_iterations=200)
+wing_lower_surface_ml = wing.project(new_chord_surface - np.array([0., 0., 0.5]), direction=np.array([0., 0., 1.]), grid_search_n=100, plot=False, max_iterations=200)
+
+wing_oml_mesh_name_ml = 'wing_oml_mesh_ML'
+wing_oml_mesh_ml = am.vstack((wing_upper_surface_ml, wing_lower_surface_ml))
+# spatial_rep.plot_meshes([wing_camber_surface])
 # endregion
 
 # region wing beam mesh
@@ -409,7 +432,7 @@ trailing_edge_points = np.concatenate((np.linspace(point01, point11, int(num_win
 
 leading_edge = wing.project(leading_edge_points, direction=np.array([-1., 0., 0.]), plot=do_plots)
 trailing_edge = wing.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=do_plots)
-wing_beam = am.linear_combination(leading_edge,trailing_edge,1,start_weights=np.ones((num_wing_beam,))*0.75,stop_weights=np.ones((num_wing_beam,))*0.25)
+wing_beam = am.linear_combination(leading_edge, trailing_edge, 1, start_weights=np.ones((num_wing_beam, ))*0.75, stop_weights=np.ones((num_wing_beam, ))*0.25)
 width = am.norm((leading_edge - trailing_edge)*0.5)
 # width = am.subtract(leading_edge, trailing_edge)
 
@@ -434,6 +457,24 @@ tail_chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
 htail_upper_surface_wireframe = htail.project(tail_chord_surface.value + np.array([0., 0., 1.]), direction=np.array([0., 0., -1.]), grid_search_n=25, plot=plot_tail_mesh)
 htail_lower_surface_wireframe = htail.project(tail_chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_n=25, plot=plot_tail_mesh)
 htail_camber_surface = am.linspace(htail_upper_surface_wireframe, htail_lower_surface_wireframe, 1) 
+
+
+# OML mesh for ML pressures tail
+x_interp_x = tail_chord_surface.value[1,:, 0].reshape(num_spanwise_vlm, 1) - ((tail_chord_surface.value[1, :, 0] - tail_chord_surface.value[0, :, 0]).reshape(num_spanwise_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
+x_interp_y = tail_chord_surface.value[1,:, 1].reshape(num_spanwise_vlm, 1) - ((tail_chord_surface.value[1, :, 1] - tail_chord_surface.value[0, :, 1]).reshape(num_spanwise_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
+x_interp_z = tail_chord_surface.value[1,:, 2].reshape(num_spanwise_vlm, 1) - ((tail_chord_surface.value[1, :, 2] - tail_chord_surface.value[0, :, 2]).reshape(num_spanwise_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
+
+new_chord_surface = np.zeros((num_ml_points, num_spanwise_vlm, 3))
+new_chord_surface[:, :, 0] = x_interp_x.T
+new_chord_surface[:, :, 1] = x_interp_y.T
+new_chord_surface[:, :, 2] = x_interp_z.T
+
+htail_upper_surface_ml = htail.project(new_chord_surface + np.array([0., 0., 0.5]), direction=np.array([0., 0., -1.]), grid_search_n=75, plot=False, max_iterations=200)
+htail_lower_surface_ml = htail.project(new_chord_surface - np.array([0., 0., 0.5]), direction=np.array([0., 0., 1.]), grid_search_n=100, plot=False, max_iterations=200)
+
+htail_oml_mesh_name_ml = 'htail_oml_mesh_ML'
+tail_oml_mesh_ml = am.vstack((htail_upper_surface_ml, htail_lower_surface_ml))
+
 # endregion
 
 # region pusher prop (pp) meshes
@@ -1009,7 +1050,7 @@ horizontal_stabilizer_actuator_solver.set_rotation(name='plus_3g_tail_actuation'
 plus_3g_configuration.actuate(transformation=horizontal_stabilizer_actuator_solver)
 
 wing_actuator_solver = PrescribedRotation(component=wing, axis_origin=wing_quarter_chord_port, axis_vector=wing_actuation_axis)
-wing_actuator_solver.set_rotation(name='plus_3g_wing_actuation', value=np.deg2rad(4) , units='radians')
+wing_actuator_solver.set_rotation(name='plus_3g_wing_actuation', value=np.deg2rad(0) , units='radians')
 plus_3g_configuration.actuate(transformation=wing_actuator_solver)
 # endregion
 
@@ -1024,7 +1065,7 @@ horizontal_stabilizer_actuator_solver.set_rotation(name='minus_1g_tail_actuation
 minus_1g_configuration.actuate(transformation=horizontal_stabilizer_actuator_solver)
 
 wing_actuator_solver = PrescribedRotation(component=wing, axis_origin=wing_quarter_chord_port, axis_vector=wing_actuation_axis)
-wing_actuator_solver.set_rotation(name='minus_1g_wing_actuation', value=np.deg2rad(4) , units='radians')
+wing_actuator_solver.set_rotation(name='minus_1g_wing_actuation', value=np.deg2rad(0) , units='radians')
 minus_1g_configuration.actuate(transformation=wing_actuator_solver)
 # endregion
 
@@ -1183,13 +1224,17 @@ lpc_param.add_geometry_parameterization(ffd_set)
 lpc_param.setup()
 
 
-# lpc_rep.add_output(name=wing_vlm_mesh_name, quantity=wing_camber_surface)
+lpc_rep.add_output(name=wing_vlm_mesh_name, quantity=wing_camber_surface)
 # lpc_rep.add_output(name=f"{wing_vlm_mesh_name}_cruise", quantity=wing_camber_surface)
 
-# lpc_rep.add_output(name=htail_vlm_mesh_name, quantity=htail_camber_surface)
+lpc_rep.add_output(name=htail_vlm_mesh_name, quantity=htail_camber_surface)
+lpc_rep.add_output(htail_oml_mesh_name_ml, tail_oml_mesh_ml)
+
 # lpc_rep.add_output(name=f"{htail_vlm_mesh_name}_cruise", quantity=htail_camber_surface)
 
 lpc_rep.add_output(name=f"{wing.parameters['name']}_oml_mesh", quantity=wing_oml_mesh)
+lpc_rep.add_output(wing_oml_mesh_name_ml, wing_oml_mesh_ml)
+
 # lpc_rep.add_output(name=f"{htail.parameters['name']}_oml_mesh", quantity=htail_camber_surface)
 
 lpc_rep.add_output(name='wing_beam_mesh', quantity=wing_beam)

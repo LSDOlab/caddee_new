@@ -7,6 +7,8 @@ from VAST.core.vast_solver import VASTFluidSover
 from VAST.core.fluid_problem import FluidProblem
 from VAST.core.generate_mappings_m3l import VASTNodalForces
 from lsdo_airfoil.core.pressure_profile import PressureProfile, NodalPressureProfile
+from VAST.core.vlm_llt.viscous_correction import ViscousCorrectionModel
+
 # from modopt.snopt_library import SNOPT
 from modopt.scipy_library import SLSQP
 from modopt.csdl_library import CSDLProblem
@@ -17,230 +19,17 @@ import m3l
 import lsdo_geo as lg
 import aframe.core.beam_module as ebbeam
 
+
+from examples.advanced_examples.TC2_problem.ex_tc2_geometry_setup import lpc_rep, lpc_param, \
+    wing_camber_surface, htail_camber_surface, wing_vlm_mesh_name, htail_vlm_mesh_name, wing_oml_mesh, wing_upper_surface_ml, htail_upper_surface_ml, \
+    wing_beam, width, height, num_wing_beam, wing, wing_upper_surface_wireframe, wing_lower_surface_wireframe,\
+    pp_disk_in_plane_x, pp_disk_in_plane_y, pp_disk_origin, pp_disk
+
 caddee = cd.CADDEE()
 caddee.system_model = system_model = cd.SystemModel()
-caddee.system_representation = sys_rep = cd.SystemRepresentation()
-caddee.system_parameterization = sys_param = cd.SystemParameterization(system_representation=sys_rep)
+caddee.system_representation = lpc_rep
+caddee.system_parameterization = lpc_param
 
-file_name = 'lift_plus_cruise_final.stp'
-
-spatial_rep = sys_rep.spatial_representation
-spatial_rep.import_file(file_name=file_name)
-spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
-
-# wing
-wing_primitive_names = list(spatial_rep.get_primitives(search_names=['Wing_1']).keys())
-wing = LiftingSurface(name='wing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)
-# wing.plot()
-
-# Horizontal tail
-tail_primitive_names = list(spatial_rep.get_primitives(search_names=['Tail_1']).keys())
-htail = cd.LiftingSurface(name='h_tail', spatial_representation=spatial_rep, primitive_names=tail_primitive_names)
-
-# Rotor: pusher
-pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor-9-disk']).keys())
-pp_disk = cd.Rotor(name='pp_disk', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
-
-pp_blade_1_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_9_blades, 0']).keys())
-pp_blade_1 = cd.Rotor(name='pp_blade_1', spatial_representation=spatial_rep, primitive_names=pp_blade_1_prim_names)
-
-pp_blade_2_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_9_blades, 1']).keys())
-pp_blade_2 = cd.Rotor(name='pp_blade_2', spatial_representation=spatial_rep, primitive_names=pp_blade_2_prim_names)
-
-pp_blade_3_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_9_blades, 2']).keys())
-pp_blade_3 = cd.Rotor(name='pp_blade_3', spatial_representation=spatial_rep, primitive_names=pp_blade_3_prim_names)
-
-pp_blade_4_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_9_blades, 3']).keys())
-pp_blade_4 = cd.Rotor(name='pp_blade_4', spatial_representation=spatial_rep, primitive_names=pp_blade_4_prim_names)
-
-# Adding components
-sys_rep.add_component(wing)
-sys_rep.add_component(htail)
-sys_rep.add_component(pp_disk)
-sys_rep.add_component(pp_blade_1)
-sys_rep.add_component(pp_blade_2)
-sys_rep.add_component(pp_blade_3)
-sys_rep.add_component(pp_blade_4)
-
-# Tail FFD
-htail_geometry_primitives = htail.get_geometry_primitives()
-htail_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(htail_geometry_primitives, num_control_points=(11, 2, 2), order=(4,2,2), xyz_to_uvw_indices=(1,0,2))
-htail_ffd_block = cd.SRBGFFDBlock(name='htail_ffd_block', primitive=htail_ffd_bspline_volume, embedded_entities=htail_geometry_primitives)
-htail_ffd_block.add_scale_v(name='htail_linear_taper', order=2, num_dof=3, value=np.array([0., 0., 0.]), cost_factor=1.)
-htail_ffd_block.add_rotation_u(name='htail_twist_distribution', connection_name='h_tail_act', order=1, num_dof=1, value=np.array([np.deg2rad(1.75)]))
-# NOTE: line above is performaing actuation- change when actuations are ready
-
-ffd_set = cd.SRBGFFDSet(
-    name='ffd_set', 
-    ffd_blocks={htail_ffd_block.name : htail_ffd_block}
-)
-
-
-sys_param.add_geometry_parameterization(ffd_set)
-sys_param.setup()
-
-# wing mesh
-num_wing_vlm = 11
-num_chordwise_vlm = 2
-point00 = np.array([12.356, 25.125, 7.618 + 0.1]) # * ft2m # Right tip leading edge
-point01 = np.array([13.400, 25.125, 7.617 + 0.1]) # * ft2m # Right tip trailing edge
-point10 = np.array([8.892,    0.000, 8.633 + 0.1]) # * ft2m # Center Leading Edge
-point11 = np.array([14.332,   0.000, 8.439 + 0.1]) # * ft2m # Center Trailing edge
-point20 = np.array([12.356, -25.125, 7.618 + 0.1]) # * ft2m # Left tip leading edge
-point21 = np.array([13.400, -25.125, 7.617 + 0.1]) # * ft2m # Left tip trailing edge
-
-do_plots=False
-
-leading_edge_points = np.concatenate((np.linspace(point00, point10, int(num_wing_vlm/2+1))[0:-1,:], np.linspace(point10, point20, int(num_wing_vlm/2+1))), axis=0)
-trailing_edge_points = np.concatenate((np.linspace(point01, point11, int(num_wing_vlm/2+1))[0:-1,:], np.linspace(point11, point21, int(num_wing_vlm/2+1))), axis=0)
-
-leading_edge = wing.project(leading_edge_points, direction=np.array([-1., 0., 0.]), plot=True)
-trailing_edge = wing.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=True)
-
-
-chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
-# spatial_rep.plot_meshes([chord_surface])
-wing_upper_surface_wireframe = wing.project(chord_surface.value + np.array([0., 0., 0.5]), direction=np.array([0., 0., -1.]), grid_search_n=50, plot=do_plots, max_iterations=200)
-wing_lower_surface_wireframe = wing.project(chord_surface.value - np.array([0., 0., 0.5]), direction=np.array([0., 0., 1.]), grid_search_n=50, plot=do_plots, max_iterations=200)
-wing_camber_surface = am.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1)
-wing_vlm_mesh_name = 'wing_vlm_mesh'
-sys_rep.add_output(wing_vlm_mesh_name, wing_camber_surface)
-oml_mesh = am.vstack((wing_upper_surface_wireframe, wing_lower_surface_wireframe))
-wing_oml_mesh_name = 'wing_oml_mesh'
-sys_rep.add_output(wing_oml_mesh_name, oml_mesh)
-# spatial_rep.plot_meshes([wing_camber_surface])
-
-
-# OML mesh for ML pressures wing
-num_ml_points = 100
-chord_surface_ml = am.linspace(leading_edge, trailing_edge, num_ml_points)
-i_vec = np.arange(0, len(chord_surface_ml.value))
-x_range = np.linspace(0, 1, num_ml_points)
-
-x_interp_x = chord_surface.value[1,:, 0].reshape(num_wing_vlm,1) - ((chord_surface.value[1, :, 0] - chord_surface.value[0, :, 0]).reshape(num_wing_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
-x_interp_y = chord_surface.value[1,:, 1].reshape(num_wing_vlm,1) - ((chord_surface.value[1, :, 1] - chord_surface.value[0, :, 1]).reshape(num_wing_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
-x_interp_z = chord_surface.value[1,:, 2].reshape(num_wing_vlm,1) - ((chord_surface.value[1, :, 2] - chord_surface.value[0, :, 2]).reshape(num_wing_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
-
-new_chord_surface = np.zeros((num_ml_points, num_wing_vlm, 3))
-new_chord_surface[:, :, 0] = x_interp_x.T
-new_chord_surface[:, :, 1] = x_interp_y.T
-new_chord_surface[:, :, 2] = x_interp_z.T
-
-wing_upper_surface_ml = wing.project(new_chord_surface + np.array([0., 0., 0.5]), direction=np.array([0., 0., -1.]), grid_search_n=75, plot=True, max_iterations=200)
-wing_lower_surface_ml = wing.project(new_chord_surface - np.array([0., 0., 0.5]), direction=np.array([0., 0., 1.]), grid_search_n=100, plot=True, max_iterations=200)
-
-wing_oml_mesh_name_ml = 'wing_oml_mesh_ML'
-oml_mesh_ml = am.vstack((wing_upper_surface_ml, wing_lower_surface_ml))
-sys_rep.add_output(wing_oml_mesh_name_ml, oml_mesh_ml)
-
-
-# region tail mesh
-plot_tail_mesh = False
-num_spanwise_vlm = 10
-num_chordwise_vlm = 2
-leading_edge = htail.project(np.linspace(np.array([27., -6.75, 6.]), np.array([27., 6.75, 6.]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), grid_search_n=25, plot=plot_tail_mesh)  # returns MappedArray
-trailing_edge = htail.project(np.linspace(np.array([31.5, -6.75, 6.]), np.array([31.5, 6.75, 6.]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), grid_search_n=25, plot=plot_tail_mesh)   # returns MappedArray
-tail_chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
-htail_upper_surface_wireframe = htail.project(tail_chord_surface.value + np.array([0., 0., 1.]), direction=np.array([0., 0., -1.]), grid_search_n=25, plot=plot_tail_mesh)
-htail_lower_surface_wireframe = htail.project(tail_chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_n=25, plot=plot_tail_mesh)
-htail_camber_surface = am.linspace(htail_upper_surface_wireframe, htail_lower_surface_wireframe, 1)
-htail_vlm_mesh_name = 'htail_vlm_mesh'
-sys_rep.add_output(htail_vlm_mesh_name, htail_camber_surface)
-
-
-# OML mesh for ML pressures wing
-x_interp_x = tail_chord_surface.value[1,:, 0].reshape(num_spanwise_vlm, 1) - ((tail_chord_surface.value[1, :, 0] - tail_chord_surface.value[0, :, 0]).reshape(num_spanwise_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
-x_interp_y = tail_chord_surface.value[1,:, 1].reshape(num_spanwise_vlm, 1) - ((tail_chord_surface.value[1, :, 1] - tail_chord_surface.value[0, :, 1]).reshape(num_spanwise_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
-x_interp_z = tail_chord_surface.value[1,:, 2].reshape(num_spanwise_vlm, 1) - ((tail_chord_surface.value[1, :, 2] - tail_chord_surface.value[0, :, 2]).reshape(num_spanwise_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
-
-new_chord_surface = np.zeros((num_ml_points, num_spanwise_vlm, 3))
-new_chord_surface[:, :, 0] = x_interp_x.T
-new_chord_surface[:, :, 1] = x_interp_y.T
-new_chord_surface[:, :, 2] = x_interp_z.T
-
-htail_upper_surface_ml = htail.project(new_chord_surface + np.array([0., 0., 0.5]), direction=np.array([0., 0., -1.]), grid_search_n=75, plot=True, max_iterations=200)
-htail_lower_surface_ml = htail.project(new_chord_surface - np.array([0., 0., 0.5]), direction=np.array([0., 0., 1.]), grid_search_n=100, plot=True, max_iterations=200)
-
-htail_oml_mesh_name_ml = 'htail_oml_mesh_ML'
-oml_mesh_ml = am.vstack((htail_upper_surface_ml, htail_lower_surface_ml))
-sys_rep.add_output(htail_oml_mesh_name_ml, oml_mesh_ml)
-
-# endregion
-# region pusher prop (pp) meshes
-# disk
-y11 = pp_disk.project(np.array([31.94, 0.00, 3.29]), direction=np.array([-1., 0., 0.]), plot=False)
-y12 = pp_disk.project(np.array([31.94, 0.00, 12.29]), direction=np.array([-1., 0., 0.]), plot=False)
-y21 = pp_disk.project(np.array([31.94, -4.50, 7.78]), direction=np.array([-1., 0., 0.]), plot=False)
-y22 = pp_disk.project(np.array([31.94, 4.45, 7.77]), direction=np.array([-1., 0., 0.]), plot=False)
-pp_disk_in_plane_y = am.subtract(y11, y12)
-pp_disk_in_plane_x = am.subtract(y21, y22)
-pp_disk_origin = pp_disk.project(np.array([32.625, 0., 7.79]), direction=np.array([-1., 0., 0.]))
-sys_rep.add_output(f"{pp_disk.parameters['name']}_in_plane_1", pp_disk_in_plane_y)
-sys_rep.add_output(f"{pp_disk.parameters['name']}_in_plane_2", pp_disk_in_plane_x)
-sys_rep.add_output(f"{pp_disk.parameters['name']}_origin", pp_disk_origin)
-
-
-# chord 
-num_radial = 25
-# num_lifting_line = 10
-off_set = 1
-off_set_long_le = 0.1
-off_set_long_te_root = 0.35
-off_set_long_te_tip = 0.25
-
-b4_le_high_res_numpy = np.linspace(np.array([31.757 - off_set, -0.179 - off_set, 6.890 + 2 * off_set_long_le]), np.array([31.910 - off_set, -0.111 - off_set, 3.290 - 3 * off_set_long_le]), num_radial)
-b4_te_high_res_numpy = np.linspace(np.array([32.123 + off_set, 0.179 + off_set, 6.890 + 2 * off_set_long_le]), np.array([31.970 + off_set, 0.111 + off_set, 3.290 - 3 * off_set_long_le]), num_radial)
-pp_blade_4_le_high_res = pp_blade_4.project(b4_le_high_res_numpy, direction=np.array([1., 0., 0.]), grid_search_n=50, plot=False)
-pp_blade_4_te_high_res = pp_blade_4.project(b4_te_high_res_numpy, direction=np.array([-1., 0., 0.]), grid_search_n=50, plot=False)
-# pp_chord_length = am.norm(am.subtract(pp_blade_4_le_high_res, pp_blade_4_te_high_res), axes=(1, ))
-pp_chord_length = am.subtract(pp_blade_4_le_high_res, pp_blade_4_te_high_res)
-
-# twist
-pp_le_proj_disk = pp_disk.project(pp_blade_4_le_high_res.evaluate(), direction=np.array([-1., 0., 0.]), grid_search_n=50, plot=False)
-pp_te_proj_disk = pp_disk.project(pp_blade_4_te_high_res.evaluate(), direction=np.array([-1., 0., 0.]), grid_search_n=50, plot=False)
-
-pp_v_dist_le = am.subtract(pp_blade_4_le_high_res, pp_le_proj_disk)
-pp_v_dist_te = am.subtract(pp_blade_4_te_high_res, pp_te_proj_disk)
-pp_tot_v_dist = am.subtract(pp_v_dist_te, pp_v_dist_le)
-
-sys_rep.add_output(name="pp_chord_length", quantity=pp_chord_length)
-sys_rep.add_output(name='pp_twist', quantity=pp_tot_v_dist)
-# endregion
-
-
-
-# wing beam mesh
-num_wing_beam = 11
-leading_edge = wing.project(leading_edge_points, direction=np.array([-1., 0., 0.]), plot=do_plots)
-trailing_edge = wing.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=do_plots)
-wing_beam = am.linear_combination(leading_edge,trailing_edge,1,start_weights=np.ones((num_wing_beam,))*0.75,stop_weights=np.ones((num_wing_beam,))*0.25)
-width = am.norm((leading_edge - trailing_edge)*0.5*0.304)
-# width = am.subtract(leading_edge, trailing_edge)
-
-if do_plots:
-    spatial_rep.plot_meshes([wing_beam])
-
-wing_beam = wing_beam.reshape((11,3))#*0.304
-
-offset = np.array([0,0,0.5])
-top = wing.project(wing_beam.value+offset, direction=np.array([0., 0., -1.]), plot=False)
-bot = wing.project(wing_beam.value-offset, direction=np.array([0., 0., 1.]), plot=False)
-height = am.norm((top - bot)*1)
-# print('HEIGHT IN FEET', height.evaluate())
-# height = am.subtract(top, bot)
-# exit()
-sys_rep.add_output(name='wing_beam_mesh', quantity=wing_beam)
-sys_rep.add_output(name='wing_beam_width', quantity=width)
-sys_rep.add_output(name='wing_beam_height', quantity=height)
-
-# pass the beam meshes to aframe:
-beam_mesh = LinearBeamMesh(
-meshes = dict(
-wing_beam = wing_beam*0.304,
-wing_beam_width = width,
-wing_beam_height = height,
-)
-)
 
 # m3l sizing model
 # sizing_model = m3l.Model()
@@ -282,8 +71,8 @@ cruise_model.register_output(ac_states)
 
 vlm_model = VASTFluidSover(
     surface_names=[
-        wing_vlm_mesh_name,
-        htail_vlm_mesh_name,
+        f'{wing_vlm_mesh_name}_cruise',
+        f'{htail_vlm_mesh_name}_cruise',
     ],
     surface_shapes=[
         (1, ) + wing_camber_surface.evaluate().shape[1:],
@@ -291,11 +80,13 @@ vlm_model = VASTFluidSover(
     ],
     fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
     mesh_unit='ft',
-    cl0=[0.4, 0.]
+    cl0=[0.25, 0.],
+    ML=True,
 )
 
 # aero forces and moments
-cl_distribution, re_spans, vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states, ML=True)
+cl_distribution, re_spans, vlm_panel_forces, panel_areas, evaluation_pt, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states, ML=True)
+# vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states, design_condition=cruise_condition)
 cruise_model.register_output(vlm_force)
 cruise_model.register_output(vlm_moment)
 cruise_model.register_output(cl_distribution)
@@ -306,14 +97,29 @@ ml_pressures = PressureProfile(
     use_inverse_cl_map=True,
 )
 
-cp_upper, cp_lower, Cd = ml_pressures.evaluate(cl_distribution) #, mach_number, reynolds_number)
+cp_upper, cp_lower, Cd = ml_pressures.evaluate(cl_distribution, re_spans) #, mach_number, reynolds_number)
 cruise_model.register_output(cp_upper)
 cruise_model.register_output(cp_lower)
 
+viscous_drag_correction = ViscousCorrectionModel(
+    surface_names=[
+        f'{wing_vlm_mesh_name}_cruise',
+        f'{htail_vlm_mesh_name}_cruise',
+    ],
+    surface_shapes=[
+        (1, ) + wing_camber_surface.evaluate().shape[1:],
+        (1, ) + htail_camber_surface.evaluate().shape[1:],
+    ],
+)
+moment_point = None
+vlm_F, vlm_M = viscous_drag_correction.evaluate(ac_states=ac_states, forces=vlm_panel_forces, cd_v=Cd, panel_area=panel_areas, moment_pt=moment_point, evaluation_pt=evaluation_pt, design_condition=cruise_condition)
+cruise_model.register_output(vlm_F)
+cruise_model.register_output(vlm_M)
+
 ml_pressures_oml_map = NodalPressureProfile(
     surface_names=[
-        wing_vlm_mesh_name,
-        htail_vlm_mesh_name,
+        f'{wing_vlm_mesh_name}_cruise',
+        f'{htail_vlm_mesh_name}_cruise',
     ],
     surface_shapes=[
         wing_upper_surface_ml.value.shape,
@@ -346,7 +152,7 @@ vlm_force_mapping_model = VASTNodalForces(
         htail_camber_surface]
 )
 
-oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces, nodal_force_meshes=[oml_mesh, oml_mesh])
+oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces, nodal_force_meshes=[wing_oml_mesh, wing_oml_mesh])
 wing_forces = oml_forces[0]
 htail_forces = oml_forces[1]
 
@@ -370,39 +176,39 @@ bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=2000,
 bem_forces, bem_moments,_ ,_ ,_ = bem_model.evaluate(ac_states=ac_states)
 
 # create the aframe dictionaries:
-joints, bounds, beams = {}, {}, {}
-beams['wing_beam'] = {'E': 69E9,'G': 26E9,'rho': 2700,'cs': 'box','nodes': list(range(num_wing_beam))}
-bounds['wing_root'] = {'beam': 'wing_beam','node': 5,'fdim': [1,1,1,1,1,1]}
+# joints, bounds, beams = {}, {}, {}
+# beams['wing_beam'] = {'E': 69E9,'G': 26E9,'rho': 2700,'cs': 'box','nodes': list(range(num_wing_beam))}
+# bounds['wing_root'] = {'beam': 'wing_beam','node': 5,'fdim': [1,1,1,1,1,1]}
 
-# create the beam model:
-beam = EBBeam(component=wing, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints)
-#beam.set_module_input('wing_beamt_cap_in', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
-#beam.set_module_input('wing_beamt_web_in', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
+# # create the beam model:
+# beam = EBBeam(component=wing, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints)
+# #beam.set_module_input('wing_beamt_cap_in', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
+# #beam.set_module_input('wing_beamt_web_in', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
 
-cruise_wing_structural_nodal_displacements_mesh = am.vstack((wing_upper_surface_wireframe, wing_lower_surface_wireframe))
-cruise_wing_aero_nodal_displacements_mesh = cruise_wing_structural_nodal_displacements_mesh
-cruise_wing_structural_nodal_force_mesh = cruise_wing_structural_nodal_displacements_mesh
-cruise_wing_aero_nodal_force_mesh = cruise_wing_structural_nodal_displacements_mesh
+# cruise_wing_structural_nodal_displacements_mesh = am.vstack((wing_upper_surface_wireframe, wing_lower_surface_wireframe))
+# cruise_wing_aero_nodal_displacements_mesh = cruise_wing_structural_nodal_displacements_mesh
+# cruise_wing_structural_nodal_force_mesh = cruise_wing_structural_nodal_displacements_mesh
+# cruise_wing_aero_nodal_force_mesh = cruise_wing_structural_nodal_displacements_mesh
 
-dummy_b_spline_space = lg.BSplineSpace(name='dummy_b_spline_space', order=(3,1), control_points_shape=((35,1)))
-dummy_function_space = lg.BSplineSetSpace(name='dummy_space', spaces={'dummy_b_spline_space': dummy_b_spline_space})
+# dummy_b_spline_space = lg.BSplineSpace(name='dummy_b_spline_space', order=(3,1), control_points_shape=((35,1)))
+# dummy_function_space = lg.BSplineSetSpace(name='dummy_space', spaces={'dummy_b_spline_space': dummy_b_spline_space})
 
-cruise_wing_displacement_coefficients = m3l.Variable(name='cruise_wing_displacement_coefficients', shape=(35,3))
-cruise_wing_displacement = m3l.Function(name='cruise_wing_displacement', space=dummy_function_space, coefficients=cruise_wing_displacement_coefficients)
+# cruise_wing_displacement_coefficients = m3l.Variable(name='cruise_wing_displacement_coefficients', shape=(35,3))
+# cruise_wing_displacement = m3l.Function(name='cruise_wing_displacement', space=dummy_function_space, coefficients=cruise_wing_displacement_coefficients)
 
 
-beam_force_map_model = ebbeam.EBBeamForces(component=wing, beam_mesh=beam_mesh, beams=beams)
-cruise_structural_wing_mesh_forces = beam_force_map_model.evaluate(nodal_forces=wing_forces,
-                                                                   nodal_forces_mesh=oml_mesh)
+# beam_force_map_model = ebbeam.EBBeamForces(component=wing, beam_mesh=beam_mesh, beams=beams)
+# cruise_structural_wing_mesh_forces = beam_force_map_model.evaluate(nodal_forces=wing_forces,
+#                                                                    nodal_forces_mesh=oml_mesh)
 
-beam_displacements_model = ebbeam.EBBeam(component=wing, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints)
-beam_displacements_model.set_module_input('wing_beamt_cap_in', val=0.01, dv_flag=True, lower=0.0001, upper=0.04, scaler=1E3)
-beam_displacements_model.set_module_input('wing_beamt_web_in', val=0.01, dv_flag=True, lower=0.0001, upper=0.04, scaler=1E3)
+# beam_displacements_model = ebbeam.EBBeam(component=wing, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints)
+# beam_displacements_model.set_module_input('wing_beamt_cap_in', val=0.01, dv_flag=True, lower=0.0001, upper=0.04, scaler=1E3)
+# beam_displacements_model.set_module_input('wing_beamt_web_in', val=0.01, dv_flag=True, lower=0.0001, upper=0.04, scaler=1E3)
 
-cruise_structural_wing_mesh_displacements, cruise_structural_wing_mesh_rotations, wing_mass, wing_cg, wing_inertia_tensor = beam_displacements_model.evaluate(
-    forces=cruise_structural_wing_mesh_forces)
+# cruise_structural_wing_mesh_displacements, cruise_structural_wing_mesh_rotations, wing_mass, wing_cg, wing_inertia_tensor = beam_displacements_model.evaluate(
+#     forces=cruise_structural_wing_mesh_forces)
 
-cruise_model.register_output(cruise_structural_wing_mesh_displacements)
+# cruise_model.register_output(cruise_structural_wing_mesh_displacements)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
 # total_mass, total_cg, total_inertia = total_mass_properties.evaluate(wing_mass, battery_mass, mass_m4, wing_cg, cg_battery, cg_m4, wing_inertia_tensor, I_battery, I_m4)
@@ -420,7 +226,8 @@ cruise_model.register_output(inertial_moments)
 
 # total forces and moments 
 total_forces_moments_model = cd.TotalForcesMomentsM3L()
-total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment, bem_forces, bem_moments, inertial_forces, inertial_moments)
+total_forces, total_moments = total_forces_moments_model.evaluate(vlm_F, vlm_M, bem_forces, bem_moments, inertial_forces, inertial_moments)
+# total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment, bem_forces, bem_moments, inertial_forces, inertial_moments)
 cruise_model.register_output(total_forces)
 cruise_model.register_output(total_moments)
 
@@ -447,12 +254,13 @@ system_model.add_design_scenario(design_scenario=design_scenario)
 
 caddee_csdl_model = caddee.assemble_csdl()
 
-h_tail_act = caddee_csdl_model.create_input('h_tail_act', val=np.deg2rad(-0.5))
+h_tail_act = caddee_csdl_model.create_input('h_tail_act', val=np.deg2rad(0))
 caddee_csdl_model.add_design_variable('h_tail_act', 
                                 lower=np.deg2rad(-10),
                                 upper=np.deg2rad(10),
                                 scaler=1,
                             )
+wing_act_plus_3g = caddee_csdl_model.create_input('cruise_wing_actuation', val=np.deg2rad(3.2))
 
 # caddee_csdl_model.add_constraint('system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.new_stress',upper=500E6/1,scaler=1E-8)
 # caddee_csdl_model.add_constraint('system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual', equals=0.)
