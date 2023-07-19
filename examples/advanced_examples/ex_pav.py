@@ -2,6 +2,8 @@
 import caddee.api as cd
 import m3l
 from python_csdl_backend import Simulator
+from modopt.scipy_library import SLSQP
+from modopt.csdl_library import CSDLProblem
 
 # Geometry
 from caddee.core.caddee_core.system_representation.component.component import LiftingSurface, Component
@@ -50,7 +52,6 @@ htail = cd.LiftingSurface(name='HTail', spatial_representation=spatial_rep, prim
 if debug_geom_flag:
     htail.plot()
 sys_rep.add_component(htail)
-# endregion
 
 # Canard
 canard_primitive_names = list(spatial_rep.get_primitives(search_names=['FrontSuport']).keys())
@@ -200,9 +201,6 @@ if debug_geom_flag:
 if visualize_flag:
     spatial_rep.plot_meshes([wing_camber_surface, htail_camber_surface])
 
-# region Canard
-# endregion
-
 # region Pusher prop
 # y11 = pp_disk.project(np.array([23.500 + 0.1, 0.00, 0.800]), direction=np.array([-1., 0., 0.]), plot=False)
 # y12 = pp_disk.project(np.array([23.500 + 0.1, 0.00, 5.800]), direction=np.array([-1., 0., 0.]), plot=False)
@@ -215,9 +213,6 @@ if visualize_flag:
 # sys_rep.add_output(f"{pp_disk.parameters['name']}_in_plane_2", pp_disk_in_plane_x)
 # sys_rep.add_output(f"{pp_disk.parameters['name']}_origin", pp_disk_origin)
 # endregion
-
-
-
 
 # endregion
 
@@ -240,7 +235,7 @@ cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
 cruise_condition.set_module_input(name='altitude', val=600*ft2m)
 cruise_condition.set_module_input(name='mach_number', val=0.145972)  # 112 mph = 0.145972 Mach
 cruise_condition.set_module_input(name='range', val=80467.2)  # 50 miles = 80467.2 m
-cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=0., upper=np.deg2rad(10))
+cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-10), upper=np.deg2rad(10))
 cruise_condition.set_module_input(name='flight_path_angle', val=0)
 cruise_condition.set_module_input(name='roll_angle', val=0)
 cruise_condition.set_module_input(name='yaw_angle', val=0)
@@ -298,16 +293,20 @@ vlm_model = VASTFluidSover(
         ],
     fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
     mesh_unit='ft',
-    cl0=[0.0, 0.0]
+    cl0=[0.55, 0.0]
 )
-vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=cruise_ac_states)
-cruise_model.register_output(vlm_force)
-cruise_model.register_output(vlm_moment)
+vlm_panel_forces, vlm_forces, vlm_moments  = vlm_model.evaluate(ac_states=cruise_ac_states)
+cruise_model.register_output(vlm_forces)
+cruise_model.register_output(vlm_moments)
 # endregion
 
 # Total loads
 total_forces_moments_model = cd.TotalForcesMomentsM3L()
-total_forces, total_moments = total_forces_moments_model.evaluate(bem_forces, bem_moments)
+total_forces, total_moments = total_forces_moments_model.evaluate(
+    inertial_forces, inertial_moments,
+    vlm_forces, vlm_moments,
+    bem_forces, bem_moments
+)
 cruise_model.register_output(total_forces)
 cruise_model.register_output(total_moments)
 
@@ -340,14 +339,39 @@ caddee_csdl_model.create_input(name='h_tail_act', val=np.deg2rad(0.))
 caddee_csdl_model.add_design_variable(dv_name='h_tail_act', lower=np.deg2rad(-10), upper=np.deg2rad(10), scaler=1.)
 
 # region Optimization Setup
-
+caddee_csdl_model.add_objective('system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual')
+caddee_csdl_model.add_constraint(
+    name='system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.induced_velocity_model.eta',
+    equals=0.8)
+caddee_csdl_model.add_constraint(
+    name='system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.L_over_D',
+    equals=8.,
+    scaler=1e-1
+)
 # endregion
 
 # Create and run simulator
 sim = Simulator(caddee_csdl_model, analytics=True)
 sim.run()
+# sim.compute_total_derivatives()
+# sim.check_totals()
 
 print('Total forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_forces'])
 print('Total moments:', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_moments'])
 
 # system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.induced_velocity_model.FOM
+
+prob = CSDLProblem(problem_name='lpc', simulator=sim)
+optimizer = SLSQP(prob, maxiter=1000, ftol=1E-10)
+optimizer.solve()
+optimizer.print_results()
+
+print('Trim residual: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual'])
+print('Trim forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_forces'])
+print('Trim moments:', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_moments'])
+print('Pitch: ', np.rad2deg(sim['system_model.aircraft_trim.cruise_1.cruise_1.cruise_1_ac_states_operation.cruise_1_pitch_angle']))
+print('RPM: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.rpm'])
+print('Horizontal tail actuation: ', np.rad2deg(sim['system_parameterization.ffd_set.rotational_section_properties_model.h_tail_act']))
+
+print(sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.induced_velocity_model.eta'])
+print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.L_over_D'])
