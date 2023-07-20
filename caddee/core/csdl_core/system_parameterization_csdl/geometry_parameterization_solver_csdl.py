@@ -1,5 +1,6 @@
 import csdl
 import numpy as np
+import array_mapper as am
 import scipy.sparse as sps
 
 import time
@@ -135,7 +136,10 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
         # self.mapped_array_indices = {}
         mapped_array_indices_counter = 0
         for input_name, parameterization_input in system_parameterization.inputs.items():
-            mapped_array = parameterization_input.quantity.input
+            if type(parameterization_input.quantity) is am.MappedArray:
+                mapped_array = parameterization_input.quantity
+            elif type(parameterization_input.quantity) is am.NonlinearMappedArray:
+                mapped_array = parameterization_input.quantity.input
             # num_mapped_array_outputs = mapped_array.linear_map.shape[0]
             # self.mapped_array_indices[input_name] = \
             #     np.arange(mapped_array_indices_counter, mapped_array_indices_counter + num_mapped_array_outputs)
@@ -210,14 +214,23 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
         for input_name, parameterization_input in system_parameterization.inputs.items():
             quantity = parameterization_input.quantity
             quantity_num_constraints = np.prod(quantity.shape)
-            nonlinear_operation_input = quantity.input.evaluate(system_representation_geometry)
-            c[constraint_counter:constraint_counter+quantity_num_constraints] = \
-                quantity.evaluate(system_representation_geometry, evaluate_input=True) \
+
+            if type(quantity) is am.MappedArray: # displacement constraint
+                c[constraint_counter:constraint_counter+quantity_num_constraints] = \
+                    quantity.evaluate(system_representation_geometry) \
                     - parameterization_inputs[constraint_counter:constraint_counter+quantity_num_constraints]
             
-            nonlinear_derivative = quantity.evaluate_derivative(nonlinear_operation_input, evaluate_input=False)
-            dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = \
-                nonlinear_derivative.dot(self.ffd_free_dof_to_mapped_arrays.toarray())
+                dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = \
+                    self.ffd_free_dof_to_mapped_arrays.toarray()
+            else:
+                nonlinear_operation_input = quantity.input.evaluate(system_representation_geometry)
+                c[constraint_counter:constraint_counter+quantity_num_constraints] = \
+                    quantity.evaluate(system_representation_geometry, evaluate_input=True) \
+                        - parameterization_inputs[constraint_counter:constraint_counter+quantity_num_constraints]
+                
+                nonlinear_derivative = quantity.evaluate_derivative(nonlinear_operation_input, evaluate_input=False)
+                dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = \
+                    nonlinear_derivative.dot(self.ffd_free_dof_to_mapped_arrays.toarray())
 
             constraint_counter += quantity_num_constraints
 
@@ -285,56 +298,26 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
         for input_name, parameterization_input in system_parameterization.inputs.items():
             quantity = parameterization_input.quantity
             quantity_num_constraints = np.prod(quantity.shape)
-            nonlinear_operation_input = quantity.input.evaluate(system_representation_geometry)
 
-            nonlinear_derivative = quantity.evaluate_derivative(nonlinear_operation_input, evaluate_input=False)
-            dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = \
-                nonlinear_derivative.dot(self.ffd_free_dof_to_mapped_arrays.toarray())
-            
-            nonlinear_second_derivative = quantity.evaluate_second_derivative(nonlinear_operation_input).reshape(
-                (quantity_num_constraints, ffd_set.num_affine_free_dof, ffd_set.num_affine_free_dof))
-            # shape is (1,3,3) or (num_outputs,)
-            first_term = np.tensordot(nonlinear_second_derivative, self.ffd_free_dof_to_mapped_arrays.toarray(), axes=([-2, 0]))
-            total_second_derivative = np.tensordot(first_term, self.ffd_free_dof_to_mapped_arrays.toarray(), axes=([-1, 0]))
-            d2c_dx2[constraint_counter:constraint_counter+quantity_num_constraints,:,:] = total_second_derivative
+            if type(quantity) is am.MappedArray:
+                dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = \
+                    self.ffd_free_dof_to_mapped_arrays.toarray()
 
-            # if type(geometric_calculation) is MagnitudeCalculation:
-            #     pointset = geometric_calculation.pointset
-            #     starting_index = pointset.output_starting_ind
-            #     pointset_length = np.cumprod(pointset.shape)[-2]
-            #     ending_index = starting_index + pointset_length
-            #     indices = np.arange(starting_index, ending_index)
-            #     pointset_subset_map = np.zeros((pointset_length, pointset_points.shape[0]))
-            #     for i, index in enumerate(indices):
-            #         pointset_subset_map[i, index] = 1.
+                d2c_dx2[constraint_counter:constraint_counter+quantity_num_constraints,:,:] = 0.
+            else:
+                nonlinear_operation_input = quantity.input.evaluate(system_representation_geometry)
+                mapped_array_size = np.prod(nonlinear_operation_input.shape)
 
-            #     total_linear_map = np.tensordot(pointset_subset_map, self.ffd_free_dof_to_pointsets_linear_map, axes=([-1],[0]))
+                nonlinear_derivative = quantity.evaluate_derivative(nonlinear_operation_input, evaluate_input=False)
+                dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = \
+                    nonlinear_derivative.dot(self.ffd_free_dof_to_mapped_arrays.toarray())
+                
+                nonlinear_second_derivative = quantity.evaluate_second_derivative(nonlinear_operation_input).reshape(
+                    (quantity_num_constraints, mapped_array_size, mapped_array_size))
 
-            #     displacement = pointset_subset_map.dot(pointset_points)
-            #     magnitude = np.linalg.norm(displacement)
-            #     # c[constraint_counter] = magnitude - chord_dv
-
-            #     displacement_tensor = displacement.reshape((1,1) + tuple(pointset.shape))  # geometric output has shape (1,)  (it should technically be (1,1), but I think (1,) will work same in practice)
-            #     nonlinear_map = displacement_tensor/magnitude   # dgeometricoutputs_dgeometricoutputpointset
-
-            #     dc_dx[constraint_counter,:] = np.tensordot(nonlinear_map, total_linear_map)
-
-            #     ddisplacement_displacement = np.zeros(tuple(pointset.shape) + tuple(pointset.shape))
-            #     ddisplacement_displacement[0,:,0,:] = np.eye(pointset.shape[1])     # should just be a (3,3)
-            #     ddisplacement_displacement_T = np.zeros(tuple(pointset.shape[::-1]) + tuple(pointset.shape))
-            #     ddisplacement_displacement_T[:,0,0,:] = np.eye(pointset.shape[1])     # should just be a (3,3)
-            #     a_term_dot_db_term = ddisplacement_displacement.reshape((1,1) + tuple(ddisplacement_displacement.shape))/magnitude
-            #     a_term_dot_db_term_T = np.swapaxes(a_term_dot_db_term, 0, 3)    # need to transpose for upcoming computation anyway
-            #     da_term = -np.tensordot(displacement/magnitude**3, ddisplacement_displacement_T, axes=([-1],[0]))
-            #     b_term_T_dot_da_term_T = np.tensordot(displacement_tensor.T, da_term, axes=([-1],[0]))
-            #     # b_term_T_dot_da_term_T_all_T = np.swapaxes(b_term_T_dot_da_term_T, 0, 3)  # need to transpose back anywyay
-            #     d2magnitude_dpointsetddisplacement_T = a_term_dot_db_term_T + b_term_T_dot_da_term_T
-            #     d2magnitude_dffddv2_term1_T = np.tensordot(total_linear_map.T, d2magnitude_dpointsetddisplacement_T)
-            #     # d2magnitude_dpointset2_term1 = np.transpose(d2magnitude_dpointset2_term1_T, axes=(3, 2, 1, 0, 4, 5))
-            #     d2magnitude_dffddv2_term1 = np.transpose(d2magnitude_dffddv2_term1_T, axes=(2, 1, 0, 3, 4))
-            #     d2magnitude_dffddv2 = np.tensordot(d2magnitude_dffddv2_term1, total_linear_map)
-
-            #     d2c_dx2[constraint_counter,:,:] = d2magnitude_dffddv2
+                first_term = np.tensordot(nonlinear_second_derivative, self.ffd_free_dof_to_mapped_arrays.toarray(), axes=([2, 0]))
+                total_second_derivative = np.tensordot(first_term, self.ffd_free_dof_to_mapped_arrays.toarray(), axes=([1, 0]))
+                d2c_dx2[constraint_counter:constraint_counter+quantity_num_constraints,:,:] = total_second_derivative
 
             constraint_counter += quantity_num_constraints
 

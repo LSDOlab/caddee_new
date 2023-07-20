@@ -80,7 +80,7 @@ wing_ffd_bspline_volume = create_cartesian_enclosure_volume(wing_geometry_primit
                                                             xyz_to_uvw_indices=(1,0,2))
 wing_ffd_block = SRBGFFDBlock(name='wing_ffd_block', primitive=wing_ffd_bspline_volume, embedded_entities=wing_geometry_primitives)
 wing_ffd_block.add_scale_v(name='linear_taper', order=2, num_dof=3, cost_factor=1.)
-wing_ffd_block.add_scale_w(name='constant_thickness_scaling', order=1, num_dof=1, value=np.array([0.5]))
+wing_ffd_block.add_scale_w(name='constant_thickness_scaling', order=1, num_dof=1)
 wing_ffd_block.add_rotation_u(name='twist_distribution', order=4, num_dof=10,
                               value=1/4*np.array([0., 0.11, 0.22, 0.33, 0.44, 0.44, 0.33, 0.22, 0.11, 0.]))
 
@@ -92,6 +92,10 @@ horizontal_stabilizer_ffd_block = SRBGFFDBlock(name='horizontal_stabilizer_ffd_b
 horizontal_stabilizer_ffd_block.add_scale_v(name='horizontal_stabilizer_linear_taper', order=2, num_dof=3, value=np.array([0.5, 0.5, 0.5]),
                                             cost_factor=1.)
 horizontal_stabilizer_ffd_block.add_rotation_u(name='horizontal_stabilizer_twist_distribution', order=1, num_dof=1, value=np.array([np.pi/10]))
+
+point_on_wing = wing.project(np.array([10., 0., 10.]), direction=np.array([0., 0., -1.]))
+point_on_tail = horizontal_stabilizer.project(np.array([28., 0., 10.]), direction=np.array([0., 0., -1.]))
+wing_to_tail_distance = am.norm(point_on_wing-point_on_tail)
 
 from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_set import SRBGFFDSet
 ffd_blocks = {wing_ffd_block.name : wing_ffd_block, horizontal_stabilizer_ffd_block.name : horizontal_stabilizer_ffd_block}
@@ -113,11 +117,7 @@ cruise_configuration.set_num_nodes(num_nodes=cruise_num_nodes)
 cruise_configuration.add_output('horizontal_stabilizer_camber_surface', horizontal_stabilizer_camber_surface)
 cruise_configuration.add_output('wing_camber_surface', wing_camber_surface)
 
-point_on_wing = wing.project(np.array([10., 0., 10.]), direction=np.array([0., 0., -1.]))
-point_on_tail = horizontal_stabilizer.project(np.array([28., 0., 10.]), direction=np.array([0., 0., -1.]))
-wing_to_tail_distance = am.norm(point_on_wing-point_on_tail)
 cruise_configuration.add_output('wing_to_tail_distance', wing_to_tail_distance)
-
 
 horizontal_stabilizer_quarter_chord_port = horizontal_stabilizer.project(np.array([28.5, -10., 8.]))
 horizontal_stabilizer_quarter_chord_starboard = horizontal_stabilizer.project(np.array([28.5, 10., 8.]))

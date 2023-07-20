@@ -140,7 +140,7 @@ class SRBGFFDSet:
                 prescribed_affine_section_properties_maps.append(ffd_block.prescribed_affine_section_properties_map)
             else:
                 prescribed_affine_section_properties_maps.append(
-                    (sps.csc_matrix(ffd_block.num_affine_section_properties,ffd_block.num_affine_prescribed_dof)))
+                    sps.csc_matrix((ffd_block.num_affine_section_properties,ffd_block.num_affine_prescribed_dof)))
 
         if free_affine_section_properties_maps:
             free_affine_section_properties_map = sps.block_diag(tuple(free_affine_section_properties_maps))
