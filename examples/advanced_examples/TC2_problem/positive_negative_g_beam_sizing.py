@@ -8,7 +8,7 @@ from VAST.core.vast_solver import VASTFluidSover
 from VAST.core.fluid_problem import FluidProblem
 from VAST.core.generate_mappings_m3l import VASTNodalForces
 from VAST.core.vlm_llt.viscous_correction import ViscousCorrectionModel
-# from modopt.snopt_library import SNOPT
+from modopt.snopt_library import SNOPT
 from modopt.scipy_library import SLSQP
 from modopt.csdl_library import CSDLProblem
 import csdl
@@ -450,13 +450,13 @@ wing_act_minis_1g = caddee_csdl_model.create_input('minus_1g_wing_actuation', va
 # #                                 scaler=1,
 # #                             )
 
-plus_3g_stress = caddee_csdl_model.declare_variable('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress', shape=(10, 5))
-minus_1g_stress = caddee_csdl_model.declare_variable('system_model.system_m3l_model.minus_1g_sizing_wing_eb_beam_model.new_stress', shape=(10, 5))
-max_stress = csdl.max(csdl.max(plus_3g_stress, minus_1g_stress * 1))
-caddee_csdl_model.register_output('max_beam_stress', max_stress)
+# plus_3g_stress = caddee_csdl_model.declare_variable('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress', shape=(10, 5))
+# minus_1g_stress = caddee_csdl_model.declare_variable('system_model.system_m3l_model.minus_1g_sizing_wing_eb_beam_model.new_stress', shape=(10, 5))
+# max_stress = csdl.max(csdl.max(plus_3g_stress, minus_1g_stress * 1))
+# caddee_csdl_model.register_output('max_beam_stress', max_stress)
 
-# caddee_csdl_model.add_constraint('system_model.system_m3l_model.minus_1g_sizing_wing_eb_beam_model.Aframe.new_stress',upper=276E6/1.5,scaler=1E-8)
-caddee_csdl_model.add_constraint('max_beam_stress', upper=427E6/1.0, scaler=1E-8)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress',upper=427E6/1.,scaler=1E-8)
+# caddee_csdl_model.add_constraint('max_beam_stress', upper=427E6/1.0, scaler=1E-8)
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_euler_eom_gen_ref_pt.trim_residual', equals=0.)
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.minus_1g_sizing_euler_eom_gen_ref_pt.trim_residual', equals=0.)
 caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_mass_properties.total_constant_mass', scaler=1e-3)
@@ -469,16 +469,24 @@ sim.run()
 # print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.vm_stress'])
 # print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.wing_beam_forces'])
 
-# sim.check_totals()
+# sim.check_totals(of='max_beam_stress', wrt='system_model.system_m3l_model.minus_1g_sizing_ac_states_operation.minus_1g_sizing_pitch_angle', step=1e-12)
 
 
 # exit()
 
 # sim.compute_total_derivatives()
 
+prob = CSDLProblem(problem_name='beam_plus3g_minus1g', simulator=sim)
+optimizer = SNOPT(
+    prob, 
+    Major_iterations=400, 
+    Major_optimality=1e-5, 
+    Major_feasibility=1e-8,
+    append2file=True,
+)
 
-prob = CSDLProblem(problem_name='lpc', simulator=sim)
-optimizer = SLSQP(prob, maxiter=1000, ftol=1E-5)
+# prob = CSDLProblem(problem_name='lpc', simulator=sim)
+# optimizer = SLSQP(prob, maxiter=1000, ftol=1E-5)
 optimizer.solve()
 optimizer.print_results()
 

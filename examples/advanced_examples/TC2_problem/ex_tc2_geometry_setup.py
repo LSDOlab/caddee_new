@@ -1075,6 +1075,38 @@ qst_1_configuration.set_num_nodes(num_nodes=1)
 qst_1_configuration.add_output(f'{htail_vlm_mesh_name}_qst_1', htail_camber_surface)
 qst_1_configuration.add_output(f'{wing_vlm_mesh_name}_qst_1', wing_camber_surface)
 
+qst_1_configuration.add_output(f"qst_1_{rlo_disk.parameters['name']}_in_plane_1", rlo_in_plane_y)
+qst_1_configuration.add_output(f"qst_1_{rlo_disk.parameters['name']}_in_plane_2", rlo_in_plane_x)
+qst_1_configuration.add_output(f"qst_1_{rlo_disk.parameters['name']}_origin", rlo_origin)
+
+qst_1_configuration.add_output(f"qst_1_{rli_disk.parameters['name']}_in_plane_1", rli_in_plane_y)
+qst_1_configuration.add_output(f"qst_1_{rli_disk.parameters['name']}_in_plane_2", rli_in_plane_x)
+qst_1_configuration.add_output(f"qst_1_{rli_disk.parameters['name']}_origin", rli_origin)
+
+qst_1_configuration.add_output(f"qst_1_{rri_disk.parameters['name']}_in_plane_1", rri_in_plane_y)
+qst_1_configuration.add_output(f"qst_1_{rri_disk.parameters['name']}_in_plane_2", rri_in_plane_x)
+qst_1_configuration.add_output(f"qst_1_{rri_disk.parameters['name']}_origin", rri_origin)
+
+qst_1_configuration.add_output(f"qst_1_{rro_disk.parameters['name']}_in_plane_1", rro_in_plane_y)
+qst_1_configuration.add_output(f"qst_1_{rro_disk.parameters['name']}_in_plane_2", rro_in_plane_x)
+qst_1_configuration.add_output(f"qst_1_{rro_disk.parameters['name']}_origin", rro_origin)
+
+qst_1_configuration.add_output(f"qst_1_{flo_disk.parameters['name']}_in_plane_1", flo_in_plane_y)
+qst_1_configuration.add_output(f"qst_1_{flo_disk.parameters['name']}_in_plane_2", flo_in_plane_x)
+qst_1_configuration.add_output(f"qst_1_{flo_disk.parameters['name']}_origin", flo_origin)
+
+qst_1_configuration.add_output(f"qst_1_{fli_disk.parameters['name']}_in_plane_1", fli_in_plane_y)
+qst_1_configuration.add_output(f"qst_1_{fli_disk.parameters['name']}_in_plane_2", fli_in_plane_x)
+qst_1_configuration.add_output(f"qst_1_{fli_disk.parameters['name']}_origin", fli_origin)
+
+qst_1_configuration.add_output(f"qst_1_{fri_disk.parameters['name']}_in_plane_1", fri_in_plane_y)
+qst_1_configuration.add_output(f"qst_1_{fri_disk.parameters['name']}_in_plane_2", fri_in_plane_x)
+qst_1_configuration.add_output(f"qst_1_{fri_disk.parameters['name']}_origin", fri_origin)
+
+qst_1_configuration.add_output(f"qst_1_{fro_disk.parameters['name']}_in_plane_1", fro_in_plane_y)
+qst_1_configuration.add_output(f"qst_1_{fro_disk.parameters['name']}_in_plane_2", fro_in_plane_x)
+qst_1_configuration.add_output(f"qst_1_{fro_disk.parameters['name']}_origin", fro_origin)
+
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='qst_1_tail_actuation', value=0, units='radians')
 qst_1_configuration.actuate(transformation=horizontal_stabilizer_actuator_solver)
@@ -1082,6 +1114,78 @@ qst_1_configuration.actuate(transformation=horizontal_stabilizer_actuator_solver
 wing_actuator_solver = PrescribedRotation(component=wing, axis_origin=wing_quarter_chord_port, axis_vector=wing_actuation_axis)
 wing_actuator_solver.set_rotation(name='qst_1_wing_actuation', value=np.deg2rad(4) , units='radians')
 qst_1_configuration.actuate(transformation=wing_actuator_solver)
+
+# rlo
+rlo_disk_actuator_solver_1 = PrescribedRotation(component=rlo_disk, axis_origin=rlo_origin, axis_vector=rlo_in_plane_y)
+rlo_disk_actuator_solver_1.set_rotation(name='qst_1_rlo_disk_actuation_1', value=0, units='radians')
+qst_1_configuration.actuate(transformation=rlo_disk_actuator_solver_1)
+
+rlo_disk_actuator_solver_2 = PrescribedRotation(component=rlo_disk, axis_origin=rlo_origin, axis_vector=rlo_in_plane_x)
+rlo_disk_actuator_solver_2.set_rotation(name='qst_1_rlo_disk_actuation_2', value=0, units='radians')
+qst_1_configuration.actuate(transformation=rlo_disk_actuator_solver_2)
+
+# rli
+rli_disk_actuator_solver_1 = PrescribedRotation(component=rli_disk, axis_origin=rli_origin, axis_vector=rli_in_plane_y)
+rli_disk_actuator_solver_1.set_rotation(name='qst_1_rli_disk_actuation_1', value=0, units='radians')
+qst_1_configuration.actuate(transformation=rli_disk_actuator_solver_1)
+
+rli_disk_actuator_solver_2 = PrescribedRotation(component=rli_disk, axis_origin=rli_origin, axis_vector=rli_in_plane_x)
+rli_disk_actuator_solver_2.set_rotation(name='qst_1_rli_disk_actuation_2', value=0, units='radians')
+qst_1_configuration.actuate(transformation=rli_disk_actuator_solver_2)
+
+# rri
+rri_disk_actuator_solver_1 = PrescribedRotation(component=rri_disk, axis_origin=rri_origin, axis_vector=rri_in_plane_y)
+rri_disk_actuator_solver_1.set_rotation(name='qst_1_rri_disk_actuation_1', value=0, units='radians')
+qst_1_configuration.actuate(transformation=rri_disk_actuator_solver_1)
+
+rri_disk_actuator_solver_2 = PrescribedRotation(component=rri_disk, axis_origin=rri_origin, axis_vector=rri_in_plane_x)
+rri_disk_actuator_solver_2.set_rotation(name='qst_1_rri_disk_actuation_2', value=0, units='radians')
+qst_1_configuration.actuate(transformation=rri_disk_actuator_solver_2)
+
+# rro
+rro_disk_actuator_solver_1 = PrescribedRotation(component=rro_disk, axis_origin=rro_origin, axis_vector=rro_in_plane_y)
+rro_disk_actuator_solver_1.set_rotation(name='qst_1_rro_disk_actuation_1', value=0, units='radians')
+qst_1_configuration.actuate(transformation=rro_disk_actuator_solver_1)
+
+rro_disk_actuator_solver_2 = PrescribedRotation(component=rro_disk, axis_origin=rro_origin, axis_vector=rro_in_plane_x)
+rro_disk_actuator_solver_2.set_rotation(name='qst_1_rro_disk_actuation_2', value=0, units='radians')
+qst_1_configuration.actuate(transformation=rro_disk_actuator_solver_2)
+
+# flo
+flo_disk_actuator_solver_1 = PrescribedRotation(component=flo_disk, axis_origin=flo_origin, axis_vector=flo_in_plane_y)
+flo_disk_actuator_solver_1.set_rotation(name='qst_1_flo_disk_actuation_1', value=0, units='radians')
+qst_1_configuration.actuate(transformation=flo_disk_actuator_solver_1)
+
+flo_disk_actuator_solver_2 = PrescribedRotation(component=flo_disk, axis_origin=flo_origin, axis_vector=flo_in_plane_x)
+flo_disk_actuator_solver_2.set_rotation(name='qst_1_flo_disk_actuation_2', value=0, units='radians')
+qst_1_configuration.actuate(transformation=flo_disk_actuator_solver_2)
+
+# fli
+fli_disk_actuator_solver_1 = PrescribedRotation(component=fli_disk, axis_origin=fli_origin, axis_vector=fli_in_plane_y)
+fli_disk_actuator_solver_1.set_rotation(name='qst_1_fli_disk_actuation_1', value=0, units='radians')
+qst_1_configuration.actuate(transformation=fli_disk_actuator_solver_1)
+
+fli_disk_actuator_solver_2 = PrescribedRotation(component=fli_disk, axis_origin=fli_origin, axis_vector=fli_in_plane_x)
+fli_disk_actuator_solver_2.set_rotation(name='qst_1_fli_disk_actuation_2', value=0, units='radians')
+qst_1_configuration.actuate(transformation=fli_disk_actuator_solver_2)
+
+# fri
+fri_disk_actuator_solver_1 = PrescribedRotation(component=fri_disk, axis_origin=fri_origin, axis_vector=fri_in_plane_y)
+fri_disk_actuator_solver_1.set_rotation(name='qst_1_fri_disk_actuation_1', value=0, units='radians')
+qst_1_configuration.actuate(transformation=fri_disk_actuator_solver_1)
+
+fri_disk_actuator_solver_2 = PrescribedRotation(component=fri_disk, axis_origin=fri_origin, axis_vector=fri_in_plane_x)
+fri_disk_actuator_solver_2.set_rotation(name='qst_1_fri_disk_actuation_2', value=0, units='radians')
+qst_1_configuration.actuate(transformation=fri_disk_actuator_solver_2)
+
+# fro
+fro_disk_actuator_solver_1 = PrescribedRotation(component=fro_disk, axis_origin=fro_origin, axis_vector=fro_in_plane_y)
+fro_disk_actuator_solver_1.set_rotation(name='qst_1_fro_disk_actuation_1', value=0, units='radians')
+qst_1_configuration.actuate(transformation=fro_disk_actuator_solver_1)
+
+fro_disk_actuator_solver_2 = PrescribedRotation(component=fro_disk, axis_origin=fro_origin, axis_vector=fro_in_plane_x)
+fro_disk_actuator_solver_2.set_rotation(name='qst_1_fro_disk_actuation_2', value=0, units='radians')
+qst_1_configuration.actuate(transformation=fro_disk_actuator_solver_2)
 # endregion
 
 # region quasi_steady_transition_2
@@ -1090,6 +1194,38 @@ qst_2_configuration.set_num_nodes(num_nodes=1)
 qst_2_configuration.add_output(f'{htail_vlm_mesh_name}_qst_2', htail_camber_surface)
 qst_2_configuration.add_output(f'{wing_vlm_mesh_name}_qst_2', wing_camber_surface)
 
+qst_2_configuration.add_output(f"qst_2_{rlo_disk.parameters['name']}_in_plane_1", rlo_in_plane_y)
+qst_2_configuration.add_output(f"qst_2_{rlo_disk.parameters['name']}_in_plane_2", rlo_in_plane_x)
+qst_2_configuration.add_output(f"qst_2_{rlo_disk.parameters['name']}_origin", rlo_origin)
+
+qst_2_configuration.add_output(f"qst_2_{rli_disk.parameters['name']}_in_plane_1", rli_in_plane_y)
+qst_2_configuration.add_output(f"qst_2_{rli_disk.parameters['name']}_in_plane_2", rli_in_plane_x)
+qst_2_configuration.add_output(f"qst_2_{rli_disk.parameters['name']}_origin", rli_origin)
+
+qst_2_configuration.add_output(f"qst_2_{rri_disk.parameters['name']}_in_plane_1", rri_in_plane_y)
+qst_2_configuration.add_output(f"qst_2_{rri_disk.parameters['name']}_in_plane_2", rri_in_plane_x)
+qst_2_configuration.add_output(f"qst_2_{rri_disk.parameters['name']}_origin", rri_origin)
+
+qst_2_configuration.add_output(f"qst_2_{rro_disk.parameters['name']}_in_plane_1", rro_in_plane_y)
+qst_2_configuration.add_output(f"qst_2_{rro_disk.parameters['name']}_in_plane_2", rro_in_plane_x)
+qst_2_configuration.add_output(f"qst_2_{rro_disk.parameters['name']}_origin", rro_origin)
+
+qst_2_configuration.add_output(f"qst_2_{flo_disk.parameters['name']}_in_plane_1", flo_in_plane_y)
+qst_2_configuration.add_output(f"qst_2_{flo_disk.parameters['name']}_in_plane_2", flo_in_plane_x)
+qst_2_configuration.add_output(f"qst_2_{flo_disk.parameters['name']}_origin", flo_origin)
+
+qst_2_configuration.add_output(f"qst_2_{fli_disk.parameters['name']}_in_plane_1", fli_in_plane_y)
+qst_2_configuration.add_output(f"qst_2_{fli_disk.parameters['name']}_in_plane_2", fli_in_plane_x)
+qst_2_configuration.add_output(f"qst_2_{fli_disk.parameters['name']}_origin", fli_origin)
+
+qst_2_configuration.add_output(f"qst_2_{fri_disk.parameters['name']}_in_plane_1", fri_in_plane_y)
+qst_2_configuration.add_output(f"qst_2_{fri_disk.parameters['name']}_in_plane_2", fri_in_plane_x)
+qst_2_configuration.add_output(f"qst_2_{fri_disk.parameters['name']}_origin", fri_origin)
+
+qst_2_configuration.add_output(f"qst_2_{fro_disk.parameters['name']}_in_plane_1", fro_in_plane_y)
+qst_2_configuration.add_output(f"qst_2_{fro_disk.parameters['name']}_in_plane_2", fro_in_plane_x)
+qst_2_configuration.add_output(f"qst_2_{fro_disk.parameters['name']}_origin", fro_origin)
+
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='qst_2_tail_actuation', value=0, units='radians')
 qst_2_configuration.actuate(transformation=horizontal_stabilizer_actuator_solver)
@@ -1097,6 +1233,78 @@ qst_2_configuration.actuate(transformation=horizontal_stabilizer_actuator_solver
 wing_actuator_solver = PrescribedRotation(component=wing, axis_origin=wing_quarter_chord_port, axis_vector=wing_actuation_axis)
 wing_actuator_solver.set_rotation(name='qst_2_wing_actuation', value=np.deg2rad(4) , units='radians')
 qst_2_configuration.actuate(transformation=wing_actuator_solver)
+
+# rlo
+rlo_disk_actuator_solver_1 = PrescribedRotation(component=rlo_disk, axis_origin=rlo_origin, axis_vector=rlo_in_plane_y)
+rlo_disk_actuator_solver_1.set_rotation(name='qst_2_rlo_disk_actuation_1', value=0, units='radians')
+qst_2_configuration.actuate(transformation=rlo_disk_actuator_solver_1)
+
+rlo_disk_actuator_solver_2 = PrescribedRotation(component=rlo_disk, axis_origin=rlo_origin, axis_vector=rlo_in_plane_x)
+rlo_disk_actuator_solver_2.set_rotation(name='qst_2_rlo_disk_actuation_2', value=0, units='radians')
+qst_2_configuration.actuate(transformation=rlo_disk_actuator_solver_2)
+
+# rli
+rli_disk_actuator_solver_1 = PrescribedRotation(component=rli_disk, axis_origin=rli_origin, axis_vector=rli_in_plane_y)
+rli_disk_actuator_solver_1.set_rotation(name='qst_2_rli_disk_actuation_1', value=0, units='radians')
+qst_2_configuration.actuate(transformation=rli_disk_actuator_solver_1)
+
+rli_disk_actuator_solver_2 = PrescribedRotation(component=rli_disk, axis_origin=rli_origin, axis_vector=rli_in_plane_x)
+rli_disk_actuator_solver_2.set_rotation(name='qst_2_rli_disk_actuation_2', value=0, units='radians')
+qst_2_configuration.actuate(transformation=rli_disk_actuator_solver_2)
+
+# rri
+rri_disk_actuator_solver_1 = PrescribedRotation(component=rri_disk, axis_origin=rri_origin, axis_vector=rri_in_plane_y)
+rri_disk_actuator_solver_1.set_rotation(name='qst_2_rri_disk_actuation_1', value=0, units='radians')
+qst_2_configuration.actuate(transformation=rri_disk_actuator_solver_1)
+
+rri_disk_actuator_solver_2 = PrescribedRotation(component=rri_disk, axis_origin=rri_origin, axis_vector=rri_in_plane_x)
+rri_disk_actuator_solver_2.set_rotation(name='qst_2_rri_disk_actuation_2', value=0, units='radians')
+qst_2_configuration.actuate(transformation=rri_disk_actuator_solver_2)
+
+# rro
+rro_disk_actuator_solver_1 = PrescribedRotation(component=rro_disk, axis_origin=rro_origin, axis_vector=rro_in_plane_y)
+rro_disk_actuator_solver_1.set_rotation(name='qst_2_rro_disk_actuation_1', value=0, units='radians')
+qst_2_configuration.actuate(transformation=rro_disk_actuator_solver_1)
+
+rro_disk_actuator_solver_2 = PrescribedRotation(component=rro_disk, axis_origin=rro_origin, axis_vector=rro_in_plane_x)
+rro_disk_actuator_solver_2.set_rotation(name='qst_2_rro_disk_actuation_2', value=0, units='radians')
+qst_2_configuration.actuate(transformation=rro_disk_actuator_solver_2)
+
+# flo
+flo_disk_actuator_solver_1 = PrescribedRotation(component=flo_disk, axis_origin=flo_origin, axis_vector=flo_in_plane_y)
+flo_disk_actuator_solver_1.set_rotation(name='qst_2_flo_disk_actuation_1', value=0, units='radians')
+qst_2_configuration.actuate(transformation=flo_disk_actuator_solver_1)
+
+flo_disk_actuator_solver_2 = PrescribedRotation(component=flo_disk, axis_origin=flo_origin, axis_vector=flo_in_plane_x)
+flo_disk_actuator_solver_2.set_rotation(name='qst_2_flo_disk_actuation_2', value=0, units='radians')
+qst_2_configuration.actuate(transformation=flo_disk_actuator_solver_2)
+
+# fli
+fli_disk_actuator_solver_1 = PrescribedRotation(component=fli_disk, axis_origin=fli_origin, axis_vector=fli_in_plane_y)
+fli_disk_actuator_solver_1.set_rotation(name='qst_2_fli_disk_actuation_1', value=0, units='radians')
+qst_2_configuration.actuate(transformation=fli_disk_actuator_solver_1)
+
+fli_disk_actuator_solver_2 = PrescribedRotation(component=fli_disk, axis_origin=fli_origin, axis_vector=fli_in_plane_x)
+fli_disk_actuator_solver_2.set_rotation(name='qst_2_fli_disk_actuation_2', value=0, units='radians')
+qst_2_configuration.actuate(transformation=fli_disk_actuator_solver_2)
+
+# fri
+fri_disk_actuator_solver_1 = PrescribedRotation(component=fri_disk, axis_origin=fri_origin, axis_vector=fri_in_plane_y)
+fri_disk_actuator_solver_1.set_rotation(name='qst_2_fri_disk_actuation_1', value=0, units='radians')
+qst_2_configuration.actuate(transformation=fri_disk_actuator_solver_1)
+
+fri_disk_actuator_solver_2 = PrescribedRotation(component=fri_disk, axis_origin=fri_origin, axis_vector=fri_in_plane_x)
+fri_disk_actuator_solver_2.set_rotation(name='qst_2_fri_disk_actuation_2', value=0, units='radians')
+qst_2_configuration.actuate(transformation=fri_disk_actuator_solver_2)
+
+# fro
+fro_disk_actuator_solver_1 = PrescribedRotation(component=fro_disk, axis_origin=fro_origin, axis_vector=fro_in_plane_y)
+fro_disk_actuator_solver_1.set_rotation(name='qst_2_fro_disk_actuation_1', value=0, units='radians')
+qst_2_configuration.actuate(transformation=fro_disk_actuator_solver_1)
+
+fro_disk_actuator_solver_2 = PrescribedRotation(component=fro_disk, axis_origin=fro_origin, axis_vector=fro_in_plane_x)
+fro_disk_actuator_solver_2.set_rotation(name='qst_2_fro_disk_actuation_2', value=0, units='radians')
+qst_2_configuration.actuate(transformation=fro_disk_actuator_solver_2)
 # endregion
 
 # region quasi_steady_transition_3
@@ -1105,6 +1313,39 @@ qst_3_configuration.set_num_nodes(num_nodes=1)
 qst_3_configuration.add_output(f'{htail_vlm_mesh_name}_qst_3', htail_camber_surface)
 qst_3_configuration.add_output(f'{wing_vlm_mesh_name}_qst_3', wing_camber_surface)
 
+qst_3_configuration.add_output(f"qst_3_{rlo_disk.parameters['name']}_in_plane_1", rlo_in_plane_y)
+qst_3_configuration.add_output(f"qst_3_{rlo_disk.parameters['name']}_in_plane_2", rlo_in_plane_x)
+qst_3_configuration.add_output(f"qst_3_{rlo_disk.parameters['name']}_origin", rlo_origin)
+
+qst_3_configuration.add_output(f"qst_3_{rli_disk.parameters['name']}_in_plane_1", rli_in_plane_y)
+qst_3_configuration.add_output(f"qst_3_{rli_disk.parameters['name']}_in_plane_2", rli_in_plane_x)
+qst_3_configuration.add_output(f"qst_3_{rli_disk.parameters['name']}_origin", rli_origin)
+
+qst_3_configuration.add_output(f"qst_3_{rri_disk.parameters['name']}_in_plane_1", rri_in_plane_y)
+qst_3_configuration.add_output(f"qst_3_{rri_disk.parameters['name']}_in_plane_2", rri_in_plane_x)
+qst_3_configuration.add_output(f"qst_3_{rri_disk.parameters['name']}_origin", rri_origin)
+
+qst_3_configuration.add_output(f"qst_3_{rro_disk.parameters['name']}_in_plane_1", rro_in_plane_y)
+qst_3_configuration.add_output(f"qst_3_{rro_disk.parameters['name']}_in_plane_2", rro_in_plane_x)
+qst_3_configuration.add_output(f"qst_3_{rro_disk.parameters['name']}_origin", rro_origin)
+
+qst_3_configuration.add_output(f"qst_3_{flo_disk.parameters['name']}_in_plane_1", flo_in_plane_y)
+qst_3_configuration.add_output(f"qst_3_{flo_disk.parameters['name']}_in_plane_2", flo_in_plane_x)
+qst_3_configuration.add_output(f"qst_3_{flo_disk.parameters['name']}_origin", flo_origin)
+
+qst_3_configuration.add_output(f"qst_3_{fli_disk.parameters['name']}_in_plane_1", fli_in_plane_y)
+qst_3_configuration.add_output(f"qst_3_{fli_disk.parameters['name']}_in_plane_2", fli_in_plane_x)
+qst_3_configuration.add_output(f"qst_3_{fli_disk.parameters['name']}_origin", fli_origin)
+
+qst_3_configuration.add_output(f"qst_3_{fri_disk.parameters['name']}_in_plane_1", fri_in_plane_y)
+qst_3_configuration.add_output(f"qst_3_{fri_disk.parameters['name']}_in_plane_2", fri_in_plane_x)
+qst_3_configuration.add_output(f"qst_3_{fri_disk.parameters['name']}_origin", fri_origin)
+
+qst_3_configuration.add_output(f"qst_3_{fro_disk.parameters['name']}_in_plane_1", fro_in_plane_y)
+qst_3_configuration.add_output(f"qst_3_{fro_disk.parameters['name']}_in_plane_2", fro_in_plane_x)
+qst_3_configuration.add_output(f"qst_3_{fro_disk.parameters['name']}_origin", fro_origin)
+
+
 horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
 horizontal_stabilizer_actuator_solver.set_rotation(name='qst_3_tail_actuation', value=0, units='radians')
 qst_3_configuration.actuate(transformation=horizontal_stabilizer_actuator_solver)
@@ -1112,6 +1353,78 @@ qst_3_configuration.actuate(transformation=horizontal_stabilizer_actuator_solver
 wing_actuator_solver = PrescribedRotation(component=wing, axis_origin=wing_quarter_chord_port, axis_vector=wing_actuation_axis)
 wing_actuator_solver.set_rotation(name='qst_3_wing_actuation', value=np.deg2rad(4) , units='radians')
 qst_3_configuration.actuate(transformation=wing_actuator_solver)
+
+# rlo
+rlo_disk_actuator_solver_1 = PrescribedRotation(component=rlo_disk, axis_origin=rlo_origin, axis_vector=rlo_in_plane_y)
+rlo_disk_actuator_solver_1.set_rotation(name='qst_3_rlo_disk_actuation_1', value=0, units='radians')
+qst_3_configuration.actuate(transformation=rlo_disk_actuator_solver_1)
+
+rlo_disk_actuator_solver_2 = PrescribedRotation(component=rlo_disk, axis_origin=rlo_origin, axis_vector=rlo_in_plane_x)
+rlo_disk_actuator_solver_2.set_rotation(name='qst_3_rlo_disk_actuation_2', value=0, units='radians')
+qst_3_configuration.actuate(transformation=rlo_disk_actuator_solver_2)
+
+# rli
+rli_disk_actuator_solver_1 = PrescribedRotation(component=rli_disk, axis_origin=rli_origin, axis_vector=rli_in_plane_y)
+rli_disk_actuator_solver_1.set_rotation(name='qst_3_rli_disk_actuation_1', value=0, units='radians')
+qst_3_configuration.actuate(transformation=rli_disk_actuator_solver_1)
+
+rli_disk_actuator_solver_2 = PrescribedRotation(component=rli_disk, axis_origin=rli_origin, axis_vector=rli_in_plane_x)
+rli_disk_actuator_solver_2.set_rotation(name='qst_3_rli_disk_actuation_2', value=0, units='radians')
+qst_3_configuration.actuate(transformation=rli_disk_actuator_solver_2)
+
+# rri
+rri_disk_actuator_solver_1 = PrescribedRotation(component=rri_disk, axis_origin=rri_origin, axis_vector=rri_in_plane_y)
+rri_disk_actuator_solver_1.set_rotation(name='qst_3_rri_disk_actuation_1', value=0, units='radians')
+qst_3_configuration.actuate(transformation=rri_disk_actuator_solver_1)
+
+rri_disk_actuator_solver_2 = PrescribedRotation(component=rri_disk, axis_origin=rri_origin, axis_vector=rri_in_plane_x)
+rri_disk_actuator_solver_2.set_rotation(name='qst_3_rri_disk_actuation_2', value=0, units='radians')
+qst_3_configuration.actuate(transformation=rri_disk_actuator_solver_2)
+
+# rro
+rro_disk_actuator_solver_1 = PrescribedRotation(component=rro_disk, axis_origin=rro_origin, axis_vector=rro_in_plane_y)
+rro_disk_actuator_solver_1.set_rotation(name='qst_3_rro_disk_actuation_1', value=0, units='radians')
+qst_3_configuration.actuate(transformation=rro_disk_actuator_solver_1)
+
+rro_disk_actuator_solver_2 = PrescribedRotation(component=rro_disk, axis_origin=rro_origin, axis_vector=rro_in_plane_x)
+rro_disk_actuator_solver_2.set_rotation(name='qst_3_rro_disk_actuation_2', value=0, units='radians')
+qst_3_configuration.actuate(transformation=rro_disk_actuator_solver_2)
+
+# flo
+flo_disk_actuator_solver_1 = PrescribedRotation(component=flo_disk, axis_origin=flo_origin, axis_vector=flo_in_plane_y)
+flo_disk_actuator_solver_1.set_rotation(name='qst_3_flo_disk_actuation_1', value=0, units='radians')
+qst_3_configuration.actuate(transformation=flo_disk_actuator_solver_1)
+
+flo_disk_actuator_solver_2 = PrescribedRotation(component=flo_disk, axis_origin=flo_origin, axis_vector=flo_in_plane_x)
+flo_disk_actuator_solver_2.set_rotation(name='qst_3_flo_disk_actuation_2', value=0, units='radians')
+qst_3_configuration.actuate(transformation=flo_disk_actuator_solver_2)
+
+# fli
+fli_disk_actuator_solver_1 = PrescribedRotation(component=fli_disk, axis_origin=fli_origin, axis_vector=fli_in_plane_y)
+fli_disk_actuator_solver_1.set_rotation(name='qst_3_fli_disk_actuation_1', value=0, units='radians')
+qst_3_configuration.actuate(transformation=fli_disk_actuator_solver_1)
+
+fli_disk_actuator_solver_2 = PrescribedRotation(component=fli_disk, axis_origin=fli_origin, axis_vector=fli_in_plane_x)
+fli_disk_actuator_solver_2.set_rotation(name='qst_3_fli_disk_actuation_2', value=0, units='radians')
+qst_3_configuration.actuate(transformation=fli_disk_actuator_solver_2)
+
+# fri
+fri_disk_actuator_solver_1 = PrescribedRotation(component=fri_disk, axis_origin=fri_origin, axis_vector=fri_in_plane_y)
+fri_disk_actuator_solver_1.set_rotation(name='qst_3_fri_disk_actuation_1', value=0, units='radians')
+qst_3_configuration.actuate(transformation=fri_disk_actuator_solver_1)
+
+fri_disk_actuator_solver_2 = PrescribedRotation(component=fri_disk, axis_origin=fri_origin, axis_vector=fri_in_plane_x)
+fri_disk_actuator_solver_2.set_rotation(name='qst_3_fri_disk_actuation_2', value=0, units='radians')
+qst_3_configuration.actuate(transformation=fri_disk_actuator_solver_2)
+
+# fro
+fro_disk_actuator_solver_1 = PrescribedRotation(component=fro_disk, axis_origin=fro_origin, axis_vector=fro_in_plane_y)
+fro_disk_actuator_solver_1.set_rotation(name='qst_3_fro_disk_actuation_1', value=0, units='radians')
+qst_3_configuration.actuate(transformation=fro_disk_actuator_solver_1)
+
+fro_disk_actuator_solver_2 = PrescribedRotation(component=fro_disk, axis_origin=fro_origin, axis_vector=fro_in_plane_x)
+fro_disk_actuator_solver_2.set_rotation(name='qst_3_fro_disk_actuation_2', value=0, units='radians')
+qst_3_configuration.actuate(transformation=fro_disk_actuator_solver_2)
 # endregion
 
 # region quasi_steady_transition_4
@@ -1127,6 +1440,111 @@ qst_4_configuration.actuate(transformation=horizontal_stabilizer_actuator_solver
 wing_actuator_solver = PrescribedRotation(component=wing, axis_origin=wing_quarter_chord_port, axis_vector=wing_actuation_axis)
 wing_actuator_solver.set_rotation(name='qst_4_wing_actuation', value=np.deg2rad(4) , units='radians')
 qst_4_configuration.actuate(transformation=wing_actuator_solver)
+
+qst_4_configuration.add_output(f"qst_4_{rlo_disk.parameters['name']}_in_plane_1", rlo_in_plane_y)
+qst_4_configuration.add_output(f"qst_4_{rlo_disk.parameters['name']}_in_plane_2", rlo_in_plane_x)
+qst_4_configuration.add_output(f"qst_4_{rlo_disk.parameters['name']}_origin", rlo_origin)
+
+qst_4_configuration.add_output(f"qst_4_{rli_disk.parameters['name']}_in_plane_1", rli_in_plane_y)
+qst_4_configuration.add_output(f"qst_4_{rli_disk.parameters['name']}_in_plane_2", rli_in_plane_x)
+qst_4_configuration.add_output(f"qst_4_{rli_disk.parameters['name']}_origin", rli_origin)
+
+qst_4_configuration.add_output(f"qst_4_{rri_disk.parameters['name']}_in_plane_1", rri_in_plane_y)
+qst_4_configuration.add_output(f"qst_4_{rri_disk.parameters['name']}_in_plane_2", rri_in_plane_x)
+qst_4_configuration.add_output(f"qst_4_{rri_disk.parameters['name']}_origin", rri_origin)
+
+qst_4_configuration.add_output(f"qst_4_{rro_disk.parameters['name']}_in_plane_1", rro_in_plane_y)
+qst_4_configuration.add_output(f"qst_4_{rro_disk.parameters['name']}_in_plane_2", rro_in_plane_x)
+qst_4_configuration.add_output(f"qst_4_{rro_disk.parameters['name']}_origin", rro_origin)
+
+qst_4_configuration.add_output(f"qst_4_{flo_disk.parameters['name']}_in_plane_1", flo_in_plane_y)
+qst_4_configuration.add_output(f"qst_4_{flo_disk.parameters['name']}_in_plane_2", flo_in_plane_x)
+qst_4_configuration.add_output(f"qst_4_{flo_disk.parameters['name']}_origin", flo_origin)
+
+qst_4_configuration.add_output(f"qst_4_{fli_disk.parameters['name']}_in_plane_1", fli_in_plane_y)
+qst_4_configuration.add_output(f"qst_4_{fli_disk.parameters['name']}_in_plane_2", fli_in_plane_x)
+qst_4_configuration.add_output(f"qst_4_{fli_disk.parameters['name']}_origin", fli_origin)
+
+qst_4_configuration.add_output(f"qst_4_{fri_disk.parameters['name']}_in_plane_1", fri_in_plane_y)
+qst_4_configuration.add_output(f"qst_4_{fri_disk.parameters['name']}_in_plane_2", fri_in_plane_x)
+qst_4_configuration.add_output(f"qst_4_{fri_disk.parameters['name']}_origin", fri_origin)
+
+qst_4_configuration.add_output(f"qst_4_{fro_disk.parameters['name']}_in_plane_1", fro_in_plane_y)
+qst_4_configuration.add_output(f"qst_4_{fro_disk.parameters['name']}_in_plane_2", fro_in_plane_x)
+qst_4_configuration.add_output(f"qst_4_{fro_disk.parameters['name']}_origin", fro_origin)
+
+# rlo
+rlo_disk_actuator_solver_1 = PrescribedRotation(component=rlo_disk, axis_origin=rlo_origin, axis_vector=rlo_in_plane_y)
+rlo_disk_actuator_solver_1.set_rotation(name='qst_4_rlo_disk_actuation_1', value=0, units='radians')
+qst_4_configuration.actuate(transformation=rlo_disk_actuator_solver_1)
+
+rlo_disk_actuator_solver_2 = PrescribedRotation(component=rlo_disk, axis_origin=rlo_origin, axis_vector=rlo_in_plane_x)
+rlo_disk_actuator_solver_2.set_rotation(name='qst_4_rlo_disk_actuation_2', value=0, units='radians')
+qst_4_configuration.actuate(transformation=rlo_disk_actuator_solver_2)
+
+# rli
+rli_disk_actuator_solver_1 = PrescribedRotation(component=rli_disk, axis_origin=rli_origin, axis_vector=rli_in_plane_y)
+rli_disk_actuator_solver_1.set_rotation(name='qst_4_rli_disk_actuation_1', value=0, units='radians')
+qst_4_configuration.actuate(transformation=rli_disk_actuator_solver_1)
+
+rli_disk_actuator_solver_2 = PrescribedRotation(component=rli_disk, axis_origin=rli_origin, axis_vector=rli_in_plane_x)
+rli_disk_actuator_solver_2.set_rotation(name='qst_4_rli_disk_actuation_2', value=0, units='radians')
+qst_4_configuration.actuate(transformation=rli_disk_actuator_solver_2)
+
+# rri
+rri_disk_actuator_solver_1 = PrescribedRotation(component=rri_disk, axis_origin=rri_origin, axis_vector=rri_in_plane_y)
+rri_disk_actuator_solver_1.set_rotation(name='qst_4_rri_disk_actuation_1', value=0, units='radians')
+qst_4_configuration.actuate(transformation=rri_disk_actuator_solver_1)
+
+rri_disk_actuator_solver_2 = PrescribedRotation(component=rri_disk, axis_origin=rri_origin, axis_vector=rri_in_plane_x)
+rri_disk_actuator_solver_2.set_rotation(name='qst_4_rri_disk_actuation_2', value=0, units='radians')
+qst_4_configuration.actuate(transformation=rri_disk_actuator_solver_2)
+
+# rro
+rro_disk_actuator_solver_1 = PrescribedRotation(component=rro_disk, axis_origin=rro_origin, axis_vector=rro_in_plane_y)
+rro_disk_actuator_solver_1.set_rotation(name='qst_4_rro_disk_actuation_1', value=0, units='radians')
+qst_4_configuration.actuate(transformation=rro_disk_actuator_solver_1)
+
+rro_disk_actuator_solver_2 = PrescribedRotation(component=rro_disk, axis_origin=rro_origin, axis_vector=rro_in_plane_x)
+rro_disk_actuator_solver_2.set_rotation(name='qst_4_rro_disk_actuation_2', value=0, units='radians')
+qst_4_configuration.actuate(transformation=rro_disk_actuator_solver_2)
+
+# flo
+flo_disk_actuator_solver_1 = PrescribedRotation(component=flo_disk, axis_origin=flo_origin, axis_vector=flo_in_plane_y)
+flo_disk_actuator_solver_1.set_rotation(name='qst_4_flo_disk_actuation_1', value=0, units='radians')
+qst_4_configuration.actuate(transformation=flo_disk_actuator_solver_1)
+
+flo_disk_actuator_solver_2 = PrescribedRotation(component=flo_disk, axis_origin=flo_origin, axis_vector=flo_in_plane_x)
+flo_disk_actuator_solver_2.set_rotation(name='qst_4_flo_disk_actuation_2', value=0, units='radians')
+qst_4_configuration.actuate(transformation=flo_disk_actuator_solver_2)
+
+# fli
+fli_disk_actuator_solver_1 = PrescribedRotation(component=fli_disk, axis_origin=fli_origin, axis_vector=fli_in_plane_y)
+fli_disk_actuator_solver_1.set_rotation(name='qst_4_fli_disk_actuation_1', value=0, units='radians')
+qst_4_configuration.actuate(transformation=fli_disk_actuator_solver_1)
+
+fli_disk_actuator_solver_2 = PrescribedRotation(component=fli_disk, axis_origin=fli_origin, axis_vector=fli_in_plane_x)
+fli_disk_actuator_solver_2.set_rotation(name='qst_4_fli_disk_actuation_2', value=0, units='radians')
+qst_4_configuration.actuate(transformation=fli_disk_actuator_solver_2)
+
+# fri
+fri_disk_actuator_solver_1 = PrescribedRotation(component=fri_disk, axis_origin=fri_origin, axis_vector=fri_in_plane_y)
+fri_disk_actuator_solver_1.set_rotation(name='qst_4_fri_disk_actuation_1', value=0, units='radians')
+qst_4_configuration.actuate(transformation=fri_disk_actuator_solver_1)
+
+fri_disk_actuator_solver_2 = PrescribedRotation(component=fri_disk, axis_origin=fri_origin, axis_vector=fri_in_plane_x)
+fri_disk_actuator_solver_2.set_rotation(name='qst_4_fri_disk_actuation_2', value=0, units='radians')
+qst_4_configuration.actuate(transformation=fri_disk_actuator_solver_2)
+
+# fro
+fro_disk_actuator_solver_1 = PrescribedRotation(component=fro_disk, axis_origin=fro_origin, axis_vector=fro_in_plane_y)
+fro_disk_actuator_solver_1.set_rotation(name='qst_4_fro_disk_actuation_1', value=0, units='radians')
+qst_4_configuration.actuate(transformation=fro_disk_actuator_solver_1)
+
+fro_disk_actuator_solver_2 = PrescribedRotation(component=fro_disk, axis_origin=fro_origin, axis_vector=fro_in_plane_x)
+fro_disk_actuator_solver_2.set_rotation(name='qst_4_fro_disk_actuation_2', value=0, units='radians')
+qst_4_configuration.actuate(transformation=fro_disk_actuator_solver_2)
+
 # endregion
 
 # region quasi_steady_transition_5
