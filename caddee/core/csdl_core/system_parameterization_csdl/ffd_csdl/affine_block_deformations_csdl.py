@@ -26,7 +26,8 @@ class AffineBlockDeformationsCSDL(csdl.Model):
         if ffd_set.num_dof != 0:
             affine_deformed_ffd_control_points_flattened = csdl.matvec(affine_block_deformations_map, section_properties)
             NUM_PARAMETRIC_DIMENSIONS = 3
-            affine_deformed_ffd_control_points = csdl.reshape(affine_deformed_ffd_control_points_flattened, new_shape=(ffd_set.num_control_points, NUM_PARAMETRIC_DIMENSIONS))
+            affine_deformed_ffd_control_points = csdl.reshape(affine_deformed_ffd_control_points_flattened, 
+                                                              new_shape=(ffd_set.num_control_points, NUM_PARAMETRIC_DIMENSIONS))
             self.register_output("affine_deformed_ffd_control_points", affine_deformed_ffd_control_points)
         else:   # Purely so CSDL doesn't throw an error for the model not doing anything
             self.create_input('dummy_input_affine_block_deformations', val=0.)

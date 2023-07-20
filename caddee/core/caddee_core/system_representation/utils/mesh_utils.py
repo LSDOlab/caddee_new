@@ -4,7 +4,7 @@ import time
 import array_mapper as am
 
 
-def import_mesh(file, ms, targets=None, rescale:float=1e-3, remove_dupes=True, plot=False, optimize_projection = True, tol:float=1e-8):
+def import_mesh(file, ms, targets=None, component=None, rescale:float=1e-3, remove_dupes=True, plot=False, optimize_projection = True, tol:float=1e-8, grid_search_n:int=25):
     '''
     Read mesh file (from any format meshio supports) and convert into mapped array + connectivity
     ------------
@@ -85,5 +85,10 @@ def import_mesh(file, ms, targets=None, rescale:float=1e-3, remove_dupes=True, p
         if plot:
             ms.plot_meshes(ma_nodes, mesh_plot_types=['point_cloud'])
     else:
-        ma_nodes = ms.project(nodes, plot=plot)
+        if component is not None:
+            ma_nodes = component.project(nodes, grid_search_n=grid_search_n, plot=plot)
+        else:
+            if targets is None:
+                targets = list(ms.primitives.values())
+            ma_nodes = ms.project(nodes, targets=targets, grid_search_n=grid_search_n, plot=plot)
     return ma_nodes, connectivity

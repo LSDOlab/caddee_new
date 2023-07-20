@@ -1,8 +1,17 @@
 import csdl
 import numpy as np
+import array_mapper as am
 import scipy.sparse as sps
 
 import time
+
+'''
+IDEA: If solution fails (NaN or max iteration), the constraints are enforced with penalty method instead of lagrange multipliers
+    which turns the problem into a regularized least squares problem (Note: There is a nonlinear operation, so can't use pseudo-inverse).
+
+NOTE: Currently converges for simple case, but I'm almost sure that the d2c_dx2 is wrong. Also not sure that dc_dx is correct.
+-- Also need to connect the output of this model to the FFD model.
+'''
 
 class GeometryParameterizationSolverCSDL(csdl.Model):
     def initialize(self):
@@ -20,7 +29,7 @@ class GeometryParameterizationSolverCSDL(csdl.Model):
         inputs_csdl = self.create_output('parameterization_inputs', shape=(input_vector_length,))
 
         starting_index = 0
-        for input in inputs:
+        for input_name, input in inputs.items():
             input_csdl = self.declare_variable(input.name, val=input.value)
 
             num_flattened_inputs = np.prod(input.shape)
@@ -45,13 +54,14 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
 
     def define(self):
         system_parameterization = self.parameters['system_parameterization']
+        system_representation = system_parameterization.system_representation
 
         geometry_parameterizations = system_parameterization.geometry_parameterizations
 
         # Collect the parameterizations which have free dof (one parameterization is like one FFDSet)
         free_geometry_parameterizations = {}
         for geometry_parameterization_name, geometry_parameterization in geometry_parameterizations.items():
-            if geometry_parameterization.free_affine_dof != 0:
+            if geometry_parameterization.num_affine_free_dof != 0:
                 free_geometry_parameterizations[geometry_parameterization_name] = geometry_parameterization
                 # NOTE! Hardcoding for one FFDSet as the only geometry parameterization
                 ffd_set = geometry_parameterization
@@ -66,32 +76,90 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
         self.add_input('parameterization_inputs', shape=(input_vector_length,))
         self.add_output('ffd_free_dof', val=np.zeros((num_affine_free_dof,)))
         self.add_output('parameterization_lagrange_multipliers', val=np.zeros((input_vector_length,)))
-        # self.declare_derivatives('ffd_free_dof', 'ffd_free_dof')
-        # self.declare_derivatives('ffd_free_dof', 'lagrange_multipliers')
-        # self.declare_derivatives('lagrange_multipliers', 'ffd_free_dof')
-        # self.declare_derivatives('lagrange_multipliers', 'lagrange_multipliers')
-        # self.declare_derivatives('ffd_free_dof', 'inputs_and_constraints')
-        # self.declare_derivatives('lagrange_multipliers', 'inputs_and_constraints')
+        self.declare_derivatives('ffd_free_dof', 'ffd_free_dof')
+        self.declare_derivatives('ffd_free_dof', 'parameterization_lagrange_multipliers')
+        self.declare_derivatives('parameterization_lagrange_multipliers', 'ffd_free_dof')
+        self.declare_derivatives('parameterization_lagrange_multipliers', 'parameterization_lagrange_multipliers')
+        self.declare_derivatives('ffd_free_dof', 'parameterization_inputs')
+        self.declare_derivatives('parameterization_lagrange_multipliers', 'parameterization_inputs')
 
-        self.declare_derivatives('*','*')
+        # self.declare_derivatives('*','*')
 
         self.linear_solver = csdl.ScipyKrylov()
         self.nonlinear_solver = csdl.NewtonSolver(solve_subsystems=True, maxiter=10)
 
+        # Precompute maps
+        ffd_free_dof_to_local_ffd_control_points = ffd_set.affine_block_deformations_map.dot(ffd_set.free_affine_section_properties_map)
+        # Apply rotation to each map
+        rotation_matrices = []
+        for ffd_block in list(ffd_set.ffd_blocks.values()):
+            if ffd_block.num_dof == 0:
+                continue
+            rotation_matrices.extend([ffd_block.local_to_global_rotation]*ffd_block.num_control_points)
+        local_to_global = sps.block_diag(rotation_matrices)
+        ffd_free_dof_to_ffd_control_points = local_to_global.dot(ffd_free_dof_to_local_ffd_control_points)
+        # Map to embedded entities (geometry control points that are embedded) (need to expand/repeat map from num_ffd_cp to num_ffd_cp*3)
+        NUM_PHYSICAL_DIMENSIONS = 3
+        expanded_ffd_embedded_entity_map = sps.lil_matrix(
+            (ffd_set.embedded_entities_map.shape[0]*NUM_PHYSICAL_DIMENSIONS,ffd_set.embedded_entities_map.shape[1]*NUM_PHYSICAL_DIMENSIONS))
+        for i in range(NUM_PHYSICAL_DIMENSIONS):
+            input_indices = np.arange(0,ffd_set.embedded_entities_map.shape[1])*NUM_PHYSICAL_DIMENSIONS + i
+            output_indices = np.arange(0,ffd_set.embedded_entities_map.shape[0])*NUM_PHYSICAL_DIMENSIONS + i
+            expanded_ffd_embedded_entity_map[np.ix_(output_indices,input_indices)] = ffd_set.embedded_entities_map
+        expanded_ffd_embedded_entity_map = expanded_ffd_embedded_entity_map.tocsc()
+        ffd_free_dof_to_embedded_entities = expanded_ffd_embedded_entity_map.dot(ffd_free_dof_to_ffd_control_points)
+        # Map from embedded entities to all geometry control points
+        initial_system_representation_geometry = system_representation.spatial_representation.control_points['geometry'].copy()
+        indexing_indices = []
+        for ffd_block in list(geometry_parameterization.active_ffd_blocks.values()):
+            ffd_block_embedded_primitive_names = list(ffd_block.embedded_entities.keys())
+            ffd_block_embedded_primitive_indices = []
+            for primitive_name in ffd_block_embedded_primitive_names:
+                ffd_block_embedded_primitive_indices.extend(list(
+                    system_representation.spatial_representation.primitive_indices[primitive_name]['geometry']))
+            indexing_indices.extend(ffd_block_embedded_primitive_indices)
 
-        # ffd_free_dof_to_affine_ffd_control_points_map = ffd_set.ffd_free_dof_to_affine_ffd_control_points_map
-        # affine_geometry_control_points_map = ffd_set.affine_geometry_control_points_map
-        # pointset_map = geometry.eval_map
+        indexing_indices_array = np.array(indexing_indices)
+        expanded_indexing_indices = indexing_indices_array*NUM_PHYSICAL_DIMENSIONS
+        row_indices = np.concatenate((expanded_indexing_indices, expanded_indexing_indices + 1, expanded_indexing_indices + 2))
+        num_points = len(indexing_indices)
+        col_indices_array = np.arange(num_points)*NUM_PHYSICAL_DIMENSIONS
+        col_indices = np.concatenate((col_indices_array, col_indices_array + 1, col_indices_array + 2))
+        num_points_system_representation = initial_system_representation_geometry.shape[0]
+        data = np.ones((num_points*3))
+        geometry_assembly_map = sps.coo_matrix((data, (row_indices, col_indices)),
+                        shape=(num_points_system_representation*NUM_PHYSICAL_DIMENSIONS, num_points*NUM_PHYSICAL_DIMENSIONS))
+        geometry_assembly_map = geometry_assembly_map.tocsc()
+        ffd_free_dof_to_geometry_control_points = geometry_assembly_map.dot(ffd_free_dof_to_embedded_entities)
+        # Map from geometry control points to mapped arrays
+        mapped_array_mappings = []
+        # self.mapped_array_indices = {}
+        mapped_array_indices_counter = 0
+        for input_name, parameterization_input in system_parameterization.inputs.items():
+            if type(parameterization_input.quantity) is am.MappedArray:
+                mapped_array = parameterization_input.quantity
+            elif type(parameterization_input.quantity) is am.NonlinearMappedArray:
+                mapped_array = parameterization_input.quantity.input
+            # num_mapped_array_outputs = mapped_array.linear_map.shape[0]
+            # self.mapped_array_indices[input_name] = \
+            #     np.arange(mapped_array_indices_counter, mapped_array_indices_counter + num_mapped_array_outputs)
+            # mapped_array_indices_counter += num_mapped_array_outputs
 
-        # # Preallocate memory
-        # self.ffd_section_properties = np.zeros((ffd_set.num_affine_section_properties,)) # Section properties model output!
+            mapped_array_map = mapped_array.linear_map
+            expanded_mapped_array_map = sps.lil_matrix(
+                (mapped_array_map.shape[0]*NUM_PHYSICAL_DIMENSIONS,mapped_array_map.shape[1]*NUM_PHYSICAL_DIMENSIONS))
+            for i in range(NUM_PHYSICAL_DIMENSIONS):
+                input_indices = np.arange(0,mapped_array_map.shape[1])*NUM_PHYSICAL_DIMENSIONS + i
+                output_indices = np.arange(0,mapped_array_map.shape[0])*NUM_PHYSICAL_DIMENSIONS + i
+                expanded_mapped_array_map[np.ix_(output_indices,input_indices)] = mapped_array_map
+            expanded_mapped_array_map = expanded_mapped_array_map.tocsc()
 
-        # # Precompute constant maps
-        # ffd_control_points_to_pointsets_linear_map = pointset_map.dot(affine_geometry_control_points_map)
-        # ffd_control_points_to_pointsets_linear_map_tensor = np.zeros(tuple((pointset_map.shape[0],3)) + (ffd_set.num_affine_free_ffd_control_points,3))
-        # for i in range(3):
-        #     ffd_control_points_to_pointsets_linear_map_tensor[:,i,:,i] = ffd_control_points_to_pointsets_linear_map.toarray()
-        # self.ffd_free_dof_to_pointsets_linear_map = np.tensordot(ffd_control_points_to_pointsets_linear_map_tensor, ffd_free_dof_to_affine_ffd_control_points_map)
+            # mapped_array_mapping = sps.block_diag([mapped_array.linear_map]*NUM_PHYSICAL_DIMENSIONS)
+            mapped_array_mappings.append(expanded_mapped_array_map)
+
+        mapped_arrays_map = sps.vstack(mapped_array_mappings).tocsc()
+
+        self.ffd_free_dof_to_mapped_arrays = mapped_arrays_map.dot(ffd_free_dof_to_geometry_control_points)
 
 
     def evaluate_residuals(self, inputs, outputs, residuals):
@@ -104,11 +172,10 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
         # Collect the parameterizations which have free dof (one parameterization is like one FFDSet)
         free_geometry_parameterizations = {}
         for geometry_parameterization_name, geometry_parameterization in geometry_parameterizations.items():
-            if geometry_parameterization.free_affine_dof != 0:
+            if geometry_parameterization.num_affine_free_dof != 0:
                 free_geometry_parameterizations[geometry_parameterization_name] = geometry_parameterization
                 # NOTE! Hardcoding for one FFDSet as the only geometry parameterization
                 ffd_set = geometry_parameterization
-        ffd_blocks = ffd_set.ffd_blocks
 
         parameterization_inputs = inputs['parameterization_inputs']
         num_inputs = len(parameterization_inputs)
@@ -116,70 +183,14 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
         lagrange_multipliers = outputs['parameterization_lagrange_multipliers']
 
         NUM_PARAMETRIC_DIMENSIONS = 3       # This type of FFD block has 3 parametric dimensions by definition.
-        # Evaluate affine section properties from FFD dof
-        # affine_section_properties = ffd_set.evaluate_affine_section_properties(free_affine_dof=ffd_free_dof)
-        if ffd_set.num_affine_dof == 0:
-            translations = np.zeros((ffd_set.num_sections, NUM_PARAMETRIC_DIMENSIONS))
-            return
-
-        # affine_section_properties_free_component = ffd_set.free_affine_section_properties_map.dot(ffd_free_dof)
-        # affine_section_properties_prescribed_component = ffd_set.prescribed_affine_section_properties_map.dot(prescribed_affine_dof)
-        # affine_section_properties = affine_section_properties_free_component + affine_section_properties_prescribed_component
-        affine_section_properties = ffd_set.free_affine_section_properties_map.dot(ffd_free_dof)
-
-        affine_section_properties = np.zeros((ffd_set.num_affine_section_properties,))
-        translations = None
-
-        ffd_block_section_properties_starting_index = 0
-        for ffd_block in list(ffd_set.active_ffd_blocks.values()):
-            ffd_block_scaling_properties_starting_index = ffd_block_section_properties_starting_index + ffd_block.num_sections*(ffd_block.num_affine_properties-ffd_block.num_scaling_properties)
-            ffd_block_section_properties_ending_index = ffd_block_section_properties_starting_index + ffd_block.num_affine_section_properties
-
-            # Add 1 to scaling parameters to make initial scaling=1.
-            affine_section_properties[ffd_block_scaling_properties_starting_index:ffd_block_section_properties_ending_index] += 1
-
-            if translations is None:
-                translations = affine_section_properties[ffd_block_section_properties_starting_index:ffd_block_scaling_properties_starting_index]
-            else:
-                translations = np.append(translations,
-                                    affine_section_properties[ffd_block_section_properties_starting_index:ffd_block_scaling_properties_starting_index])
-
-            ffd_block_section_properties_starting_index = ffd_block_section_properties_ending_index
-
-        # Evaluate rotational section properties from ffd rotational dof # TODO: Come back to this
-        # rotational_section_properties = ffd_set.evaluate_rotational_section_properties()    # If want, these could be passed in as csdl var
-
-        # Evaluate FFD block affine deformations by applying affine section properties
-        # affine_deformed_ffd_control_points = ffd_set.evaluate_affine_block_deformations(affine_section_properties=affine_section_properties)
-        affine_deformed_control_points_flattened = ffd_set.affine_block_deformations_map.dot(affine_section_properties)
-        affine_deformed_control_points = affine_deformed_control_points_flattened.reshape((ffd_set.num_control_points, NUM_PARAMETRIC_DIMENSIONS))
-
-        # Evaluate FFD block rotational deformations by applying rotational sectino properties #TODO Come back to this
-        # rotated_ffd_control_points = ffd_set.evaluate_rotational_block_deformations()
-
-        # Evaluate FFD control points by rotating back into global frame
-        # ffd_control_points = ffd_set.evaluate_control_points()
-        ffd_control_points = np.zeros((ffd_set.num_control_points,NUM_PARAMETRIC_DIMENSIONS))
-        starting_index = 0
-        for ffd_block in list(ffd_set.active_ffd_blocks.values()):
-            ending_index = starting_index + ffd_block.num_control_points
-
-            ffd_block_control_points_local_frame = affine_deformed_control_points[starting_index:ending_index]
-
-            ffd_block_control_points_rotated_back_wrong_axis = np.tensordot(ffd_block.local_to_global_rotation,
-                                                                            ffd_block_control_points_local_frame, axes=([-1],[-1]))
-            ffd_block_control_points_rotated_back = np.moveaxis(ffd_block_control_points_rotated_back_wrong_axis, 0, 1)
-            ffd_block_control_points_rotated_back_reshaped = ffd_block_control_points_rotated_back.reshape(ffd_block.primitive.shape)
-
-            ffd_block_control_points_reshaped = ffd_block_control_points_rotated_back_reshaped + ffd_block.local_to_global_translations
-            ffd_block_control_points = ffd_block_control_points_reshaped.reshape((ffd_block.num_control_points, NUM_PARAMETRIC_DIMENSIONS))
-
-            ffd_control_points[starting_index:ending_index] = ffd_block_control_points
-            starting_index = ending_index
-
-        # Evaluate geometry control points
-        # ffd_embedded_entities = ffd_set.evaluate_embedded_entities()
-        ffd_embedded_entities = ffd_set.embedded_entities_map.dot(ffd_control_points)
+        affine_section_properties = ffd_set.evaluate_affine_section_properties(free_affine_dof=ffd_free_dof)
+        rotational_section_properties = ffd_set.evaluate_rotational_section_properties()
+        affine_deformed_ffd_control_points = ffd_set.evaluate_affine_block_deformations(
+            affine_section_properties=affine_section_properties)
+        rotated_ffd_control_points = ffd_set.evaluate_rotational_block_deformations(
+            affine_deformed_control_points=affine_deformed_ffd_control_points)
+        ffd_control_points = ffd_set.evaluate_control_points(rotated_control_points_local_frame=rotated_ffd_control_points)
+        ffd_embedded_entities = ffd_set.evaluate_embedded_entities(control_points=ffd_control_points, plot=True)
 
         # Assemble geometry from FFD outputs
         initial_system_representation_geometry = system_representation.spatial_representation.control_points['geometry'].copy()
@@ -193,122 +204,42 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
                     system_representation.spatial_representation.primitive_indices[primitive_name]['geometry']))
             parameterization_indices.extend(ffd_block_embedded_primitive_indices)
 
-        num_points_system_representation = initial_system_representation_geometry.shape[0]
-        data = np.ones((len(parameterization_indices)))
-        indexing_map = sps.coo_matrix((data, (np.array(parameterization_indices), np.arange(len(parameterization_indices)))),
-                                        shape=(num_points_system_representation, len(parameterization_indices)))
-        indexing_map = indexing_map.tocsc()
-        updated_geometry_component = csdl.sparsematmat(ffd_embedded_entities, sparse_mat=indexing_map)
-
-        system_representation_geometry[parameterization_indices,:] = updated_geometry_component
-
-        ''' Start implementing from this point on! '''
-
-        for input_name, parameterization_input in system_parameterization.inputs.items():
-
-            # Evaluate linear mapped array
-
-            # Evaluate nonlinear mapped array
-
-
+        system_representation_geometry[parameterization_indices,:] = ffd_embedded_entities
 
         # geometric_calculations evaluation
         c = np.zeros((num_inputs,))   # for displacement, may need to insert more rows since that's 3 constraints.
         dc_dx = np.zeros(((num_inputs,) + ffd_free_dof.shape))
 
         constraint_counter = 0
-        for input_name, parameterization_input in parameterization_inputs.items():
+        for input_name, parameterization_input in system_parameterization.inputs.items():
             quantity = parameterization_input.quantity
             quantity_num_constraints = np.prod(quantity.shape)
-            c[constraint_counter:constraint_counter+quantity_num_constraints] = quantity.evaluate(ffd_embedded_entities)
 
-            if type(geometric_calculation) is DisplacementCalculation:
-                pointset = geometric_calculation.pointset
-                starting_index = pointset.output_starting_ind
-                pointset_length = np.cumprod(pointset.shape)[-2]
-                ending_index = starting_index + pointset_length
-                indices = np.arange(starting_index, ending_index)
-                pointset_subset_map = np.zeros((pointset_length, pointset_points.shape[0]))
-                for i, index in enumerate(indices):
-                    pointset_subset_map[i, index] = 1.
+            if type(quantity) is am.MappedArray: # displacement constraint
+                c[constraint_counter:constraint_counter+quantity_num_constraints] = \
+                    quantity.evaluate(system_representation_geometry) \
+                    - parameterization_inputs[constraint_counter:constraint_counter+quantity_num_constraints]
+            
+                dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = \
+                    self.ffd_free_dof_to_mapped_arrays.toarray()
+            else:
+                nonlinear_operation_input = quantity.input.evaluate(system_representation_geometry)
+                c[constraint_counter:constraint_counter+quantity_num_constraints] = \
+                    quantity.evaluate(system_representation_geometry, evaluate_input=True) \
+                        - parameterization_inputs[constraint_counter:constraint_counter+quantity_num_constraints]
+                
+                nonlinear_derivative = quantity.evaluate_derivative(nonlinear_operation_input, evaluate_input=False)
+                dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = \
+                    nonlinear_derivative.dot(self.ffd_free_dof_to_mapped_arrays.toarray())
 
-                total_linear_map = np.tensordot(pointset_subset_map, self.ffd_free_dof_to_pointsets_linear_map, axes=([-1],[0]))
+            constraint_counter += quantity_num_constraints
 
-                displacement = pointset_subset_map.dot(pointset_points)
-                c[constraint_counter:constraint_counter+3] = (displacement.reshape(-1,)).T - inputs_and_constraints[constraint_counter:constraint_counter+3].T
-                # NOTE: The axis of length one must be removed for proper casting
-                dc_dx[constraint_counter:constraint_counter+3,:] = (total_linear_map).reshape((3,) + tuple(ffd_free_dof.shape)) # first 2 axes should be transposed
-                # NOTE: The axis of length one must be removed for proper casting
-                constraint_counter += 3
+        dObjective_dx = 2*ffd_set.cost_matrix.dot(ffd_free_dof)
 
-            elif type(geometric_calculation) is MagnitudeCalculation:
-                pointset = geometric_calculation.pointset
-                starting_index = pointset.output_starting_ind
-                pointset_length = np.cumprod(pointset.shape)[-2]
-                ending_index = starting_index + pointset_length
-                indices = np.arange(starting_index, ending_index)
-                pointset_subset_map = np.zeros((pointset_length, pointset_points.shape[0]))
-                for i, index in enumerate(indices):
-                    pointset_subset_map[i, index] = 1.
-
-                total_linear_map = np.tensordot(pointset_subset_map, self.ffd_free_dof_to_pointsets_linear_map, axes=([-1],[0]))
-
-                displacement = pointset_subset_map.dot(pointset_points)
-                magnitude = np.linalg.norm(displacement)
-                # c[constraint_counter] = magnitude - chord_dv
-                c[constraint_counter] = magnitude - inputs_and_constraints[constraint_counter]
-
-                # print('displacement', displacement)
-                # print('magnitude', magnitude)
-                # print('c', c)
-
-                displacement_tensor = displacement.reshape((1,1) + tuple(pointset.shape))  # geometric output has shape (1,)  (it should technically be (1,1), but I think (1,) will work same in practice)
-                nonlinear_map = displacement_tensor/magnitude   # dgeometricoutputs_dgeometricoutputpointset
-
-                dc_dx[constraint_counter,:] = np.tensordot(nonlinear_map, total_linear_map)
-
-                constraint_counter += 1
-
-            elif type(geometric_calculation) is AreaCalculation:
-                pointsets = geometric_calculation.pointsets
-                num_pointsets_points = 0
-                indices = None
-                for pointset in pointsets:
-                    num_pointsets_points += np.cumprod(pointset.shape[-1])[-1]
-                    starting_index = pointset.output_starting_ind
-                    ending_index = starting_index + np.cumprod(pointset.shape[-1])[-1]
-                    if indices is None:
-                        indices = np.arange(starting_index, ending_index)
-                    else:
-                        indices = np.append(indices, np.arange(starting_index, ending_index))
-
-                pointset_subset_map = np.zeros((num_pointsets_points, pointset_points.shape[0]))
-                for pointset in pointsets:
-                    for i, index in enumerate(indices):
-                        pointset_subset_map[i, index] = 1.
-
-                total_linear_map = np.tensordot(pointset_subset_map, self.ffd_free_dof_to_pointsets_linear_map, axes=([-1],[0]))
-
-                basis_vectors = pointset_subset_map.dot(pointset_points)
-                normal_vector = np.cross(basis_vectors[0,:], basis_vectors[1,:])
-                area = np.linalg.norm(normal_vector)
-
-                c[constraint_counter] = area - inputs_and_constraints[constraint_counter]
-
-                # TODO finish implementation
-                # NOTE: Area is more difficult because the cross product and norm are both nonlinear. Derivatives must be thought through thouroughly.
-
-                # cross_product_map =
-
-                displacement_tensor = displacement.reshape((1,1) + tuple(pointset.shape))  # geometric output has shape (1,)  (it should technically be (1,1), but I think (1,) will work same in practice)
-                nonlinear_map = displacement_tensor/magnitude   # dgeometricoutputs_dgeometricoutputpointset
-
-                dc_dx[constraint_counter,:] = np.tensordot(nonlinear_map, total_linear_map)
-
-                constraint_counter += 1
-
-
-        dObjective_dx = 2*cost_matrix.dot(ffd_free_dof)
+        num_affine_free_dof = geometry_parameterization.num_affine_free_dof
+        self.residual_testing = np.zeros((num_affine_free_dof+num_inputs,))
+        self.residual_testing[:num_affine_free_dof] = dObjective_dx + np.tensordot(lagrange_multipliers, dc_dx, axes=([-1],[0]))
+        self.residual_testing[num_affine_free_dof:] = c.T
 
         residuals['ffd_free_dof'] = dObjective_dx + np.tensordot(lagrange_multipliers, dc_dx, axes=([-1],[0]))
         residuals['parameterization_lagrange_multipliers'] = c.T
@@ -316,232 +247,111 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
 
     def compute_derivatives(self, inputs, outputs, derivatives):
         # inputs
-        geometry = self.parameters['geometry']
-        ffd_set = geometry.ffd_set
-        ffd_blocks = ffd_set.ffd_blocks
+        system_parameterization = self.parameters['system_parameterization']
+        system_representation = system_parameterization.system_representation
 
-        cost_matrix = ffd_set.cost_matrix
-        free_section_properties_map = ffd_set.free_section_properties_map
-        ffd_control_points_map = ffd_set.ffd_control_points_map
-        ffd_control_points_x_map = ffd_set.ffd_control_points_x_map
-        ffd_control_points_y_map = ffd_set.ffd_control_points_y_map
-        ffd_control_points_z_map = ffd_set.ffd_control_points_z_map
-        affine_free_ffd_control_points_map = ffd_set.affine_free_ffd_control_points_map
-        affine_free_ffd_control_points_x_map = ffd_set.affine_free_ffd_control_points_x_map
-        affine_free_ffd_control_points_y_map = ffd_set.affine_free_ffd_control_points_y_map
-        affine_free_ffd_control_points_z_map = ffd_set.affine_free_ffd_control_points_z_map
-        local_to_global_ffd_control_points_map = ffd_set.local_to_global_ffd_control_points_map
-        geometry_control_points_map = ffd_set.geometry_control_points_map
-        unchanged_geometry_indexing_map = ffd_set.unchanged_geometry_indexing_map
-        pointset_map = geometry.eval_map
+        geometry_parameterizations = system_parameterization.geometry_parameterizations
 
-        inputs_and_constraints = inputs['inputs_and_constraints']
-        num_inputs_and_constraints = inputs_and_constraints.shape[0]
+        # Collect the parameterizations which have free dof (one parameterization is like one FFDSet)
+        free_geometry_parameterizations = {}
+        for geometry_parameterization_name, geometry_parameterization in geometry_parameterizations.items():
+            if geometry_parameterization.num_affine_free_dof != 0:
+                free_geometry_parameterizations[geometry_parameterization_name] = geometry_parameterization
+                # NOTE! Hardcoding for one FFDSet as the only geometry parameterization
+                ffd_set = geometry_parameterization
+
+        parameterization_inputs = inputs['parameterization_inputs']
+        num_inputs = len(parameterization_inputs)
         ffd_free_dof = outputs['ffd_free_dof']
         lagrange_multipliers = outputs['parameterization_lagrange_multipliers']
 
-        num_affine_free_dof = ffd_set.num_affine_free_dof
-        num_affine_section_properties = ffd_set.num_affine_section_properties
-        num_affine_ffd_control_points = ffd_set.num_affine_ffd_control_points
-        num_affine_free_ffd_control_points = ffd_set.num_affine_free_ffd_control_points
-        num_embedded_points = ffd_set.num_embedded_points
-        num_geometry_control_points = ffd_set.num_geometry_control_points
+        NUM_PARAMETRIC_DIMENSIONS = 3       # This type of FFD block has 3 parametric dimensions by definition.
+        affine_section_properties = ffd_set.evaluate_affine_section_properties(free_affine_dof=ffd_free_dof)
+        rotational_section_properties = ffd_set.evaluate_rotational_section_properties()
+        affine_deformed_ffd_control_points = ffd_set.evaluate_affine_block_deformations(
+            affine_section_properties=affine_section_properties)
+        rotated_ffd_control_points = ffd_set.evaluate_rotational_block_deformations(
+            affine_deformed_control_points=affine_deformed_ffd_control_points)
+        ffd_control_points = ffd_set.evaluate_control_points(rotated_control_points_local_frame=rotated_ffd_control_points)
+        ffd_embedded_entities = ffd_set.evaluate_embedded_entities(control_points=ffd_control_points)
 
-        # ffd section properties evaluation
-        ffd_free_section_properties_without_initial = free_section_properties_map.dot(ffd_free_dof)
+        # Assemble geometry from FFD outputs
+        initial_system_representation_geometry = system_representation.spatial_representation.control_points['geometry'].copy()
+        system_representation_geometry = initial_system_representation_geometry.copy()
+        parameterization_indices = []
+        for ffd_block in list(geometry_parameterization.active_ffd_blocks.values()):
+            ffd_block_embedded_primitive_names = list(ffd_block.embedded_entities.keys())
+            ffd_block_embedded_primitive_indices = []
+            for primitive_name in ffd_block_embedded_primitive_names:
+                ffd_block_embedded_primitive_indices.extend(list(
+                    system_representation.spatial_representation.primitive_indices[primitive_name]['geometry']))
+            parameterization_indices.extend(ffd_block_embedded_primitive_indices)
 
-        # An initial value of 1 must be added to the scaling section properties. This is not differentiated because it's a constant 1.
-        self.ffd_section_properties = np.zeros((num_affine_section_properties,)) # Section properties model output!
-        ffd_block_starting_index = 0
-        for ffd_block in ffd_blocks:
-            if ffd_block.num_affine_dof == 0:
-                continue
+        system_representation_geometry[parameterization_indices,:] = ffd_embedded_entities
 
-            ffd_block_ending_index = ffd_block_starting_index + ffd_block.num_sections * ffd_block.num_affine_properties
-            NUM_SCALING_PROPERTIES = 3
-            ffd_block_scaling_properties_starting_index = ffd_block_starting_index + ffd_block.num_sections*(ffd_block.num_affine_properties-NUM_SCALING_PROPERTIES)    #The last 2 properties are scaling
-            ffd_block_scaling_properties_ending_index = ffd_block_scaling_properties_starting_index + ffd_block.num_sections*(NUM_SCALING_PROPERTIES)
-
-            # Use calculated values for non-scaling parameters
-            self.ffd_section_properties[ffd_block_starting_index:ffd_block_scaling_properties_starting_index] = \
-                ffd_free_section_properties_without_initial[ffd_block_starting_index:ffd_block_scaling_properties_starting_index] # -3 is because scale_y and z are the last 2 properties
-
-            # Add 1 to scaling parameters to make initial scaling=1.
-            self.ffd_section_properties[ffd_block_scaling_properties_starting_index:ffd_block_scaling_properties_ending_index] = \
-                ffd_free_section_properties_without_initial[ffd_block_scaling_properties_starting_index:ffd_block_scaling_properties_ending_index] + 1.  # adding 1 which is initial scale value
-
-            ffd_block_starting_index = ffd_block_ending_index
-
-
-        # ffd control points evaluation (affine)
-        ffd_control_points_x = affine_free_ffd_control_points_x_map.dot(self.ffd_section_properties)
-        ffd_control_points_y = affine_free_ffd_control_points_y_map.dot(self.ffd_section_properties)
-        ffd_control_points_z = affine_free_ffd_control_points_z_map.dot(self.ffd_section_properties)
-
-        # Combine x,y,z components back to list of points
-        affine_ffd_control_points = np.zeros((num_affine_free_ffd_control_points, 3))
-        affine_ffd_control_points[:,0] = ffd_control_points_x
-        affine_ffd_control_points[:,1] = ffd_control_points_y
-        affine_ffd_control_points[:,2] = ffd_control_points_z
-
-        # Construct ffd control points vector from ffd blocks with affine and/or rotational dof
-        ffd_control_points_local_frame = affine_ffd_control_points
-
-        # Transformation back into global frame evaluation
-        ffd_control_points_without_origin = np.tensordot(local_to_global_ffd_control_points_map, ffd_control_points_local_frame)
-        ffd_control_points = ffd_control_points_without_origin
-        ffd_block_starting_index = 0
-        for ffd_block in ffd_blocks:
-            if ffd_block.num_affine_free_dof == 0:
-                continue
-            ffd_block_num_control_points = ffd_block.nxp * ffd_block.nyp * ffd_block.nzp
-            ffd_block_ending_index = ffd_block_starting_index + ffd_block_num_control_points
-            ffd_control_points[ffd_block_starting_index:ffd_block_ending_index] += np.repeat(ffd_block.section_origins, ffd_block.nyp*ffd_block.nzp, axis=0)
-            ffd_block_starting_index = ffd_block_ending_index
-
-        # vp_init = Plotter()
-        # vps = []
-        # vps1 = Points(ffd_control_points, r=8, c = 'blue')
-        # vps2 = Points(ffd_control_points_without_origin, r=7, c='cyan')
-        # vps3 = Points(ffd_control_points_local_frame, r=7, c='red')
-        # vps4 = Points(affine_ffd_control_points, r=7, c='magenta')
-        # vps.append(vps1)
-        # vps.append(vps2)
-        # vps.append(vps3)
-        # vps.append(vps4)
-
-        # vp_init.show(vps, 'FFD Changes', axes=1, viewup="z", interactive = True)
-
-        # Geometry control points evaluation
-        if num_embedded_points != num_geometry_control_points:  #
-            # Get unchanged geometry control points (points not included in FFD)
-            initial_geometry_control_points = geometry.total_cntrl_pts_vector
-            unchanged_geometry_control_points = unchanged_geometry_indexing_map.dot(initial_geometry_control_points)
-
-        # --Construct map (ffd control points (in ffd blocks with affine free dof) --> geometry control points)
-        affine_geometry_control_points_map = None
-        ffd_block_starting_index = 0
-        for ffd_block in ffd_blocks:
-            if ffd_block.num_affine_free_dof == 0:
-                continue
-
-            ffd_block_num_control_points = ffd_block.nxp * ffd_block.nyp * ffd_block.nzp
-            ffd_block_ending_index = ffd_block_starting_index + ffd_block_num_control_points
-
-            if affine_geometry_control_points_map is None:
-                affine_geometry_control_points_map = geometry_control_points_map[:,ffd_block_starting_index:ffd_block_ending_index]
-            else:
-                affine_geometry_control_points_map = sps.hstack((affine_geometry_control_points_map, geometry_control_points_map[:,ffd_block_starting_index:ffd_block_ending_index]))
-
-            ffd_block_starting_index = ffd_block_ending_index
-
-        # --Evaluate updated geometry control points using map
-        updated_geometry_control_points = affine_geometry_control_points_map.dot(ffd_control_points)
-
-        # --Combine updated and unchanged portions of the geometry to complete the geometry
-        if num_embedded_points != num_geometry_control_points:
-            geometry_control_points = updated_geometry_control_points + unchanged_geometry_control_points
-        else:
-            geometry_control_points = updated_geometry_control_points
-        # pointset evaluation
-        pointset_points = pointset_map.dot(geometry_control_points)
-
-        # geometric_calculations evaluation
+        # quantity evaluation
         # c = np.zeros((num_geometric_outputs,))   # Don't need c for Hessian.
-        dc_dx = np.zeros(((num_inputs_and_constraints,) + ffd_free_dof.shape))
-        d2c_dx2 = np.zeros(((num_inputs_and_constraints,)  + ffd_free_dof.shape + ffd_free_dof.shape))
+        dc_dx = np.zeros(((num_inputs,) + ffd_free_dof.shape))
+        d2c_dx2 = np.zeros(((num_inputs,)  + ffd_free_dof.shape + ffd_free_dof.shape))
 
-        inputs_and_constraints_python = geometry.inputs.copy() + geometry.constraints.copy()
         constraint_counter = 0
-        for inner_optimization_constraint in inputs_and_constraints_python:
-            geometric_calculation = inner_optimization_constraint.geometric_calculation
+        for input_name, parameterization_input in system_parameterization.inputs.items():
+            quantity = parameterization_input.quantity
+            quantity_num_constraints = np.prod(quantity.shape)
 
-            if type(geometric_calculation) is DisplacementCalculation:
-                pointset = geometric_calculation.pointset
-                starting_index = pointset.output_starting_ind
-                pointset_length = np.cumprod(pointset.shape)[-2]
-                ending_index = starting_index + pointset_length
-                indices = np.arange(starting_index, ending_index)
-                pointset_subset_map = np.zeros((pointset_length, pointset_points.shape[0]))
-                for i, index in enumerate(indices):
-                    pointset_subset_map[i, index] = 1.
+            if type(quantity) is am.MappedArray:
+                dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = \
+                    self.ffd_free_dof_to_mapped_arrays.toarray()
 
-                total_linear_map = np.tensordot(pointset_subset_map, self.ffd_free_dof_to_pointsets_linear_map, axes=([-1],[0]))
+                d2c_dx2[constraint_counter:constraint_counter+quantity_num_constraints,:,:] = 0.
+            else:
+                nonlinear_operation_input = quantity.input.evaluate(system_representation_geometry)
+                mapped_array_size = np.prod(nonlinear_operation_input.shape)
 
-                displacement = pointset_subset_map.dot(pointset_points)
-                # NOTE: The axis of length one must be removed for proper casting
-                dc_dx[constraint_counter:constraint_counter+3,:] = (total_linear_map).reshape((3,) + tuple(ffd_free_dof.shape)) # first 2 axes should be transposed
-                # NOTE: The axis of length one must be removed for proper casting
-                d2c_dx2[constraint_counter:constraint_counter+3,:,:] = np.zeros((3,) + tuple(ffd_free_dof.shape) + tuple(ffd_free_dof.shape))
+                nonlinear_derivative = quantity.evaluate_derivative(nonlinear_operation_input, evaluate_input=False)
+                dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = \
+                    nonlinear_derivative.dot(self.ffd_free_dof_to_mapped_arrays.toarray())
+                
+                nonlinear_second_derivative = quantity.evaluate_second_derivative(nonlinear_operation_input).reshape(
+                    (quantity_num_constraints, mapped_array_size, mapped_array_size))
 
-                constraint_counter += 3
-            elif type(geometric_calculation) is MagnitudeCalculation:
-                pointset = geometric_calculation.pointset
-                starting_index = pointset.output_starting_ind
-                pointset_length = np.cumprod(pointset.shape)[-2]
-                ending_index = starting_index + pointset_length
-                indices = np.arange(starting_index, ending_index)
-                pointset_subset_map = np.zeros((pointset_length, pointset_points.shape[0]))
-                for i, index in enumerate(indices):
-                    pointset_subset_map[i, index] = 1.
+                first_term = np.tensordot(nonlinear_second_derivative, self.ffd_free_dof_to_mapped_arrays.toarray(), axes=([2, 0]))
+                total_second_derivative = np.tensordot(first_term, self.ffd_free_dof_to_mapped_arrays.toarray(), axes=([1, 0]))
+                d2c_dx2[constraint_counter:constraint_counter+quantity_num_constraints,:,:] = total_second_derivative
 
-                total_linear_map = np.tensordot(pointset_subset_map, self.ffd_free_dof_to_pointsets_linear_map, axes=([-1],[0]))
+            constraint_counter += quantity_num_constraints
 
-                displacement = pointset_subset_map.dot(pointset_points)
-                magnitude = np.linalg.norm(displacement)
-                # c[constraint_counter] = magnitude - chord_dv
+        d2objective_dx2 = 2*ffd_set.cost_matrix
 
-                displacement_tensor = displacement.reshape((1,1) + tuple(pointset.shape))  # geometric output has shape (1,)  (it should technically be (1,1), but I think (1,) will work same in practice)
-                nonlinear_map = displacement_tensor/magnitude   # dgeometricoutputs_dgeometricoutputpointset
-
-                dc_dx[constraint_counter,:] = np.tensordot(nonlinear_map, total_linear_map)
-
-                ddisplacement_displacement = np.zeros(tuple(pointset.shape) + tuple(pointset.shape))
-                ddisplacement_displacement[0,:,0,:] = np.eye(pointset.shape[1])     # should just be a (3,3)
-                ddisplacement_displacement_T = np.zeros(tuple(pointset.shape[::-1]) + tuple(pointset.shape))
-                ddisplacement_displacement_T[:,0,0,:] = np.eye(pointset.shape[1])     # should just be a (3,3)
-                a_term_dot_db_term = ddisplacement_displacement.reshape((1,1) + tuple(ddisplacement_displacement.shape))/magnitude
-                a_term_dot_db_term_T = np.swapaxes(a_term_dot_db_term, 0, 3)    # need to transpose for upcoming computation anyway
-                da_term = -np.tensordot(displacement/magnitude**3, ddisplacement_displacement_T, axes=([-1],[0]))
-                b_term_T_dot_da_term_T = np.tensordot(displacement_tensor.T, da_term, axes=([-1],[0]))
-                # b_term_T_dot_da_term_T_all_T = np.swapaxes(b_term_T_dot_da_term_T, 0, 3)  # need to transpose back anywyay
-                d2magnitude_dpointsetddisplacement_T = a_term_dot_db_term_T + b_term_T_dot_da_term_T
-                d2magnitude_dffddv2_term1_T = np.tensordot(total_linear_map.T, d2magnitude_dpointsetddisplacement_T)
-                # d2magnitude_dpointset2_term1 = np.transpose(d2magnitude_dpointset2_term1_T, axes=(3, 2, 1, 0, 4, 5))
-                d2magnitude_dffddv2_term1 = np.transpose(d2magnitude_dffddv2_term1_T, axes=(2, 1, 0, 3, 4))
-                d2magnitude_dffddv2 = np.tensordot(d2magnitude_dffddv2_term1, total_linear_map)
-
-                d2c_dx2[constraint_counter,:,:] = d2magnitude_dffddv2
-
-                constraint_counter += 1
-
-        d2objective_dx2 = 2*cost_matrix
-
-        hessian = np.zeros((num_affine_free_dof+num_inputs_and_constraints,num_affine_free_dof+num_inputs_and_constraints))
-        hessian[:num_affine_free_dof, :num_affine_free_dof] = d2objective_dx2 + np.tensordot(lagrange_multipliers, d2c_dx2, axes=([-1],[0]))    # upper left blockk
+        num_affine_free_dof = ffd_set.num_affine_free_dof
+        hessian = np.zeros((num_affine_free_dof+num_inputs,num_affine_free_dof+num_inputs))
+        hessian[:num_affine_free_dof, :num_affine_free_dof] = \
+            d2objective_dx2 + np.tensordot(lagrange_multipliers, d2c_dx2, axes=([-1],[0]))    # upper left block
         hessian[:num_affine_free_dof, num_affine_free_dof:] = dc_dx.T   # uper right block
         hessian[num_affine_free_dof:, :num_affine_free_dof] = dc_dx # lower left block
         # hessian[num_affine_free_dof:, num_affine_free_dof:] = 0.  lower right block preallocated to zeroes
 
         derivatives['ffd_free_dof', 'ffd_free_dof'] = hessian[:num_affine_free_dof, :num_affine_free_dof]
-        derivatives['ffd_free_dof', 'lagrange_multipliers'] = hessian[:num_affine_free_dof, num_affine_free_dof:]
-        derivatives['lagrange_multipliers', 'ffd_free_dof'] = hessian[num_affine_free_dof:, :num_affine_free_dof]
-        derivatives['lagrange_multipliers', 'lagrange_multipliers'] = hessian[num_affine_free_dof:, num_affine_free_dof:]
-
+        derivatives['ffd_free_dof', 'parameterization_lagrange_multipliers'] = hessian[:num_affine_free_dof, num_affine_free_dof:]
+        derivatives['parameterization_lagrange_multipliers', 'ffd_free_dof'] = hessian[num_affine_free_dof:, :num_affine_free_dof]
+        derivatives['parameterization_lagrange_multipliers', 'parameterization_lagrange_multipliers'] = \
+            hessian[num_affine_free_dof:, num_affine_free_dof:]
+        
         # df_dx = pf_px - pf_py.dot(pr_py**-1).dot(pr_px)
-        pr_px = np.zeros((num_inputs_and_constraints+num_affine_free_dof, num_inputs_and_constraints))
+        pr_px = np.zeros((num_inputs+num_affine_free_dof, num_inputs))
         # pr_px[:num_affine_free_dof,:] = 0.
-        pr_px[num_affine_free_dof:,:] = -np.eye(num_inputs_and_constraints)
+        pr_px[num_affine_free_dof:,:] = -np.eye(num_inputs)
         # pr_py = -hessian
         # dy_dx = np.linalg.solve(pr_py, pr_px)   # solve using direct method since num inputs < num outputs
         # df_dx = dy_dx   # df_dy = I since f=y, also_pf_py = 0, so df_dx = 0 - I.dot(dy_dx)
         # dffddof_dinputsandconstraints = df_dx[:num_affine_free_dof]
         # # dlagrangemultipliers_dinputsandconstraints = df_dx[num_affine_free_dof:]
         # # derivatives['ffd_free_dof', 'inputs_and_constraints'] = dffddof_dinputsandconstraints
-        # # derivatives['lagrange_multipliers', 'inputs_and_constraints'] = dlagrangemultipliers_dinputsandconstraints    # don't care about variations in lagrange multipliers
+        # # derivatives['parameterization_lagrange_multipliers', 'inputs_and_constraints'] = dlagrangemultipliers_dinputsandconstraints    # don't care about variations in lagrange multipliers
 
-        derivatives['ffd_free_dof', 'inputs_and_constraints'] = pr_px[:num_affine_free_dof,:]
-        derivatives['lagrange_multipliers', 'inputs_and_constraints'] = pr_px[num_affine_free_dof:,:]
+        derivatives['ffd_free_dof', 'parameterization_inputs'] = pr_px[:num_affine_free_dof,:]
+        derivatives['parameterization_lagrange_multipliers', 'parameterization_inputs'] = pr_px[num_affine_free_dof:,:]
+
 
     '''
     Might be able to take advantage of convexity here.
@@ -723,11 +533,11 @@ if __name__ == "__main__":
     ffd_set = geometry.ffd_set
 
     ffd_free_dof = sim['InnerOptimizationModel.ffd_free_dof']     # output
-    lagrange_multipliers = sim['InnerOptimizationModel.lagrange_multipliers']   # output
+    parameterization_lagrange_multipliers = sim['InnerOptimizationModel.parameterization_lagrange_multipliers']   # output
 
     print('ffd_free_dof', ffd_free_dof)
     print('norm(ffd_free_dof)', np.linalg.norm(sim['InnerOptimizationModel.ffd_free_dof']))
-    print('lagrange multipliers', lagrange_multipliers)
+    print('lagrange multipliers', parameterization_lagrange_multipliers)
 
     ffd_set = geometry.ffd_set
     ffd_blocks = ffd_set.ffd_blocks

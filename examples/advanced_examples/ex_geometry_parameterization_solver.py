@@ -76,27 +76,34 @@ from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_f
 from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock
 
 wing_geometry_primitives = wing.get_geometry_primitives()
-wing_ffd_bspline_volume = create_cartesian_enclosure_volume(wing_geometry_primitives, num_control_points=(11, 2, 2), order=(4,2,2),
+wing_ffd_bspline_volume = create_cartesian_enclosure_volume(wing_geometry_primitives, num_control_points=(5, 2, 2), order=(4,2,2),
                                                             xyz_to_uvw_indices=(1,0,2))
 wing_ffd_block = SRBGFFDBlock(name='wing_ffd_block', primitive=wing_ffd_bspline_volume, embedded_entities=wing_geometry_primitives)
-wing_ffd_block.add_scale_v(name='linear_taper', order=2, num_dof=3, value=np.array([0., 1., 0.]))
-wing_ffd_block.add_scale_w(name='constant_thickness_scaling', order=1, num_dof=1, value=np.array([0.5]))
+wing_ffd_block.add_scale_v(name='linear_taper', order=2, num_dof=3, cost_factor=1.)
+wing_ffd_block.add_scale_w(name='constant_thickness_scaling', order=1, num_dof=1)
 wing_ffd_block.add_rotation_u(name='twist_distribution', order=4, num_dof=10,
                               value=1/4*np.array([0., 0.11, 0.22, 0.33, 0.44, 0.44, 0.33, 0.22, 0.11, 0.]))
 
 horizontal_stabilizer_geometry_primitives = horizontal_stabilizer.get_geometry_primitives()
-horizontal_stabilizer_ffd_bspline_volume = create_cartesian_enclosure_volume(horizontal_stabilizer_geometry_primitives,num_control_points=(11, 2, 2),
-                                                                             order=(4,2,2), xyz_to_uvw_indices=(1,0,2))
+horizontal_stabilizer_ffd_bspline_volume = create_cartesian_enclosure_volume(horizontal_stabilizer_geometry_primitives,num_control_points=(4, 2, 2),
+                                                                             order=(3,2,2), xyz_to_uvw_indices=(1,0,2))
 horizontal_stabilizer_ffd_block = SRBGFFDBlock(name='horizontal_stabilizer_ffd_block', primitive=horizontal_stabilizer_ffd_bspline_volume,
                                                embedded_entities=horizontal_stabilizer_geometry_primitives)
 horizontal_stabilizer_ffd_block.add_scale_v(name='horizontal_stabilizer_linear_taper', order=2, num_dof=3, value=np.array([0.5, 0.5, 0.5]),
                                             cost_factor=1.)
 horizontal_stabilizer_ffd_block.add_rotation_u(name='horizontal_stabilizer_twist_distribution', order=1, num_dof=1, value=np.array([np.pi/10]))
 
+point_on_wing = wing.project(np.array([10., 0., 10.]), direction=np.array([0., 0., -1.]))
+point_on_tail = horizontal_stabilizer.project(np.array([28., 0., 10.]), direction=np.array([0., 0., -1.]))
+wing_to_tail_distance = am.norm(point_on_wing-point_on_tail)
+
 from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_set import SRBGFFDSet
 ffd_blocks = {wing_ffd_block.name : wing_ffd_block, horizontal_stabilizer_ffd_block.name : horizontal_stabilizer_ffd_block}
 ffd_set = SRBGFFDSet(name='ffd_set', ffd_blocks=ffd_blocks)
 system_parameterization.add_geometry_parameterization(ffd_set)
+
+system_parameterization.add_input(name='root_chord', quantity=root_chord, value=20.)
+
 system_parameterization.setup()
 
 # Configuration creations and prescribed actuations
@@ -110,11 +117,7 @@ cruise_configuration.set_num_nodes(num_nodes=cruise_num_nodes)
 cruise_configuration.add_output('horizontal_stabilizer_camber_surface', horizontal_stabilizer_camber_surface)
 cruise_configuration.add_output('wing_camber_surface', wing_camber_surface)
 
-point_on_wing = wing.project(np.array([10., 0., 10.]), direction=np.array([0., 0., -1.]))
-point_on_tail = horizontal_stabilizer.project(np.array([28., 0., 10.]), direction=np.array([0., 0., -1.]))
-wing_to_tail_distance = am.norm(point_on_wing-point_on_tail)
 cruise_configuration.add_output('wing_to_tail_distance', wing_to_tail_distance)
-
 
 horizontal_stabilizer_quarter_chord_port = horizontal_stabilizer.project(np.array([28.5, -10., 8.]))
 horizontal_stabilizer_quarter_chord_starboard = horizontal_stabilizer.project(np.array([28.5, 10., 8.]))
@@ -168,7 +171,10 @@ ffd_embedded_entities = ffd_set.evaluate_embedded_entities()
 print('wing to tail distance: ', sim['wing_to_tail_distance'])
 for t in range(cruise_num_nodes):
     updated_primitives_names = list(spatial_rep.primitives.keys()).copy()
-    cruise_geometry = sim['cruise_configuration_geometry'][t]
+    if cruise_num_nodes == 1:
+        cruise_geometry = sim['cruise_configuration_geometry']
+    else:
+        cruise_geometry = sim['cruise_configuration_geometry'][t]
     # cruise_geometry = sim['design_geometry']
     spatial_rep.update(cruise_geometry, updated_primitives_names)
 
@@ -180,8 +186,12 @@ for t in range(cruise_num_nodes):
     # print('wing root chord', sim['wing_root_chord'])
     # print("Python and CSDL difference: wing root chord", np.linalg.norm(root_chord.value - sim['wing_root_chord']))
 
-    wing_camber_surface_csdl = sim['wing_camber_surface'][t]
-    horizontal_stabilizer_camber_surface_csdl = sim['horizontal_stabilizer_camber_surface'][t]
+    if cruise_num_nodes == 1:
+        wing_camber_surface_csdl = sim['wing_camber_surface']
+        horizontal_stabilizer_camber_surface_csdl = sim['horizontal_stabilizer_camber_surface']
+    else:
+        wing_camber_surface_csdl = sim['wing_camber_surface'][t]
+        horizontal_stabilizer_camber_surface_csdl = sim['horizontal_stabilizer_camber_surface'][t]
     # print("Python and CSDL difference: wing camber surface", np.linalg.norm(wing_camber_surface_csdl - wing_camber_surface.value))
     # print("Python and CSDL difference: horizontal stabilizer camber surface", 
     #       np.linalg.norm(horizontal_stabilizer_camber_surface_csdl - horizontal_stabilizer_camber_surface.value))

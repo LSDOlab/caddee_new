@@ -27,7 +27,8 @@ class SystemConfigurationsCSDL(csdl.Model):
         for configuration_name, configuration in system_representation.configurations.items():
             if configuration.num_nodes != 1:
                 transient_configuration_model = TransientConfigurationCSDL(configuration=configuration)
-                self.add(submodel=transient_configuration_model, name='expanded_transient_'+configuration_name+'_model', promotes=[])
+                self.add(submodel=transient_configuration_model, name='expanded_transient_'+configuration_name+'_model', 
+                         promotes=['system_representation_geometry'])
 
         for configuration_name, configuration in system_representation.configurations.items():
             counter = 1
