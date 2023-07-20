@@ -130,9 +130,9 @@ class SRBGFFDBlock(FFDBlock):
     def add_parameter(self, name:str, parameter:Parameter):
         self.parameters[name] = parameter
 
-        # WARNING: This change makes all parameters be prescribed instead of constant. Is this ok?
-        if parameter.connection_name is None:
-            parameter.connection_name = name
+        # WARNING: This change makes all parameters be prescribed instead of constant. Is this ok? No lol
+        # if parameter.connection_name is None:
+        #     parameter.connection_name = name
 
         if parameter.property_type == 'rotation_u' or \
             parameter.property_type == 'rotation_v' or \
