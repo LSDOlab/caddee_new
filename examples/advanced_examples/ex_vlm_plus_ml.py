@@ -54,16 +54,13 @@ design_scenario = cd.DesignScenario(name='aircraft_trim')
 
 # region cruise condition
 cruise_model = m3l.Model()
-cruise_condition = cd.CruiseCondition(name="cruise_1")
+cruise_condition = cd.CruiseCondition(name="cruise")
 cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
 cruise_condition.set_module_input(name='altitude', val=1000)
 cruise_condition.set_module_input(name='mach_number', val=0.17, dv_flag=True, lower=0.17, upper=0.19)
 cruise_condition.set_module_input(name='range', val=40000)
-cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=0., upper=np.deg2rad(10))
+cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=0., upper=np.deg2rad(5))
 cruise_condition.set_module_input(name='flight_path_angle', val=0)
-cruise_condition.set_module_input(name='roll_angle', val=0)
-cruise_condition.set_module_input(name='yaw_angle', val=0)
-cruise_condition.set_module_input(name='wind_angle', val=0)
 cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 500]))
 
 ac_states = cruise_condition.evaluate_ac_states()
@@ -140,8 +137,8 @@ cruise_model.register_output(htail_oml_pressure_lower)
 
 vlm_force_mapping_model = VASTNodalForces(
     surface_names=[
-        wing_vlm_mesh_name,
-        htail_vlm_mesh_name,
+        f'{wing_vlm_mesh_name}_cruise',
+        f'{htail_vlm_mesh_name}_cruise',
     ],
     surface_shapes=[
         (1, ) + wing_camber_surface.evaluate().shape[1:],
