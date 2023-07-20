@@ -26,7 +26,7 @@ class AffineSectionPropertiesCSDL(csdl.Model):
         # Get sparse Python maps for (free dof --> section properties) and (prescribed dof --> section_properties)
         if num_affine_free_dof != 0:
             ffd_free_dof = self.declare_variable('ffd_free_dof', val=ffd_set.free_affine_dof)
-            free_section_properties_map = ffd_set.free_section_properties_map
+            free_section_properties_map = ffd_set.free_affine_section_properties_map
         if num_affine_prescribed_dof != 0:
             # ffd_prescribed_dof = self.create_output(f'ffd_prescribed_dof', shape=(num_affine_prescribed_dof,))
             ffd_prescribed_dof = self.create_output(f'ffd_prescribed_dof', val=ffd_set.prescribed_affine_dof)

@@ -133,8 +133,14 @@ class SRBGFFDSet:
 
             if ffd_block.num_affine_free_dof != 0:
                 free_affine_section_properties_maps.append(ffd_block.free_affine_section_properties_map)
+            else:
+                free_affine_section_properties_maps.append(
+                    sps.csc_matrix((ffd_block.num_affine_section_properties,ffd_block.num_affine_free_dof)))
             if ffd_block.num_affine_prescribed_dof != 0:
                 prescribed_affine_section_properties_maps.append(ffd_block.prescribed_affine_section_properties_map)
+            else:
+                prescribed_affine_section_properties_maps.append(
+                    (sps.csc_matrix(ffd_block.num_affine_section_properties,ffd_block.num_affine_prescribed_dof)))
 
         if free_affine_section_properties_maps:
             free_affine_section_properties_map = sps.block_diag(tuple(free_affine_section_properties_maps))
@@ -221,6 +227,34 @@ class SRBGFFDSet:
             local_to_global_control_points_maps.append(ffd_block.local_to_global_rotation)
         self.local_to_global_control_points_maps = local_to_global_control_points_maps
         return self.local_to_global_control_points_maps
+    
+    # def assemble_local_to_global_control_points_map(self):
+    #     if self.local_to_global_control_points_map is not None:
+    #         return self.local_to_global_control_points_map
+
+    #     self.local_to_global_control_points_map = np.zeros((self.num_affine_free_control_points, 3, self.num_affine_free_control_points, 3))
+    #     ffd_block_starting_index = 0
+    #     for ffd_block in self.ffd_blocks:
+    #         if ffd_block.num_affine_free_dof == 0:
+    #             continue
+
+    #         ffd_block_rotation_matrix_tensor = np.zeros((ffd_block.num_control_points, 3, ffd_block.num_control_points, 3))
+    #         for i in range(ffd_block_rotation_matrix_tensor.shape[0]):
+    #             ffd_block_rotation_matrix_tensor[i,:,i,:] = ffd_block.local_to_global_rotation
+
+    #         ffd_block_ending_index = ffd_block_starting_index + ffd_block.num_control_points
+    #         self.local_to_global_control_points_map[ffd_block_starting_index:ffd_block_ending_index,:,ffd_block_starting_index:ffd_block_ending_index,:] \
+    #               = ffd_block_rotation_matrix_tensor
+    #         ffd_block_starting_index = ffd_block_ending_index
+
+    #     self.local_to_global_ffd_control_points_sparse_map = sps.lil_array((self.num_affine_free_ffd_control_points*3, self.num_affine_free_ffd_control_points*3))
+    #     starting_index = 0
+    #     for i in range(3):
+    #         ending_index = starting_index + self.num_affine_free_ffd_control_points
+    #         self.local_to_global_ffd_control_points_sparse_map[starting_index:ending_index, starting_index:ending_index] = self.local_to_global_ffd_control_points_map[:,i,:,i]
+    #         starting_index = ending_index
+
+    #     return self.local_to_global_control_points_map
 
 
     def assemble_embedded_entities_map(self):
@@ -266,7 +300,7 @@ class SRBGFFDSet:
             return self.cost_matrix
 
         ffd_block_cost_matrices_with_free_dof = []
-        for ffd_block in self.ffd_blocks:
+        for ffd_block_name, ffd_block in self.ffd_blocks.items():
             if ffd_block.num_affine_free_dof != 0:
                 ffd_block_cost_matrices_with_free_dof.append(ffd_block.cost_matrix)
         ffd_block_cost_matrices_with_free_dof = tuple(ffd_block_cost_matrices_with_free_dof)
@@ -291,6 +325,7 @@ class SRBGFFDSet:
         self.assemble_affine_section_properties_maps()
         self.assemble_rotational_section_properties_map()
         self.assemble_affine_block_deformations_map()
+        self.assemble_local_to_global_control_points_map()
         if project_embedded_entities:
             self.assemble_embedded_entities_map()
         self.assemble_cost_matrix()

@@ -1,39 +1,11 @@
 from caddee.utils.base_model_csdl import BaseModelCSDL
-# from caddee.core.caddee_core.system_representation.system_representation import SystemRepresentation
-# from caddee.core.caddee_core.system_parameterization.system_parameterization import SystemParameterization
-
-
-# class SystemParameterizationCSDL(BaseModelCSDL):
-#     def initialize(self):
-#         self.parameters.declare('system_representation', types=SystemRepresentation)
-#         self.parameters.declare('system_parameterization') #, types=SystemParameterization)
-    
-#     def define(self):
-#         system_representation = self.parameters['system_representation']
-#         system_parameterization = self.parameters['system_parameterization']
-
-#         component_dictionary = system_representation.components_dictionary
-#         # oml = system_representation.oml
-#         power_systems_architecture = system_representation.power_systems_architecture
-
-#         self.create_component_csdl_input_variables(component_dictionary=component_dictionary)
-
-#         # self.add(power_systems_architecture._assemble_csdl(), 'power_systems_architecture')
-
-#         # self.add(spatial_representation._assemble_csdl(), 'spatial_representation')
-
-#         # test_input = self.declare_variable('system_config_test_input', val=10.)
-#         # test_output = 10 * test_input
-#         # self.register_output('system_config_test_output', test_output)
-
-
 import csdl
 from csdl_om import Simulator
 import numpy as np
 import scipy.sparse as sps
 
 from caddee.core.csdl_core.system_parameterization_csdl.system_representation_assembly_csdl import SystemRepresentationAssemblyCSDL
-# from caddee.core.csdl_core.system_parameterization_csdl.geometry_parameterization_solver_csdl import GeometryParameterizationSolverCSDL
+from caddee.core.csdl_core.system_parameterization_csdl.geometry_parameterization_solver_csdl import GeometryParameterizationSolverCSDL
 
 
 class SystemParameterizationCSDL(BaseModelCSDL):
@@ -48,11 +20,14 @@ class SystemParameterizationCSDL(BaseModelCSDL):
         system_parameterization = self.parameters['system_parameterization']
 
         # Call setup on all parameterizations
+        num_free_dof = 0
         for geometry_parameterization_name, geometry_parameterization in system_parameterization.geometry_parameterizations.items():
             geometry_parameterization.setup()
+            num_free_dof += geometry_parameterization.num_affine_free_dof
 
-        # geometry_parameterization_solver = GeometryParameterizationSolverCSDL(system_parameterization=system_parameterization)
-        # self.add(submodel=geometry_parameterization_solver, name='geometry_parameterization_solver_model')
+        if num_free_dof != 0:
+            geometry_parameterization_solver = GeometryParameterizationSolverCSDL(system_parameterization=system_parameterization)
+            self.add(submodel=geometry_parameterization_solver, name='geometry_parameterization_solver_model')
 
         for geometry_parameterization_name in system_parameterization.geometry_parameterizations:
             parameterization_model = system_parameterization.geometry_parameterizations[geometry_parameterization_name].assemble_csdl()
