@@ -44,7 +44,7 @@ system_m3l_model = m3l.Model()
 # simple_battery_sizing = cd.SimpleBatterySizingM3L(component=battery_component)
 
 # simple_battery_sizing.set_module_input('battery_mass', val=800, dv_flag=False, lower=600, scaler=1e-3)
-# simple_battery_sizing.set_module_input('battery_position', val=np.array([3.4, 0, 0.5]))
+# simple_battery_sizing.set_module_input('battery_position', val=np.array([3.6, 0, 0.5]))
 # simple_battery_sizing.set_module_input('battery_energy_density', val=400)
 
 # battery_mass, cg_battery, I_battery = simple_battery_sizing.evaluate()
@@ -54,7 +54,7 @@ system_m3l_model = m3l.Model()
 
 
 # # M4 regressions
-# m4_regression = cd.M4RegressionsM3L(exclude_wing=True)
+# m4_regression = cd.M4RegressionsM3L(exclude_wing=False)
 
 # mass_m4, cg_m4, I_m4 = m4_regression.evaluate(battery_mass=battery_mass)
 # system_m3l_model.register_output(mass_m4)
@@ -435,6 +435,291 @@ system_m3l_model.register_output(trim_residual, minus_1g_condition)
 
 # Add cruise m3l model to cruise condition
 # minus_1g_condition.add_m3l_model('minus_1g_sizing_model', minus_1g_model)
+# endregion
+
+# region hover oei flo
+hover_1_oei_flo = cd.HoverCondition(name='hover_1_oei_flo')
+hover_1_oei_flo.atmosphere_model = cd.SimpleAtmosphereModel()
+hover_1_oei_flo.set_module_input('altitude', val=300)
+hover_1_oei_flo.set_module_input(name='hover_time', val=90)
+hover_1_oei_flo.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
+
+hover_1_ac_states = hover_1_oei_flo.evaluate_ac_states()
+
+rlo_bem_model = BEM(disk_prefix='hover_1_rlo_disk', blade_prefix='rlo', component=rlo_disk, mesh=bem_mesh_lift)
+rlo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+rlo_bem_forces, rlo_bem_moments,_ ,_ ,_ = rlo_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1_oei_flo)
+
+rli_bem_model = BEM(disk_prefix='hover_1_rli_disk', blade_prefix='rli', component=rli_disk, mesh=bem_mesh_lift)
+rli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+rli_bem_forces, rli_bem_moments,_ ,_ ,_ = rli_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1_oei_flo)
+
+rri_bem_model = BEM(disk_prefix='hover_1_rri_disk', blade_prefix='rri', component=rri_disk, mesh=bem_mesh_lift)
+rri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+rri_bem_forces, rri_bem_moments,_ ,_ ,_ = rri_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1_oei_flo)
+
+rro_bem_model = BEM(disk_prefix='hover_1_rro_disk', blade_prefix='rro', component=rro_disk, mesh=bem_mesh_lift)
+rro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+rro_bem_forces, rro_bem_moments,_ ,_ ,_ = rro_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1_oei_flo)
+
+fli_bem_model = BEM(disk_prefix='hover_1_fli_disk', blade_prefix='fli', component=fli_disk, mesh=bem_mesh_lift)
+fli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+fli_bem_forces, fli_bem_moments,_ ,_ ,_ = fli_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1_oei_flo)
+
+fri_bem_model = BEM(disk_prefix='hover_1_fri_disk', blade_prefix='fri', component=fri_disk, mesh=bem_mesh_lift)
+fri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+fri_bem_forces, fri_bem_moments,_ ,_ ,_ = fri_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1_oei_flo)
+
+fro_bem_model = BEM(disk_prefix='hover_1_fro_disk', blade_prefix='fro', component=fro_disk, mesh=bem_mesh_lift)
+fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+fro_bem_forces, fro_bem_moments,_ ,_ ,_ = fro_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1_oei_flo)
+
+total_mass_properties = cd.TotalMassPropertiesM3L()
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=hover_1_oei_flo)
+
+system_m3l_model.register_output(total_mass, hover_1_oei_flo)
+system_m3l_model.register_output(total_cg, hover_1_oei_flo)
+system_m3l_model.register_output(total_inertia, hover_1_oei_flo)
+
+inertial_loads_model = cd.InertialLoadsM3L()
+inertial_forces, inertial_moments = inertial_loads_model.evaluate(
+    total_cg_vector=total_cg, 
+    totoal_mass=total_mass, 
+    ac_states=hover_1_ac_states, 
+    design_condition=hover_1_oei_flo
+)
+system_m3l_model.register_output(inertial_forces, hover_1_oei_flo)
+system_m3l_model.register_output(inertial_moments, hover_1_oei_flo)
+
+total_forces_moments_model = cd.TotalForcesMomentsM3L()
+total_forces, total_moments = total_forces_moments_model.evaluate(
+    rlo_bem_forces, 
+    rlo_bem_moments, 
+    rli_bem_forces, 
+    rli_bem_moments,
+    rri_bem_forces, 
+    rri_bem_moments, 
+    rro_bem_forces, 
+    rro_bem_moments,  
+    fli_bem_forces, 
+    fli_bem_moments,
+    fri_bem_forces, 
+    fri_bem_moments, 
+    fro_bem_forces, 
+    fro_bem_moments,  
+    inertial_forces, 
+    inertial_moments,
+    design_condition=hover_1_oei_flo,
+)
+system_m3l_model.register_output(total_forces,hover_1_oei_flo)
+system_m3l_model.register_output(total_moments, hover_1_oei_flo)
+
+eom_m3l_model = cd.EoMM3LEuler6DOF()
+trim_residual = eom_m3l_model.evaluate(
+    total_mass=total_mass, 
+    total_cg_vector=total_cg, 
+    total_inertia_tensor=total_inertia, 
+    total_forces=total_forces, 
+    total_moments=total_moments,
+    ac_states=hover_1_ac_states,
+    design_condition=hover_1_oei_flo,
+)
+system_m3l_model.register_output(trim_residual, hover_1_oei_flo)
+# endregion
+
+# region qst 1 oei flo
+qst_1_oei_flo = cd.CruiseCondition(name='qst_1_oei_flo')
+qst_1_oei_flo.atmosphere_model = cd.SimpleAtmosphereModel()
+qst_1_oei_flo.set_module_input('pitch_angle', val=0-0.0134037)
+qst_1_oei_flo.set_module_input('mach_number', val=0.00029412)
+qst_1_oei_flo.set_module_input('altitude', val=300)
+qst_1_oei_flo.set_module_input(name='range', val=20)
+qst_1_oei_flo.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
+
+qst_1_ac_states = qst_1_oei_flo.evaluate_ac_states()
+
+rlo_bem_model = BEM(disk_prefix='qst_1_rlo_disk', blade_prefix='rlo', component=rlo_disk, mesh=bem_mesh_lift)
+rlo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+rlo_bem_forces, rlo_bem_moments,_ ,_ ,_ = rlo_bem_model.evaluate(ac_states=qst_1_ac_states, design_condition=qst_1_oei_flo)
+
+rli_bem_model = BEM(disk_prefix='qst_1_rli_disk', blade_prefix='rli', component=rli_disk, mesh=bem_mesh_lift)
+rli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+rli_bem_forces, rli_bem_moments,_ ,_ ,_ = rli_bem_model.evaluate(ac_states=qst_1_ac_states, design_condition=qst_1_oei_flo)
+
+rri_bem_model = BEM(disk_prefix='qst_1_rri_disk', blade_prefix='rri', component=rri_disk, mesh=bem_mesh_lift)
+rri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+rri_bem_forces, rri_bem_moments,_ ,_ ,_ = rri_bem_model.evaluate(ac_states=qst_1_ac_states, design_condition=qst_1_oei_flo)
+
+rro_bem_model = BEM(disk_prefix='qst_1_rro_disk', blade_prefix='rro', component=rro_disk, mesh=bem_mesh_lift)
+rro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+rro_bem_forces, rro_bem_moments,_ ,_ ,_ = rro_bem_model.evaluate(ac_states=qst_1_ac_states, design_condition=qst_1_oei_flo)
+
+
+fli_bem_model = BEM(disk_prefix='qst_1_fli_disk', blade_prefix='fli', component=fli_disk, mesh=bem_mesh_lift)
+fli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+fli_bem_forces, fli_bem_moments,_ ,_ ,_ = fli_bem_model.evaluate(ac_states=qst_1_ac_states, design_condition=qst_1_oei_flo)
+
+fri_bem_model = BEM(disk_prefix='qst_1_fri_disk', blade_prefix='fri', component=fri_disk, mesh=bem_mesh_lift)
+fri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+fri_bem_forces, fri_bem_moments,_ ,_ ,_ = fri_bem_model.evaluate(ac_states=qst_1_ac_states, design_condition=qst_1_oei_flo)
+
+fro_bem_model = BEM(disk_prefix='qst_1_fro_disk', blade_prefix='fro', component=fro_disk, mesh=bem_mesh_lift)
+fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+fro_bem_forces, fro_bem_moments,_ ,_ ,_ = fro_bem_model.evaluate(ac_states=qst_1_ac_states, design_condition=qst_1_oei_flo)
+
+total_mass_properties = cd.TotalMassPropertiesM3L()
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=qst_1_oei_flo)
+
+system_m3l_model.register_output(total_mass, qst_1_oei_flo)
+system_m3l_model.register_output(total_cg, qst_1_oei_flo)
+system_m3l_model.register_output(total_inertia, qst_1_oei_flo)
+
+inertial_loads_model = cd.InertialLoadsM3L()
+inertial_forces, inertial_moments = inertial_loads_model.evaluate(
+    total_cg_vector=total_cg, 
+    totoal_mass=total_mass, 
+    ac_states=qst_1_ac_states, 
+    design_condition=qst_1_oei_flo
+)
+system_m3l_model.register_output(inertial_forces, qst_1_oei_flo)
+system_m3l_model.register_output(inertial_moments, qst_1_oei_flo)
+
+total_forces_moments_model = cd.TotalForcesMomentsM3L()
+total_forces, total_moments = total_forces_moments_model.evaluate(
+    rlo_bem_forces, 
+    rlo_bem_moments, 
+    rli_bem_forces, 
+    rli_bem_moments,
+    rri_bem_forces, 
+    rri_bem_moments, 
+    rro_bem_forces, 
+    rro_bem_moments,  
+    fli_bem_forces, 
+    fli_bem_moments,
+    fri_bem_forces, 
+    fri_bem_moments, 
+    fro_bem_forces, 
+    fro_bem_moments,  
+    inertial_forces, 
+    inertial_moments,
+    # pp_bem_forces,
+    # pp_bem_moments,
+    # vlm_forces,
+    # vlm_moments,
+    design_condition=qst_1_oei_flo,
+)
+system_m3l_model.register_output(total_forces,qst_1_oei_flo)
+system_m3l_model.register_output(total_moments, qst_1_oei_flo)
+
+eom_m3l_model = cd.EoMM3LEuler6DOF()
+trim_residual = eom_m3l_model.evaluate(
+    total_mass=total_mass, 
+    total_cg_vector=total_cg, 
+    total_inertia_tensor=total_inertia, 
+    total_forces=total_forces, 
+    total_moments=total_moments,
+    ac_states=qst_1_ac_states,
+    design_condition=qst_1_oei_flo,
+)
+system_m3l_model.register_output(trim_residual, qst_1_oei_flo)
+# endregion
+
+
+# region on design 
+# region hover 1
+hover_1 = cd.HoverCondition(name='hover_1')
+hover_1.atmosphere_model = cd.SimpleAtmosphereModel()
+hover_1.set_module_input('altitude', val=300)
+hover_1.set_module_input(name='hover_time', val=90)
+hover_1.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
+
+hover_1_ac_states = hover_1.evaluate_ac_states()
+
+rlo_bem_model = BEM(disk_prefix='hover_1_rlo_disk', blade_prefix='rlo', component=rlo_disk, mesh=bem_mesh_lift)
+rlo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+rlo_bem_forces, rlo_bem_moments,_ ,_ ,_ = rlo_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1)
+
+rli_bem_model = BEM(disk_prefix='hover_1_rli_disk', blade_prefix='rli', component=rli_disk, mesh=bem_mesh_lift)
+rli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+rli_bem_forces, rli_bem_moments,_ ,_ ,_ = rli_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1)
+
+rri_bem_model = BEM(disk_prefix='hover_1_rri_disk', blade_prefix='rri', component=rri_disk, mesh=bem_mesh_lift)
+rri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+rri_bem_forces, rri_bem_moments,_ ,_ ,_ = rri_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1)
+
+rro_bem_model = BEM(disk_prefix='hover_1_rro_disk', blade_prefix='rro', component=rro_disk, mesh=bem_mesh_lift)
+rro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+rro_bem_forces, rro_bem_moments,_ ,_ ,_ = rro_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1)
+
+flo_bem_model = BEM(disk_prefix='hover_1_flo_disk', blade_prefix='flo', component=flo_disk, mesh=bem_mesh_lift)
+flo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+flo_bem_forces, flo_bem_moments,_ ,_ ,_ = flo_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1)
+
+fli_bem_model = BEM(disk_prefix='hover_1_fli_disk', blade_prefix='fli', component=fli_disk, mesh=bem_mesh_lift)
+fli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+fli_bem_forces, fli_bem_moments,_ ,_ ,_ = fli_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1)
+
+fri_bem_model = BEM(disk_prefix='hover_1_fri_disk', blade_prefix='fri', component=fri_disk, mesh=bem_mesh_lift)
+fri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+fri_bem_forces, fri_bem_moments,_ ,_ ,_ = fri_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1)
+
+fro_bem_model = BEM(disk_prefix='hover_1_fro_disk', blade_prefix='fro', component=fro_disk, mesh=bem_mesh_lift)
+fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+fro_bem_forces, fro_bem_moments,_ ,_ ,_ = fro_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1)
+
+total_mass_properties = cd.TotalMassPropertiesM3L()
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=hover_1)
+
+system_m3l_model.register_output(total_mass, hover_1)
+system_m3l_model.register_output(total_cg, hover_1)
+system_m3l_model.register_output(total_inertia, hover_1)
+
+inertial_loads_model = cd.InertialLoadsM3L()
+inertial_forces, inertial_moments = inertial_loads_model.evaluate(
+    total_cg_vector=total_cg, 
+    totoal_mass=total_mass, 
+    ac_states=hover_1_ac_states, 
+    design_condition=hover_1
+)
+system_m3l_model.register_output(inertial_forces, hover_1)
+system_m3l_model.register_output(inertial_moments, hover_1)
+
+total_forces_moments_model = cd.TotalForcesMomentsM3L()
+total_forces, total_moments = total_forces_moments_model.evaluate(
+    rlo_bem_forces, 
+    rlo_bem_moments, 
+    rli_bem_forces, 
+    rli_bem_moments,
+    rri_bem_forces, 
+    rri_bem_moments, 
+    rro_bem_forces, 
+    rro_bem_moments,  
+    flo_bem_forces, 
+    flo_bem_moments, 
+    fli_bem_forces, 
+    fli_bem_moments,
+    fri_bem_forces, 
+    fri_bem_moments, 
+    fro_bem_forces, 
+    fro_bem_moments,  
+    inertial_forces, 
+    inertial_moments,
+    design_condition=hover_1,
+)
+system_m3l_model.register_output(total_forces,hover_1)
+system_m3l_model.register_output(total_moments, hover_1)
+
+eom_m3l_model = cd.EoMM3LEuler6DOF()
+trim_residual = eom_m3l_model.evaluate(
+    total_mass=total_mass, 
+    total_cg_vector=total_cg, 
+    total_inertia_tensor=total_inertia, 
+    total_forces=total_forces, 
+    total_moments=total_moments,
+    ac_states=hover_1_ac_states,
+    design_condition=hover_1,
+)
+system_m3l_model.register_output(trim_residual, hover_1)
 # endregion
 
 # region qst 1
@@ -1681,13 +1966,153 @@ trim_residual = eom_m3l_model.evaluate(
 system_m3l_model.register_output(trim_residual, qst_10)
 # endregion
 
+# region climb 1
+climb_1 = cd.ClimbCondition(name='climb_1')
+climb_1.atmosphere_model = cd.SimpleAtmosphereModel()
+climb_1.set_module_input(name='altitude', val=1000)
+climb_1.set_module_input(name='mach_number', val=0.17)
+climb_1.set_module_input(name='initial_altitude', val=300)
+climb_1.set_module_input(name='final_altitude', val=1000)
+climb_1.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-5), upper=np.deg2rad(10))
+climb_1.set_module_input(name='flight_path_angle', val=0, dv_flag=True, lower=np.deg2rad(-5), upper=np.deg2rad(10))
+climb_1.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
+
+ac_states = climb_1.evaluate_ac_states()
+system_m3l_model.register_output(ac_states)
+
+vlm_model = VASTFluidSover(
+    surface_names=[
+        f'{wing_vlm_mesh_name}_climb',
+        f'{htail_vlm_mesh_name}_climb',
+    ],
+    surface_shapes=[
+        (1, ) + wing_camber_surface.evaluate().shape[1:],
+        (1, ) + htail_camber_surface.evaluate().shape[1:],
+    ],
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+    mesh_unit='ft',
+    cl0=[0.25, 0.],
+    ML=True,
+)
+
+# aero forces and moments
+cl_distribution, re_spans, vlm_panel_forces, panel_areas, evaluation_pt, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states, ML=True, design_condition=climb_1)
+# vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states, design_condition=climb_1)
+system_m3l_model.register_output(vlm_force)
+system_m3l_model.register_output(vlm_moment)
+system_m3l_model.register_output(cl_distribution)
+system_m3l_model.register_output(re_spans)
+
+ml_pressures = PressureProfile(
+    airfoil_name='NASA_langley_ga_1',
+    use_inverse_cl_map=True,
+)
+
+cp_upper, cp_lower, Cd = ml_pressures.evaluate(cl_distribution, re_spans) #, mach_number, reynolds_number)
+system_m3l_model.register_output(cp_upper, design_condition=climb_1)
+system_m3l_model.register_output(cp_lower, design_condition=climb_1)
+
+viscous_drag_correction = ViscousCorrectionModel(
+    surface_names=[
+        f'{wing_vlm_mesh_name}_climb',
+        f'{htail_vlm_mesh_name}_climb',
+    ],
+    surface_shapes=[
+        (1, ) + wing_camber_surface.evaluate().shape[1:],
+        (1, ) + htail_camber_surface.evaluate().shape[1:],
+    ],
+)
+moment_point = None
+vlm_F, vlm_M = viscous_drag_correction.evaluate(ac_states=ac_states, forces=vlm_panel_forces, cd_v=Cd, panel_area=panel_areas, moment_pt=moment_point, evaluation_pt=evaluation_pt, design_condition=climb_1)
+system_m3l_model.register_output(vlm_F, design_condition=climb_1)
+system_m3l_model.register_output(vlm_M, design_condition=climb_1)
+
+ml_pressures_oml_map = NodalPressureProfile(
+    surface_names=[
+        f'{wing_vlm_mesh_name}_climb',
+        f'{htail_vlm_mesh_name}_climb',
+    ],
+    surface_shapes=[
+        wing_upper_surface_ml.value.shape,
+        htail_upper_surface_ml.value.shape,
+    ]
+)
+
+cp_upper_oml, cp_lower_oml = ml_pressures_oml_map.evaluate(cp_upper, cp_lower, nodal_pressure_mesh=[])
+wing_oml_pressure_upper = cp_upper_oml[0]
+htail_oml_pressure_upper = cp_upper_oml[1]
+wing_oml_pressure_lower = cp_lower_oml[0]
+htail_oml_pressure_lower = cp_lower_oml[1]
+
+system_m3l_model.register_output(wing_oml_pressure_upper, design_condition=climb_1)
+system_m3l_model.register_output(htail_oml_pressure_upper, design_condition=climb_1)
+system_m3l_model.register_output(wing_oml_pressure_lower, design_condition=climb_1)
+system_m3l_model.register_output(htail_oml_pressure_lower, design_condition=climb_1)
+
+vlm_force_mapping_model = VASTNodalForces(
+    surface_names=[
+        f'{wing_vlm_mesh_name}_climb',
+        f'{htail_vlm_mesh_name}_climb',
+    ],
+    surface_shapes=[
+        (1, ) + wing_camber_surface.evaluate().shape[1:],
+        (1, ) + htail_camber_surface.evaluate().shape[1:],
+    ],
+    initial_meshes=[
+        wing_camber_surface,
+        htail_camber_surface]
+)
+
+oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces, nodal_force_meshes=[wing_oml_mesh, wing_oml_mesh])
+wing_forces = oml_forces[0]
+htail_forces = oml_forces[1]
+
+bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
+bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=2000, scaler=1e-3)
+bem_forces, bem_moments,_ ,_ ,_ = bem_model.evaluate(ac_states=ac_states, design_condition=climb_1)
+
+system_m3l_model.register_output(bem_forces, design_condition=climb_1)
+system_m3l_model.register_output(bem_moments, design_condition=climb_1)
+
+total_mass_properties = cd.TotalMassPropertiesM3L()
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=climb_1)
+
+system_m3l_model.register_output(total_mass, climb_1)
+system_m3l_model.register_output(total_cg, climb_1)
+system_m3l_model.register_output(total_inertia, climb_1)
+
+inertial_loads_model = cd.InertialLoadsM3L(load_factor=1.)
+inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass, ac_states=ac_states, design_condition=climb_1)
+system_m3l_model.register_output(inertial_forces, climb_1)
+system_m3l_model.register_output(inertial_moments, climb_1)
+
+total_forces_moments_model = cd.TotalForcesMomentsM3L()
+total_forces, total_moments = total_forces_moments_model.evaluate(vlm_F, vlm_M, bem_forces, bem_moments, inertial_forces, inertial_moments, design_condition=climb_1)
+# total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment, bem_forces, bem_moments, inertial_forces, inertial_moments)
+system_m3l_model.register_output(total_forces, climb_1)
+system_m3l_model.register_output(total_moments, climb_1)
+
+eom_m3l_model = cd.EoMM3LEuler6DOF()
+trim_residual = eom_m3l_model.evaluate(
+    total_mass=total_mass, 
+    total_cg_vector=total_cg, 
+    total_inertia_tensor=total_inertia, 
+    total_forces=total_forces, 
+    total_moments=total_moments,
+    ac_states=ac_states,
+    design_condition=climb_1,
+)
+
+system_m3l_model.register_output(trim_residual, climb_1)
+# endregion
+
 # region cruise condition
 cruise_condition = cd.CruiseCondition(name="cruise")
 cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
 cruise_condition.set_module_input(name='altitude', val=1000)
-cruise_condition.set_module_input(name='mach_number', val=0.17, dv_flag=True, lower=0.17, upper=0.19)
+cruise_condition.set_module_input(name='mach_number', val=0.173, dv_flag=False, lower=0.17, upper=0.19)
 cruise_condition.set_module_input(name='range', val=40000)
-cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=0., upper=np.deg2rad(5))
+cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-5), upper=np.deg2rad(5))
 cruise_condition.set_module_input(name='flight_path_angle', val=0)
 cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 500]))
 
@@ -1783,7 +2208,10 @@ htail_forces = oml_forces[1]
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=2000, scaler=1e-3)
-bem_forces, bem_moments,_ ,_ ,_ = bem_model.evaluate(ac_states=ac_states)
+bem_forces, bem_moments,_ ,_ ,_ = bem_model.evaluate(ac_states=ac_states, design_condition=cruise_condition)
+
+system_m3l_model.register_output(bem_forces, design_condition=cruise_condition)
+system_m3l_model.register_output(bem_moments, design_condition=cruise_condition)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
 total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=cruise_condition)
@@ -1817,9 +2245,17 @@ trim_residual = eom_m3l_model.evaluate(
 system_m3l_model.register_output(trim_residual, cruise_condition)
 # endregion
 
+# endregion
 
+
+# wing sizing conditions
 design_scenario.add_design_condition(plus_3g_condition)
 design_scenario.add_design_condition(minus_1g_condition)
+
+# Off design (OEI )
+
+# On design 
+design_scenario.add_design_condition(hover_1)
 design_scenario.add_design_condition(qst_1)
 design_scenario.add_design_condition(qst_2)
 design_scenario.add_design_condition(qst_3)
@@ -1830,6 +2266,7 @@ design_scenario.add_design_condition(qst_7)
 design_scenario.add_design_condition(qst_8)
 design_scenario.add_design_condition(qst_9)
 design_scenario.add_design_condition(qst_10)
+design_scenario.add_design_condition(climb_1)
 design_scenario.add_design_condition(cruise_condition)
 
 system_model.add_m3l_model('system_m3l_model', system_m3l_model)
@@ -1858,12 +2295,12 @@ caddee_csdl_model.add_design_variable('minus_1g_tail_actuation',
 wing_act_minis_1g = caddee_csdl_model.create_input('minus_1g_wing_actuation', val=np.deg2rad(3.2))
 
 
-# caddee_csdl_model.create_input('qst_1_tail_actuation', val=np.deg2rad(-0.5))
-# caddee_csdl_model.add_design_variable('qst_1_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
-# caddee_csdl_model.create_input('qst_1_wing_actuation', val=np.deg2rad(4))
+
+
 tilt_1 = np.deg2rad(0)
 tilt_2 = np.deg2rad(0)
 
+# region actuations
 caddee_csdl_model.create_input('qst_1_rlo_disk_actuation_1', val=tilt_1)
 caddee_csdl_model.create_input('qst_1_rlo_disk_actuation_2', val=tilt_2)
 caddee_csdl_model.add_design_variable('qst_1_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
@@ -2065,15 +2502,61 @@ caddee_csdl_model.create_input('qst_10_tail_actuation', val=np.deg2rad(-0.5))
 caddee_csdl_model.add_design_variable('qst_10_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
 caddee_csdl_model.create_input('qst_10_wing_actuation', val=np.deg2rad(3.2))
 
-caddee_csdl_model.create_input('cruise_tail_actuation', val=np.deg2rad(-0.5))
-caddee_csdl_model.add_design_variable('cruise_tail_actuation', lower=np.deg2rad(15), upper=np.deg2rad(15))
-caddee_csdl_model.create_input('cruise_wing_actuation', val=np.deg2rad(3.2))
 
+caddee_csdl_model.create_input('hover_1_rlo_disk_actuation_1', val=tilt_1)
+caddee_csdl_model.create_input('hover_1_rlo_disk_actuation_2', val=tilt_2)
+caddee_csdl_model.add_design_variable('hover_1_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+caddee_csdl_model.add_design_variable('hover_1_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+caddee_csdl_model.create_input('hover_1_rli_disk_actuation_1', val=tilt_1)
+caddee_csdl_model.create_input('hover_1_rli_disk_actuation_2', val=tilt_2)
+caddee_csdl_model.add_design_variable('hover_1_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+caddee_csdl_model.add_design_variable('hover_1_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+caddee_csdl_model.create_input('hover_1_rri_disk_actuation_1', val=tilt_1)
+caddee_csdl_model.create_input('hover_1_rri_disk_actuation_2', val=tilt_2)
+caddee_csdl_model.add_design_variable('hover_1_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+caddee_csdl_model.add_design_variable('hover_1_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+caddee_csdl_model.create_input('hover_1_rro_disk_actuation_1', val=tilt_1)
+caddee_csdl_model.create_input('hover_1_rro_disk_actuation_2', val=tilt_2)
+caddee_csdl_model.add_design_variable('hover_1_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+caddee_csdl_model.add_design_variable('hover_1_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+caddee_csdl_model.create_input('hover_1_flo_disk_actuation_1', val=tilt_1)
+caddee_csdl_model.create_input('hover_1_flo_disk_actuation_2', val=tilt_2)
+caddee_csdl_model.add_design_variable('hover_1_flo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+caddee_csdl_model.add_design_variable('hover_1_flo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+caddee_csdl_model.create_input('hover_1_fli_disk_actuation_1', val=tilt_1)
+caddee_csdl_model.create_input('hover_1_fli_disk_actuation_2', val=tilt_2)
+caddee_csdl_model.add_design_variable('hover_1_fli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+caddee_csdl_model.add_design_variable('hover_1_fli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+caddee_csdl_model.create_input('hover_1_fri_disk_actuation_1', val=tilt_1)
+caddee_csdl_model.create_input('hover_1_fri_disk_actuation_2', val=tilt_2)
+caddee_csdl_model.add_design_variable('hover_1_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+caddee_csdl_model.add_design_variable('hover_1_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+caddee_csdl_model.create_input('hover_1_fro_disk_actuation_1', val=tilt_1)
+caddee_csdl_model.create_input('hover_1_fro_disk_actuation_2', val=tilt_2)
+caddee_csdl_model.add_design_variable('hover_1_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+caddee_csdl_model.add_design_variable('hover_1_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+caddee_csdl_model.create_input('climb_tail_actuation', val=np.deg2rad(-0.5))
+caddee_csdl_model.add_design_variable('climb_tail_actuation', lower=np.deg2rad(-115), upper=np.deg2rad(15))
+caddee_csdl_model.create_input('climb_wing_actuation', val=np.deg2rad(3.2))
+
+caddee_csdl_model.create_input('cruise_tail_actuation', val=np.deg2rad(-0.5))
+caddee_csdl_model.add_design_variable('cruise_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
+caddee_csdl_model.create_input('cruise_wing_actuation', val=np.deg2rad(3.2))
+# endregion
 
 
 
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_euler_eom_gen_ref_pt.trim_residual', equals=0)
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.minus_1g_sizing_euler_eom_gen_ref_pt.trim_residual', equals=0)
+
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_1_euler_eom_gen_ref_pt.trim_residual', equals=0)
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_2_euler_eom_gen_ref_pt.trim_residual', equals=0)
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', equals=0)
@@ -2084,6 +2567,9 @@ caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_7_euler_eom_
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_8_euler_eom_gen_ref_pt.trim_residual', equals=0)
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_9_euler_eom_gen_ref_pt.trim_residual', equals=0)
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_10_euler_eom_gen_ref_pt.trim_residual', equals=0)
+
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.hover_1_euler_eom_gen_ref_pt.trim_residual', equals=0)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.climb_1_euler_eom_gen_ref_pt.trim_residual', equals=0)
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.cruise_euler_eom_gen_ref_pt.trim_residual', equals=0)
 
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress',upper=427E6/1.,scaler=1E-8)
@@ -2091,6 +2577,9 @@ caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_w
 
 caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_mass_properties.total_constant_mass', scaler=1e-3)
 
+# trim_1 = caddee_csdl_model.declare_variable('system_model.system_m3l_model.hover_1_euler_eom_gen_ref_pt.trim_residual', shape=(1, ))
+# trim_2 = caddee_csdl_model.declare_variable('system_model.system_m3l_model.climb_1_euler_eom_gen_ref_pt.trim_residual', shape=(1, ))
+# trim_3 = caddee_csdl_model.declare_variable('system_model.system_m3l_model.cruise_euler_eom_gen_ref_pt.trim_residual', shape=(1, ))
 # trim_1 = caddee_csdl_model.declare_variable('system_model.system_m3l_model.qst_1_euler_eom_gen_ref_pt.trim_residual', shape=(1, ))
 # trim_2 = caddee_csdl_model.declare_variable('system_model.system_m3l_model.qst_2_euler_eom_gen_ref_pt.trim_residual', shape=(1, ))
 # trim_3 = caddee_csdl_model.declare_variable('system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', shape=(1, ))
@@ -2103,7 +2592,7 @@ caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_ma
 # trim_10 = caddee_csdl_model.declare_variable('system_model.system_m3l_model.qst_10_euler_eom_gen_ref_pt.trim_residual', shape=(1, ))
 # # caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_mass_properties.total_mass', scaler=1e-3)
 
-# # combined_trim = caddee_csdl_model.register_output('combined_trim', trim_1 * 1 + trim_2 * 1 + trim_3 * 1)
+# combined_trim = caddee_csdl_model.register_output('combined_trim', trim_1 * 1 + trim_2 * 1 + trim_3 * 1)
 # combined_trim = caddee_csdl_model.register_output('combined_trim', trim_1 *1 + trim_2*1 + trim_3*1 + trim_4*1 + trim_5 * 1 + trim_6 * 1 + trim_7 * 1 + trim_8 * 1 + trim_9 * 1 + trim_10*1)
 # caddee_csdl_model.add_objective('combined_trim')
 
@@ -2113,6 +2602,7 @@ sim.run()
 
 # print('\n')
 # sim.check_totals(of='system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', wrt='system_model.system_m3l_model.qst_3_pp_disk_bem_model.rpm')
+# sim.check_totals()
 
 # exit()
 # print(sim['system_model.system_m3l_model.qst_1_rlo_disk_bem_model.thrust_vector'])

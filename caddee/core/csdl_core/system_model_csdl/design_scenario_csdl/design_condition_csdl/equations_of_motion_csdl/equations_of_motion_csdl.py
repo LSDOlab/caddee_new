@@ -23,8 +23,8 @@ class EulerFlatEarth6DoFGenRef(BaseModelCSDL):
         F = self.register_module_input('total_forces', shape=(num_nodes, 3))
         M = self.register_module_input('total_moments', shape=(num_nodes, 3))
         
-        self.print_var(F)
-        self.print_var(M)
+        # self.print_var(F)
+        # self.print_var(M)
 
         Fx = F[:, 0] #self.register_module_input(name='Fx_total', shape=(num_nodes, 1), units='N')
         Fy = F[:, 1] #self.register_module_input(name='Fy_total', shape=(num_nodes, 1), units='N')
@@ -60,7 +60,7 @@ class EulerFlatEarth6DoFGenRef(BaseModelCSDL):
         cgy = cg_vector[1]
         cgz = cg_vector[2]
 
-        self.print_var(cg_vector)
+        # self.print_var(cg_vector)
 
 
         # State
