@@ -716,8 +716,8 @@ forces, vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=qst_3_ac_states, 
 system_m3l_model.register_output(vlm_forces, design_condition=qst_3)
 system_m3l_model.register_output(vlm_moments, design_condition=qst_3)
 
-pp_bem_model = PittPeters(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
-pp_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=20, upper=2000, scaler=1e-3)
+pp_bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
+pp_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=300, upper=2000, scaler=1e-3)
 pp_bem_forces, pp_bem_moments, _, _, _ = pp_bem_model.evaluate(ac_states=qst_3_ac_states, design_condition=qst_3)
 
 rlo_bem_model = PittPeters(disk_prefix='qst_3_rlo_disk', blade_prefix='rlo', component=rlo_disk, mesh=pitt_peters_mesh_lift)
@@ -2111,6 +2111,10 @@ caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_ma
 sim = Simulator(caddee_csdl_model, analytics=True)
 sim.run()
 
+# print('\n')
+# sim.check_totals(of='system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', wrt='system_model.system_m3l_model.qst_3_pp_disk_bem_model.rpm')
+
+# exit()
 # print(sim['system_model.system_m3l_model.qst_1_rlo_disk_bem_model.thrust_vector'])
 # print(sim['system_model.system_m3l_model.qst_1_rli_disk_bem_model.thrust_vector'])
 # print(sim['system_model.system_m3l_model.qst_1_rri_disk_bem_model.thrust_vector'])
@@ -2128,15 +2132,6 @@ sim.run()
 
 prob = CSDLProblem(problem_name='TC_2_problem', simulator=sim)
 
-# prob2 = CSDLProblem(problem_name='fuck', simulator=sim)
-
-# opt = SNOPT(
-#     prob2,
-#     Major_iterations=300,
-#     Major_optimality=1e-5,
-#     Major_feasibility=1e-5,
-#     append2file=True
-# )
 optimizer = SNOPT(
     prob, 
     Major_iterations=1000, 
@@ -2148,6 +2143,14 @@ optimizer = SNOPT(
 optimizer.solve()
 # opt.print_results()
 
+for dv_name, dv_dict in sim.dvs.items():
+    print(dv_name, dv_dict['index_lower'], dv_dict['index_upper'])
+
+print('\n')
+print('\n')
+
+for c_name, c_dict in sim.cvs.items():
+    print(c_name, c_dict['index_lower'], c_dict['index_upper'])
 # print(sim['system_model.system_m3l_model.qst_1_rlo_disk_bem_model.thrust_vector'])
 # print(sim['system_model.system_m3l_model.qst_1_rli_disk_bem_model.thrust_vector'])
 # print(sim['system_model.system_m3l_model.qst_1_rri_disk_bem_model.thrust_vector'])
