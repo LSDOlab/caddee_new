@@ -299,9 +299,11 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
             quantity = parameterization_input.quantity
             quantity_num_constraints = np.prod(quantity.shape)
 
+            mapped_array_map_ind = self.mapped_array_indices[input_name]
+            ffd_free_dof_to_mapped_array = self.ffd_free_dof_to_mapped_arrays.toarray()[mapped_array_map_ind,:]
+            
             if type(quantity) is am.MappedArray:
-                dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = \
-                    self.ffd_free_dof_to_mapped_arrays.toarray()
+                dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = ffd_free_dof_to_mapped_array
 
                 d2c_dx2[constraint_counter:constraint_counter+quantity_num_constraints,:,:] = 0.
             else:
@@ -310,13 +312,13 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
 
                 nonlinear_derivative = quantity.evaluate_derivative(nonlinear_operation_input, evaluate_input=False)
                 dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = \
-                    nonlinear_derivative.dot(self.ffd_free_dof_to_mapped_arrays.toarray())
+                    nonlinear_derivative.dot(ffd_free_dof_to_mapped_array)
                 
                 nonlinear_second_derivative = quantity.evaluate_second_derivative(nonlinear_operation_input).reshape(
                     (quantity_num_constraints, mapped_array_size, mapped_array_size))
 
-                first_term = np.tensordot(nonlinear_second_derivative, self.ffd_free_dof_to_mapped_arrays.toarray(), axes=([2, 0]))
-                total_second_derivative = np.tensordot(first_term, self.ffd_free_dof_to_mapped_arrays.toarray(), axes=([1, 0]))
+                first_term = np.tensordot(nonlinear_second_derivative, ffd_free_dof_to_mapped_array, axes=([2, 0]))
+                total_second_derivative = np.tensordot(first_term, ffd_free_dof_to_mapped_array, axes=([1, 0]))
                 d2c_dx2[constraint_counter:constraint_counter+quantity_num_constraints,:,:] = total_second_derivative
 
             constraint_counter += quantity_num_constraints
