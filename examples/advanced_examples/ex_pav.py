@@ -153,7 +153,6 @@ def trim_at_cruise():
     # endregion
 
     # region Tail
-
     num_htail_vlm = 13
     num_chordwise_vlm = 5
     point00 = np.array([20.713 - 4., 8.474 + 1.5, 0.825 + 1.5])  # * ft2m # Right tip leading edge
@@ -403,14 +402,88 @@ def trim_at_hover():
     spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
 
     # region Rotors
-    # Pusher prop
-    pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropPusher']).keys())
-    pp_disk = cd.Rotor(name='pp_disk', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
+    # region Lift rotor: Right 1
+    lr_r1_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropRight1']).keys())
+    lr_r1_disk = cd.Rotor(name='lr_r1_disk', 
+                          spatial_representation=spatial_rep, 
+                          primitive_names=lr_r1_disk_prim_names)
     if debug_geom_flag:
-        pp_disk.plot()
-    sys_rep.add_component(pp_disk)
+        lr_r1_disk.plot()
+    sys_rep.add_component(lr_r1_disk)
     # endregion
 
+    # region Lift rotor: Right 2
+    lr_r2_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropRight2']).keys())
+    lr_r2_disk = cd.Rotor(name='lr_r2_disk', 
+                          spatial_representation=spatial_rep, 
+                          primitive_names=lr_r2_disk_prim_names)
+    if debug_geom_flag:
+        lr_r2_disk.plot()
+    sys_rep.add_component(lr_r2_disk)
+    # endregion
+
+    # region Lift rotor: Right 3
+    lr_r3_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropRight3']).keys())
+    lr_r3_disk = cd.Rotor(name='lr_r3_disk', 
+                          spatial_representation=spatial_rep, 
+                          primitive_names=lr_r3_disk_prim_names)
+    if debug_geom_flag:
+        lr_r3_disk.plot()
+    sys_rep.add_component(lr_r3_disk)
+    # endregion
+
+    # region Lift rotor: Right 4
+    lr_r4_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropRight4']).keys())
+    lr_r4_disk = cd.Rotor(name='lr_r4_disk', 
+                          spatial_representation=spatial_rep, 
+                          primitive_names=lr_r4_disk_prim_names)
+    if debug_geom_flag:
+        lr_r4_disk.plot()
+    sys_rep.add_component(lr_r4_disk)
+    # endregion
+
+    # region Lift rotor: Left 1
+    lr_l1_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropLeft1']).keys())
+    lr_l1_disk = cd.Rotor(name='lr_l1_disk', 
+                          spatial_representation=spatial_rep, 
+                          primitive_names=lr_l1_disk_prim_names)
+    if debug_geom_flag:
+        lr_l1_disk.plot()
+    sys_rep.add_component(lr_l1_disk)
+    # endregion
+    
+    # region Lift rotor: Left 2
+    lr_l2_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropLeft2']).keys())
+    lr_l2_disk = cd.Rotor(name='lr_l2_disk', 
+                          spatial_representation=spatial_rep, 
+                          primitive_names=lr_l2_disk_prim_names)
+    if debug_geom_flag:
+        lr_l2_disk.plot()
+    sys_rep.add_component(lr_l2_disk)
+    # endregion
+
+    # region Lift rotor: Left 3
+    lr_l3_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropLeft3']).keys())
+    lr_l3_disk = cd.Rotor(name='lr_l3_disk', 
+                          spatial_representation=spatial_rep, 
+                          primitive_names=lr_l3_disk_prim_names)
+    if debug_geom_flag:
+        lr_l3_disk.plot()
+    sys_rep.add_component(lr_l3_disk)
+    # endregion
+
+    # region Lift rotor: Left 4
+    lr_l4_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropLeft4']).keys())
+    lr_l4_disk = cd.Rotor(name='lr_l4_disk', 
+                          spatial_representation=spatial_rep, 
+                          primitive_names=lr_l4_disk_prim_names)
+    if debug_geom_flag:
+        lr_l4_disk.plot()
+    sys_rep.add_component(lr_l4_disk)
+    # endregion
+
+    # endregion
+    
     # endregion
 
     # region Sizing
@@ -436,11 +509,85 @@ def trim_at_hover():
     hover_ac_states = hover_condition.evaluate_ac_states()
     hover_model.register_output(hover_ac_states)
 
+    # region Propulsion Loads: Lift Rotor: Right 1
+    lr_r1_bem_mesh = BEMMesh(
+        airfoil='NACA_4412',
+        num_blades=2,
+        num_radial=25,
+        use_airfoil_ml=False,
+        use_rotor_geometry=False,
+        mesh_units='ft',
+        chord_b_spline_rep=True,
+        twist_b_spline_rep=True
+    )
+    lr_r1_bem_model = BEM(disk_prefix='lr_r1_disk', blade_prefix='lr_r1', 
+                    component=lr_r1_disk, 
+                    mesh=lr_r1_bem_mesh)
+    lr_r1_bem_model.set_module_input('rpm', val=2000)
+    lr_r1_bem_model.set_module_input('propeller_radius', val=5.17045 / 2 * ft2m)
+    lr_r1_bem_model.set_module_input('thrust_vector', val=np.array([0., 0., -1.]))
+    lr_r1_bem_model.set_module_input('thrust_origin', val=np.array([-3.000, 5.313, -0.530]))
+    lr_r1_bem_model.set_module_input('chord_cp', val=np.linspace(0.2, 0.05, 4),
+                               dv_flag=True,
+                               upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]),
+                               scaler=1
+                               )
+    lr_r1_bem_model.set_module_input('twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
+                               dv_flag=True,
+                               lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
+                               )
+    lr_r1_bem_forces, lr_r1_bem_moments, _, _, _ = lr_r1_bem_model.evaluate(ac_states=hover_ac_states)
+    hover_model.register_output(lr_r1_bem_forces)
+    hover_model.register_output(lr_r1_bem_moments)
     # endregion
+
+    # Total loads
+    total_forces_moments_model = cd.TotalForcesMomentsM3L()
+    total_forces, total_moments = total_forces_moments_model.evaluate(
+        lr_r1_bem_forces, lr_r1_bem_moments
+    )
+    hover_model.register_output(total_forces)
+    hover_model.register_output(total_moments)
+
+    # Equations of motions
+    eom_m3l_model = cd.EoMM3LEuler6DOF()
+    trim_residual = eom_m3l_model.evaluate(
+        total_mass=total_mass,
+        total_cg_vector=total_cg,
+        total_inertia_tensor=total_inertia,
+        total_forces=total_forces,
+        total_moments=total_moments,
+        ac_states=hover_ac_states
+    )
+
+    hover_model.register_output(trim_residual)
+
+    # Add hover m3l model to hover condition
+    hover_condition.add_m3l_model('hover_model', hover_model)
+
+    # Add design condition to design scenario
+    design_scenario.add_design_condition(hover_condition)
+    # endregion
+
+    system_model.add_design_scenario(design_scenario=design_scenario)
+    # endregion
+
+    caddee_csdl_model = caddee.assemble_csdl()
+
+    # Create and run simulator
+    sim = Simulator(caddee_csdl_model, analytics=True)
+    sim.run()
+
+    print('Total forces: ', sim['system_model.aircraft_trim.hover.hover.euler_eom_gen_ref_pt.total_forces'])
+    print('Total moments:', sim['system_model.aircraft_trim.hover.hover.euler_eom_gen_ref_pt.total_moments'])
+
+    print('Lift rotor right 1 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.rpm'])
+    print('Lift rotor right 1 FoM: ', sim['system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.induced_velocity_model.FOM'])
+
     return
 
 
 
 if __name__ == '__main__':
-    trim_at_cruise()
+    # trim_at_cruise()
     trim_at_hover()
