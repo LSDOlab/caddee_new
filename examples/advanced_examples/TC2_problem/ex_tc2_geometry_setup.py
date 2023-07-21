@@ -201,7 +201,7 @@ right_point= np.array([15., 26., 7.5])
 left_point_am = wing.project(left_point, direction=np.array([0., 0., -1.]))
 right_point_am = wing.project(right_point, direction=np.array([0., 0., -1.]))
 wing_span = am.norm(left_point_am - right_point_am)
-lpc_param.add_input('wing_span', wing_span, value=80)
+lpc_param.add_input('wing_span', wing_span)
 
 # Tail FFD
 htail_geometry_primitives = htail.get_geometry_primitives()
@@ -217,7 +217,7 @@ right_point= np.array([27., -6.75, 6.])
 left_point_am = htail.project(left_point, direction=np.array([0., 0., -1.]))
 right_point_am = htail.project(right_point, direction=np.array([0., 0., -1.]))
 tail_span = am.norm(left_point_am - right_point_am)
-lpc_param.add_input('tail_span', tail_span, value=15)
+lpc_param.add_input('tail_span', tail_span)
 # NOTE: line above is performaing actuation- change when actuations are ready
 
 # region Pusher prop
@@ -250,8 +250,9 @@ pp_blade_4_ffd_block.add_rotation_u(name='pp_blade_4_twist', connection_name='pp
 # rlo_disk_geom_prim = rlo_disk.get_geometry_primitives()
 # rlo_disk_bspline_vol = cd.create_cartesian_enclosure_volume(rlo_disk_geom_prim, num_control_points=(2, 2, 2), order=(2, 2, 2), xyz_to_uvw_indices=(2, 1, 0))
 # rlo_disk_ffd_block = cd.SRBGFFDBlock(name='rlo_blade_1_ffd_block', primitive=rlo_disk_bspline_vol, embedded_entities=rlo_disk_geom_prim)
-# rlo_disk_ffd_block.add_scale_v(name='rlo_disk_r1', connection_name='rlo_disk_r1', order=1, num_dof=1, value=0)
-# rlo_disk_ffd_block.add_scale_w(name='rlo_disk_r2', connection_name='rlo_disk_r2', order=1, num_dof=1, value=0)
+# rlo_disk_ffd_block.add_scale_v(name='rlo_disk_r1', connection_name='rlo_disk_r1', order=1, num_dof=1, value=np.array([0.]))
+# rlo_disk_ffd_block.add_scale_w(name='rlo_disk_r2', connection_name='rlo_disk_r2', order=1, num_dof=1, value=np.array([0.]))
+# rlo_disk_ffd_block.add_rotation_u(name='rlo_disk_r2_rot', connection_name='rlo_disk_r2_rot', order=1, num_dof=1, value=np.array([0.]))
 
 rlo_blade_1_geom_prim = rlo_blade_1.get_geometry_primitives()
 rlo_blade_1_bspline_vol = cd.create_cartesian_enclosure_volume(rlo_blade_1_geom_prim, num_control_points=(11, 2, 2), order=(4,2,2), xyz_to_uvw_indices=(0, 1, 2))
@@ -275,17 +276,17 @@ y22 = rlo_disk.project(np.array([24.2, -18.75, 9.01]), direction=np.array([0., 0
 rlo_in_plane_y = am.subtract(y12, y11)
 rlo_in_plane_x = am.subtract(y21, y22)
 
-lpc_param.add_input('rlo_in_plane_d1', am.norm(rlo_in_plane_y))
-lpc_param.add_input('rlo_in_plane_d2', am.norm(rlo_in_plane_x))
+# lpc_param.add_input('rlo_in_plane_r1', am.norm(rlo_in_plane_y / 2))
+# lpc_param.add_input('rlo_in_plane_r2', am.norm(rlo_in_plane_x / 2))
 
-rlo_hub_center = rlo_hub.project(np.array([19.2, -18.75, 9.01]), direction=np.array([0., 0., -1.]), grid_search_n=50, plot=False)
-rlo_blade_2_tip = rlo_blade_2.project(np.array([14.2, -18.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
-rlo_blade_1_tip = rlo_blade_1.project(np.array([24.2, -18.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
-lpc_param.add_input('rlo_in_plane_r1', am.norm(rlo_blade_2_tip-rlo_hub_center))
-lpc_param.add_input('rlo_in_plane_r2', am.norm(rlo_blade_2_tip-rlo_hub_center))
+# rlo_hub_center = rlo_hub.project(np.array([19.2, -18.75, 9.01]), direction=np.array([0., 0., -1.]), grid_search_n=50, plot=False)
+# rlo_blade_2_tip = rlo_blade_2.project(np.array([14.2, -18.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
+# rlo_blade_1_tip = rlo_blade_1.project(np.array([24.2, -18.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
+# lpc_param.add_input('rlo_in_plane_r3', am.norm(rlo_blade_2_tip-rlo_hub_center))
+# lpc_param.add_input('rlo_in_plane_r4', am.norm(rlo_blade_2_tip-rlo_hub_center))
 
-rlo_disk_center = rlo_disk.project(np.array([19.2, -18.75, 9.01]), direction=np.array([0., 0., -1.]), grid_search_n=50, plot=False)
-lpc_param.add_input('hub_disk_connection', rlo_hub_center-rlo_disk_center)
+# rlo_disk_center = rlo_disk.project(np.array([19.2, -18.75, 9.01]), direction=np.array([0., 0., -1.]), grid_search_n=50, plot=False)
+# lpc_param.add_input('hub_disk_connection', rlo_hub_center-rlo_disk_center)
 
 # exit()
 # endregion

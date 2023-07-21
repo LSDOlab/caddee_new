@@ -35,6 +35,10 @@ class RotationalBlockDeformationsCSDL(csdl.Model):
 
             ffd_block_affine_deformed_control_points = affine_deformed_control_points[starting_index_control_points:ending_index_control_points,:]
             ffd_block_translations = translations[starting_index_sections:ending_index_sections,:]
+            # print(ffd_block.name)
+            # print(starting_index_section_properties)
+            # print(ending_index_section_properties)
+            # print(rotational_section_properties.shape)
             ffd_block_rotational_section_properties = rotational_section_properties[starting_index_section_properties:ending_index_section_properties]
 
             # Undo translations so section origin is at origin
