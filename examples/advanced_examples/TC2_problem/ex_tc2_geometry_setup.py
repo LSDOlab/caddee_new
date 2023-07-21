@@ -67,6 +67,9 @@ rli_blade_1 = cd.Rotor(name='rli_blade_1', spatial_representation=spatial_rep, p
 rli_blade_2_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_4_blades, 0']).keys())
 rli_blade_2 = cd.Rotor(name='rli_blade_2', spatial_representation=spatial_rep, primitive_names=rli_blade_2_prim_names)
 
+rli_hub_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_4_Hub']).keys())
+rli_hub = cd.Rotor(name='rli_hub', spatial_representation=spatial_rep, primitive_names=rli_hub_prim_names)
+
 # Rotor: rear right inner
 rri_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_6_disk']).keys())
 rri_disk = cd.Rotor(name='rri_disk', spatial_representation=spatial_rep, primitive_names=rri_disk_prim_names)
@@ -76,6 +79,9 @@ rri_blade_1 = cd.Rotor(name='rri_blade_1', spatial_representation=spatial_rep, p
 
 rri_blade_2_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_6_blades, 1']).keys())
 rri_blade_2 = cd.Rotor(name='rri_blade_2', spatial_representation=spatial_rep, primitive_names=rri_blade_2_prim_names)
+
+rri_hub_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_6_Hub']).keys())
+rri_hub = cd.Rotor(name='rri_hub', spatial_representation=spatial_rep, primitive_names=rri_hub_prim_names)
 
 # Rotor: rear right outer
 rro_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_8_disk']).keys())
@@ -87,6 +93,9 @@ rro_blade_1 = cd.Rotor(name='rro_blade_1', spatial_representation=spatial_rep, p
 rro_blade_2_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_8_blades, 0']).keys())
 rro_blade_2 = cd.Rotor(name='rro_blade_2', spatial_representation=spatial_rep, primitive_names=rro_blade_2_prim_names)
 
+rro_hub_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_8_Hub']).keys())
+rro_hub = cd.Rotor(name='rro_hub', spatial_representation=spatial_rep, primitive_names=rro_hub_prim_names)
+
 # Rotor: front left outer
 flo_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_1_disk']).keys())
 flo_disk = cd.Rotor(name='flo_disk', spatial_representation=spatial_rep, primitive_names=flo_disk_prim_names)
@@ -96,6 +105,9 @@ flo_blade_1 = cd.Rotor(name='flo_blade_1', spatial_representation=spatial_rep, p
 
 flo_blade_2_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_1_blades, 0']).keys())
 flo_blade_2 = cd.Rotor(name='flo_blade_2', spatial_representation=spatial_rep, primitive_names=flo_blade_2_prim_names)
+
+flo_hub_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_1_Hub']).keys())
+flo_hub = cd.Rotor(name='flo_hub', spatial_representation=spatial_rep, primitive_names=flo_hub_prim_names)
 
 # Rotor: front left inner
 fli_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_3_disk']).keys())
@@ -107,6 +119,8 @@ fli_blade_1 = cd.Rotor(name='fli_blade_1', spatial_representation=spatial_rep, p
 fli_blade_2_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_3_blades, 1']).keys())
 fli_blade_2 = cd.Rotor(name='fli_blade_2', spatial_representation=spatial_rep, primitive_names=fli_blade_2_prim_names)
 
+# flo_hub_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_1_Hub']).keys())
+# flo_hub = cd.Rotor(name='flo_hub', spatial_representation=spatial_rep, primitive_names=flo_hub_prim_names)
 # Rotor: front right inner
 fri_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Rotor_5_disk']).keys())
 fri_disk = cd.Rotor(name='fri_disk', spatial_representation=spatial_rep, primitive_names=fri_disk_prim_names)
@@ -233,11 +247,11 @@ pp_blade_4_ffd_block.add_rotation_u(name='pp_blade_4_twist', connection_name='pp
 # endregion
 
 # region Rotor: rear left outer
-rlo_disk_geom_prim = rlo_disk.get_geometry_primitives()
-rlo_disk_bspline_vol = cd.create_cartesian_enclosure_volume(rlo_disk_geom_prim, num_control_points=(2, 2, 2), order=(2, 2, 2), xyz_to_uvw_indices=(2, 1, 0))
-rlo_disk_ffd_block = cd.SRBGFFDBlock(name='rlo_blade_1_ffd_block', primitive=rlo_disk_bspline_vol, embedded_entities=rlo_disk_geom_prim)
-rlo_disk_ffd_block.add_scale_v(name='rlo_disk_r1', connection_name='rlo_disk_r1', order=1, num_dof=1, value=0)
-rlo_disk_ffd_block.add_scale_w(name='rlo_disk_r2', connection_name='rlo_disk_r2', order=1, num_dof=1, value=0)
+# rlo_disk_geom_prim = rlo_disk.get_geometry_primitives()
+# rlo_disk_bspline_vol = cd.create_cartesian_enclosure_volume(rlo_disk_geom_prim, num_control_points=(2, 2, 2), order=(2, 2, 2), xyz_to_uvw_indices=(2, 1, 0))
+# rlo_disk_ffd_block = cd.SRBGFFDBlock(name='rlo_blade_1_ffd_block', primitive=rlo_disk_bspline_vol, embedded_entities=rlo_disk_geom_prim)
+# rlo_disk_ffd_block.add_scale_v(name='rlo_disk_r1', connection_name='rlo_disk_r1', order=1, num_dof=1, value=0)
+# rlo_disk_ffd_block.add_scale_w(name='rlo_disk_r2', connection_name='rlo_disk_r2', order=1, num_dof=1, value=0)
 
 rlo_blade_1_geom_prim = rlo_blade_1.get_geometry_primitives()
 rlo_blade_1_bspline_vol = cd.create_cartesian_enclosure_volume(rlo_blade_1_geom_prim, num_control_points=(11, 2, 2), order=(4,2,2), xyz_to_uvw_indices=(0, 1, 2))
@@ -277,11 +291,11 @@ lpc_param.add_input('hub_disk_connection', rlo_hub_center-rlo_disk_center)
 # endregion
 
 # region Rotor: rear left inner
-rli_disk_geom_prim = rli_disk.get_geometry_primitives()
-rli_disk_bspline_vol = cd.create_cartesian_enclosure_volume(rli_disk_geom_prim, num_control_points=(2, 2, 2), order=(2, 2, 2), xyz_to_uvw_indices=(2, 1, 0))
-rli_disk_ffd_block = cd.SRBGFFDBlock(name='rli_blade_1_ffd_block', primitive=rli_disk_bspline_vol, embedded_entities=rli_disk_geom_prim)
-rli_disk_ffd_block.add_scale_v(name='rli_disk_r1', connection_name='rli_disk_r1', order=1, num_dof=1, value=0)
-rli_disk_ffd_block.add_scale_w(name='rli_disk_r2', connection_name='rli_disk_r2', order=1, num_dof=1, value=0)
+# rli_disk_geom_prim = rli_disk.get_geometry_primitives()
+# rli_disk_bspline_vol = cd.create_cartesian_enclosure_volume(rli_disk_geom_prim, num_control_points=(2, 2, 2), order=(2, 2, 2), xyz_to_uvw_indices=(2, 1, 0))
+# rli_disk_ffd_block = cd.SRBGFFDBlock(name='rli_blade_1_ffd_block', primitive=rli_disk_bspline_vol, embedded_entities=rli_disk_geom_prim)
+# rli_disk_ffd_block.add_scale_v(name='rli_disk_r1', connection_name='rli_disk_r1', order=1, num_dof=1, value=0)
+# rli_disk_ffd_block.add_scale_w(name='rli_disk_r2', connection_name='rli_disk_r2', order=1, num_dof=1, value=0)
 
 rli_blade_1_geom_prim = rli_blade_1.get_geometry_primitives()
 rli_blade_1_bspline_vol = cd.create_cartesian_enclosure_volume(rli_blade_1_geom_prim, num_control_points=(11, 2, 2), order=(4,2,2), xyz_to_uvw_indices=(0, 1, 2))
@@ -295,19 +309,19 @@ rli_blade_2_ffd_block = cd.SRBGFFDBlock(name='rli_blade_2_ffd_block', primitive=
 rli_blade_2_ffd_block.add_scale_v(name='rli_blade_2_chord', connection_name='rli_blade_2_chord', order=4, num_dof=4, value=np.array([0., 0., 0., 0.]))
 rli_blade_2_ffd_block.add_rotation_u(name='rli_blade_2_twist', connection_name='rli_blade_2_twist', order=4, num_dof=5, value=np.array([0., 0., 0., 0., 0.]))
 
-# along y
-y11 = rli_disk.project(np.array([18.760, -3.499, 9.996]), direction=np.array([0., 0., -1.]), plot=False)
-y12 = rli_disk.project(np.array([18.760, -13.401, 8.604]), direction=np.array([0., 0., -1.]), plot=False)
-# along x
-y21 = rli_disk.project(np.array([13.760, -8.450, 9.300]), direction=np.array([0., 0., -1.]), plot=False)
-y22 = rli_disk.project(np.array([23.760, -8.450, 9.300]), direction=np.array([0., 0., -1.]), plot=False)
+# # along y
+# y11 = rli_disk.project(np.array([18.760, -3.499, 9.996]), direction=np.array([0., 0., -1.]), plot=False)
+# y12 = rli_disk.project(np.array([18.760, -13.401, 8.604]), direction=np.array([0., 0., -1.]), plot=False)
+# # along x
+# y21 = rli_disk.project(np.array([13.760, -8.450, 9.300]), direction=np.array([0., 0., -1.]), plot=False)
+# y22 = rli_disk.project(np.array([23.760, -8.450, 9.300]), direction=np.array([0., 0., -1.]), plot=False)
 
 
-rli_in_plane_y = am.subtract(y12, y11)
-rli_in_plane_x = am.subtract(y21, y22)
+# rli_in_plane_y = am.subtract(y12, y11)
+# rli_in_plane_x = am.subtract(y21, y22)
 
-lpc_param.add_input('rli_in_plane_d1', am.norm(rli_in_plane_y))
-lpc_param.add_input('rli_in_plane_d2', am.norm(rli_in_plane_x))
+# lpc_param.add_input('rli_in_plane_d1', am.norm(rli_in_plane_y))
+# lpc_param.add_input('rli_in_plane_d2', am.norm(rli_in_plane_x))
 
 # rli_hub_center = rli_hub.project(np.array([18.760, -8.450, 9.300]), direction=np.array([0., 0., -1.]), grid_search_n=50, plot=False)
 # rli_blade_2_tip = rli_blade_2.project(np.array([14.2, -18.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
@@ -409,7 +423,7 @@ ffd_set = cd.SRBGFFDSet(
         pp_blade_4_ffd_block.name: pp_blade_4_ffd_block,
         rlo_blade_1_ffd_block.name : rlo_blade_1_ffd_block,
         rlo_blade_2_ffd_block.name : rlo_blade_2_ffd_block,
-        rlo_disk_ffd_block.name : rlo_disk_ffd_block,
+        # rlo_disk_ffd_block.name : rlo_disk_ffd_block,
         rli_blade_1_ffd_block.name : rli_blade_1_ffd_block,
         rli_blade_2_ffd_block.name : rli_blade_2_ffd_block,
         rri_blade_1_ffd_block.name : rri_blade_1_ffd_block,
