@@ -190,7 +190,7 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
         rotated_ffd_control_points = ffd_set.evaluate_rotational_block_deformations(
             affine_deformed_control_points=affine_deformed_ffd_control_points)
         ffd_control_points = ffd_set.evaluate_control_points(rotated_control_points_local_frame=rotated_ffd_control_points)
-        ffd_embedded_entities = ffd_set.evaluate_embedded_entities(control_points=ffd_control_points, plot=True)
+        ffd_embedded_entities = ffd_set.evaluate_embedded_entities(control_points=ffd_control_points, plot=False)
 
         # Assemble geometry from FFD outputs
         initial_system_representation_geometry = system_representation.spatial_representation.control_points['geometry'].copy()
