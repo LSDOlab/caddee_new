@@ -442,7 +442,7 @@ class SRBGFFDBlock(FFDBlock):
         if self.num_dof == 0:
             return None
 
-        embedded_entities = self.project(self.embedded_points, grid_search_n=5, plot=False)
+        embedded_entities = self.project(self.embedded_points, grid_search_n=15, plot=False)
         self.embedded_entities_map = embedded_entities.linear_map
 
         return self.embedded_entities_map
