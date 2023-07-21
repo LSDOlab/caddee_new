@@ -133,17 +133,18 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
         ffd_free_dof_to_geometry_control_points = geometry_assembly_map.dot(ffd_free_dof_to_embedded_entities)
         # Map from geometry control points to mapped arrays
         mapped_array_mappings = []
-        # self.mapped_array_indices = {}
+        self.mapped_array_indices = {}
         mapped_array_indices_counter = 0
         for input_name, parameterization_input in system_parameterization.inputs.items():
             if type(parameterization_input.quantity) is am.MappedArray:
                 mapped_array = parameterization_input.quantity
             elif type(parameterization_input.quantity) is am.NonlinearMappedArray:
                 mapped_array = parameterization_input.quantity.input
-            # num_mapped_array_outputs = mapped_array.linear_map.shape[0]
-            # self.mapped_array_indices[input_name] = \
-            #     np.arange(mapped_array_indices_counter, mapped_array_indices_counter + num_mapped_array_outputs)
-            # mapped_array_indices_counter += num_mapped_array_outputs
+            num_mapped_array_outputs = mapped_array.linear_map.shape[0]
+            self.mapped_array_indices[input_name] = \
+                np.arange(mapped_array_indices_counter*NUM_PHYSICAL_DIMENSIONS, 
+                          (mapped_array_indices_counter + num_mapped_array_outputs)*NUM_PHYSICAL_DIMENSIONS)
+            mapped_array_indices_counter += num_mapped_array_outputs
 
             mapped_array_map = mapped_array.linear_map
             expanded_mapped_array_map = sps.lil_matrix(
@@ -215,13 +216,15 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
             quantity = parameterization_input.quantity
             quantity_num_constraints = np.prod(quantity.shape)
 
+            mapped_array_map_ind = self.mapped_array_indices[input_name]
+
             if type(quantity) is am.MappedArray: # displacement constraint
                 c[constraint_counter:constraint_counter+quantity_num_constraints] = \
                     quantity.evaluate(system_representation_geometry) \
                     - parameterization_inputs[constraint_counter:constraint_counter+quantity_num_constraints]
             
                 dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = \
-                    self.ffd_free_dof_to_mapped_arrays.toarray()
+                    self.ffd_free_dof_to_mapped_arrays.toarray()[mapped_array_map_ind,:]
             else:
                 nonlinear_operation_input = quantity.input.evaluate(system_representation_geometry)
                 c[constraint_counter:constraint_counter+quantity_num_constraints] = \
@@ -230,16 +233,13 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
                 
                 nonlinear_derivative = quantity.evaluate_derivative(nonlinear_operation_input, evaluate_input=False)
                 dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = \
-                    nonlinear_derivative.dot(self.ffd_free_dof_to_mapped_arrays.toarray())
+                    nonlinear_derivative.dot(self.ffd_free_dof_to_mapped_arrays.toarray()[mapped_array_map_ind,:])
 
             constraint_counter += quantity_num_constraints
 
         dObjective_dx = 2*ffd_set.cost_matrix.dot(ffd_free_dof)
 
         num_affine_free_dof = geometry_parameterization.num_affine_free_dof
-        self.residual_testing = np.zeros((num_affine_free_dof+num_inputs,))
-        self.residual_testing[:num_affine_free_dof] = dObjective_dx + np.tensordot(lagrange_multipliers, dc_dx, axes=([-1],[0]))
-        self.residual_testing[num_affine_free_dof:] = c.T
 
         residuals['ffd_free_dof'] = dObjective_dx + np.tensordot(lagrange_multipliers, dc_dx, axes=([-1],[0]))
         residuals['parameterization_lagrange_multipliers'] = c.T

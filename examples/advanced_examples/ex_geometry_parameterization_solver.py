@@ -70,6 +70,7 @@ root_trailing = wing.project(np.array([15., 0., 7.5]), direction=np.array([0., 0
 root_chord_vector = root_leading - root_trailing
 root_chord = am.norm(root_chord_vector)     # NOTE: Nonlinear operations don't return MappedArrays. They return NonlinearMappedarrays
 system_representation.add_output(name='wing_root_chord', quantity=root_chord)
+system_representation.add_output(name='wing_root_chord_vector', quantity=root_chord_vector)
 
 # # Parameterization
 from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_functions import create_cartesian_enclosure_volume
@@ -102,7 +103,7 @@ ffd_blocks = {wing_ffd_block.name : wing_ffd_block, horizontal_stabilizer_ffd_bl
 ffd_set = SRBGFFDSet(name='ffd_set', ffd_blocks=ffd_blocks)
 system_parameterization.add_geometry_parameterization(ffd_set)
 
-system_parameterization.add_input(name='root_chord', quantity=root_chord, value=20.)
+system_parameterization.add_input(name='root_chord', quantity=root_chord)
 
 system_parameterization.setup()
 
@@ -117,7 +118,8 @@ cruise_configuration.set_num_nodes(num_nodes=cruise_num_nodes)
 cruise_configuration.add_output('horizontal_stabilizer_camber_surface', horizontal_stabilizer_camber_surface)
 cruise_configuration.add_output('wing_camber_surface', wing_camber_surface)
 
-cruise_configuration.add_output('wing_to_tail_distance', wing_to_tail_distance)
+system_representation.add_output('wing_to_tail_distance', wing_to_tail_distance)
+# cruise_configuration.add_output('wing_to_tail_distance', wing_to_tail_distance)
 
 horizontal_stabilizer_quarter_chord_port = horizontal_stabilizer.project(np.array([28.5, -10., 8.]))
 horizontal_stabilizer_quarter_chord_starboard = horizontal_stabilizer.project(np.array([28.5, 10., 8.]))
@@ -150,12 +152,14 @@ my_model.add(system_representation_model, 'system_representation')
 # my_model.create_input('linear_taper', val=initial_guess_linear_taper)
 # my_model.add_design_variable('linear_taper')
 # my_model.add_objective('wing_camber_surface')
-# my_model.add_objective('chord_distribution')
+my_model.create_input('root_chord', 10.)
+my_model.add_design_variable('root_chord')
+my_model.add_objective('wing_to_tail_distance')
 
 sim = Simulator(my_model, analytics=True, display_scripts=True)
 sim.run()
 # sim.compute_total_derivatives()
-# sim.check_totals()
+# sim.check_totals(of='wing_root_chord',wrt='linear_taper', step=1e-6)
 
 # affine_section_properties = ffd_set.evaluate_affine_section_properties(prescribed_affine_dof=np.append(initial_guess_linear_taper, np.zeros(4,)))
 affine_section_properties = ffd_set.evaluate_affine_section_properties()
@@ -169,6 +173,7 @@ ffd_embedded_entities = ffd_set.evaluate_embedded_entities()
 # updated_primitives_names.extend(horizontal_stabilizer.primitive_names.copy())
 
 print('wing to tail distance: ', sim['wing_to_tail_distance'])
+exit()
 for t in range(cruise_num_nodes):
     updated_primitives_names = list(spatial_rep.primitives.keys()).copy()
     if cruise_num_nodes == 1:
