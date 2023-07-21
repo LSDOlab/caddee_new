@@ -25,7 +25,7 @@ class SystemParameterizationCSDL(BaseModelCSDL):
             geometry_parameterization.setup()
             num_free_dof += geometry_parameterization.num_affine_free_dof
 
-        if num_free_dof != 0:
+        if num_free_dof != 0 and system_parameterization.inputs:
             geometry_parameterization_solver = GeometryParameterizationSolverCSDL(system_parameterization=system_parameterization)
             self.add(submodel=geometry_parameterization_solver, name='geometry_parameterization_solver_model')
 
