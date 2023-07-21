@@ -207,9 +207,9 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
 
         system_representation_geometry[parameterization_indices,:] = ffd_embedded_entities
 
-        # updated_primitives_names = list(system_representation.spatial_representation.primitives.keys()).copy()
-        # system_representation.spatial_representation.update(system_representation_geometry, updated_primitives_names)
-        # system_representation.spatial_representation.plot(opacity=0.8)
+        updated_primitives_names = list(system_representation.spatial_representation.primitives.keys()).copy()
+        system_representation.spatial_representation.update(system_representation_geometry, updated_primitives_names)
+        system_representation.spatial_representation.plot(opacity=0.8)
 
         # geometric_calculations evaluation
         c = np.zeros((num_inputs,))   # for displacement, may need to insert more rows since that's 3 constraints.

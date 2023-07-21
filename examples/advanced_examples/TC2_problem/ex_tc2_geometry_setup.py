@@ -313,6 +313,7 @@ rlo_blade_1_ffd_block.add_rotation_u(name='rlo_blade_1_twist', connection_name='
 rlo_blade_1_ffd_block.add_translation_u(name='rlo_blade_1_radius', order=2, num_dof=2)
 rlo_blade_1_ffd_block.add_translation_v(name='rlo_blade_1_transl_v', order=1, num_dof=1)
 rlo_blade_1_ffd_block.add_translation_w(name='rlo_blade_1_transl_w', order=1, num_dof=1)
+# rlo_blade_1_ffd_block.plot()
 
 rlo_blade_2_geom_prim = rlo_blade_2.get_geometry_primitives()
 rlo_blade_2_bspline_vol = cd.create_cartesian_enclosure_volume(rlo_blade_2_geom_prim, num_control_points=(11, 2, 2), order=(4,2,2), xyz_to_uvw_indices=(0, 1, 2))
@@ -322,6 +323,7 @@ rlo_blade_2_ffd_block.add_rotation_u(name='rlo_blade_2_twist', connection_name='
 rlo_blade_2_ffd_block.add_translation_u(name='rlo_blade_2_radius', order=2, num_dof=2)
 rlo_blade_2_ffd_block.add_translation_v(name='rlo_blade_2_transl_v', order=1, num_dof=1)
 rlo_blade_2_ffd_block.add_translation_w(name='rlo_blade_2_transl_w', order=1, num_dof=1)
+# rlo_blade_2_ffd_block.plot()
 
 # along y
 y11 = rlo_disk.project(np.array([19.2, -13.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
@@ -372,6 +374,7 @@ rli_blade_1_ffd_block.add_rotation_u(name='rli_blade_1_twist', connection_name='
 rli_blade_1_ffd_block.add_translation_v(name='rli_blade_1_transl_v', order=1, num_dof=1)
 rli_blade_1_ffd_block.add_translation_w(name='rli_blade_1_transl_w', order=1, num_dof=1)
 rli_blade_1_ffd_block.add_translation_u(name='rli_blade_1_stretch', order=2, num_dof=2)
+rli_blade_1_ffd_block.plot()
 
 rli_blade_2_geom_prim = rli_blade_2.get_geometry_primitives()
 rli_blade_2_bspline_vol = cd.create_cartesian_enclosure_volume(rli_blade_2_geom_prim, num_control_points=(11, 2, 2), order=(4,2,2), xyz_to_uvw_indices=(0, 1, 2))
@@ -381,6 +384,7 @@ rli_blade_2_ffd_block.add_rotation_u(name='rli_blade_2_twist', connection_name='
 rli_blade_2_ffd_block.add_translation_u(name='rli_blade_2_stretch', order=2, num_dof=2)
 rli_blade_2_ffd_block.add_translation_v(name='rli_blade_2_transl_v', order=1, num_dof=1)
 rli_blade_2_ffd_block.add_translation_w(name='rli_blade_2_transl_w', order=1, num_dof=1)
+rli_blade_2_ffd_block.plot()
 
 # along y
 y11 = rli_disk.project(np.array([18.760, -3.499, 9.996]), direction=np.array([0., 0., -1.]), plot=False)
@@ -430,6 +434,7 @@ rri_blade_1_ffd_block.add_rotation_u(name='rri_blade_1_twist', connection_name='
 rri_blade_1_ffd_block.add_translation_u(name='rri_blade_1_stretch', order=2, num_dof=2)
 rri_blade_1_ffd_block.add_translation_v(name='rri_blade_1_transl_v', order=1, num_dof=1)
 rri_blade_1_ffd_block.add_translation_w(name='rri_blade_1_transl_w', order=1, num_dof=1)
+rri_blade_1_ffd_block.plot()
 
 rri_blade_2_geom_prim = rri_blade_2.get_geometry_primitives()
 rri_blade_2_bspline_vol = cd.create_cartesian_enclosure_volume(rri_blade_2_geom_prim, num_control_points=(11, 2, 2), order=(4,2,2), xyz_to_uvw_indices=(0, 1, 2))
@@ -439,7 +444,7 @@ rri_blade_2_ffd_block.add_rotation_u(name='rri_blade_2_twist', connection_name='
 rri_blade_2_ffd_block.add_translation_u(name='rri_blade_2_stretch', order=2, num_dof=2)
 rri_blade_2_ffd_block.add_translation_v(name='rri_blade_2_transl_v', order=1, num_dof=1)
 rri_blade_2_ffd_block.add_translation_w(name='rri_blade_2_transl_w', order=1, num_dof=1)
-
+rri_blade_2_ffd_block.plot()
 # along y
 y11 = rri_disk.project(np.array([18.760, 13.401, 8.604]), direction=np.array([0., 0., -1.]), plot=False)
 y12 = rri_disk.project(np.array([18.760, 3.499, 9.996]), direction=np.array([0., 0., -1.]), plot=False)
@@ -768,6 +773,8 @@ lpc_param.add_input('fro_blade_2_hub_connection', fro_hub_2_root-fro_blade_2_roo
 
 # endregion
 
+
+
 ffd_set = cd.SRBGFFDSet(
     name='ffd_set', 
     ffd_blocks={
@@ -806,15 +813,17 @@ ffd_set = cd.SRBGFFDSet(
 
 
 
-# rli_disk_ffd_block.setup()
-# affine_section_properties = rli_disk_ffd_block.evaluate_affine_section_properties()
-# rotational_section_properties = rli_disk_ffd_block.evaluate_rotational_section_properties()
-# affine_ffd_control_points_local_frame = rli_disk_ffd_block.evaluate_affine_block_deformations(plot=False)
-# ffd_control_points_local_frame = rli_disk_ffd_block.evaluate_rotational_block_deformations(plot=False)
-# ffd_control_points = rli_disk_ffd_block.evaluate_control_points(plot=False)
-# updated_geometry = rli_disk_ffd_block.evaluate_embedded_entities(plot=False)
-# updated_primitives_names = rli_disk.primitive_names.copy()
+# rlo_blade_1_ffd_block.setup()
+# affine_section_properties = rlo_blade_1_ffd_block.evaluate_affine_section_properties()
+# rotational_section_properties = rlo_blade_1_ffd_block.evaluate_rotational_section_properties()
+# affine_ffd_control_points_local_frame = rlo_blade_1_ffd_block.evaluate_affine_block_deformations(plot=True)
+# ffd_control_points_local_frame = rlo_blade_1_ffd_block.evaluate_rotational_block_deformations(plot=True)
+# ffd_control_points = rlo_blade_1_ffd_block.evaluate_control_points(plot=True)
+# updated_geometry = rlo_blade_1_ffd_block.evaluate_embedded_entities(plot=True)
+# updated_primitives_names = rlo_blade_1_ffd_block.copy()
+# rlo_blade_1_ffd_block.plot()
 # rlo_disk_ffd_block
+
 # ffd_set.setup()
 # affine_section_properties = ffd_set.evaluate_affine_section_properties()
 # rotational_section_properties = ffd_set.evaluate_rotational_section_properties()
@@ -1085,12 +1094,14 @@ rro_blade_2_te_high_res = rro_blade_2.project(b2_te_high_res_numpy, direction=np
 rro_chord_length = am.subtract(rro_blade_2_le_high_res, rro_blade_2_te_high_res)
 
 # twist
-rro_te_proj_disk = rro_disk.project(rro_blade_2_te_high_res.evaluate(), direction=np.array([0., 0., -1.]), grid_search_n=50, plot=False)
-rro_le_proj_disk = rro_disk.project(rro_blade_2_le_high_res.evaluate(), direction=np.array([0., 0., -1.]), grid_search_n=50, plot=False)
+rro_te_proj_disk = rro_disk.project(rro_blade_2_te_high_res.evaluate(), direction=np.array([0., 0., -1.]), grid_search_n=50, plot=True)
+rro_le_proj_disk = rro_disk.project(rro_blade_2_le_high_res.evaluate(), direction=np.array([0., 0., -1.]), grid_search_n=50, plot=True)
 
 rro_v_dist_le = am.subtract(rro_blade_2_le_high_res, rro_le_proj_disk)
 rro_v_dist_te = am.subtract(rro_blade_2_te_high_res, rro_te_proj_disk)
 rro_tot_v_dist = am.subtract(rro_v_dist_le, rro_v_dist_te)
+# exit()
+
 # endregion
 
 # region front left outer (flo) rotor meshes
