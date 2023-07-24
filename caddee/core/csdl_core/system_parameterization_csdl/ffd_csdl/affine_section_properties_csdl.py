@@ -56,7 +56,7 @@ class AffineSectionPropertiesCSDL(csdl.Model):
                         continue
                 
                 parameter_ending_index = parameter_starting_index + parameter.num_dof
-                ffd_prescribed_dof[parameter_starting_index:parameter_ending_index] = dof
+                ffd_prescribed_dof[parameter_starting_index:parameter_ending_index] = dof * 1
 
                 parameter_starting_index = parameter_ending_index
 

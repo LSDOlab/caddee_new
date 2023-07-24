@@ -40,9 +40,9 @@ class RotationalBlockDeformationsCSDL(csdl.Model):
                 starting_index_sections = ending_index_sections
                 continue
 
-            ffd_block_affine_deformed_control_points = affine_deformed_control_points[starting_index_control_points:ending_index_control_points,:]
-            ffd_block_translations = translations[starting_index_sections:ending_index_sections,:]
-            ffd_block_rotational_section_properties = rotational_section_properties[starting_index_section_properties:ending_index_section_properties]
+            ffd_block_affine_deformed_control_points = affine_deformed_control_points[starting_index_control_points:ending_index_control_points,:]* 1
+            ffd_block_translations = translations[starting_index_sections:ending_index_sections,:]* 1
+            ffd_block_rotational_section_properties = rotational_section_properties[starting_index_section_properties:ending_index_section_properties] * 1 
 
             # Undo translations so section origin is at origin
             ffd_block_translations_expanded = csdl.expand(ffd_block_translations, ffd_block.primitive.shape, 'ij->iklj')
@@ -50,9 +50,9 @@ class RotationalBlockDeformationsCSDL(csdl.Model):
             affine_control_points_local_frame_without_translations = affine_control_points_local_frame_reshaped - ffd_block_translations_expanded
 
             # Calculate rotation matrices (rotation_matrices_u, rotation_matrices_v, rotation_matrices_w), each (num_section,3,3)
-            rotation_u = ffd_block_rotational_section_properties[:ffd_block.num_sections]
-            rotation_v = ffd_block_rotational_section_properties[ffd_block.num_sections:2*ffd_block.num_sections]
-            rotation_w = ffd_block_rotational_section_properties[2*ffd_block.num_sections:3*ffd_block.num_sections]
+            rotation_u = ffd_block_rotational_section_properties[:ffd_block.num_sections] * 1
+            rotation_v = ffd_block_rotational_section_properties[ffd_block.num_sections:2*ffd_block.num_sections] * 1
+            rotation_w = ffd_block_rotational_section_properties[2*ffd_block.num_sections:3*ffd_block.num_sections] * 1
 
             sin_rotations_u = csdl.sin(rotation_u)
             cos_rotations_u = csdl.cos(rotation_u)
@@ -72,20 +72,20 @@ class RotationalBlockDeformationsCSDL(csdl.Model):
             rotation_tensor_v = self.create_output(f'{ffd_block.name}_rotation_tensor_v', val=identity_per_section.copy())
             rotation_tensor_w = self.create_output(f'{ffd_block.name}_rotation_tensor_w', val=identity_per_section.copy())
 
-            rotation_tensor_u[:,1,1] = csdl.expand(cos_rotations_u, cos_rotations_u.shape + (1,1), 'i->ijk')
-            rotation_tensor_u[:,1,2] = csdl.expand(sin_rotations_u, sin_rotations_u.shape + (1,1), 'i->ijk')
-            rotation_tensor_u[:,2,1] = csdl.expand(-sin_rotations_u, sin_rotations_u.shape + (1,1), 'i->ijk')
-            rotation_tensor_u[:,2,2] = csdl.expand(cos_rotations_u, cos_rotations_u.shape + (1,1), 'i->ijk')
+            rotation_tensor_u[:,1,1] = csdl.expand(cos_rotations_u, cos_rotations_u.shape + (1,1), 'i->ijk') * 1
+            rotation_tensor_u[:,1,2] = csdl.expand(sin_rotations_u, sin_rotations_u.shape + (1,1), 'i->ijk')* 1
+            rotation_tensor_u[:,2,1] = csdl.expand(-sin_rotations_u, sin_rotations_u.shape + (1,1), 'i->ijk')* 1
+            rotation_tensor_u[:,2,2] = csdl.expand(cos_rotations_u, cos_rotations_u.shape + (1,1), 'i->ijk')* 1
 
-            rotation_tensor_v[:,0,0] = csdl.expand(cos_rotations_v, cos_rotations_v.shape + (1,1), 'i->ijk')
-            rotation_tensor_v[:,0,2] = csdl.expand(-sin_rotations_v, sin_rotations_v.shape + (1,1), 'i->ijk')
-            rotation_tensor_v[:,2,0] = csdl.expand(sin_rotations_v, sin_rotations_v.shape + (1,1), 'i->ijk')
-            rotation_tensor_v[:,2,2] = csdl.expand(cos_rotations_v, cos_rotations_v.shape + (1,1), 'i->ijk')
+            rotation_tensor_v[:,0,0] = csdl.expand(cos_rotations_v, cos_rotations_v.shape + (1,1), 'i->ijk')* 1
+            rotation_tensor_v[:,0,2] = csdl.expand(-sin_rotations_v, sin_rotations_v.shape + (1,1), 'i->ijk')* 1
+            rotation_tensor_v[:,2,0] = csdl.expand(sin_rotations_v, sin_rotations_v.shape + (1,1), 'i->ijk')* 1
+            rotation_tensor_v[:,2,2] = csdl.expand(cos_rotations_v, cos_rotations_v.shape + (1,1), 'i->ijk')* 1
 
-            rotation_tensor_w[:,0,0] = csdl.expand(cos_rotations_w, cos_rotations_w.shape + (1,1), 'i->ijk')
-            rotation_tensor_w[:,0,1] = csdl.expand(sin_rotations_w, sin_rotations_w.shape + (1,1), 'i->ijk')
-            rotation_tensor_w[:,1,0] = csdl.expand(-sin_rotations_w, sin_rotations_w.shape + (1,1), 'i->ijk')
-            rotation_tensor_w[:,1,1] = csdl.expand(cos_rotations_w, cos_rotations_w.shape + (1,1), 'i->ijk')
+            rotation_tensor_w[:,0,0] = csdl.expand(cos_rotations_w, cos_rotations_w.shape + (1,1), 'i->ijk')* 1
+            rotation_tensor_w[:,0,1] = csdl.expand(sin_rotations_w, sin_rotations_w.shape + (1,1), 'i->ijk')* 1
+            rotation_tensor_w[:,1,0] = csdl.expand(-sin_rotations_w, sin_rotations_w.shape + (1,1), 'i->ijk')* 1
+            rotation_tensor_w[:,1,1] = csdl.expand(cos_rotations_w, cos_rotations_w.shape + (1,1), 'i->ijk')* 1
 
             rotated_control_points_local_frame_without_translations = self.create_output(f'{ffd_block.name}_rotated_control_points_local_frame_without_translations', shape=ffd_block.primitive.shape)
             for i in range(ffd_block.num_sections):
@@ -100,13 +100,13 @@ class RotationalBlockDeformationsCSDL(csdl.Model):
                                                                                     (ffd_block.num_control_points_per_section, NUM_PARAMETRIC_DIMENSIONS))
                 
                 ffd_block_rotated_points_flattened = csdl.matmat(affine_control_points_local_frame_without_translations_flattened, csdl.transpose(section_rotation_matrix))
-                rotated_control_points_local_frame_without_translations[i,:,:,:] = csdl.reshape(ffd_block_rotated_points_flattened, (1,)+ffd_block.primitive.shape[1:])
+                rotated_control_points_local_frame_without_translations[i,:,:,:] = csdl.reshape(ffd_block_rotated_points_flattened, (1,)+ffd_block.primitive.shape[1:]) * 1
 
             # Add back on translations from the affine transformation
-            rotated_control_points_local_frame_reshaped = rotated_control_points_local_frame_without_translations + ffd_block_translations_expanded
+            rotated_control_points_local_frame_reshaped = rotated_control_points_local_frame_without_translations * 1 + ffd_block_translations_expanded
             ffd_block_rotated_control_points = csdl.reshape(rotated_control_points_local_frame_reshaped, (ffd_block.num_control_points,NUM_PARAMETRIC_DIMENSIONS))
 
-            rotated_control_points[starting_index_control_points:ending_index_control_points,:] = ffd_block_rotated_control_points
+            rotated_control_points[starting_index_control_points:ending_index_control_points,:] = ffd_block_rotated_control_points * 1
             starting_index_control_points = ending_index_control_points
             starting_index_sections = ending_index_sections
             starting_index_section_properties = ending_index_section_properties

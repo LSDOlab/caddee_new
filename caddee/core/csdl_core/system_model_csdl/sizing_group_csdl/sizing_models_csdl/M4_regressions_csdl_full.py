@@ -16,13 +16,14 @@ class M4RegressionsCSDL(ModuleCSDL):
         ktas_to_m_s = 1 / 1.944
         lbs_to_kg =  1 / 2.205
 
-        wing_area = self.register_module_input('wing_area', shape=shape, units='m^2', val=210 * ft_2_to_m_2) 
+        wing_area = self.register_module_input('wing_area', shape=shape, units='m^2', val=210 * ft_2_to_m_2) * ft_2_to_m_2
         # self.print_var(wing_area)
         wing_AR = self.register_module_input('wing_AR', shape=shape, val=13)
         # self.print_var(wing_AR)
         
         # Declaring input variables
-        fuselage_length = self.register_module_input('fuselage_length', shape=shape, units='m' ,val=30 * ft_to_m)
+        fuselage_length = self.register_module_input('fuselage_length', shape=shape, units='m' ,val=30 * ft_to_m) * ft_to_m
+        # self.print_var(fuselage_length)
         # fuselage_length = self.create_input('fuselage_length', shape=shape, units='m' ,val=30 * ft_to_m) 
         battery_mass = self.register_module_input('battery_mass', shape=shape, units='kg')
         # self.print_var(battery_mass)
