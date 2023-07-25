@@ -40,7 +40,7 @@ class Component(CADDEEBase):
     def get_geometry_primitives(self):
         return self.spatial_representation.get_geometry_primitives(search_names=self.primitive_names)
     
-    def project(self, points:np.ndarray, direction:np.ndarray=None, grid_search_n:int=25,
+    def project(self, points:np.ndarray, properties:list=['geometry'], direction:np.ndarray=None, grid_search_n:int=25,
                 max_iterations=100, offset:np.ndarray=None, plot:bool=False):
         '''
         Projects points onto the system.
@@ -66,7 +66,7 @@ class Component(CADDEEBase):
         '''
         
         comp_name = self.parameters['name']
-        projected_points = self.spatial_representation.project(points=points, targets=self.primitive_names.copy(), 
+        projected_points = self.spatial_representation.project(points=points, targets=self.primitive_names.copy(), properties=properties, 
                 direction=direction, grid_search_n=grid_search_n, max_iterations=max_iterations, offset=offset, plot=plot, comp_name=comp_name)
 
         return projected_points
