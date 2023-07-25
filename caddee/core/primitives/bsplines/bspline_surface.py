@@ -17,15 +17,15 @@ class BSplineSurface(BSpline):
         self.shape = shape
         self.control_points = control_points
 
-    def compute_evaluation_map(self, u_vec, v_vec):
+    def compute_evaluation_map(self, u_vec, v_vec, u_der:int=0, v_der:int=0):
         data = np.zeros(len(u_vec) * self.order_u * self.order_v)
         row_indices = np.zeros(len(data), np.int32)
         col_indices = np.zeros(len(data), np.int32)
 
         num_control_points = self.shape[0] * self.shape[1]
 
-        get_basis_surface_matrix(self.order_u, self.shape[0], 0, u_vec, self.knots_u, 
-            self.order_v, self.shape[1], 0, v_vec, self.knots_v, 
+        get_basis_surface_matrix(self.order_u, self.shape[0], u_der, u_vec, self.knots_u, 
+            self.order_v, self.shape[1], v_der, v_vec, self.knots_v, 
             len(u_vec), data, row_indices, col_indices)
 
         basis0 = sps.csc_matrix((data, (row_indices, col_indices)), shape=(len(u_vec), num_control_points) )
@@ -61,6 +61,14 @@ class BSplineSurface(BSpline):
         basis2 = sps.csc_matrix((data, (row_indices, col_indices)), shape=(len(u_vec), num_control_points) )
         
         return basis2
+
+    def evaluate(self, u_vec, v_vec, u_der, v_der):
+        num_control_points = self.shape[0] * self.shape[1]
+        
+        basis = self.compute_evaluation_map(u_vec, v_vec, u_der, v_der)
+        output = basis.dot(self.control_points.reshape((num_control_points, self.shape[2])))
+
+        return output
 
     def evaluate_points(self, u_vec, v_vec):       
         num_control_points = self.shape[0] * self.shape[1]
