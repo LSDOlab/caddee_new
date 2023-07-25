@@ -18,6 +18,7 @@ from caddee.utils.aircraft_models.pav.pav_weight import PavMassProperties
 from caddee import GEOMETRY_FILES_FOLDER
 
 import numpy as np
+import pandas as pd
 # endregion
 
 
@@ -27,7 +28,363 @@ debug_geom_flag = False
 visualize_flag = False
 
 
-def trim_at_cruise():
+
+def tuning_cl0():
+
+    reynolds_number = 5224802
+    CL_expected = 0.55
+
+    resolution = 50
+    cl0_range = np.linspace(0.01, 0.8, num=resolution)
+    CL = np.empty(resolution)
+    CD = np.empty(resolution)
+
+    for idx, cl0 in enumerate(cl0_range):
+
+        caddee = cd.CADDEE()
+        caddee.system_model = system_model = cd.SystemModel()
+        caddee.system_representation = sys_rep = cd.SystemRepresentation()
+        caddee.system_parameterization = sys_param = cd.SystemParameterization(system_representation=sys_rep)
+
+        # region Geometry
+        file_name = 'pav.stp'
+
+        spatial_rep = sys_rep.spatial_representation
+        spatial_rep.import_file(file_name=GEOMETRY_FILES_FOLDER / file_name)
+        spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
+
+        # region Wing
+        wing_primitive_names = list(spatial_rep.get_primitives(search_names=['Wing']).keys())
+        wing = LiftingSurface(name='Wing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)
+        if debug_geom_flag:
+            wing.plot()
+        sys_rep.add_component(wing)
+        # endregion
+
+        sys_param.setup()
+        # endregion
+
+        # region Wing Meshes
+        num_wing_vlm = 21
+        num_chordwise_vlm = 5
+        point00 = np.array([8.796, 14.000, 1.989])  # * ft2m # Right tip leading edge
+        point01 = np.array([11.300, 14.000, 1.989])  # * ft2m # Right tip trailing edge
+        point10 = np.array([8.800, 0.000, 1.989])  # * ft2m # Center Leading Edge
+        point11 = np.array([15.170, 0.000, 1.989])  # * ft2m # Center Trailing edge
+        point20 = np.array([8.796, -14.000, 1.989])  # * ft2m # Left tip leading edge
+        point21 = np.array([11.300, -14.000, 1.989])  # * ft2m # Left tip
+
+        leading_edge_points = np.concatenate(
+            (np.linspace(point00, point10, int(num_wing_vlm / 2 + 1))[0:-1, :],
+             np.linspace(point10, point20, int(num_wing_vlm / 2 + 1))),
+            axis=0)
+        trailing_edge_points = np.concatenate(
+            (np.linspace(point01, point11, int(num_wing_vlm / 2 + 1))[0:-1, :],
+             np.linspace(point11, point21, int(num_wing_vlm / 2 + 1))),
+            axis=0)
+
+        leading_edge = wing.project(leading_edge_points, direction=np.array([-1., 0., 0.]), plot=debug_geom_flag)
+        trailing_edge = wing.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=debug_geom_flag)
+
+        # Chord Surface
+        wing_chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
+        if debug_geom_flag:
+            spatial_rep.plot_meshes([wing_chord_surface])
+
+        # Upper and lower surface
+        wing_upper_surface_wireframe = wing.project(wing_chord_surface.value + np.array([0., 0., 0.5]),
+                                                    direction=np.array([0., 0., -1.]), grid_search_n=25,
+                                                    plot=debug_geom_flag, max_iterations=200)
+        wing_lower_surface_wireframe = wing.project(wing_chord_surface.value - np.array([0., 0., 0.5]),
+                                                    direction=np.array([0., 0., 1.]), grid_search_n=25,
+                                                    plot=debug_geom_flag, max_iterations=200)
+
+        # Chamber surface
+        wing_camber_surface = am.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1)
+        wing_vlm_mesh_name = 'wing_vlm_mesh'
+        sys_rep.add_output(wing_vlm_mesh_name, wing_camber_surface)
+        if debug_geom_flag:
+            spatial_rep.plot_meshes([wing_camber_surface])
+
+        # OML mesh
+        wing_oml_mesh = am.vstack((wing_upper_surface_wireframe, wing_lower_surface_wireframe))
+        wing_oml_mesh_name = 'wing_oml_mesh'
+        sys_rep.add_output(wing_oml_mesh_name, wing_oml_mesh)
+        if debug_geom_flag:
+            spatial_rep.plot_meshes([wing_oml_mesh])
+        # endregion
+
+        # region Sizing
+        pav_wt = PavMassProperties()
+        mass, cg, I = pav_wt.evaluate()
+
+        total_mass_properties = cd.TotalMassPropertiesM3L()
+        total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass, cg, I)
+        # endregion
+
+        # region Mission
+
+        design_scenario = cd.DesignScenario(name='aircraft_trim')
+
+        # region Cruise condition
+        cruise_model = m3l.Model()
+        cruise_condition = cd.CruiseCondition(name="cruise_1")
+        cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
+        cruise_condition.set_module_input(name='altitude', val=600 * ft2m)
+        cruise_condition.set_module_input(name='mach_number', val=0.145972)  # 112 mph = 0.145972 Mach
+        cruise_condition.set_module_input(name='range', val=80467.2)  # 50 miles = 80467.2 m
+        cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0))
+        cruise_condition.set_module_input(name='flight_path_angle', val=0)
+        cruise_condition.set_module_input(name='roll_angle', val=0)
+        cruise_condition.set_module_input(name='yaw_angle', val=0)
+        cruise_condition.set_module_input(name='wind_angle', val=0)
+        cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 600 * ft2m]))
+
+        cruise_ac_states = cruise_condition.evaluate_ac_states()
+        cruise_model.register_output(cruise_ac_states)
+
+        # region Aerodynamics
+        vlm_model = VASTFluidSover(
+            surface_names=[
+                wing_vlm_mesh_name,
+            ],
+            surface_shapes=[
+                (1,) + wing_camber_surface.evaluate().shape[1:],
+            ],
+            fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+            mesh_unit='ft',
+            cl0=[cl0]
+        )
+        vlm_panel_forces, vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=cruise_ac_states)
+        cruise_model.register_output(vlm_forces)
+        cruise_model.register_output(vlm_moments)
+        # endregion
+
+        # Total loads
+        total_forces_moments_model = cd.TotalForcesMomentsM3L()
+        total_forces, total_moments = total_forces_moments_model.evaluate(
+            vlm_forces, vlm_moments,
+        )
+        cruise_model.register_output(total_forces)
+        cruise_model.register_output(total_moments)
+
+        # Equations of motions
+        eom_m3l_model = cd.EoMM3LEuler6DOF()
+        trim_residual = eom_m3l_model.evaluate(
+            total_mass=total_mass,
+            total_cg_vector=total_cg,
+            total_inertia_tensor=total_inertia,
+            total_forces=total_forces,
+            total_moments=total_moments,
+            ac_states=cruise_ac_states
+        )
+
+        cruise_model.register_output(trim_residual)
+
+        # Add cruise m3l model to cruise condition
+        cruise_condition.add_m3l_model('cruise_model', cruise_model)
+
+        # Add design condition to design scenario
+        design_scenario.add_design_condition(cruise_condition)
+        # endregion
+
+        system_model.add_design_scenario(design_scenario=design_scenario)
+        # endregion
+
+        caddee_csdl_model = caddee.assemble_csdl()
+
+        # Create and run simulator
+        sim = Simulator(caddee_csdl_model, analytics=True)
+        sim.run()
+
+        CL[idx] = sim[
+            'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.total_CL']
+        CD[idx] = sim[
+            'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.total_CD']
+
+    # creating the dataframe
+    df = pd.DataFrame(data=np.transpose(np.vstack((cl0_range, CL, CD))),
+                      columns=['cl0', 'CL', 'CD'])
+    df.to_excel("InfuenceOfCl0.xlsx")
+    print(df)
+
+    def find_cl0(cl0_test):
+        return (CL_expected - np.interp(cl0_test, cl0_range, CL))**2
+
+    from scipy.optimize import minimize
+    res = minimize(find_cl0, 0.35, method='Nelder-Mead', tol=1e-6)
+    print(res)
+
+    return res.x
+
+
+def vlm_evaluation(wing_cl0=0.3475,
+                   pitch_angle=np.deg2rad(3.)):
+    caddee = cd.CADDEE()
+    caddee.system_model = system_model = cd.SystemModel()
+    caddee.system_representation = sys_rep = cd.SystemRepresentation()
+    caddee.system_parameterization = sys_param = cd.SystemParameterization(system_representation=sys_rep)
+
+    # region Geometry
+    file_name = 'pav.stp'
+
+    spatial_rep = sys_rep.spatial_representation
+    spatial_rep.import_file(file_name=GEOMETRY_FILES_FOLDER / file_name)
+    spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
+
+    # region Wing
+    wing_primitive_names = list(spatial_rep.get_primitives(search_names=['Wing']).keys())
+    wing = LiftingSurface(name='Wing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)
+    if debug_geom_flag:
+        wing.plot()
+    sys_rep.add_component(wing)
+    # endregion
+
+    sys_param.setup()
+    # endregion
+
+    # region Wing Meshes
+    num_wing_vlm = 21
+    num_chordwise_vlm = 5
+    point00 = np.array([8.796, 14.000, 1.989])  # * ft2m # Right tip leading edge
+    point01 = np.array([11.300, 14.000, 1.989])  # * ft2m # Right tip trailing edge
+    point10 = np.array([8.800, 0.000, 1.989])  # * ft2m # Center Leading Edge
+    point11 = np.array([15.170, 0.000, 1.989])  # * ft2m # Center Trailing edge
+    point20 = np.array([8.796, -14.000, 1.989])  # * ft2m # Left tip leading edge
+    point21 = np.array([11.300, -14.000, 1.989])  # * ft2m # Left tip
+
+    leading_edge_points = np.concatenate(
+        (np.linspace(point00, point10, int(num_wing_vlm / 2 + 1))[0:-1, :],
+         np.linspace(point10, point20, int(num_wing_vlm / 2 + 1))),
+        axis=0)
+    trailing_edge_points = np.concatenate(
+        (np.linspace(point01, point11, int(num_wing_vlm / 2 + 1))[0:-1, :],
+         np.linspace(point11, point21, int(num_wing_vlm / 2 + 1))),
+        axis=0)
+
+    leading_edge = wing.project(leading_edge_points, direction=np.array([-1., 0., 0.]), plot=debug_geom_flag)
+    trailing_edge = wing.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=debug_geom_flag)
+
+    # Chord Surface
+    wing_chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
+    if debug_geom_flag:
+        spatial_rep.plot_meshes([wing_chord_surface])
+
+    # Upper and lower surface
+    wing_upper_surface_wireframe = wing.project(wing_chord_surface.value + np.array([0., 0., 0.5]),
+                                                direction=np.array([0., 0., -1.]), grid_search_n=25,
+                                                plot=debug_geom_flag, max_iterations=200)
+    wing_lower_surface_wireframe = wing.project(wing_chord_surface.value - np.array([0., 0., 0.5]),
+                                                direction=np.array([0., 0., 1.]), grid_search_n=25,
+                                                plot=debug_geom_flag, max_iterations=200)
+
+    # Chamber surface
+    wing_camber_surface = am.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1)
+    wing_vlm_mesh_name = 'wing_vlm_mesh'
+    sys_rep.add_output(wing_vlm_mesh_name, wing_camber_surface)
+    if debug_geom_flag:
+        spatial_rep.plot_meshes([wing_camber_surface])
+
+    # OML mesh
+    wing_oml_mesh = am.vstack((wing_upper_surface_wireframe, wing_lower_surface_wireframe))
+    wing_oml_mesh_name = 'wing_oml_mesh'
+    sys_rep.add_output(wing_oml_mesh_name, wing_oml_mesh)
+    if debug_geom_flag:
+        spatial_rep.plot_meshes([wing_oml_mesh])
+    # endregion
+
+    # region Sizing
+    pav_wt = PavMassProperties()
+    mass, cg, I = pav_wt.evaluate()
+
+    total_mass_properties = cd.TotalMassPropertiesM3L()
+    total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass, cg, I)
+    # endregion
+
+    # region Mission
+
+    design_scenario = cd.DesignScenario(name='aircraft_trim')
+
+    # region Cruise condition
+    cruise_model = m3l.Model()
+    cruise_condition = cd.CruiseCondition(name="cruise_1")
+    cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
+    cruise_condition.set_module_input(name='altitude', val=600 * ft2m)
+    cruise_condition.set_module_input(name='mach_number', val=0.145972)  # 112 mph = 0.145972 Mach
+    cruise_condition.set_module_input(name='range', val=80467.2)  # 50 miles = 80467.2 m
+    cruise_condition.set_module_input(name='pitch_angle', val=pitch_angle)
+    cruise_condition.set_module_input(name='flight_path_angle', val=0)
+    cruise_condition.set_module_input(name='roll_angle', val=0)
+    cruise_condition.set_module_input(name='yaw_angle', val=0)
+    cruise_condition.set_module_input(name='wind_angle', val=0)
+    cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 600 * ft2m]))
+
+    cruise_ac_states = cruise_condition.evaluate_ac_states()
+    cruise_model.register_output(cruise_ac_states)
+
+    # region Aerodynamics
+    vlm_model = VASTFluidSover(
+        surface_names=[
+            wing_vlm_mesh_name,
+        ],
+        surface_shapes=[
+            (1,) + wing_camber_surface.evaluate().shape[1:],
+        ],
+        fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+        mesh_unit='ft',
+        cl0=[wing_cl0]
+    )
+    vlm_panel_forces, vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=cruise_ac_states)
+    cruise_model.register_output(vlm_forces)
+    cruise_model.register_output(vlm_moments)
+    # endregion
+
+    # Total loads
+    total_forces_moments_model = cd.TotalForcesMomentsM3L()
+    total_forces, total_moments = total_forces_moments_model.evaluate(
+        vlm_forces, vlm_moments,
+    )
+    cruise_model.register_output(total_forces)
+    cruise_model.register_output(total_moments)
+
+    # Equations of motions
+    eom_m3l_model = cd.EoMM3LEuler6DOF()
+    trim_residual = eom_m3l_model.evaluate(
+        total_mass=total_mass,
+        total_cg_vector=total_cg,
+        total_inertia_tensor=total_inertia,
+        total_forces=total_forces,
+        total_moments=total_moments,
+        ac_states=cruise_ac_states
+    )
+
+    cruise_model.register_output(trim_residual)
+
+    # Add cruise m3l model to cruise condition
+    cruise_condition.add_m3l_model('cruise_model', cruise_model)
+
+    # Add design condition to design scenario
+    design_scenario.add_design_condition(cruise_condition)
+    # endregion
+
+    system_model.add_design_scenario(design_scenario=design_scenario)
+    # endregion
+
+    caddee_csdl_model = caddee.assemble_csdl()
+
+    # Create and run simulator
+    sim = Simulator(caddee_csdl_model, analytics=True)
+    sim.run()
+
+    print('CL: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.total_CL'])
+    print('CD: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.total_CD'])
+    print('Total forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_forces'])
+    print('Total moments:', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_moments'])
+    return
+
+
+
+def trim_at_cruise(wing_cl0=0.3475):
     caddee = cd.CADDEE()
     caddee.system_model = system_model = cd.SystemModel()
     caddee.system_representation = sys_rep = cd.SystemRepresentation()
@@ -298,7 +655,7 @@ def trim_at_cruise():
         ],
         fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
         mesh_unit='ft',
-        cl0=[0.55, 0.0]
+        cl0=[wing_cl0, 0.0]
     )
     vlm_panel_forces, vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=cruise_ac_states)
     cruise_model.register_output(vlm_forces)
@@ -380,10 +737,11 @@ def trim_at_cruise():
     print('Horizontal tail actuation: ',
           np.rad2deg(sim['system_parameterization.ffd_set.rotational_section_properties_model.h_tail_act']))
 
-    print(sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.induced_velocity_model.eta'])
-    print(sim[
-              'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.L_over_D'])
-
+    print('Cruise propeller efficiency: ',
+          sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.induced_velocity_model.eta'])
+    print('Cruise L/D',
+          sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.L_over_D'])
+    print('Cruise prop torque', sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.induced_velocity_model.total_torque'])
 
     return
 
@@ -589,5 +947,8 @@ def trim_at_hover():
 
 
 if __name__ == '__main__':
-    # trim_at_cruise()
-    trim_at_hover()
+    # cl0 = tuning_cl0()
+    # vlm_evaluation()
+    trim_at_cruise()
+
+    # trim_at_hover()
