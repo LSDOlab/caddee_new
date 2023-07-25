@@ -125,7 +125,7 @@ class ConstantMassPropertiesCSDL(BaseModelCSDL):
             izz = izz + izz_model + m_model * (pos_x**2 + pos_y**2)
             ixz = ixz + ixz_model + m_model * (-pos_x * pos_z)
 
-            m_fudge = self.declare_variable('m_fudge', shape=(1, ), val=262)
+            m_fudge = self.declare_variable('m_fudge', shape=(1, ), val=0.)
 
             # Compute total mass
             m = m + m_model + m_fudge
