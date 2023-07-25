@@ -25,7 +25,8 @@ import pandas as pd
 ft2m = 0.3048
 
 def setup_geometry(include_wing_flag=True, num_wing_spanwise_vlm = 21, num_wing_chordwise_vlm = 5,
-                   include_tail_flag=True,
+                   include_tail_flag=True, num_htail_vlm = 21, num_chordwise_vlm = 5,
+                   include_tail_actuation=True,
                    debug_geom_flag = False, visualize_flag = False):
     caddee = cd.CADDEE()
     caddee.system_model = system_model = cd.SystemModel()
@@ -57,7 +58,6 @@ def setup_geometry(include_wing_flag=True, num_wing_spanwise_vlm = 21, num_wing_
         sys_rep.add_component(htail)
     # endregion
 
-    sys_param.setup()
     # endregion
 
     # region Meshes
@@ -111,13 +111,95 @@ def setup_geometry(include_wing_flag=True, num_wing_spanwise_vlm = 21, num_wing_
             spatial_rep.plot_meshes([wing_oml_mesh])
     # endregion
 
-    if include_wing_flag:
+    # region Tail
+    if include_tail_flag:
+
+        point00 = np.array([20.713 - 4., 8.474 + 1.5, 0.825 + 1.5])  # * ft2m # Right tip leading edge
+        point01 = np.array([22.916, 8.474, 0.825])  # * ft2m # Right tip trailing edge
+        point10 = np.array([18.085, 0.000, 0.825])  # * ft2m # Center Leading Edge
+        point11 = np.array([23.232, 0.000, 0.825])  # * ft2m # Center Trailing edge
+        point20 = np.array([20.713 - 4., -8.474 - 1.5, 0.825 + 1.5])  # * ft2m # Left tip leading edge
+        point21 = np.array([22.916, -8.474, 0.825])  # * ft2m # Left tip trailing edge
+
+        leading_edge_points = np.linspace(point00, point20, num_htail_vlm)
+        trailing_edge_points = np.linspace(point01, point21, num_htail_vlm)
+
+        leading_edge = htail.project(leading_edge_points, direction=np.array([0., 0., -1.]), plot=debug_geom_flag)
+        trailing_edge = htail.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=debug_geom_flag)
+
+        # Chord Surface
+        htail_chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
+        if debug_geom_flag:
+            spatial_rep.plot_meshes([htail_chord_surface])
+
+        # Upper and lower surface
+        htail_upper_surface_wireframe = htail.project(htail_chord_surface.value + np.array([0., 0., 0.5]),
+                                                      direction=np.array([0., 0., -1.]), grid_search_n=25,
+                                                      plot=debug_geom_flag, max_iterations=200)
+        htail_lower_surface_wireframe = htail.project(htail_chord_surface.value - np.array([0., 0., 0.5]),
+                                                      direction=np.array([0., 0., 1.]), grid_search_n=25,
+                                                      plot=debug_geom_flag, max_iterations=200)
+
+        # Chamber surface
+        htail_camber_surface = am.linspace(htail_upper_surface_wireframe, htail_lower_surface_wireframe, 1)
+        htail_vlm_mesh_name = 'htail_vlm_mesh'
+        sys_rep.add_output(htail_vlm_mesh_name, htail_camber_surface)
+        if debug_geom_flag:
+            spatial_rep.plot_meshes([htail_camber_surface])
+
+        # OML mesh
+        htail_oml_mesh = am.vstack((htail_upper_surface_wireframe, htail_lower_surface_wireframe))
+        htail_oml_mesh_name = 'htail_oml_mesh'
+        sys_rep.add_output(htail_oml_mesh_name, htail_oml_mesh)
+        if debug_geom_flag:
+            spatial_rep.plot_meshes([htail_oml_mesh])
+        # endregion
+    # endregion
+
+    if visualize_flag:
+        if include_wing_flag and not include_tail_flag:
+            spatial_rep.plot_meshes([wing_camber_surface])
+        elif include_tail_flag and not include_wing_flag:
+            raise NotImplementedError
+        elif include_wing_flag and include_tail_flag:
+            spatial_rep.plot_meshes([wing_camber_surface, htail_camber_surface])
+    # endregion
+
+    # region Actuations
+    if include_tail_flag and include_tail_actuation:
+        # Tail FFD
+        htail_geometry_primitives = htail.get_geometry_primitives()
+        htail_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
+            htail_geometry_primitives,
+            num_control_points=(11, 2, 2), order=(4, 2, 2),
+            xyz_to_uvw_indices=(1, 0, 2)
+        )
+        htail_ffd_block = cd.SRBGFFDBlock(name='htail_ffd_block',
+                                          primitive=htail_ffd_bspline_volume,
+                                          embedded_entities=htail_geometry_primitives)
+        htail_ffd_block.add_scale_v(name='htail_linear_taper',
+                                    order=2, num_dof=3, value=np.array([0., 0., 0.]),
+                                    cost_factor=1.)
+        htail_ffd_block.add_rotation_u(name='htail_twist_distribution',
+                                       connection_name='h_tail_act', order=1,
+                                       num_dof=1, value=np.array([np.deg2rad(1.75)]))
+        ffd_set = cd.SRBGFFDSet(
+            name='ffd_set',
+            ffd_blocks={htail_ffd_block.name: htail_ffd_block}
+        )
+        sys_param.add_geometry_parameterization(ffd_set)
+    sys_param.setup()
+    # endregion
+
+    if include_wing_flag and not include_tail_flag:
         return caddee, system_model, sys_rep, sys_param, \
             wing_vlm_mesh_name, wing_camber_surface
-    elif include_tail_flag:
+    elif include_tail_flag and not include_wing_flag:
         raise NotImplementedError
     elif include_wing_flag and include_tail_flag:
-        raise NotImplementedError
+        return caddee, system_model, sys_rep, sys_param, \
+            wing_vlm_mesh_name, wing_camber_surface, \
+            htail_vlm_mesh_name, htail_camber_surface
 
 
 def vlm_as_ll(debug_geom_flag = False, visualize_flag = False):
@@ -393,89 +475,104 @@ def vlm_evaluation_wing_tail_aoa_sweep(wing_cl0=0.3475,
     for idx, pitch_angle in enumerate(pitch_angle_range):
         # region Geometry and meshes
         caddee, system_model, sys_rep, sys_param, \
-            wing_vlm_mesh_name, wing_camber_surface = setup_geometry(
+            wing_vlm_mesh_name, wing_camber_surface, \
+            htail_vlm_mesh_name, htail_camber_surface = setup_geometry(
             include_wing_flag=True,
             include_tail_flag=True,
             visualize_flag=visualize_flag,
             debug_geom_flag=debug_geom_flag,
         )
-        exit()
         # endregion
+
+        # region Mission
+
+        design_scenario = cd.DesignScenario(name='aircraft_trim')
+
+        # region Cruise condition
+        cruise_model = m3l.Model()
+        cruise_condition = cd.CruiseCondition(name="cruise_1")
+        cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
+        cruise_condition.set_module_input(name='altitude', val=600 * ft2m)
+        cruise_condition.set_module_input(name='mach_number', val=0.145972)  # 112 mph = 0.145972 Mach
+        cruise_condition.set_module_input(name='range', val=80467.2)  # 50 miles = 80467.2 m
+        cruise_condition.set_module_input(name='pitch_angle', val=pitch_angle)
+        cruise_condition.set_module_input(name='flight_path_angle', val=0)
+        cruise_condition.set_module_input(name='roll_angle', val=0)
+        cruise_condition.set_module_input(name='yaw_angle', val=0)
+        cruise_condition.set_module_input(name='wind_angle', val=0)
+        cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 600 * ft2m]))
+
+        cruise_ac_states = cruise_condition.evaluate_ac_states()
+        cruise_model.register_output(cruise_ac_states)
+
+        # region Aerodynamics
+        vlm_model = VASTFluidSover(
+            surface_names=[
+                wing_vlm_mesh_name,
+                htail_vlm_mesh_name
+            ],
+            surface_shapes=[
+                (1,) + wing_camber_surface.evaluate().shape[1:],
+                (1,) + htail_camber_surface.evaluate().shape[1:],
+            ],
+            fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+            mesh_unit='ft',
+            cl0=[wing_cl0, 0.]
+        )
+        vlm_panel_forces, vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=cruise_ac_states)
+        cruise_model.register_output(vlm_forces)
+        cruise_model.register_output(vlm_moments)
+        # endregion
+
+        # Add cruise m3l model to cruise condition
+        cruise_condition.add_m3l_model('cruise_model', cruise_model)
+
+        # Add design condition to design scenario
+        design_scenario.add_design_condition(cruise_condition)
+        # endregion
+
+        system_model.add_design_scenario(design_scenario=design_scenario)
+        # endregion
+
+        caddee_csdl_model = caddee.assemble_csdl()
+
+        # Create and run simulator
+        sim = Simulator(caddee_csdl_model, analytics=True)
+        sim.run()
+
+        CL[idx] = sim[
+            'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.total_CL']
+        CD[idx] = sim[
+            'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.total_CD']
+
+    # creating the dataframe
+    df = pd.DataFrame(data=np.transpose(np.vstack((np.rad2deg(pitch_angle_range), CL, CD))),
+                      columns=['Pitch Angle', 'CL', 'CD'])
+    df.to_excel("WingTail_InfluenceOfAoA.xlsx")
+    print(df)
+    return
 
 def trim_at_cruise(wing_cl0=0.3475):
 
+    # region Geometry and meshes
 
-
-    # Canard
-    canard_primitive_names = list(spatial_rep.get_primitives(search_names=['FrontSuport']).keys())
-    canard = cd.LiftingSurface(name='Canard', spatial_representation=spatial_rep,
-                               primitive_names=canard_primitive_names)
-    if debug_geom_flag:
-        canard.plot()
-    sys_rep.add_component(canard)
+    # region Lifting surfaces
+    caddee, system_model, sys_rep, sys_param, \
+        wing_vlm_mesh_name, wing_camber_surface, \
+        htail_vlm_mesh_name, htail_camber_surface = setup_geometry(
+        include_wing_flag=True,
+        include_tail_flag=True,
+    )
     # endregion
+
+    spatial_rep = sys_rep.spatial_representation
 
     # region Rotors
     # Pusher prop
     pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropPusher']).keys())
     pp_disk = cd.Rotor(name='pp_disk', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
-    if debug_geom_flag:
-        pp_disk.plot()
     sys_rep.add_component(pp_disk)
     # endregion
-
-    # endregion
-
-    # region Actuations
-    # Tail FFD
-    htail_geometry_primitives = htail.get_geometry_primitives()
-    htail_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
-        htail_geometry_primitives,
-        num_control_points=(11, 2, 2), order=(4, 2, 2),
-        xyz_to_uvw_indices=(1, 0, 2)
-    )
-    htail_ffd_block = cd.SRBGFFDBlock(name='htail_ffd_block',
-                                      primitive=htail_ffd_bspline_volume,
-                                      embedded_entities=htail_geometry_primitives)
-    htail_ffd_block.add_scale_v(name='htail_linear_taper',
-                                order=2, num_dof=3, value=np.array([0., 0., 0.]),
-                                cost_factor=1.)
-    htail_ffd_block.add_rotation_u(name='htail_twist_distribution',
-                                   connection_name='h_tail_act', order=1,
-                                   num_dof=1, value=np.array([np.deg2rad(1.75)]))
-    ffd_set = cd.SRBGFFDSet(
-        name='ffd_set',
-        ffd_blocks={htail_ffd_block.name: htail_ffd_block}
-    )
-    sys_param.add_geometry_parameterization(ffd_set)
-    sys_param.setup()
-    # endregion
-
-    # region Meshes
-
-
-
-
-    # region Canard
-
-    # endregion
-
-    if visualize_flag:
-        spatial_rep.plot_meshes([wing_camber_surface, htail_camber_surface])
-
-    # region Pusher prop
-    # y11 = pp_disk.project(np.array([23.500 + 0.1, 0.00, 0.800]), direction=np.array([-1., 0., 0.]), plot=False)
-    # y12 = pp_disk.project(np.array([23.500 + 0.1, 0.00, 5.800]), direction=np.array([-1., 0., 0.]), plot=False)
-    # y21 = pp_disk.project(np.array([23.500 + 0.1, -2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
-    # y22 = pp_disk.project(np.array([23.500 + 0.1, 2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
-    # pp_disk_in_plane_y = am.subtract(y11, y12)
-    # pp_disk_in_plane_x = am.subtract(y21, y22)
-    # pp_disk_origin = pp_disk.project(np.array([32.625, 0., 7.79]), direction=np.array([-1., 0., 0.]))
-    # sys_rep.add_output(f"{pp_disk.parameters['name']}_in_plane_1", pp_disk_in_plane_y)
-    # sys_rep.add_output(f"{pp_disk.parameters['name']}_in_plane_2", pp_disk_in_plane_x)
-    # sys_rep.add_output(f"{pp_disk.parameters['name']}_origin", pp_disk_origin)
-    # endregion
-
     # endregion
 
     # region Sizing
@@ -497,8 +594,8 @@ def trim_at_cruise(wing_cl0=0.3475):
     cruise_condition.set_module_input(name='altitude', val=600 * ft2m)
     cruise_condition.set_module_input(name='mach_number', val=0.145972)  # 112 mph = 0.145972 Mach
     cruise_condition.set_module_input(name='range', val=80467.2)  # 50 miles = 80467.2 m
-    cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-10),
-                                      upper=np.deg2rad(10))
+    cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True,
+                                      lower=np.deg2rad(-10), upper=np.deg2rad(10))
     cruise_condition.set_module_input(name='flight_path_angle', val=0)
     cruise_condition.set_module_input(name='roll_angle', val=0)
     cruise_condition.set_module_input(name='yaw_angle', val=0)
@@ -520,7 +617,7 @@ def trim_at_cruise(wing_cl0=0.3475):
         twist_b_spline_rep=True
     )
     bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
-    bem_model.set_module_input('rpm', val=4000)
+    bem_model.set_module_input('rpm', val=4000., dv_flag=True, lower=1500., upper=5000., scaler=1e-3)
     bem_model.set_module_input('propeller_radius', val=3.97727 / 2 * ft2m)
     bem_model.set_module_input('thrust_vector', val=np.array([1., 0., 0.]))
     bem_model.set_module_input('thrust_origin', val=np.array([19.700, 0., 2.625]))
@@ -623,8 +720,6 @@ def trim_at_cruise(wing_cl0=0.3475):
 
     print('Total forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_forces'])
     print('Total moments:', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_moments'])
-
-    # system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.induced_velocity_model.FOM
 
     prob = CSDLProblem(problem_name='lpc', simulator=sim)
     optimizer = SLSQP(prob, maxiter=1000, ftol=1E-10)
@@ -1175,9 +1270,10 @@ def trim_at_hover():
 
 
 if __name__ == '__main__':
-    # vlm_as_ll(debug_geom_flag=False)
+    # vlm_as_ll()
     # cl0 = tuning_cl0()
-    vlm_evaluation_wing_only_aoa_sweep()
-    # trim_at_cruise()
+    # vlm_evaluation_wing_only_aoa_sweep()
+    # vlm_evaluation_wing_tail_aoa_sweep()
+    trim_at_cruise()
 
     # trim_at_hover()
