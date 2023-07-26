@@ -8,12 +8,16 @@ from modopt.csdl_library import CSDLProblem
 # Geometry
 from caddee.core.caddee_core.system_representation.component.component import LiftingSurface, Component
 import array_mapper as am
+import lsdo_geo as lg
 
 # Solvers
 from lsdo_rotor.core.BEM_caddee.BEM_caddee import BEM, BEMMesh
 from VAST.core.vast_solver import VASTFluidSover
 from VAST.core.fluid_problem import FluidProblem
 from caddee.utils.aircraft_models.pav.pav_weight import PavMassProperties
+from aframe.core.mass import Mass, MassMesh
+from VAST.core.generate_mappings_m3l import VASTNodalForces
+import aframe.core.beam_module as ebbeam
 
 from caddee import GEOMETRY_FILES_FOLDER
 
@@ -24,9 +28,10 @@ import pandas as pd
 
 ft2m = 0.3048
 
-def setup_geometry(include_wing_flag=True, num_wing_spanwise_vlm = 21, num_wing_chordwise_vlm = 5,
-                   include_tail_flag=True, num_htail_vlm = 21, num_chordwise_vlm = 5,
-                   include_tail_actuation=True,
+def setup_geometry(include_wing_flag=False, num_wing_spanwise_vlm = 21, num_wing_chordwise_vlm = 5,
+                   include_tail_flag=False, num_htail_vlm = 21, num_chordwise_vlm = 5,
+                   include_tail_actuation_flag=False,
+                   include_wing_beam_flag=False, num_wing_beam_nodes=21,
                    debug_geom_flag = False, visualize_flag = False):
     caddee = cd.CADDEE()
     caddee.system_model = system_model = cd.SystemModel()
@@ -80,11 +85,11 @@ def setup_geometry(include_wing_flag=True, num_wing_spanwise_vlm = 21, num_wing_
              np.linspace(point11, point21, int(num_wing_spanwise_vlm / 2 + 1))),
             axis=0)
 
-        leading_edge = wing.project(leading_edge_points, direction=np.array([-1., 0., 0.]), plot=debug_geom_flag)
-        trailing_edge = wing.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=debug_geom_flag)
+        wing_leading_edge = wing.project(leading_edge_points, direction=np.array([-1., 0., 0.]), plot=debug_geom_flag)
+        wing_trailing_edge = wing.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=debug_geom_flag)
 
         # Chord Surface
-        wing_chord_surface = am.linspace(leading_edge, trailing_edge, num_wing_chordwise_vlm)
+        wing_chord_surface = am.linspace(wing_leading_edge, wing_trailing_edge, num_wing_chordwise_vlm)
         if debug_geom_flag:
             spatial_rep.plot_meshes([wing_chord_surface])
 
@@ -156,17 +161,59 @@ def setup_geometry(include_wing_flag=True, num_wing_spanwise_vlm = 21, num_wing_
         # endregion
     # endregion
 
+    # region Wing Beam Mesh
+    if include_wing_flag and include_wing_beam_flag:
+
+        wing_beam = am.linear_combination(wing_leading_edge, wing_trailing_edge, 1,
+                                          start_weights=np.ones((num_wing_beam_nodes,)) * 0.75,
+                                          stop_weights=np.ones((num_wing_beam_nodes,)) * 0.25)
+        width = am.norm((wing_leading_edge - wing_trailing_edge) * 0.5)
+
+        if debug_geom_flag:
+            spatial_rep.plot_meshes([wing_beam])
+
+        offset = np.array([0, 0, 0.5])
+        top = wing.project(wing_beam.value + offset, direction=np.array([0., 0., -1.]), plot=debug_geom_flag)
+        bot = wing.project(wing_beam.value - offset, direction=np.array([0., 0., 1.]), plot=debug_geom_flag)
+        height = am.norm((top - bot) * 1)
+
+        sys_rep.add_output(name='wing_beam_mesh', quantity=wing_beam)
+        sys_rep.add_output(name='wing_beam_width', quantity=width)
+        sys_rep.add_output(name='wing_beam_height', quantity=height)
+
+        # pass the beam meshes to aframe:
+        beam_mesh = ebbeam.LinearBeamMesh(
+            meshes=dict(
+                wing_beam=wing_beam,
+                wing_beam_width=width,
+                wing_beam_height=height, ))
+
+        # pass the beam meshes to the aframe mass model:
+        beam_mass_mesh = MassMesh(
+            meshes=dict(
+                wing_beam=wing_beam,
+                wing_beam_width=width,
+                wing_beam_height=height, ))
+    # endregion
+
     if visualize_flag:
-        if include_wing_flag and not include_tail_flag:
+        if include_wing_flag and not include_tail_flag and \
+                not include_tail_actuation_flag and not include_wing_beam_flag:  # Wing-Only VLM Analysis
             spatial_rep.plot_meshes([wing_camber_surface])
         elif include_tail_flag and not include_wing_flag:
             raise NotImplementedError
-        elif include_wing_flag and include_tail_flag:
+        elif include_wing_flag and include_tail_flag and include_tail_actuation_flag \
+                 and not include_wing_beam_flag:  # Trimming
             spatial_rep.plot_meshes([wing_camber_surface, htail_camber_surface])
+        elif include_wing_flag and not include_tail_flag and not include_tail_actuation_flag \
+                and include_wing_beam_flag:  # Wing-only structural analysis
+            spatial_rep.plot_meshes([wing_camber_surface, wing_beam])
+        else:
+            raise NotImplementedError
     # endregion
 
     # region Actuations
-    if include_tail_flag and include_tail_actuation:
+    if include_tail_flag and include_tail_actuation_flag:
         # Tail FFD
         htail_geometry_primitives = htail.get_geometry_primitives()
         htail_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
@@ -191,15 +238,22 @@ def setup_geometry(include_wing_flag=True, num_wing_spanwise_vlm = 21, num_wing_
     sys_param.setup()
     # endregion
 
-    if include_wing_flag and not include_tail_flag:
+    if include_wing_flag and not include_tail_flag and \
+            not include_tail_actuation_flag and not include_wing_beam_flag:  # Wing-Only VLM Analysis
         return caddee, system_model, sys_rep, sys_param, \
             wing_vlm_mesh_name, wing_camber_surface
     elif include_tail_flag and not include_wing_flag:
         raise NotImplementedError
-    elif include_wing_flag and include_tail_flag:
+    elif include_wing_flag and include_tail_flag and include_tail_actuation_flag \
+            and not include_wing_beam_flag:  # Trimming
         return caddee, system_model, sys_rep, sys_param, \
             wing_vlm_mesh_name, wing_camber_surface, \
             htail_vlm_mesh_name, htail_camber_surface
+    elif include_wing_flag and not include_tail_flag and not include_tail_actuation_flag \
+            and include_wing_beam_flag:  # Wing-only structural analysis
+        return caddee, system_model, sys_rep, sys_param, \
+            wing_vlm_mesh_name, wing_camber_surface, wing_oml_mesh, \
+            wing, beam_mesh, beam_mass_mesh
 
 
 def vlm_as_ll(debug_geom_flag = False, visualize_flag = False):
@@ -562,6 +616,7 @@ def trim_at_cruise(wing_cl0=0.3475):
         htail_vlm_mesh_name, htail_camber_surface = setup_geometry(
         include_wing_flag=True,
         include_tail_flag=True,
+        include_tail_actuation_flag=True
     )
     # endregion
 
@@ -1268,12 +1323,143 @@ def trim_at_hover():
     return
 
 
+def structural_wingbox_beam_evaluation(wing_cl0=0.3475, num_wing_beam_nodes=21,
+                                       debug_geom_flag = False, visualize_flag = False):
+    # region Geometry and meshes
+    caddee, system_model, sys_rep, sys_param, \
+        wing_vlm_mesh_name, wing_camber_surface, \
+        wing_oml_mesh, wing_component, \
+        beam_mesh, beam_mass_mesh = setup_geometry(
+        include_wing_flag=True,
+        include_tail_flag=False,
+        include_wing_beam_flag=True,
+        visualize_flag=visualize_flag,
+        debug_geom_flag=debug_geom_flag,
+        num_wing_spanwise_vlm=21,
+        num_wing_chordwise_vlm=5,
+        num_wing_beam_nodes=21
+    )
+    # endregion
+
+    # region Mission
+
+    design_scenario = cd.DesignScenario(name='aircraft_trim')
+
+    # region Cruise condition
+    cruise_model = m3l.Model()
+    cruise_condition = cd.CruiseCondition(name="cruise_1")
+    cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
+    cruise_condition.set_module_input(name='altitude', val=600 * ft2m)
+    cruise_condition.set_module_input(name='mach_number', val=0.145972)  # 112 mph = 0.145972 Mach
+    cruise_condition.set_module_input(name='range', val=80467.2)  # 50 miles = 80467.2 m
+    cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(6.))
+    cruise_condition.set_module_input(name='flight_path_angle', val=0)
+    cruise_condition.set_module_input(name='roll_angle', val=0)
+    cruise_condition.set_module_input(name='yaw_angle', val=0)
+    cruise_condition.set_module_input(name='wind_angle', val=0)
+    cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 600 * ft2m]))
+
+    cruise_ac_states = cruise_condition.evaluate_ac_states()
+    cruise_model.register_output(cruise_ac_states)
+
+    # region VLM Solver
+    vlm_model = VASTFluidSover(
+        surface_names=[
+            wing_vlm_mesh_name,
+        ],
+        surface_shapes=[
+            (1,) + wing_camber_surface.evaluate().shape[1:],
+        ],
+        fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+        mesh_unit='ft',
+        cl0=[wing_cl0, ]
+    )
+    vlm_panel_forces, vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=cruise_ac_states)
+    cruise_model.register_output(vlm_forces)
+    cruise_model.register_output(vlm_moments)
+
+    vlm_force_mapping_model = VASTNodalForces(
+        surface_names=[
+            wing_vlm_mesh_name,
+        ],
+        surface_shapes=[
+            (1,) + wing_camber_surface.evaluate().shape[1:],
+        ],
+        initial_meshes=[
+            wing_camber_surface,
+        ]
+    )
+
+    oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces,
+                                                  nodal_force_meshes=[wing_oml_mesh, ])
+    wing_forces = oml_forces[0]
+
+    # endregion
+
+    # region Beam Solver
+
+    # create the aframe dictionaries:
+    joints, bounds, beams = {}, {}, {}
+    beams['wing_beam'] = {'E': 70E9, 'G': 70E9 / (2 * (1 + 0.33)), 'rho': 2700, 'cs': 'box',
+                          'nodes': list(range(num_wing_beam_nodes))}
+    bounds['wing_root'] = {'beam': 'wing_beam', 'node': 5, 'fdim': [1, 1, 1, 1, 1, 1]}
+
+    # create the beam model:
+    # beam_mass = Mass(component=wing_component, mesh=beam_mass_mesh, beams=beams,
+    #                  mesh_units='ft')
+    # mass_model_wing_mass = beam_mass.evaluate()
+    # cruise_model.register_output(mass_model_wing_mass)
+
+    dummy_b_spline_space = lg.BSplineSpace(name='dummy_b_spline_space', order=(3, 1), control_points_shape=((35, 1)))
+    dummy_function_space = lg.BSplineSetSpace(name='dummy_space', spaces={'dummy_b_spline_space': dummy_b_spline_space})
+
+    cruise_wing_displacement_coefficients = m3l.Variable(name='cruise_wing_displacement_coefficients', shape=(35, 3))
+    cruise_wing_displacement = m3l.Function(name='cruise_wing_displacement', space=dummy_function_space,
+                                            coefficients=cruise_wing_displacement_coefficients)
+
+    beam_force_map_model = ebbeam.EBBeamForces(component=wing_component, beam_mesh=beam_mesh, beams=beams)
+    cruise_structural_wing_mesh_forces = beam_force_map_model.evaluate(nodal_forces=wing_forces,
+                                                                       nodal_forces_mesh=wing_oml_mesh)
+
+    beam_displacements_model = ebbeam.EBBeam(component=wing_component, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints)
+    beam_displacements_model.set_module_input('wing_beamt_cap_in', val=np.array(num_wing_beam_nodes - 1) * 0.01,
+                                              dv_flag=True, lower=0.001, upper=0.04,
+                                              scaler=1E3)
+    beam_displacements_model.set_module_input('wing_beamt_web_in', val=np.array(num_wing_beam_nodes - 1) * 0.01,
+                                              dv_flag=True, lower=0.001, upper=0.04,
+                                              scaler=1E3)
+
+    cruise_structural_wing_mesh_displacements, cruise_structural_wing_mesh_rotations, \
+        wing_mass, wing_cg, wing_inertia_tensor = beam_displacements_model.evaluate(
+        forces=cruise_structural_wing_mesh_forces)
+    cruise_model.register_output(cruise_structural_wing_mesh_displacements)
+
+    # endregion
+
+    # Add cruise m3l model to cruise condition
+    cruise_condition.add_m3l_model('cruise_model', cruise_model)
+
+    # Add design condition to design scenario
+    design_scenario.add_design_condition(cruise_condition)
+    # endregion
+
+    system_model.add_design_scenario(design_scenario=design_scenario)
+    # endregion
+
+    caddee_csdl_model = caddee.assemble_csdl()
+
+    # Create and run simulator
+    sim = Simulator(caddee_csdl_model, analytics=True)
+    sim.run()
+    return
+
 
 if __name__ == '__main__':
     # vlm_as_ll()
     # cl0 = tuning_cl0()
     # vlm_evaluation_wing_only_aoa_sweep()
     # vlm_evaluation_wing_tail_aoa_sweep()
-    trim_at_cruise()
+    # trim_at_cruise()
+    structural_wingbox_beam_evaluation()
 
     # trim_at_hover()
