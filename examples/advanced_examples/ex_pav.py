@@ -1504,7 +1504,7 @@ def trim_at_3g(pusher_prop_twist_cp=np.array([1.10595917, 0.71818285, 0.47990602
     cruise_condition.set_module_input(name='mach_number', val=0.145972)  # 112 mph = 0.145972 Mach
     cruise_condition.set_module_input(name='range', val=80467.2)  # 50 miles = 80467.2 m
     cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True,
-                                      lower=np.deg2rad(-10), upper=np.deg2rad(10))
+                                      lower=np.deg2rad(-10), upper=np.deg2rad(15))
     cruise_condition.set_module_input(name='flight_path_angle', val=0)
     cruise_condition.set_module_input(name='roll_angle', val=0)
     cruise_condition.set_module_input(name='yaw_angle', val=0)
@@ -1532,13 +1532,13 @@ def trim_at_3g(pusher_prop_twist_cp=np.array([1.10595917, 0.71818285, 0.47990602
     bem_model.set_module_input('thrust_origin', val=np.array([19.700, 0., 2.625]))
     bem_model.set_module_input('chord_cp', val=pusher_prop_chord_cp)
     bem_model.set_module_input('twist_cp', val=pusher_prop_twist_cp)
-    bem_forces, bem_moments, _, _, _ = bem_model.evaluate(ac_states=cruise_ac_states)
+    bem_forces, bem_moments, _, _, _, _ = bem_model.evaluate(ac_states=cruise_ac_states)
     cruise_model.register_output(bem_forces)
     cruise_model.register_output(bem_moments)
     # endregion
 
     # region Inertial loads
-    inertial_loads_model = cd.InertialLoadsM3L(load_factor=1.)
+    inertial_loads_model = cd.InertialLoadsM3L(load_factor=3.)
     inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass,
                                                                       ac_states=cruise_ac_states)
     cruise_model.register_output(inertial_forces)
@@ -1600,18 +1600,10 @@ def trim_at_3g(pusher_prop_twist_cp=np.array([1.10595917, 0.71818285, 0.47990602
     caddee_csdl_model = caddee.assemble_csdl()
 
     caddee_csdl_model.create_input(name='h_tail_act', val=np.deg2rad(0.))
-    caddee_csdl_model.add_design_variable(dv_name='h_tail_act', lower=np.deg2rad(-10), upper=np.deg2rad(10), scaler=1.)
+    caddee_csdl_model.add_design_variable(dv_name='h_tail_act', lower=np.deg2rad(-30), upper=np.deg2rad(30), scaler=1.)
 
     # region Optimization Setup
     caddee_csdl_model.add_objective('system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual')
-    caddee_csdl_model.add_constraint(
-        name='system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.induced_velocity_model.eta',
-        equals=0.8)
-    caddee_csdl_model.add_constraint(
-        name='system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.L_over_D',
-        equals=8.,
-        scaler=1e-1
-    )
     # endregion
 
     # Create and run simulator
@@ -1651,7 +1643,8 @@ if __name__ == '__main__':
     # cl0 = tuning_cl0()
     # vlm_evaluation_wing_only_aoa_sweep()
     # vlm_evaluation_wing_tail_aoa_sweep()
-    pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
+    # pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
+    trim_at_3g()
     # structural_wingbox_beam_evaluation()
 
     # trim_at_hover()
