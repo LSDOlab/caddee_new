@@ -170,7 +170,7 @@ pusher_bem_mesh = BEMMesh(
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=2000, scaler=1e-3)
-bem_forces, bem_moments,_ ,_ ,_ = bem_model.evaluate(ac_states=ac_states)
+bem_forces, bem_moments,_ ,_ ,_, _ = bem_model.evaluate(ac_states=ac_states)
 
 # create the aframe dictionaries:
 # joints, bounds, beams = {}, {}, {}

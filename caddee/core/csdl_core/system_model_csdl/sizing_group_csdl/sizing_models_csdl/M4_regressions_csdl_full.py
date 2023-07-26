@@ -22,7 +22,8 @@ class M4RegressionsCSDL(ModuleCSDL):
         # self.print_var(wing_AR)
         
         # Declaring input variables
-        fuselage_length = self.register_module_input('fuselage_length', shape=shape, units='m' ,val=30 * ft_to_m) * ft_to_m
+        # fuselage_length = self.register_module_input('fuselage_length', shape=shape, units='m' ,val=30 * ft_to_m) * ft_to_m
+        fuselage_length = self.register_module_input('fuselage_length', shape=shape, units='m' ,val=30 * ft_to_m) 
         # self.print_var(fuselage_length)
         # fuselage_length = self.create_input('fuselage_length', shape=shape, units='m' ,val=30 * ft_to_m) 
         battery_mass = self.register_module_input('battery_mass', shape=shape, units='kg')

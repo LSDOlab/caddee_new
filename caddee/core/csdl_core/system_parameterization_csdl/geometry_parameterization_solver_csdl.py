@@ -318,7 +318,7 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
                 dc_dx[constraint_counter:constraint_counter+quantity_num_constraints,:] = \
                     nonlinear_derivative.dot(ffd_free_dof_to_mapped_array)
                 
-                nonlinear_second_derivative = quantity.evaluate_second_derivative(nonlinear_operation_input).reshape(
+                nonlinear_second_derivative = quantity.evaluate_second_derivative(nonlinear_operation_input, evaluate_input=False).reshape(
                     (quantity_num_constraints, mapped_array_size, mapped_array_size))
 
                 first_term = np.tensordot(nonlinear_second_derivative, ffd_free_dof_to_mapped_array, axes=([2, 0]))

@@ -1221,6 +1221,7 @@ off_set_long_te_tip = 0.285
 # region wing mesh
 plot_wing_mesh = False
 num_spanwise_vlm = 25
+num_spanwise_ml = num_spanwise_vlm - 1
 num_chordwise_vlm = 2
 
 wing_surface_offset = np.zeros((num_spanwise_vlm, 3))
@@ -1228,6 +1229,18 @@ wing_surface_offset[2:-2, 0] = 5.5
 wing_surface_offset[[0, -1], 0] = 1.1
 wing_surface_offset[[1, -2], 0] = 3
 wing_surface_offset[:, 2] = -1
+
+wing_surface_offset_ml = np.zeros((num_spanwise_ml, 3))
+wing_surface_offset_ml[2:-2, 0] = 5.5
+wing_surface_offset_ml[[0, -1], 0] = 2.2
+wing_surface_offset_ml[[1, -2], 0] = 3.2
+wing_surface_offset_ml[:, 2] = -1
+
+wing_surface_offset_ml_2 = np.zeros((num_spanwise_vlm, 3))
+wing_surface_offset_ml_2[2:-2, 0] = 5.5
+wing_surface_offset_ml_2[[0, -1], 0] = 1.1
+wing_surface_offset_ml_2[[1, -2], 0] = 3
+wing_surface_offset_ml_2[:, 2] = -1
 
 wing_trailing_edge = wing.project(np.linspace(np.array([15., -26., 7.5]), np.array([15., 26., 7.5]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), plot=plot_wing_mesh)  
 wing_leading_edge = wing.project(wing_trailing_edge.evaluate() - wing_surface_offset, direction=np.array([0., 0., -1.]), grid_search_n=50, plot=plot_wing_mesh)
@@ -1238,25 +1251,60 @@ wing_lower_surface_wireframe = wing.project(wing_chord_surface.value - np.array(
 wing_camber_surface = am.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1)
 wing_oml_mesh = am.vstack((wing_upper_surface_wireframe, wing_lower_surface_wireframe))
 
-
 # OML mesh for ML pressures wing
+wing_trailing_edge_ml_2 = wing.project(np.linspace(np.array([15., -26., 7.5]), np.array([15., 26., 7.5]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), plot=False)  
+wing_leading_edge_ml_2 = wing.project(wing_trailing_edge_ml_2.evaluate() - wing_surface_offset_ml_2, direction=np.array([0., 0., -1.]), grid_search_n=50, plot=False)
+wing_chord_surface_ml_2 = am.linspace(wing_leading_edge_ml_2, wing_trailing_edge_ml_2, num_chordwise_vlm)
+
+print(wing_trailing_edge.value)
+wing_trailing_edge_array = wing_trailing_edge.value
+wing_trailing_edge_array_ml = np.zeros((num_spanwise_ml, 3))
+for i in range(num_spanwise_vlm-1):
+    x = wing_trailing_edge_array[i, 0] + (wing_trailing_edge_array[i+1, 0] - wing_trailing_edge_array[i, 0])/2
+    y = wing_trailing_edge_array[i, 1] + (wing_trailing_edge_array[i+1, 1] - wing_trailing_edge_array[i, 1])/2
+    z = wing_trailing_edge_array[i, 2] + (wing_trailing_edge_array[i+1, 2] - wing_trailing_edge_array[i, 2])/2
+    wing_trailing_edge_array_ml[i, 0] = x
+    wing_trailing_edge_array_ml[i, 1] = y
+    wing_trailing_edge_array_ml[i, 2] = z
+
+print(wing_trailing_edge_array_ml)
+
+wing_trailing_edge_ml = wing.project(wing_trailing_edge_array_ml, direction=np.array([0., 0., -1.]), plot=False)
+wing_leading_edge_ml = wing.project(wing_trailing_edge_ml.evaluate() - wing_surface_offset_ml, direction=np.array([0., 0., -1.]), grid_search_n=50, plot=False)
+wing_chord_surface_ml = am.linspace(wing_leading_edge_ml, wing_trailing_edge_ml, num_chordwise_vlm)
+
+
 num_ml_points = 100
-chord_surface_ml = am.linspace(wing_leading_edge, wing_trailing_edge, num_ml_points)
+chord_surface_ml = am.linspace(wing_leading_edge_ml, wing_trailing_edge_ml, num_ml_points)
 i_vec = np.arange(0, len(chord_surface_ml.value))
 x_range = np.linspace(0, 1, num_ml_points)
 
-x_interp_x = wing_chord_surface.value[1,:, 0].reshape(num_spanwise_vlm, 1) - ((wing_chord_surface.value[1, :, 0] - wing_chord_surface.value[0, :, 0]).reshape(num_spanwise_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
-x_interp_y = wing_chord_surface.value[1,:, 1].reshape(num_spanwise_vlm, 1) - ((wing_chord_surface.value[1, :, 1] - wing_chord_surface.value[0, :, 1]).reshape(num_spanwise_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
-x_interp_z = wing_chord_surface.value[1,:, 2].reshape(num_spanwise_vlm, 1) - ((wing_chord_surface.value[1, :, 2] - wing_chord_surface.value[0, :, 2]).reshape(num_spanwise_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
+x_interp_x = wing_chord_surface_ml.value[1,:, 0].reshape(num_spanwise_ml, 1) - ((wing_chord_surface_ml.value[1, :, 0] - wing_chord_surface_ml.value[0, :, 0]).reshape(num_spanwise_ml, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
+x_interp_y = wing_chord_surface_ml.value[1,:, 1].reshape(num_spanwise_ml, 1) - ((wing_chord_surface_ml.value[1, :, 1] - wing_chord_surface_ml.value[0, :, 1]).reshape(num_spanwise_ml, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
+x_interp_z = wing_chord_surface_ml.value[1,:, 2].reshape(num_spanwise_ml, 1) - ((wing_chord_surface_ml.value[1, :, 2] - wing_chord_surface_ml.value[0, :, 2]).reshape(num_spanwise_ml, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
 
-new_chord_surface = np.zeros((num_ml_points, num_spanwise_vlm, 3))
+x_interp_x_2 = wing_chord_surface_ml_2.value[1,:, 0].reshape(num_spanwise_vlm, 1) - ((wing_chord_surface_ml_2.value[1, :, 0] - wing_chord_surface_ml_2.value[0, :, 0]).reshape(num_spanwise_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
+x_interp_y_2 = wing_chord_surface_ml_2.value[1,:, 1].reshape(num_spanwise_vlm, 1) - ((wing_chord_surface_ml_2.value[1, :, 1] - wing_chord_surface_ml_2.value[0, :, 1]).reshape(num_spanwise_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
+x_interp_z_2 = wing_chord_surface_ml_2.value[1,:, 2].reshape(num_spanwise_vlm, 1) - ((wing_chord_surface_ml_2.value[1, :, 2] - wing_chord_surface_ml_2.value[0, :, 2]).reshape(num_spanwise_vlm, 1) * np.cos(np.pi/(2 * len(x_range)) * i_vec).reshape(1,100))
+
+new_chord_surface = np.zeros((num_ml_points, num_spanwise_ml, 3))
 new_chord_surface[:, :, 0] = x_interp_x.T
 new_chord_surface[:, :, 1] = x_interp_y.T
 new_chord_surface[:, :, 2] = x_interp_z.T
 
+new_chord_surface_2 = np.zeros((num_ml_points, num_spanwise_vlm, 3))
+new_chord_surface_2[:, :, 0] = x_interp_x_2.T
+new_chord_surface_2[:, :, 1] = x_interp_y_2.T
+new_chord_surface_2[:, :, 2] = x_interp_z_2.T
+
 wing_upper_surface_ml = wing.project(new_chord_surface + np.array([0., 0., 0.5]), direction=np.array([0., 0., -1.]), grid_search_n=75, plot=False, max_iterations=200)
 wing_lower_surface_ml = wing.project(new_chord_surface - np.array([0., 0., 0.5]), direction=np.array([0., 0., 1.]), grid_search_n=100, plot=False, max_iterations=200)
 
+wing_upper_surface_ml_2 = wing.project(new_chord_surface_2 + np.array([0., 0., 0.5]), direction=np.array([0., 0., -1.]), grid_search_n=75, plot=False, max_iterations=200)
+wing_lower_surface_ml_2 = wing.project(new_chord_surface_2 - np.array([0., 0., 0.5]), direction=np.array([0., 0., 1.]), grid_search_n=100, plot=False, max_iterations=200)
+
+print(wing_lower_surface_ml_2.value.shape)
+# exit()
 wing_oml_mesh_name_ml = 'wing_oml_mesh_ML'
 wing_oml_mesh_ml = am.vstack((wing_upper_surface_ml, wing_lower_surface_ml))
 # spatial_rep.plot_meshes([wing_camber_surface])
@@ -1786,6 +1834,7 @@ configuration_names = [
     "hover_1_configuration", 
     "cruise_configuration", 
     "climb_configuration",
+    "descent_configuration",
     "quasi_steady_transition_1",    
     "quasi_steady_transition_2",    
     "quasi_steady_transition_3",    
@@ -1797,6 +1846,7 @@ configuration_names = [
     "quasi_steady_transition_9",    
     "quasi_steady_transition_10",    
     "hover_configuration_oei_flo", 
+    "hover_configuration_oei_fli",
     "quasi_steady_transition_1_oei_flo",    
     "quasi_steady_transition_2_oei_flo",
     "quasi_steady_transition_3_oei_flo",
@@ -1845,6 +1895,21 @@ climb_configuration.actuate(transformation=horizontal_stabilizer_actuator_solver
 wing_actuator_solver = PrescribedRotation(component=wing, axis_origin=wing_quarter_chord_port, axis_vector=wing_actuation_axis)
 wing_actuator_solver.set_rotation(name='climb_wing_actuation', value=np.deg2rad(4) , units='radians')
 climb_configuration.actuate(transformation=wing_actuator_solver)
+# endregion
+
+# region Descent 
+descent_configuration = system_configurations['descent_configuration']
+descent_configuration.set_num_nodes(num_nodes=1)
+descent_configuration.add_output(f"{htail_vlm_mesh_name}_descent", htail_camber_surface)
+descent_configuration.add_output(f'{wing_vlm_mesh_name}_descent', wing_camber_surface)
+
+horizontal_stabilizer_actuator_solver = PrescribedRotation(component=htail, axis_origin=horizontal_stabilizer_quarter_chord_port, axis_vector=horizontal_stabilizer_actuation_axis)
+horizontal_stabilizer_actuator_solver.set_rotation(name='descent_tail_actuation', value=0, units='radians')
+descent_configuration.actuate(transformation=horizontal_stabilizer_actuator_solver)
+
+wing_actuator_solver = PrescribedRotation(component=wing, axis_origin=wing_quarter_chord_port, axis_vector=wing_actuation_axis)
+wing_actuator_solver.set_rotation(name='descent_wing_actuation', value=np.deg2rad(4) , units='radians')
+descent_configuration.actuate(transformation=wing_actuator_solver)
 # endregion
 
 # region +3g 
@@ -2083,6 +2148,104 @@ hover_configuration_oei_flo.actuate(transformation=fro_disk_actuator_solver_1)
 fro_disk_actuator_solver_2 = PrescribedRotation(component=fro_disk, axis_origin=fro_origin, axis_vector=fro_in_plane_x)
 fro_disk_actuator_solver_2.set_rotation(name='hover_1_oei_flo_fro_disk_actuation_2', value=0, units='radians')
 hover_configuration_oei_flo.actuate(transformation=fro_disk_actuator_solver_2)
+# endregion 
+
+# region hover 1 oei fli
+hover_configuration_oei_fli = system_configurations['hover_configuration_oei_fli']
+hover_configuration_oei_fli.set_num_nodes(num_nodes=1)
+
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{rlo_disk.parameters['name']}_in_plane_1", rlo_in_plane_y)
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{rlo_disk.parameters['name']}_in_plane_2", rlo_in_plane_x)
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{rlo_disk.parameters['name']}_origin", rlo_origin)
+
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{rli_disk.parameters['name']}_in_plane_1", rli_in_plane_y)
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{rli_disk.parameters['name']}_in_plane_2", rli_in_plane_x)
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{rli_disk.parameters['name']}_origin", rli_origin)
+
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{rri_disk.parameters['name']}_in_plane_1", rri_in_plane_y)
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{rri_disk.parameters['name']}_in_plane_2", rri_in_plane_x)
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{rri_disk.parameters['name']}_origin", rri_origin)
+
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{rro_disk.parameters['name']}_in_plane_1", rro_in_plane_y)
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{rro_disk.parameters['name']}_in_plane_2", rro_in_plane_x)
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{rro_disk.parameters['name']}_origin", rro_origin)
+
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{flo_disk.parameters['name']}_in_plane_1", flo_in_plane_y)
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{flo_disk.parameters['name']}_in_plane_2", flo_in_plane_x)
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{flo_disk.parameters['name']}_origin", flo_origin)
+
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{fri_disk.parameters['name']}_in_plane_1", fri_in_plane_y)
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{fri_disk.parameters['name']}_in_plane_2", fri_in_plane_x)
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{fri_disk.parameters['name']}_origin", fri_origin)
+
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{fro_disk.parameters['name']}_in_plane_1", fro_in_plane_y)
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{fro_disk.parameters['name']}_in_plane_2", fro_in_plane_x)
+hover_configuration_oei_fli.add_output(f"hover_1_oei_fli_{fro_disk.parameters['name']}_origin", fro_origin)
+
+
+# rlo
+rlo_disk_actuator_solver_1 = PrescribedRotation(component=rlo_disk, axis_origin=rlo_origin, axis_vector=rlo_in_plane_y)
+rlo_disk_actuator_solver_1.set_rotation(name='hover_1_oei_fli_rlo_disk_actuation_1', value=0, units='radians')
+hover_configuration_oei_fli.actuate(transformation=rlo_disk_actuator_solver_1)
+
+rlo_disk_actuator_solver_2 = PrescribedRotation(component=rlo_disk, axis_origin=rlo_origin, axis_vector=rlo_in_plane_x)
+rlo_disk_actuator_solver_2.set_rotation(name='hover_1_oei_fli_rlo_disk_actuation_2', value=0, units='radians')
+hover_configuration_oei_fli.actuate(transformation=rlo_disk_actuator_solver_2)
+
+# rli
+rli_disk_actuator_solver_1 = PrescribedRotation(component=rli_disk, axis_origin=rli_origin, axis_vector=rli_in_plane_y)
+rli_disk_actuator_solver_1.set_rotation(name='hover_1_oei_fli_rli_disk_actuation_1', value=0, units='radians')
+hover_configuration_oei_fli.actuate(transformation=rli_disk_actuator_solver_1)
+
+rli_disk_actuator_solver_2 = PrescribedRotation(component=rli_disk, axis_origin=rli_origin, axis_vector=rli_in_plane_x)
+rli_disk_actuator_solver_2.set_rotation(name='hover_1_oei_fli_rli_disk_actuation_2', value=0, units='radians')
+hover_configuration_oei_fli.actuate(transformation=rli_disk_actuator_solver_2)
+
+# rri
+rri_disk_actuator_solver_1 = PrescribedRotation(component=rri_disk, axis_origin=rri_origin, axis_vector=rri_in_plane_y)
+rri_disk_actuator_solver_1.set_rotation(name='hover_1_oei_fli_rri_disk_actuation_1', value=0, units='radians')
+hover_configuration_oei_fli.actuate(transformation=rri_disk_actuator_solver_1)
+
+rri_disk_actuator_solver_2 = PrescribedRotation(component=rri_disk, axis_origin=rri_origin, axis_vector=rri_in_plane_x)
+rri_disk_actuator_solver_2.set_rotation(name='hover_1_oei_fli_rri_disk_actuation_2', value=0, units='radians')
+hover_configuration_oei_fli.actuate(transformation=rri_disk_actuator_solver_2)
+
+# rro
+rro_disk_actuator_solver_1 = PrescribedRotation(component=rro_disk, axis_origin=rro_origin, axis_vector=rro_in_plane_y)
+rro_disk_actuator_solver_1.set_rotation(name='hover_1_oei_fli_rro_disk_actuation_1', value=0, units='radians')
+hover_configuration_oei_fli.actuate(transformation=rro_disk_actuator_solver_1)
+
+rro_disk_actuator_solver_2 = PrescribedRotation(component=rro_disk, axis_origin=rro_origin, axis_vector=rro_in_plane_x)
+rro_disk_actuator_solver_2.set_rotation(name='hover_1_oei_fli_rro_disk_actuation_2', value=0, units='radians')
+hover_configuration_oei_fli.actuate(transformation=rro_disk_actuator_solver_2)
+
+
+# flo
+flo_disk_actuator_solver_1 = PrescribedRotation(component=flo_disk, axis_origin=flo_origin, axis_vector=flo_in_plane_y)
+flo_disk_actuator_solver_1.set_rotation(name='hover_1_oei_fli_flo_disk_actuation_1', value=0, units='radians')
+hover_configuration_oei_fli.actuate(transformation=flo_disk_actuator_solver_1)
+
+flo_disk_actuator_solver_2 = PrescribedRotation(component=flo_disk, axis_origin=flo_origin, axis_vector=flo_in_plane_x)
+flo_disk_actuator_solver_2.set_rotation(name='hover_1_oei_fli_flo_disk_actuation_2', value=0, units='radians')
+hover_configuration_oei_fli.actuate(transformation=flo_disk_actuator_solver_2)
+
+# fri
+fri_disk_actuator_solver_1 = PrescribedRotation(component=fri_disk, axis_origin=fri_origin, axis_vector=fri_in_plane_y)
+fri_disk_actuator_solver_1.set_rotation(name='hover_1_oei_fli_fri_disk_actuation_1', value=0, units='radians')
+hover_configuration_oei_fli.actuate(transformation=fri_disk_actuator_solver_1)
+
+fri_disk_actuator_solver_2 = PrescribedRotation(component=fri_disk, axis_origin=fri_origin, axis_vector=fri_in_plane_x)
+fri_disk_actuator_solver_2.set_rotation(name='hover_1_oei_fli_fri_disk_actuation_2', value=0, units='radians')
+hover_configuration_oei_fli.actuate(transformation=fri_disk_actuator_solver_2)
+
+# fro
+fro_disk_actuator_solver_1 = PrescribedRotation(component=fro_disk, axis_origin=fro_origin, axis_vector=fro_in_plane_y)
+fro_disk_actuator_solver_1.set_rotation(name='hover_1_oei_fli_fro_disk_actuation_1', value=0, units='radians')
+hover_configuration_oei_fli.actuate(transformation=fro_disk_actuator_solver_1)
+
+fro_disk_actuator_solver_2 = PrescribedRotation(component=fro_disk, axis_origin=fro_origin, axis_vector=fro_in_plane_x)
+fro_disk_actuator_solver_2.set_rotation(name='hover_1_oei_fli_fro_disk_actuation_2', value=0, units='radians')
+hover_configuration_oei_fli.actuate(transformation=fro_disk_actuator_solver_2)
 # endregion 
 
 # region quasi_steady_transition_1
@@ -2576,6 +2739,110 @@ qst_5_configuration.actuate(transformation=horizontal_stabilizer_actuator_solver
 wing_actuator_solver = PrescribedRotation(component=wing, axis_origin=wing_quarter_chord_port, axis_vector=wing_actuation_axis)
 wing_actuator_solver.set_rotation(name='qst_5_wing_actuation', value=np.deg2rad(4) , units='radians')
 qst_5_configuration.actuate(transformation=wing_actuator_solver)
+
+qst_5_configuration.add_output(f"qst_5_{rlo_disk.parameters['name']}_in_plane_1", rlo_in_plane_y)
+qst_5_configuration.add_output(f"qst_5_{rlo_disk.parameters['name']}_in_plane_2", rlo_in_plane_x)
+qst_5_configuration.add_output(f"qst_5_{rlo_disk.parameters['name']}_origin", rlo_origin)
+
+qst_5_configuration.add_output(f"qst_5_{rli_disk.parameters['name']}_in_plane_1", rli_in_plane_y)
+qst_5_configuration.add_output(f"qst_5_{rli_disk.parameters['name']}_in_plane_2", rli_in_plane_x)
+qst_5_configuration.add_output(f"qst_5_{rli_disk.parameters['name']}_origin", rli_origin)
+
+qst_5_configuration.add_output(f"qst_5_{rri_disk.parameters['name']}_in_plane_1", rri_in_plane_y)
+qst_5_configuration.add_output(f"qst_5_{rri_disk.parameters['name']}_in_plane_2", rri_in_plane_x)
+qst_5_configuration.add_output(f"qst_5_{rri_disk.parameters['name']}_origin", rri_origin)
+
+qst_5_configuration.add_output(f"qst_5_{rro_disk.parameters['name']}_in_plane_1", rro_in_plane_y)
+qst_5_configuration.add_output(f"qst_5_{rro_disk.parameters['name']}_in_plane_2", rro_in_plane_x)
+qst_5_configuration.add_output(f"qst_5_{rro_disk.parameters['name']}_origin", rro_origin)
+
+qst_5_configuration.add_output(f"qst_5_{flo_disk.parameters['name']}_in_plane_1", flo_in_plane_y)
+qst_5_configuration.add_output(f"qst_5_{flo_disk.parameters['name']}_in_plane_2", flo_in_plane_x)
+qst_5_configuration.add_output(f"qst_5_{flo_disk.parameters['name']}_origin", flo_origin)
+
+qst_5_configuration.add_output(f"qst_5_{fli_disk.parameters['name']}_in_plane_1", fli_in_plane_y)
+qst_5_configuration.add_output(f"qst_5_{fli_disk.parameters['name']}_in_plane_2", fli_in_plane_x)
+qst_5_configuration.add_output(f"qst_5_{fli_disk.parameters['name']}_origin", fli_origin)
+
+qst_5_configuration.add_output(f"qst_5_{fri_disk.parameters['name']}_in_plane_1", fri_in_plane_y)
+qst_5_configuration.add_output(f"qst_5_{fri_disk.parameters['name']}_in_plane_2", fri_in_plane_x)
+qst_5_configuration.add_output(f"qst_5_{fri_disk.parameters['name']}_origin", fri_origin)
+
+qst_5_configuration.add_output(f"qst_5_{fro_disk.parameters['name']}_in_plane_1", fro_in_plane_y)
+qst_5_configuration.add_output(f"qst_5_{fro_disk.parameters['name']}_in_plane_2", fro_in_plane_x)
+qst_5_configuration.add_output(f"qst_5_{fro_disk.parameters['name']}_origin", fro_origin)
+
+# rlo
+rlo_disk_actuator_solver_1 = PrescribedRotation(component=rlo_disk, axis_origin=rlo_origin, axis_vector=rlo_in_plane_y)
+rlo_disk_actuator_solver_1.set_rotation(name='qst_5_rlo_disk_actuation_1', value=0, units='radians')
+qst_5_configuration.actuate(transformation=rlo_disk_actuator_solver_1)
+
+rlo_disk_actuator_solver_2 = PrescribedRotation(component=rlo_disk, axis_origin=rlo_origin, axis_vector=rlo_in_plane_x)
+rlo_disk_actuator_solver_2.set_rotation(name='qst_5_rlo_disk_actuation_2', value=0, units='radians')
+qst_5_configuration.actuate(transformation=rlo_disk_actuator_solver_2)
+
+# rli
+rli_disk_actuator_solver_1 = PrescribedRotation(component=rli_disk, axis_origin=rli_origin, axis_vector=rli_in_plane_y)
+rli_disk_actuator_solver_1.set_rotation(name='qst_5_rli_disk_actuation_1', value=0, units='radians')
+qst_5_configuration.actuate(transformation=rli_disk_actuator_solver_1)
+
+rli_disk_actuator_solver_2 = PrescribedRotation(component=rli_disk, axis_origin=rli_origin, axis_vector=rli_in_plane_x)
+rli_disk_actuator_solver_2.set_rotation(name='qst_5_rli_disk_actuation_2', value=0, units='radians')
+qst_5_configuration.actuate(transformation=rli_disk_actuator_solver_2)
+
+# rri
+rri_disk_actuator_solver_1 = PrescribedRotation(component=rri_disk, axis_origin=rri_origin, axis_vector=rri_in_plane_y)
+rri_disk_actuator_solver_1.set_rotation(name='qst_5_rri_disk_actuation_1', value=0, units='radians')
+qst_5_configuration.actuate(transformation=rri_disk_actuator_solver_1)
+
+rri_disk_actuator_solver_2 = PrescribedRotation(component=rri_disk, axis_origin=rri_origin, axis_vector=rri_in_plane_x)
+rri_disk_actuator_solver_2.set_rotation(name='qst_5_rri_disk_actuation_2', value=0, units='radians')
+qst_5_configuration.actuate(transformation=rri_disk_actuator_solver_2)
+
+# rro
+rro_disk_actuator_solver_1 = PrescribedRotation(component=rro_disk, axis_origin=rro_origin, axis_vector=rro_in_plane_y)
+rro_disk_actuator_solver_1.set_rotation(name='qst_5_rro_disk_actuation_1', value=0, units='radians')
+qst_5_configuration.actuate(transformation=rro_disk_actuator_solver_1)
+
+rro_disk_actuator_solver_2 = PrescribedRotation(component=rro_disk, axis_origin=rro_origin, axis_vector=rro_in_plane_x)
+rro_disk_actuator_solver_2.set_rotation(name='qst_5_rro_disk_actuation_2', value=0, units='radians')
+qst_5_configuration.actuate(transformation=rro_disk_actuator_solver_2)
+
+# flo
+flo_disk_actuator_solver_1 = PrescribedRotation(component=flo_disk, axis_origin=flo_origin, axis_vector=flo_in_plane_y)
+flo_disk_actuator_solver_1.set_rotation(name='qst_5_flo_disk_actuation_1', value=0, units='radians')
+qst_5_configuration.actuate(transformation=flo_disk_actuator_solver_1)
+
+flo_disk_actuator_solver_2 = PrescribedRotation(component=flo_disk, axis_origin=flo_origin, axis_vector=flo_in_plane_x)
+flo_disk_actuator_solver_2.set_rotation(name='qst_5_flo_disk_actuation_2', value=0, units='radians')
+qst_5_configuration.actuate(transformation=flo_disk_actuator_solver_2)
+
+# fli
+fli_disk_actuator_solver_1 = PrescribedRotation(component=fli_disk, axis_origin=fli_origin, axis_vector=fli_in_plane_y)
+fli_disk_actuator_solver_1.set_rotation(name='qst_5_fli_disk_actuation_1', value=0, units='radians')
+qst_5_configuration.actuate(transformation=fli_disk_actuator_solver_1)
+
+fli_disk_actuator_solver_2 = PrescribedRotation(component=fli_disk, axis_origin=fli_origin, axis_vector=fli_in_plane_x)
+fli_disk_actuator_solver_2.set_rotation(name='qst_5_fli_disk_actuation_2', value=0, units='radians')
+qst_5_configuration.actuate(transformation=fli_disk_actuator_solver_2)
+
+# fri
+fri_disk_actuator_solver_1 = PrescribedRotation(component=fri_disk, axis_origin=fri_origin, axis_vector=fri_in_plane_y)
+fri_disk_actuator_solver_1.set_rotation(name='qst_5_fri_disk_actuation_1', value=0, units='radians')
+qst_5_configuration.actuate(transformation=fri_disk_actuator_solver_1)
+
+fri_disk_actuator_solver_2 = PrescribedRotation(component=fri_disk, axis_origin=fri_origin, axis_vector=fri_in_plane_x)
+fri_disk_actuator_solver_2.set_rotation(name='qst_5_fri_disk_actuation_2', value=0, units='radians')
+qst_5_configuration.actuate(transformation=fri_disk_actuator_solver_2)
+
+# fro
+fro_disk_actuator_solver_1 = PrescribedRotation(component=fro_disk, axis_origin=fro_origin, axis_vector=fro_in_plane_y)
+fro_disk_actuator_solver_1.set_rotation(name='qst_5_fro_disk_actuation_1', value=0, units='radians')
+qst_5_configuration.actuate(transformation=fro_disk_actuator_solver_1)
+
+fro_disk_actuator_solver_2 = PrescribedRotation(component=fro_disk, axis_origin=fro_origin, axis_vector=fro_in_plane_x)
+fro_disk_actuator_solver_2.set_rotation(name='qst_5_fro_disk_actuation_2', value=0, units='radians')
+qst_5_configuration.actuate(transformation=fro_disk_actuator_solver_2)
 # endregion
 
 # region quasi_steady_transition_6

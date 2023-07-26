@@ -98,8 +98,27 @@ class SpatialRepresentation:
         my_file = Path(projections) 
         
         if my_file.is_file():
-            with open(projections, 'rb') as f:
-                projections_dict = pickle.load(f)
+            try:
+                from mpi4py import MPI
+                comm = MPI.COMM_WORLD
+                # import time
+                # time.sleep(0.5*comm.rank)
+                comm.barrier()
+                if comm.rank == 0:
+                    with open(projections, 'rb') as f:
+                        # print(projections)
+                        projections_dict = pickle.load(f)
+                else:
+                    projections_dict = None
+                comm.barrier()
+                projections_dict = comm.bcast(projections_dict, root=0)
+            except:
+                from mpi4py import MPI
+                comm = MPI.COMM_WORLD
+                comm.Abort()
+                
+            # with open(projections, 'rb') as f:
+            #     projections_dict = pickle.load(f)
             
             new_projections = False
             if np.array_equiv(points, projections_dict['function_input']['points']):
@@ -736,6 +755,21 @@ class SpatialRepresentation:
             return plotting_elements
         else:
             return plotting_elements
+    
+    def evaluate_parametric(self, parametric_nodes:list) -> am.MappedArray:
+        num_control_points = np.cumprod(self.control_points['geometry'].shape[:-1])[-1]
+        num_points = len(parametric_nodes)
+        linear_map = sps.lil_array((num_points, num_control_points))
+        i = 0
+        for node in parametric_nodes:
+            receiving_target = self.primitives[node[0]]
+            point_map_on_receiving_target = receiving_target.geometry_primitive.compute_evaluation_map(u_vec=np.array([node[1][0,0]]), v_vec=np.array([node[1][0,1]]))
+            receiving_target_control_point_indices = self.primitive_indices[receiving_target.name]['geometry']
+            linear_map[i, receiving_target_control_point_indices] = point_map_on_receiving_target
+            i += 1
+        shape = (len(parametric_nodes),self.control_points['geometry'].shape[-1],)
+        return am.array(self.control_points['geometry'], linear_map=linear_map.tocsc(), shape=shape)
+
     
     def plot(self, primitives:list=[], point_types=['evaluated_points'], plot_types:list=['mesh'],
              opacity:float=1., color:str='#00629B', surface_texture:str="",
