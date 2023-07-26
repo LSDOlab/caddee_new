@@ -10,6 +10,7 @@ from caddee.core.caddee_core.system_representation.utils.io.step_io import read_
 from caddee.core.caddee_core.system_representation.utils.io.iges_io import read_iges, write_iges
 from caddee import IMPORTS_FILES_FOLDER
 from caddee import PROJECTIONS_FOLDER
+import sys
 
 class SpatialRepresentation:
     '''
@@ -219,20 +220,20 @@ class SpatialRepresentation:
                 #         projection_receiving_primitives.append(receiving_target)
 
                 for property in properties:
-                    num_control_points = np.cumprod(self.control_points[property].shape[:-1])[-1]
-                    linear_map = sps.lil_array((num_points, num_control_points))
                     if property == 'parametric_coordinates':
                         nodes_parametric = []
                         for i in range(num_points):
                             target_index = flattened_surface_indices[i]
                             receiving_target_name = target_names[target_index]
-                            receiving_target = targets[receiving_target_name]
+                            receiving_target = targets[target_index]
                             u_coord = projected_points_on_each_target[target_index]['parametric_coordinates'][0][i]
                             v_coord = projected_points_on_each_target[target_index]['parametric_coordinates'][1][i]
                             node_parametric_coordinates = np.array([u_coord, v_coord])
                             nodes_parametric.append((receiving_target_name, node_parametric_coordinates))
                         projection_outputs[property] = nodes_parametric
                     else:
+                        num_control_points = np.cumprod(self.control_points[property].shape[:-1])[-1]
+                        linear_map = sps.lil_array((num_points, num_control_points))
                         for i in range(num_points):
                             target_index = flattened_surface_indices[i]
                             receiving_target = targets[target_index]
@@ -303,7 +304,10 @@ class SpatialRepresentation:
             num_targets = len(targets)
             projected_points_on_each_target = []
             # Project all points onto each target
+            target_names = []
+            # Project all points onto each target
             for target in targets:   # TODO Parallelize this for loop
+                target_names.append(target.name)
                 target_projected_points = target.project(points=points, direction=direction, grid_search_n=grid_search_n,
                         max_iter=max_iterations, properties=['geometry', 'parametric_coordinates'])
                         # properties are not passed in here because we NEED geometry
@@ -341,20 +345,20 @@ class SpatialRepresentation:
             #         projection_receiving_primitives.append(receiving_target)
 
             for property in properties:
-                num_control_points = np.cumprod(self.control_points[property].shape[:-1])[-1]
-                linear_map = sps.lil_array((num_points, num_control_points))
                 if property == 'parametric_coordinates':
                     nodes_parametric = []
                     for i in range(num_points):
                         target_index = flattened_surface_indices[i]
                         receiving_target_name = target_names[target_index]
-                        receiving_target = targets[receiving_target_name]
+                        receiving_target = targets[target_index]
                         u_coord = projected_points_on_each_target[target_index]['parametric_coordinates'][0][i]
                         v_coord = projected_points_on_each_target[target_index]['parametric_coordinates'][1][i]
                         node_parametric_coordinates = np.array([u_coord, v_coord])
                         nodes_parametric.append((receiving_target_name, node_parametric_coordinates))
                     projection_outputs[property] = nodes_parametric
                 else:
+                    num_control_points = np.cumprod(self.control_points[property].shape[:-1])[-1]
+                    linear_map = sps.lil_array((num_points, num_control_points))
                     for i in range(num_points):
                         target_index = flattened_surface_indices[i]
                         receiving_target = targets[target_index]
