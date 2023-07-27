@@ -16,7 +16,7 @@ class M4RegressionsCSDL(ModuleCSDL):
         ktas_to_m_s = 1 / 1.944
         lbs_to_kg =  1 / 2.205
 
-        wing_area = self.register_module_input('wing_area', shape=shape, units='m^2', val=210 * ft_2_to_m_2) * ft_2_to_m_2
+        wing_area = self.register_module_input('wing_area', shape=shape, units='m^2', val=210 * ft_2_to_m_2) #* ft_2_to_m_2
         # self.print_var(wing_area)
         wing_AR = self.register_module_input('wing_AR', shape=shape, val=13)
         # self.print_var(wing_AR)
@@ -30,7 +30,7 @@ class M4RegressionsCSDL(ModuleCSDL):
         # self.print_var(battery_mass)
         cruise_speed = self.register_module_input('cruise_speed', shape=shape, units='m/s', val=112 * ktas_to_m_s)
         # self.print_var(cruise_speed)
-        tail_area = self.register_module_input('tail_area', shape=shape, units='m^2', val=39.51 * ft_2_to_m_2) * ft_2_to_m_2
+        tail_area = self.register_module_input('tail_area', shape=shape, units='m^2', val=39.51 * ft_2_to_m_2) #* ft_2_to_m_2
         fin_area = self.register_module_input('fin_area',shape=shape, units='m^2', val=27.34 * ft_2_to_m_2)
         
 

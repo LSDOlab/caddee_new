@@ -106,8 +106,8 @@ beam_mass_mesh = MassMesh(
     )
 )
 beam_mass = Mass(component=wing, mesh=beam_mass_mesh, beams=beams, mesh_units='ft')
-beam_mass.set_module_input('wing_beam_tcap', val=0.01, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
-beam_mass.set_module_input('wing_beam_tweb', val=0.01, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
+beam_mass.set_module_input('wing_beam_tcap', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
+beam_mass.set_module_input('wing_beam_tweb', val=0.005, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
 mass_model_wing_mass = beam_mass.evaluate()
 
 # total constant mass 
@@ -271,7 +271,7 @@ system_m3l_model.register_output(total_cg, plus_3g_condition)
 system_m3l_model.register_output(total_inertia, plus_3g_condition)
 
 # inertial forces and moments
-inertial_loads_model = cd.InertialLoadsM3L(load_factor=2.5)
+inertial_loads_model = cd.InertialLoadsM3L(load_factor=3)
 inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass, ac_states=ac_states, design_condition=plus_3g_condition)
 system_m3l_model.register_output(inertial_forces, plus_3g_condition)
 system_m3l_model.register_output(inertial_moments, plus_3g_condition)
@@ -765,135 +765,135 @@ fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4
 fro_bem_forces, fro_bem_moments, fro_dT ,fro_dQ ,fro_dD, fro_Ct = fro_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1)
 
 
-# acoustics
-hover_acoustics = Acoustics(
-    aircraft_position = np.array([0.,0., 76.])
-)
+# # acoustics
+# hover_acoustics = Acoustics(
+#     aircraft_position = np.array([0.,0., 76.])
+# )
 
-hover_acoustics.add_observer(
-    name='obs1',
-    obs_position=np.array([53.74, 0., 19.26]),
-    time_vector=np.array([0. ]),
-)
+# hover_acoustics.add_observer(
+#     name='obs1',
+#     obs_position=np.array([53.74, 0., 19.26]),
+#     time_vector=np.array([0. ]),
+# )
 
-rlo_ks_model = KS(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rlo_disk', blade_prefix='rlo')
-rlo_hover_tonal_SPL, rlo_hover_tonal_SPL_A_weighted = rlo_ks_model.evaluate_tonal_noise(rlo_dT, rlo_dD, hover_1_ac_states, design_condition=hover_1)
-system_m3l_model.register_output(rlo_hover_tonal_SPL, hover_1)
-system_m3l_model.register_output(rlo_hover_tonal_SPL_A_weighted, hover_1)
+# rlo_ks_model = KS(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rlo_disk', blade_prefix='rlo')
+# rlo_hover_tonal_SPL, rlo_hover_tonal_SPL_A_weighted = rlo_ks_model.evaluate_tonal_noise(rlo_dT, rlo_dD, hover_1_ac_states, design_condition=hover_1)
+# system_m3l_model.register_output(rlo_hover_tonal_SPL, hover_1)
+# system_m3l_model.register_output(rlo_hover_tonal_SPL_A_weighted, hover_1)
 
-rlo_gl_model = GL(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rlo_disk', blade_prefix='rlo')
-rlo_hover_broadband_SPL, rlo_hover_broadband_SPL_A_weighted = rlo_gl_model.evaluate_broadband_noise(hover_1_ac_states, rlo_Ct, design_condition=hover_1)
-system_m3l_model.register_output(rlo_hover_broadband_SPL, hover_1)
-system_m3l_model.register_output(rlo_hover_broadband_SPL_A_weighted, hover_1)
-
-
-rli_ks_model = KS(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rli_disk', blade_prefix='rli')
-rli_hover_tonal_SPL, rli_hover_tonal_SPL_A_weighted = rli_ks_model.evaluate_tonal_noise(rli_dT, rli_dD, hover_1_ac_states, design_condition=hover_1)
-system_m3l_model.register_output(rli_hover_tonal_SPL, hover_1)
-system_m3l_model.register_output(rli_hover_tonal_SPL_A_weighted, hover_1)
-
-rli_gl_model = GL(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rli_disk', blade_prefix='rli')
-rli_hover_broadband_SPL, rli_hover_broadband_SPL_A_weighted = rli_gl_model.evaluate_broadband_noise(hover_1_ac_states, rli_Ct, design_condition=hover_1)
-system_m3l_model.register_output(rli_hover_broadband_SPL, hover_1)
-system_m3l_model.register_output(rli_hover_broadband_SPL_A_weighted, hover_1)
+# rlo_gl_model = GL(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rlo_disk', blade_prefix='rlo')
+# rlo_hover_broadband_SPL, rlo_hover_broadband_SPL_A_weighted = rlo_gl_model.evaluate_broadband_noise(hover_1_ac_states, rlo_Ct, design_condition=hover_1)
+# system_m3l_model.register_output(rlo_hover_broadband_SPL, hover_1)
+# system_m3l_model.register_output(rlo_hover_broadband_SPL_A_weighted, hover_1)
 
 
-rri_ks_model = KS(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rri_disk', blade_prefix='rri')
-rri_hover_tonal_SPL, rri_hover_tonal_SPL_A_weighted = rri_ks_model.evaluate_tonal_noise(rri_dT, rri_dD, hover_1_ac_states, design_condition=hover_1)
-system_m3l_model.register_output(rri_hover_tonal_SPL, hover_1)
-system_m3l_model.register_output(rri_hover_tonal_SPL_A_weighted, hover_1)
+# rli_ks_model = KS(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rli_disk', blade_prefix='rli')
+# rli_hover_tonal_SPL, rli_hover_tonal_SPL_A_weighted = rli_ks_model.evaluate_tonal_noise(rli_dT, rli_dD, hover_1_ac_states, design_condition=hover_1)
+# system_m3l_model.register_output(rli_hover_tonal_SPL, hover_1)
+# system_m3l_model.register_output(rli_hover_tonal_SPL_A_weighted, hover_1)
 
-rri_gl_model = GL(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rri_disk', blade_prefix='rri')
-rri_hover_broadband_SPL, rri_hover_broadband_SPL_A_weighted = rri_gl_model.evaluate_broadband_noise(hover_1_ac_states, rri_Ct, design_condition=hover_1)
-system_m3l_model.register_output(rri_hover_broadband_SPL, hover_1)
-system_m3l_model.register_output(rri_hover_broadband_SPL_A_weighted, hover_1)
-
-
-rro_ks_model = KS(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rro_disk', blade_prefix='rro')
-rro_hover_tonal_SPL, rro_hover_tonal_SPL_A_weighted = rro_ks_model.evaluate_tonal_noise(rro_dT, rro_dD, hover_1_ac_states, design_condition=hover_1)
-system_m3l_model.register_output(rro_hover_tonal_SPL, hover_1)
-system_m3l_model.register_output(rro_hover_tonal_SPL_A_weighted, hover_1)
-
-rro_gl_model = GL(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rro_disk', blade_prefix='rro')
-rro_hover_broadband_SPL, rro_hover_broadband_SPL_A_weighted = rro_gl_model.evaluate_broadband_noise(hover_1_ac_states, rro_Ct, design_condition=hover_1)
-system_m3l_model.register_output(rro_hover_broadband_SPL, hover_1)
-system_m3l_model.register_output(rro_hover_broadband_SPL_A_weighted, hover_1)
+# rli_gl_model = GL(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rli_disk', blade_prefix='rli')
+# rli_hover_broadband_SPL, rli_hover_broadband_SPL_A_weighted = rli_gl_model.evaluate_broadband_noise(hover_1_ac_states, rli_Ct, design_condition=hover_1)
+# system_m3l_model.register_output(rli_hover_broadband_SPL, hover_1)
+# system_m3l_model.register_output(rli_hover_broadband_SPL_A_weighted, hover_1)
 
 
-flo_ks_model = KS(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_flo_disk', blade_prefix='flo')
-flo_hover_tonal_SPL, flo_hover_tonal_SPL_A_weighted = flo_ks_model.evaluate_tonal_noise(flo_dT, flo_dD, hover_1_ac_states, design_condition=hover_1)
-system_m3l_model.register_output(flo_hover_tonal_SPL, hover_1)
-system_m3l_model.register_output(flo_hover_tonal_SPL_A_weighted, hover_1)
+# rri_ks_model = KS(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rri_disk', blade_prefix='rri')
+# rri_hover_tonal_SPL, rri_hover_tonal_SPL_A_weighted = rri_ks_model.evaluate_tonal_noise(rri_dT, rri_dD, hover_1_ac_states, design_condition=hover_1)
+# system_m3l_model.register_output(rri_hover_tonal_SPL, hover_1)
+# system_m3l_model.register_output(rri_hover_tonal_SPL_A_weighted, hover_1)
 
-flo_gl_model = GL(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_flo_disk', blade_prefix='flo')
-flo_hover_broadband_SPL, flo_hover_broadband_SPL_A_weighted = flo_gl_model.evaluate_broadband_noise(hover_1_ac_states, flo_Ct, design_condition=hover_1)
-system_m3l_model.register_output(flo_hover_broadband_SPL, hover_1)
-system_m3l_model.register_output(flo_hover_broadband_SPL_A_weighted, hover_1)
-
-
-fli_ks_model = KS(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_fli_disk', blade_prefix='fli')
-fli_hover_tonal_SPL, fli_hover_tonal_SPL_A_weighted = fli_ks_model.evaluate_tonal_noise(fli_dT, fli_dD, hover_1_ac_states, design_condition=hover_1)
-system_m3l_model.register_output(fli_hover_tonal_SPL, hover_1)
-system_m3l_model.register_output(fli_hover_tonal_SPL_A_weighted, hover_1)
-
-fli_gl_model = GL(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_fli_disk', blade_prefix='fli')
-fli_hover_broadband_SPL, fli_hover_broadband_SPL_A_weighted = fli_gl_model.evaluate_broadband_noise(hover_1_ac_states, fli_Ct, design_condition=hover_1)
-system_m3l_model.register_output(fli_hover_broadband_SPL, hover_1)
-system_m3l_model.register_output(fli_hover_broadband_SPL_A_weighted, hover_1)
+# rri_gl_model = GL(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rri_disk', blade_prefix='rri')
+# rri_hover_broadband_SPL, rri_hover_broadband_SPL_A_weighted = rri_gl_model.evaluate_broadband_noise(hover_1_ac_states, rri_Ct, design_condition=hover_1)
+# system_m3l_model.register_output(rri_hover_broadband_SPL, hover_1)
+# system_m3l_model.register_output(rri_hover_broadband_SPL_A_weighted, hover_1)
 
 
-fri_ks_model = KS(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_fri_disk', blade_prefix='fri')
-fri_hover_tonal_SPL, fri_hover_tonal_SPL_A_weighted = fri_ks_model.evaluate_tonal_noise(fri_dT, fri_dD, hover_1_ac_states, design_condition=hover_1)
-system_m3l_model.register_output(fri_hover_tonal_SPL, hover_1)
-system_m3l_model.register_output(fri_hover_tonal_SPL_A_weighted, hover_1)
+# rro_ks_model = KS(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rro_disk', blade_prefix='rro')
+# rro_hover_tonal_SPL, rro_hover_tonal_SPL_A_weighted = rro_ks_model.evaluate_tonal_noise(rro_dT, rro_dD, hover_1_ac_states, design_condition=hover_1)
+# system_m3l_model.register_output(rro_hover_tonal_SPL, hover_1)
+# system_m3l_model.register_output(rro_hover_tonal_SPL_A_weighted, hover_1)
 
-fri_gl_model = GL(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_fri_disk', blade_prefix='fri')
-fri_hover_broadband_SPL, fri_hover_broadband_SPL_A_weighted = fri_gl_model.evaluate_broadband_noise(hover_1_ac_states, fri_Ct, design_condition=hover_1)
-system_m3l_model.register_output(fri_hover_broadband_SPL, hover_1)
-system_m3l_model.register_output(fri_hover_broadband_SPL_A_weighted, hover_1)
-
-
-fro_ks_model = KS(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_fro_disk', blade_prefix='fro')
-fro_hover_tonal_SPL, fro_hover_tonal_SPL_A_weighted = fro_ks_model.evaluate_tonal_noise(fro_dT, fro_dD, hover_1_ac_states, design_condition=hover_1)
-system_m3l_model.register_output(fro_hover_tonal_SPL, hover_1)
-system_m3l_model.register_output(fro_hover_tonal_SPL_A_weighted, hover_1)
-
-fro_gl_model = GL(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_fro_disk', blade_prefix='fro')
-fro_hover_broadband_SPL, fro_hover_broadband_SPL_A_weighted = fro_gl_model.evaluate_broadband_noise(hover_1_ac_states, fro_Ct, design_condition=hover_1)
-system_m3l_model.register_output(fro_hover_broadband_SPL, hover_1)
-system_m3l_model.register_output(fro_hover_broadband_SPL_A_weighted, hover_1)
+# rro_gl_model = GL(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_rro_disk', blade_prefix='rro')
+# rro_hover_broadband_SPL, rro_hover_broadband_SPL_A_weighted = rro_gl_model.evaluate_broadband_noise(hover_1_ac_states, rro_Ct, design_condition=hover_1)
+# system_m3l_model.register_output(rro_hover_broadband_SPL, hover_1)
+# system_m3l_model.register_output(rro_hover_broadband_SPL_A_weighted, hover_1)
 
 
-total_noise_model_hover = TotalAircraftNoise(
-    acoustics_data=hover_acoustics,
-    component_list=[rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
-)
-noise_components = [
-    rlo_hover_tonal_SPL, rlo_hover_broadband_SPL,
-    rli_hover_tonal_SPL, rli_hover_broadband_SPL,
-    rri_hover_tonal_SPL, rri_hover_broadband_SPL,
-    rro_hover_tonal_SPL, rro_hover_broadband_SPL,
-    flo_hover_tonal_SPL, flo_hover_broadband_SPL,
-    fli_hover_tonal_SPL, fli_hover_broadband_SPL,
-    fri_hover_tonal_SPL, fri_hover_broadband_SPL,
-    fro_hover_tonal_SPL, fro_hover_broadband_SPL,
+# flo_ks_model = KS(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_flo_disk', blade_prefix='flo')
+# flo_hover_tonal_SPL, flo_hover_tonal_SPL_A_weighted = flo_ks_model.evaluate_tonal_noise(flo_dT, flo_dD, hover_1_ac_states, design_condition=hover_1)
+# system_m3l_model.register_output(flo_hover_tonal_SPL, hover_1)
+# system_m3l_model.register_output(flo_hover_tonal_SPL_A_weighted, hover_1)
 
-]
-A_weighted_noise_components = [
-    rlo_hover_tonal_SPL_A_weighted, rlo_hover_broadband_SPL_A_weighted,
-    rli_hover_tonal_SPL_A_weighted, rli_hover_broadband_SPL_A_weighted,
-    rri_hover_tonal_SPL_A_weighted, rri_hover_broadband_SPL_A_weighted,
-    rro_hover_tonal_SPL_A_weighted, rro_hover_broadband_SPL_A_weighted,
-    flo_hover_tonal_SPL_A_weighted, flo_hover_broadband_SPL_A_weighted,
-    fli_hover_tonal_SPL_A_weighted, fli_hover_broadband_SPL_A_weighted,
-    fri_hover_tonal_SPL_A_weighted, fri_hover_broadband_SPL_A_weighted,
-    fro_hover_tonal_SPL_A_weighted, fro_hover_broadband_SPL_A_weighted,
+# flo_gl_model = GL(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_flo_disk', blade_prefix='flo')
+# flo_hover_broadband_SPL, flo_hover_broadband_SPL_A_weighted = flo_gl_model.evaluate_broadband_noise(hover_1_ac_states, flo_Ct, design_condition=hover_1)
+# system_m3l_model.register_output(flo_hover_broadband_SPL, hover_1)
+# system_m3l_model.register_output(flo_hover_broadband_SPL_A_weighted, hover_1)
 
-]
 
-hover_total_SPL, hover_total_SPL_A_weighted = total_noise_model_hover.evaluate(noise_components, A_weighted_noise_components, design_condition=hover_1)
-system_m3l_model.register_output(hover_total_SPL, hover_1)
-system_m3l_model.register_output(hover_total_SPL_A_weighted, hover_1)
+# fli_ks_model = KS(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_fli_disk', blade_prefix='fli')
+# fli_hover_tonal_SPL, fli_hover_tonal_SPL_A_weighted = fli_ks_model.evaluate_tonal_noise(fli_dT, fli_dD, hover_1_ac_states, design_condition=hover_1)
+# system_m3l_model.register_output(fli_hover_tonal_SPL, hover_1)
+# system_m3l_model.register_output(fli_hover_tonal_SPL_A_weighted, hover_1)
+
+# fli_gl_model = GL(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_fli_disk', blade_prefix='fli')
+# fli_hover_broadband_SPL, fli_hover_broadband_SPL_A_weighted = fli_gl_model.evaluate_broadband_noise(hover_1_ac_states, fli_Ct, design_condition=hover_1)
+# system_m3l_model.register_output(fli_hover_broadband_SPL, hover_1)
+# system_m3l_model.register_output(fli_hover_broadband_SPL_A_weighted, hover_1)
+
+
+# fri_ks_model = KS(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_fri_disk', blade_prefix='fri')
+# fri_hover_tonal_SPL, fri_hover_tonal_SPL_A_weighted = fri_ks_model.evaluate_tonal_noise(fri_dT, fri_dD, hover_1_ac_states, design_condition=hover_1)
+# system_m3l_model.register_output(fri_hover_tonal_SPL, hover_1)
+# system_m3l_model.register_output(fri_hover_tonal_SPL_A_weighted, hover_1)
+
+# fri_gl_model = GL(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_fri_disk', blade_prefix='fri')
+# fri_hover_broadband_SPL, fri_hover_broadband_SPL_A_weighted = fri_gl_model.evaluate_broadband_noise(hover_1_ac_states, fri_Ct, design_condition=hover_1)
+# system_m3l_model.register_output(fri_hover_broadband_SPL, hover_1)
+# system_m3l_model.register_output(fri_hover_broadband_SPL_A_weighted, hover_1)
+
+
+# fro_ks_model = KS(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_fro_disk', blade_prefix='fro')
+# fro_hover_tonal_SPL, fro_hover_tonal_SPL_A_weighted = fro_ks_model.evaluate_tonal_noise(fro_dT, fro_dD, hover_1_ac_states, design_condition=hover_1)
+# system_m3l_model.register_output(fro_hover_tonal_SPL, hover_1)
+# system_m3l_model.register_output(fro_hover_tonal_SPL_A_weighted, hover_1)
+
+# fro_gl_model = GL(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=hover_acoustics, disk_prefix='hover_1_fro_disk', blade_prefix='fro')
+# fro_hover_broadband_SPL, fro_hover_broadband_SPL_A_weighted = fro_gl_model.evaluate_broadband_noise(hover_1_ac_states, fro_Ct, design_condition=hover_1)
+# system_m3l_model.register_output(fro_hover_broadband_SPL, hover_1)
+# system_m3l_model.register_output(fro_hover_broadband_SPL_A_weighted, hover_1)
+
+
+# total_noise_model_hover = TotalAircraftNoise(
+#     acoustics_data=hover_acoustics,
+#     component_list=[rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
+# )
+# noise_components = [
+#     rlo_hover_tonal_SPL, rlo_hover_broadband_SPL,
+#     rli_hover_tonal_SPL, rli_hover_broadband_SPL,
+#     rri_hover_tonal_SPL, rri_hover_broadband_SPL,
+#     rro_hover_tonal_SPL, rro_hover_broadband_SPL,
+#     flo_hover_tonal_SPL, flo_hover_broadband_SPL,
+#     fli_hover_tonal_SPL, fli_hover_broadband_SPL,
+#     fri_hover_tonal_SPL, fri_hover_broadband_SPL,
+#     fro_hover_tonal_SPL, fro_hover_broadband_SPL,
+
+# ]
+# A_weighted_noise_components = [
+#     rlo_hover_tonal_SPL_A_weighted, rlo_hover_broadband_SPL_A_weighted,
+#     rli_hover_tonal_SPL_A_weighted, rli_hover_broadband_SPL_A_weighted,
+#     rri_hover_tonal_SPL_A_weighted, rri_hover_broadband_SPL_A_weighted,
+#     rro_hover_tonal_SPL_A_weighted, rro_hover_broadband_SPL_A_weighted,
+#     flo_hover_tonal_SPL_A_weighted, flo_hover_broadband_SPL_A_weighted,
+#     fli_hover_tonal_SPL_A_weighted, fli_hover_broadband_SPL_A_weighted,
+#     fri_hover_tonal_SPL_A_weighted, fri_hover_broadband_SPL_A_weighted,
+#     fro_hover_tonal_SPL_A_weighted, fro_hover_broadband_SPL_A_weighted,
+
+# ]
+
+# hover_total_SPL, hover_total_SPL_A_weighted = total_noise_model_hover.evaluate(noise_components, A_weighted_noise_components, design_condition=hover_1)
+# system_m3l_model.register_output(hover_total_SPL, hover_1)
+# system_m3l_model.register_output(hover_total_SPL_A_weighted, hover_1)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
 total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=hover_1)
@@ -1016,135 +1016,135 @@ fro_bem_model = BEM(disk_prefix='qst_1_fro_disk', blade_prefix='fro', component=
 fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
 fro_bem_forces, fro_bem_moments, fro_dT ,fro_dQ ,fro_dD, fro_Ct = fro_bem_model.evaluate(ac_states=qst_1_ac_states, design_condition=qst_1)
 
-# acoustics
-qst_1_acoustics = Acoustics(
-    aircraft_position = np.array([0.,0., 76.])
-)
+# # acoustics
+# qst_1_acoustics = Acoustics(
+#     aircraft_position = np.array([0.,0., 76.])
+# )
 
-qst_1_acoustics.add_observer(
-    name='obs1',
-    obs_position=np.array([53.74, 0., 19.26]),
-    time_vector=np.array([0. ]),
-)
+# qst_1_acoustics.add_observer(
+#     name='obs1',
+#     obs_position=np.array([53.74, 0., 19.26]),
+#     time_vector=np.array([0. ]),
+# )
 
-rlo_ks_model = KS(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rlo_disk', blade_prefix='rlo')
-rlo_qst_1_tonal_SPL, rlo_qst_1_tonal_SPL_A_weighted = rlo_ks_model.evaluate_tonal_noise(rlo_dT, rlo_dD, qst_1_ac_states, design_condition=qst_1)
-system_m3l_model.register_output(rlo_qst_1_tonal_SPL, qst_1)
-system_m3l_model.register_output(rlo_qst_1_tonal_SPL_A_weighted, qst_1)
+# rlo_ks_model = KS(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rlo_disk', blade_prefix='rlo')
+# rlo_qst_1_tonal_SPL, rlo_qst_1_tonal_SPL_A_weighted = rlo_ks_model.evaluate_tonal_noise(rlo_dT, rlo_dD, qst_1_ac_states, design_condition=qst_1)
+# system_m3l_model.register_output(rlo_qst_1_tonal_SPL, qst_1)
+# system_m3l_model.register_output(rlo_qst_1_tonal_SPL_A_weighted, qst_1)
 
-rlo_gl_model = GL(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rlo_disk', blade_prefix='rlo')
-rlo_qst_1_broadband_SPL, rlo_qst_1_broadband_SPL_A_weighted = rlo_gl_model.evaluate_broadband_noise(qst_1_ac_states, rlo_Ct, design_condition=qst_1)
-system_m3l_model.register_output(rlo_qst_1_broadband_SPL, qst_1)
-system_m3l_model.register_output(rlo_qst_1_broadband_SPL_A_weighted, qst_1)
-
-
-rli_ks_model = KS(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rli_disk', blade_prefix='rli')
-rli_qst_1_tonal_SPL, rli_qst_1_tonal_SPL_A_weighted = rli_ks_model.evaluate_tonal_noise(rli_dT, rli_dD, qst_1_ac_states, design_condition=qst_1)
-system_m3l_model.register_output(rli_qst_1_tonal_SPL, qst_1)
-system_m3l_model.register_output(rli_qst_1_tonal_SPL_A_weighted, qst_1)
-
-rli_gl_model = GL(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rli_disk', blade_prefix='rli')
-rli_qst_1_broadband_SPL, rli_qst_1_broadband_SPL_A_weighted = rli_gl_model.evaluate_broadband_noise(qst_1_ac_states, rli_Ct, design_condition=qst_1)
-system_m3l_model.register_output(rli_qst_1_broadband_SPL, qst_1)
-system_m3l_model.register_output(rli_qst_1_broadband_SPL_A_weighted, qst_1)
+# rlo_gl_model = GL(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rlo_disk', blade_prefix='rlo')
+# rlo_qst_1_broadband_SPL, rlo_qst_1_broadband_SPL_A_weighted = rlo_gl_model.evaluate_broadband_noise(qst_1_ac_states, rlo_Ct, design_condition=qst_1)
+# system_m3l_model.register_output(rlo_qst_1_broadband_SPL, qst_1)
+# system_m3l_model.register_output(rlo_qst_1_broadband_SPL_A_weighted, qst_1)
 
 
-rri_ks_model = KS(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rri_disk', blade_prefix='rri')
-rri_qst_1_tonal_SPL, rri_qst_1_tonal_SPL_A_weighted = rri_ks_model.evaluate_tonal_noise(rri_dT, rri_dD, qst_1_ac_states, design_condition=qst_1)
-system_m3l_model.register_output(rri_qst_1_tonal_SPL, qst_1)
-system_m3l_model.register_output(rri_qst_1_tonal_SPL_A_weighted, qst_1)
+# rli_ks_model = KS(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rli_disk', blade_prefix='rli')
+# rli_qst_1_tonal_SPL, rli_qst_1_tonal_SPL_A_weighted = rli_ks_model.evaluate_tonal_noise(rli_dT, rli_dD, qst_1_ac_states, design_condition=qst_1)
+# system_m3l_model.register_output(rli_qst_1_tonal_SPL, qst_1)
+# system_m3l_model.register_output(rli_qst_1_tonal_SPL_A_weighted, qst_1)
 
-rri_gl_model = GL(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rri_disk', blade_prefix='rri')
-rri_qst_1_broadband_SPL, rri_qst_1_broadband_SPL_A_weighted = rri_gl_model.evaluate_broadband_noise(qst_1_ac_states, rri_Ct, design_condition=qst_1)
-system_m3l_model.register_output(rri_qst_1_broadband_SPL, qst_1)
-system_m3l_model.register_output(rri_qst_1_broadband_SPL_A_weighted, qst_1)
-
-
-rro_ks_model = KS(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rro_disk', blade_prefix='rro')
-rro_qst_1_tonal_SPL, rro_qst_1_tonal_SPL_A_weighted = rro_ks_model.evaluate_tonal_noise(rro_dT, rro_dD, qst_1_ac_states, design_condition=qst_1)
-system_m3l_model.register_output(rro_qst_1_tonal_SPL, qst_1)
-system_m3l_model.register_output(rro_qst_1_tonal_SPL_A_weighted, qst_1)
-
-rro_gl_model = GL(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rro_disk', blade_prefix='rro')
-rro_qst_1_broadband_SPL, rro_qst_1_broadband_SPL_A_weighted = rro_gl_model.evaluate_broadband_noise(qst_1_ac_states, rro_Ct, design_condition=qst_1)
-system_m3l_model.register_output(rro_qst_1_broadband_SPL, qst_1)
-system_m3l_model.register_output(rro_qst_1_broadband_SPL_A_weighted, qst_1)
+# rli_gl_model = GL(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rli_disk', blade_prefix='rli')
+# rli_qst_1_broadband_SPL, rli_qst_1_broadband_SPL_A_weighted = rli_gl_model.evaluate_broadband_noise(qst_1_ac_states, rli_Ct, design_condition=qst_1)
+# system_m3l_model.register_output(rli_qst_1_broadband_SPL, qst_1)
+# system_m3l_model.register_output(rli_qst_1_broadband_SPL_A_weighted, qst_1)
 
 
-flo_ks_model = KS(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_flo_disk', blade_prefix='flo')
-flo_qst_1_tonal_SPL, flo_qst_1_tonal_SPL_A_weighted = flo_ks_model.evaluate_tonal_noise(flo_dT, flo_dD, qst_1_ac_states, design_condition=qst_1)
-system_m3l_model.register_output(flo_qst_1_tonal_SPL, qst_1)
-system_m3l_model.register_output(flo_qst_1_tonal_SPL_A_weighted, qst_1)
+# rri_ks_model = KS(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rri_disk', blade_prefix='rri')
+# rri_qst_1_tonal_SPL, rri_qst_1_tonal_SPL_A_weighted = rri_ks_model.evaluate_tonal_noise(rri_dT, rri_dD, qst_1_ac_states, design_condition=qst_1)
+# system_m3l_model.register_output(rri_qst_1_tonal_SPL, qst_1)
+# system_m3l_model.register_output(rri_qst_1_tonal_SPL_A_weighted, qst_1)
 
-flo_gl_model = GL(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_flo_disk', blade_prefix='flo')
-flo_qst_1_broadband_SPL, flo_qst_1_broadband_SPL_A_weighted = flo_gl_model.evaluate_broadband_noise(qst_1_ac_states, flo_Ct, design_condition=qst_1)
-system_m3l_model.register_output(flo_qst_1_broadband_SPL, qst_1)
-system_m3l_model.register_output(flo_qst_1_broadband_SPL_A_weighted, qst_1)
-
-
-fli_ks_model = KS(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_fli_disk', blade_prefix='fli')
-fli_qst_1_tonal_SPL, fli_qst_1_tonal_SPL_A_weighted = fli_ks_model.evaluate_tonal_noise(fli_dT, fli_dD, qst_1_ac_states, design_condition=qst_1)
-system_m3l_model.register_output(fli_qst_1_tonal_SPL, qst_1)
-system_m3l_model.register_output(fli_qst_1_tonal_SPL_A_weighted, qst_1)
-
-fli_gl_model = GL(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_fli_disk', blade_prefix='fli')
-fli_qst_1_broadband_SPL, fli_qst_1_broadband_SPL_A_weighted = fli_gl_model.evaluate_broadband_noise(qst_1_ac_states, fli_Ct, design_condition=qst_1)
-system_m3l_model.register_output(fli_qst_1_broadband_SPL, qst_1)
-system_m3l_model.register_output(fli_qst_1_broadband_SPL_A_weighted, qst_1)
+# rri_gl_model = GL(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rri_disk', blade_prefix='rri')
+# rri_qst_1_broadband_SPL, rri_qst_1_broadband_SPL_A_weighted = rri_gl_model.evaluate_broadband_noise(qst_1_ac_states, rri_Ct, design_condition=qst_1)
+# system_m3l_model.register_output(rri_qst_1_broadband_SPL, qst_1)
+# system_m3l_model.register_output(rri_qst_1_broadband_SPL_A_weighted, qst_1)
 
 
-fri_ks_model = KS(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_fri_disk', blade_prefix='fri')
-fri_qst_1_tonal_SPL, fri_qst_1_tonal_SPL_A_weighted = fri_ks_model.evaluate_tonal_noise(fri_dT, fri_dD, qst_1_ac_states, design_condition=qst_1)
-system_m3l_model.register_output(fri_qst_1_tonal_SPL, qst_1)
-system_m3l_model.register_output(fri_qst_1_tonal_SPL_A_weighted, qst_1)
+# rro_ks_model = KS(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rro_disk', blade_prefix='rro')
+# rro_qst_1_tonal_SPL, rro_qst_1_tonal_SPL_A_weighted = rro_ks_model.evaluate_tonal_noise(rro_dT, rro_dD, qst_1_ac_states, design_condition=qst_1)
+# system_m3l_model.register_output(rro_qst_1_tonal_SPL, qst_1)
+# system_m3l_model.register_output(rro_qst_1_tonal_SPL_A_weighted, qst_1)
 
-fri_gl_model = GL(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_fri_disk', blade_prefix='fri')
-fri_qst_1_broadband_SPL, fri_qst_1_broadband_SPL_A_weighted = fri_gl_model.evaluate_broadband_noise(qst_1_ac_states, fri_Ct, design_condition=qst_1)
-system_m3l_model.register_output(fri_qst_1_broadband_SPL, qst_1)
-system_m3l_model.register_output(fri_qst_1_broadband_SPL_A_weighted, qst_1)
-
-
-fro_ks_model = KS(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_fro_disk', blade_prefix='fro')
-fro_qst_1_tonal_SPL, fro_qst_1_tonal_SPL_A_weighted = fro_ks_model.evaluate_tonal_noise(fro_dT, fro_dD, qst_1_ac_states, design_condition=qst_1)
-system_m3l_model.register_output(fro_qst_1_tonal_SPL, qst_1)
-system_m3l_model.register_output(fro_qst_1_tonal_SPL_A_weighted, qst_1)
-
-fro_gl_model = GL(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_fro_disk', blade_prefix='fro')
-fro_qst_1_broadband_SPL, fro_qst_1_broadband_SPL_A_weighted = fro_gl_model.evaluate_broadband_noise(qst_1_ac_states, fro_Ct, design_condition=qst_1)
-system_m3l_model.register_output(fro_qst_1_broadband_SPL, qst_1)
-system_m3l_model.register_output(fro_qst_1_broadband_SPL_A_weighted, qst_1)
+# rro_gl_model = GL(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_rro_disk', blade_prefix='rro')
+# rro_qst_1_broadband_SPL, rro_qst_1_broadband_SPL_A_weighted = rro_gl_model.evaluate_broadband_noise(qst_1_ac_states, rro_Ct, design_condition=qst_1)
+# system_m3l_model.register_output(rro_qst_1_broadband_SPL, qst_1)
+# system_m3l_model.register_output(rro_qst_1_broadband_SPL_A_weighted, qst_1)
 
 
-total_noise_model_qst_1 = TotalAircraftNoise(
-    acoustics_data=qst_1_acoustics,
-    component_list=[rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
-)
-noise_components = [
-    rlo_qst_1_tonal_SPL, rlo_qst_1_broadband_SPL,
-    rli_qst_1_tonal_SPL, rli_qst_1_broadband_SPL,
-    rri_qst_1_tonal_SPL, rri_qst_1_broadband_SPL,
-    rro_qst_1_tonal_SPL, rro_qst_1_broadband_SPL,
-    flo_qst_1_tonal_SPL, flo_qst_1_broadband_SPL,
-    fli_qst_1_tonal_SPL, fli_qst_1_broadband_SPL,
-    fri_qst_1_tonal_SPL, fri_qst_1_broadband_SPL,
-    fro_qst_1_tonal_SPL, fro_qst_1_broadband_SPL,
+# flo_ks_model = KS(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_flo_disk', blade_prefix='flo')
+# flo_qst_1_tonal_SPL, flo_qst_1_tonal_SPL_A_weighted = flo_ks_model.evaluate_tonal_noise(flo_dT, flo_dD, qst_1_ac_states, design_condition=qst_1)
+# system_m3l_model.register_output(flo_qst_1_tonal_SPL, qst_1)
+# system_m3l_model.register_output(flo_qst_1_tonal_SPL_A_weighted, qst_1)
 
-]
-A_weighted_noise_components = [
-    rlo_qst_1_tonal_SPL_A_weighted, rlo_qst_1_broadband_SPL_A_weighted,
-    rli_qst_1_tonal_SPL_A_weighted, rli_qst_1_broadband_SPL_A_weighted,
-    rri_qst_1_tonal_SPL_A_weighted, rri_qst_1_broadband_SPL_A_weighted,
-    rro_qst_1_tonal_SPL_A_weighted, rro_qst_1_broadband_SPL_A_weighted,
-    flo_qst_1_tonal_SPL_A_weighted, flo_qst_1_broadband_SPL_A_weighted,
-    fli_qst_1_tonal_SPL_A_weighted, fli_qst_1_broadband_SPL_A_weighted,
-    fri_qst_1_tonal_SPL_A_weighted, fri_qst_1_broadband_SPL_A_weighted,
-    fro_qst_1_tonal_SPL_A_weighted, fro_qst_1_broadband_SPL_A_weighted,
+# flo_gl_model = GL(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_flo_disk', blade_prefix='flo')
+# flo_qst_1_broadband_SPL, flo_qst_1_broadband_SPL_A_weighted = flo_gl_model.evaluate_broadband_noise(qst_1_ac_states, flo_Ct, design_condition=qst_1)
+# system_m3l_model.register_output(flo_qst_1_broadband_SPL, qst_1)
+# system_m3l_model.register_output(flo_qst_1_broadband_SPL_A_weighted, qst_1)
 
-]
 
-qst_1_total_SPL, qst_1_total_SPL_A_weighted = total_noise_model_qst_1.evaluate(noise_components, A_weighted_noise_components, design_condition=qst_1)
-system_m3l_model.register_output(qst_1_total_SPL, qst_1)
-system_m3l_model.register_output(qst_1_total_SPL_A_weighted, qst_1)
+# fli_ks_model = KS(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_fli_disk', blade_prefix='fli')
+# fli_qst_1_tonal_SPL, fli_qst_1_tonal_SPL_A_weighted = fli_ks_model.evaluate_tonal_noise(fli_dT, fli_dD, qst_1_ac_states, design_condition=qst_1)
+# system_m3l_model.register_output(fli_qst_1_tonal_SPL, qst_1)
+# system_m3l_model.register_output(fli_qst_1_tonal_SPL_A_weighted, qst_1)
+
+# fli_gl_model = GL(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_fli_disk', blade_prefix='fli')
+# fli_qst_1_broadband_SPL, fli_qst_1_broadband_SPL_A_weighted = fli_gl_model.evaluate_broadband_noise(qst_1_ac_states, fli_Ct, design_condition=qst_1)
+# system_m3l_model.register_output(fli_qst_1_broadband_SPL, qst_1)
+# system_m3l_model.register_output(fli_qst_1_broadband_SPL_A_weighted, qst_1)
+
+
+# fri_ks_model = KS(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_fri_disk', blade_prefix='fri')
+# fri_qst_1_tonal_SPL, fri_qst_1_tonal_SPL_A_weighted = fri_ks_model.evaluate_tonal_noise(fri_dT, fri_dD, qst_1_ac_states, design_condition=qst_1)
+# system_m3l_model.register_output(fri_qst_1_tonal_SPL, qst_1)
+# system_m3l_model.register_output(fri_qst_1_tonal_SPL_A_weighted, qst_1)
+
+# fri_gl_model = GL(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_fri_disk', blade_prefix='fri')
+# fri_qst_1_broadband_SPL, fri_qst_1_broadband_SPL_A_weighted = fri_gl_model.evaluate_broadband_noise(qst_1_ac_states, fri_Ct, design_condition=qst_1)
+# system_m3l_model.register_output(fri_qst_1_broadband_SPL, qst_1)
+# system_m3l_model.register_output(fri_qst_1_broadband_SPL_A_weighted, qst_1)
+
+
+# fro_ks_model = KS(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_fro_disk', blade_prefix='fro')
+# fro_qst_1_tonal_SPL, fro_qst_1_tonal_SPL_A_weighted = fro_ks_model.evaluate_tonal_noise(fro_dT, fro_dD, qst_1_ac_states, design_condition=qst_1)
+# system_m3l_model.register_output(fro_qst_1_tonal_SPL, qst_1)
+# system_m3l_model.register_output(fro_qst_1_tonal_SPL_A_weighted, qst_1)
+
+# fro_gl_model = GL(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_1_acoustics, disk_prefix='qst_1_fro_disk', blade_prefix='fro')
+# fro_qst_1_broadband_SPL, fro_qst_1_broadband_SPL_A_weighted = fro_gl_model.evaluate_broadband_noise(qst_1_ac_states, fro_Ct, design_condition=qst_1)
+# system_m3l_model.register_output(fro_qst_1_broadband_SPL, qst_1)
+# system_m3l_model.register_output(fro_qst_1_broadband_SPL_A_weighted, qst_1)
+
+
+# total_noise_model_qst_1 = TotalAircraftNoise(
+#     acoustics_data=qst_1_acoustics,
+#     component_list=[rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
+# )
+# noise_components = [
+#     rlo_qst_1_tonal_SPL, rlo_qst_1_broadband_SPL,
+#     rli_qst_1_tonal_SPL, rli_qst_1_broadband_SPL,
+#     rri_qst_1_tonal_SPL, rri_qst_1_broadband_SPL,
+#     rro_qst_1_tonal_SPL, rro_qst_1_broadband_SPL,
+#     flo_qst_1_tonal_SPL, flo_qst_1_broadband_SPL,
+#     fli_qst_1_tonal_SPL, fli_qst_1_broadband_SPL,
+#     fri_qst_1_tonal_SPL, fri_qst_1_broadband_SPL,
+#     fro_qst_1_tonal_SPL, fro_qst_1_broadband_SPL,
+
+# ]
+# A_weighted_noise_components = [
+#     rlo_qst_1_tonal_SPL_A_weighted, rlo_qst_1_broadband_SPL_A_weighted,
+#     rli_qst_1_tonal_SPL_A_weighted, rli_qst_1_broadband_SPL_A_weighted,
+#     rri_qst_1_tonal_SPL_A_weighted, rri_qst_1_broadband_SPL_A_weighted,
+#     rro_qst_1_tonal_SPL_A_weighted, rro_qst_1_broadband_SPL_A_weighted,
+#     flo_qst_1_tonal_SPL_A_weighted, flo_qst_1_broadband_SPL_A_weighted,
+#     fli_qst_1_tonal_SPL_A_weighted, fli_qst_1_broadband_SPL_A_weighted,
+#     fri_qst_1_tonal_SPL_A_weighted, fri_qst_1_broadband_SPL_A_weighted,
+#     fro_qst_1_tonal_SPL_A_weighted, fro_qst_1_broadband_SPL_A_weighted,
+
+# ]
+
+# qst_1_total_SPL, qst_1_total_SPL_A_weighted = total_noise_model_qst_1.evaluate(noise_components, A_weighted_noise_components, design_condition=qst_1)
+# system_m3l_model.register_output(qst_1_total_SPL, qst_1)
+# system_m3l_model.register_output(qst_1_total_SPL_A_weighted, qst_1)
 
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
@@ -1273,149 +1273,149 @@ fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4
 fro_bem_forces, fro_bem_moments, fro_dT ,fro_dQ ,fro_dD, fro_Ct = fro_bem_model.evaluate(ac_states=qst_2_ac_states, design_condition=qst_2)
 
 
-# acoustics
-qst_2_acoustics = Acoustics(
-    aircraft_position = np.array([0.,0., 76.])
-)
+# # acoustics
+# qst_2_acoustics = Acoustics(
+#     aircraft_position = np.array([0.,0., 76.])
+# )
 
-qst_2_acoustics.add_observer(
-    name='obs1',
-    obs_position=np.array([53.74, 0., 19.26]),
-    time_vector=np.array([0. ]),
-)
+# qst_2_acoustics.add_observer(
+#     name='obs1',
+#     obs_position=np.array([53.74, 0., 19.26]),
+#     time_vector=np.array([0. ]),
+# )
 
-pp_lowson_model = Lowson(component=pp_disk, mesh=pusher_bem_mesh, acoustics_data=qst_2_acoustics, disk_prefix='pp_disk', blade_prefix='pp')
-pp_qst_2_tonal_SPL, pp_qst_2_tonal_SPL_A_weighted = pp_lowson_model.evaluate_tonal_noise(pp_dT, pp_dD, qst_2_ac_states, design_condition=qst_2)
-system_m3l_model.register_output(pp_qst_2_tonal_SPL, qst_2)
-system_m3l_model.register_output(pp_qst_2_tonal_SPL_A_weighted, qst_2)
+# pp_lowson_model = Lowson(component=pp_disk, mesh=pusher_bem_mesh, acoustics_data=qst_2_acoustics, disk_prefix='pp_disk', blade_prefix='pp')
+# pp_qst_2_tonal_SPL, pp_qst_2_tonal_SPL_A_weighted = pp_lowson_model.evaluate_tonal_noise(pp_dT, pp_dD, qst_2_ac_states, design_condition=qst_2)
+# system_m3l_model.register_output(pp_qst_2_tonal_SPL, qst_2)
+# system_m3l_model.register_output(pp_qst_2_tonal_SPL_A_weighted, qst_2)
 
-pp_gl_model = GL(component=pp_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_pp_disk', blade_prefix='pp')
-pp_qst_2_broadband_SPL, pp_qst_2_broadband_SPL_A_weighted = pp_gl_model.evaluate_broadband_noise(qst_2_ac_states, pp_Ct, design_condition=qst_2)
-system_m3l_model.register_output(pp_qst_2_broadband_SPL, qst_2)
-system_m3l_model.register_output(pp_qst_2_broadband_SPL_A_weighted, qst_2)
-
-
-rlo_lowson_model = Lowson(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rlo_disk', blade_prefix='rlo')
-rlo_qst_2_tonal_SPL, rlo_qst_2_tonal_SPL_A_weighted = rlo_lowson_model.evaluate_tonal_noise(rlo_dT, rlo_dD, qst_2_ac_states, design_condition=qst_2)
-system_m3l_model.register_output(rlo_qst_2_tonal_SPL, qst_2)
-system_m3l_model.register_output(rlo_qst_2_tonal_SPL_A_weighted, qst_2)
-
-rlo_gl_model = GL(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rlo_disk', blade_prefix='rlo')
-rlo_qst_2_broadband_SPL, rlo_qst_2_broadband_SPL_A_weighted = rlo_gl_model.evaluate_broadband_noise(qst_2_ac_states, rlo_Ct, design_condition=qst_2)
-system_m3l_model.register_output(rlo_qst_2_broadband_SPL, qst_2)
-system_m3l_model.register_output(rlo_qst_2_broadband_SPL_A_weighted, qst_2)
+# pp_gl_model = GL(component=pp_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_pp_disk', blade_prefix='pp')
+# pp_qst_2_broadband_SPL, pp_qst_2_broadband_SPL_A_weighted = pp_gl_model.evaluate_broadband_noise(qst_2_ac_states, pp_Ct, design_condition=qst_2)
+# system_m3l_model.register_output(pp_qst_2_broadband_SPL, qst_2)
+# system_m3l_model.register_output(pp_qst_2_broadband_SPL_A_weighted, qst_2)
 
 
-rli_lowson_model = Lowson(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rli_disk', blade_prefix='rli')
-rli_qst_2_tonal_SPL, rli_qst_2_tonal_SPL_A_weighted = rli_lowson_model.evaluate_tonal_noise(rli_dT, rli_dD, qst_2_ac_states, design_condition=qst_2)
-system_m3l_model.register_output(rli_qst_2_tonal_SPL, qst_2)
-system_m3l_model.register_output(rli_qst_2_tonal_SPL_A_weighted, qst_2)
+# rlo_lowson_model = Lowson(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rlo_disk', blade_prefix='rlo')
+# rlo_qst_2_tonal_SPL, rlo_qst_2_tonal_SPL_A_weighted = rlo_lowson_model.evaluate_tonal_noise(rlo_dT, rlo_dD, qst_2_ac_states, design_condition=qst_2)
+# system_m3l_model.register_output(rlo_qst_2_tonal_SPL, qst_2)
+# system_m3l_model.register_output(rlo_qst_2_tonal_SPL_A_weighted, qst_2)
 
-rli_gl_model = GL(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rli_disk', blade_prefix='rli')
-rli_qst_2_broadband_SPL, rli_qst_2_broadband_SPL_A_weighted = rli_gl_model.evaluate_broadband_noise(qst_2_ac_states, rli_Ct, design_condition=qst_2)
-system_m3l_model.register_output(rli_qst_2_broadband_SPL, qst_2)
-system_m3l_model.register_output(rli_qst_2_broadband_SPL_A_weighted, qst_2)
-
-
-rri_lowson_model = Lowson(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rri_disk', blade_prefix='rri')
-rri_qst_2_tonal_SPL, rri_qst_2_tonal_SPL_A_weighted = rri_lowson_model.evaluate_tonal_noise(rri_dT, rri_dD, qst_2_ac_states, design_condition=qst_2)
-system_m3l_model.register_output(rri_qst_2_tonal_SPL, qst_2)
-system_m3l_model.register_output(rri_qst_2_tonal_SPL_A_weighted, qst_2)
-
-rri_gl_model = GL(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rri_disk', blade_prefix='rri')
-rri_qst_2_broadband_SPL, rri_qst_2_broadband_SPL_A_weighted = rri_gl_model.evaluate_broadband_noise(qst_2_ac_states, rri_Ct, design_condition=qst_2)
-system_m3l_model.register_output(rri_qst_2_broadband_SPL, qst_2)
-system_m3l_model.register_output(rri_qst_2_broadband_SPL_A_weighted, qst_2)
+# rlo_gl_model = GL(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rlo_disk', blade_prefix='rlo')
+# rlo_qst_2_broadband_SPL, rlo_qst_2_broadband_SPL_A_weighted = rlo_gl_model.evaluate_broadband_noise(qst_2_ac_states, rlo_Ct, design_condition=qst_2)
+# system_m3l_model.register_output(rlo_qst_2_broadband_SPL, qst_2)
+# system_m3l_model.register_output(rlo_qst_2_broadband_SPL_A_weighted, qst_2)
 
 
-rro_lowson_model = Lowson(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rro_disk', blade_prefix='rro')
-rro_qst_2_tonal_SPL, rro_qst_2_tonal_SPL_A_weighted = rro_lowson_model.evaluate_tonal_noise(rro_dT, rro_dD, qst_2_ac_states, design_condition=qst_2)
-system_m3l_model.register_output(rro_qst_2_tonal_SPL, qst_2)
-system_m3l_model.register_output(rro_qst_2_tonal_SPL_A_weighted, qst_2)
+# rli_lowson_model = Lowson(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rli_disk', blade_prefix='rli')
+# rli_qst_2_tonal_SPL, rli_qst_2_tonal_SPL_A_weighted = rli_lowson_model.evaluate_tonal_noise(rli_dT, rli_dD, qst_2_ac_states, design_condition=qst_2)
+# system_m3l_model.register_output(rli_qst_2_tonal_SPL, qst_2)
+# system_m3l_model.register_output(rli_qst_2_tonal_SPL_A_weighted, qst_2)
 
-rro_gl_model = GL(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rro_disk', blade_prefix='rro')
-rro_qst_2_broadband_SPL, rro_qst_2_broadband_SPL_A_weighted = rro_gl_model.evaluate_broadband_noise(qst_2_ac_states, rro_Ct, design_condition=qst_2)
-system_m3l_model.register_output(rro_qst_2_broadband_SPL, qst_2)
-system_m3l_model.register_output(rro_qst_2_broadband_SPL_A_weighted, qst_2)
-
-
-flo_lowson_model = Lowson(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_flo_disk', blade_prefix='flo')
-flo_qst_2_tonal_SPL, flo_qst_2_tonal_SPL_A_weighted = flo_lowson_model.evaluate_tonal_noise(flo_dT, flo_dD, qst_2_ac_states, design_condition=qst_2)
-system_m3l_model.register_output(flo_qst_2_tonal_SPL, qst_2)
-system_m3l_model.register_output(flo_qst_2_tonal_SPL_A_weighted, qst_2)
-
-flo_gl_model = GL(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_flo_disk', blade_prefix='flo')
-flo_qst_2_broadband_SPL, flo_qst_2_broadband_SPL_A_weighted = flo_gl_model.evaluate_broadband_noise(qst_2_ac_states, flo_Ct, design_condition=qst_2)
-system_m3l_model.register_output(flo_qst_2_broadband_SPL, qst_2)
-system_m3l_model.register_output(flo_qst_2_broadband_SPL_A_weighted, qst_2)
+# rli_gl_model = GL(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rli_disk', blade_prefix='rli')
+# rli_qst_2_broadband_SPL, rli_qst_2_broadband_SPL_A_weighted = rli_gl_model.evaluate_broadband_noise(qst_2_ac_states, rli_Ct, design_condition=qst_2)
+# system_m3l_model.register_output(rli_qst_2_broadband_SPL, qst_2)
+# system_m3l_model.register_output(rli_qst_2_broadband_SPL_A_weighted, qst_2)
 
 
-fli_lowson_model = Lowson(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_fli_disk', blade_prefix='fli')
-fli_qst_2_tonal_SPL, fli_qst_2_tonal_SPL_A_weighted = fli_lowson_model.evaluate_tonal_noise(fli_dT, fli_dD, qst_2_ac_states, design_condition=qst_2)
-system_m3l_model.register_output(fli_qst_2_tonal_SPL, qst_2)
-system_m3l_model.register_output(fli_qst_2_tonal_SPL_A_weighted, qst_2)
+# rri_lowson_model = Lowson(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rri_disk', blade_prefix='rri')
+# rri_qst_2_tonal_SPL, rri_qst_2_tonal_SPL_A_weighted = rri_lowson_model.evaluate_tonal_noise(rri_dT, rri_dD, qst_2_ac_states, design_condition=qst_2)
+# system_m3l_model.register_output(rri_qst_2_tonal_SPL, qst_2)
+# system_m3l_model.register_output(rri_qst_2_tonal_SPL_A_weighted, qst_2)
 
-fli_gl_model = GL(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_fli_disk', blade_prefix='fli')
-fli_qst_2_broadband_SPL, fli_qst_2_broadband_SPL_A_weighted = fli_gl_model.evaluate_broadband_noise(qst_2_ac_states, fli_Ct, design_condition=qst_2)
-system_m3l_model.register_output(fli_qst_2_broadband_SPL, qst_2)
-system_m3l_model.register_output(fli_qst_2_broadband_SPL_A_weighted, qst_2)
-
-
-fri_lowson_model = Lowson(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_fri_disk', blade_prefix='fri')
-fri_qst_2_tonal_SPL, fri_qst_2_tonal_SPL_A_weighted = fri_lowson_model.evaluate_tonal_noise(fri_dT, fri_dD, qst_2_ac_states, design_condition=qst_2)
-system_m3l_model.register_output(fri_qst_2_tonal_SPL, qst_2)
-system_m3l_model.register_output(fri_qst_2_tonal_SPL_A_weighted, qst_2)
-
-fri_gl_model = GL(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_fri_disk', blade_prefix='fri')
-fri_qst_2_broadband_SPL, fri_qst_2_broadband_SPL_A_weighted = fri_gl_model.evaluate_broadband_noise(qst_2_ac_states, fri_Ct, design_condition=qst_2)
-system_m3l_model.register_output(fri_qst_2_broadband_SPL, qst_2)
-system_m3l_model.register_output(fri_qst_2_broadband_SPL_A_weighted, qst_2)
+# rri_gl_model = GL(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rri_disk', blade_prefix='rri')
+# rri_qst_2_broadband_SPL, rri_qst_2_broadband_SPL_A_weighted = rri_gl_model.evaluate_broadband_noise(qst_2_ac_states, rri_Ct, design_condition=qst_2)
+# system_m3l_model.register_output(rri_qst_2_broadband_SPL, qst_2)
+# system_m3l_model.register_output(rri_qst_2_broadband_SPL_A_weighted, qst_2)
 
 
-fro_lowson_model = Lowson(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_fro_disk', blade_prefix='fro')
-fro_qst_2_tonal_SPL, fro_qst_2_tonal_SPL_A_weighted = fro_lowson_model.evaluate_tonal_noise(fro_dT, fro_dD, qst_2_ac_states, design_condition=qst_2)
-system_m3l_model.register_output(fro_qst_2_tonal_SPL, qst_2)
-system_m3l_model.register_output(fro_qst_2_tonal_SPL_A_weighted, qst_2)
+# rro_lowson_model = Lowson(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rro_disk', blade_prefix='rro')
+# rro_qst_2_tonal_SPL, rro_qst_2_tonal_SPL_A_weighted = rro_lowson_model.evaluate_tonal_noise(rro_dT, rro_dD, qst_2_ac_states, design_condition=qst_2)
+# system_m3l_model.register_output(rro_qst_2_tonal_SPL, qst_2)
+# system_m3l_model.register_output(rro_qst_2_tonal_SPL_A_weighted, qst_2)
 
-fro_gl_model = GL(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_fro_disk', blade_prefix='fro')
-fro_qst_2_broadband_SPL, fro_qst_2_broadband_SPL_A_weighted = fro_gl_model.evaluate_broadband_noise(qst_2_ac_states, fro_Ct, design_condition=qst_2)
-system_m3l_model.register_output(fro_qst_2_broadband_SPL, qst_2)
-system_m3l_model.register_output(fro_qst_2_broadband_SPL_A_weighted, qst_2)
+# rro_gl_model = GL(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_rro_disk', blade_prefix='rro')
+# rro_qst_2_broadband_SPL, rro_qst_2_broadband_SPL_A_weighted = rro_gl_model.evaluate_broadband_noise(qst_2_ac_states, rro_Ct, design_condition=qst_2)
+# system_m3l_model.register_output(rro_qst_2_broadband_SPL, qst_2)
+# system_m3l_model.register_output(rro_qst_2_broadband_SPL_A_weighted, qst_2)
 
 
-total_noise_model_qst_2 = TotalAircraftNoise(
-    acoustics_data=qst_2_acoustics,
-    component_list=[pp_disk, rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
-    # component_list=[rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
-)
-noise_components = [
-    pp_qst_2_tonal_SPL, #pp_qst_2_broadband_SPL,
-    rlo_qst_2_tonal_SPL, rlo_qst_2_broadband_SPL,
-    rli_qst_2_tonal_SPL, rli_qst_2_broadband_SPL,
-    rri_qst_2_tonal_SPL, rri_qst_2_broadband_SPL,
-    rro_qst_2_tonal_SPL, rro_qst_2_broadband_SPL,
-    flo_qst_2_tonal_SPL, flo_qst_2_broadband_SPL,
-    fli_qst_2_tonal_SPL, fli_qst_2_broadband_SPL,
-    fri_qst_2_tonal_SPL, fri_qst_2_broadband_SPL,
-    fro_qst_2_tonal_SPL, fro_qst_2_broadband_SPL,
+# flo_lowson_model = Lowson(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_flo_disk', blade_prefix='flo')
+# flo_qst_2_tonal_SPL, flo_qst_2_tonal_SPL_A_weighted = flo_lowson_model.evaluate_tonal_noise(flo_dT, flo_dD, qst_2_ac_states, design_condition=qst_2)
+# system_m3l_model.register_output(flo_qst_2_tonal_SPL, qst_2)
+# system_m3l_model.register_output(flo_qst_2_tonal_SPL_A_weighted, qst_2)
 
-]
-A_weighted_noise_components = [
-    pp_qst_2_tonal_SPL_A_weighted, #pp_qst_2_broadband_SPL_A_weighted,
-    rlo_qst_2_tonal_SPL_A_weighted, rlo_qst_2_broadband_SPL_A_weighted,
-    rli_qst_2_tonal_SPL_A_weighted, rli_qst_2_broadband_SPL_A_weighted,
-    rri_qst_2_tonal_SPL_A_weighted, rri_qst_2_broadband_SPL_A_weighted,
-    rro_qst_2_tonal_SPL_A_weighted, rro_qst_2_broadband_SPL_A_weighted,
-    flo_qst_2_tonal_SPL_A_weighted, flo_qst_2_broadband_SPL_A_weighted,
-    fli_qst_2_tonal_SPL_A_weighted, fli_qst_2_broadband_SPL_A_weighted,
-    fri_qst_2_tonal_SPL_A_weighted, fri_qst_2_broadband_SPL_A_weighted,
-    fro_qst_2_tonal_SPL_A_weighted, fro_qst_2_broadband_SPL_A_weighted,
+# flo_gl_model = GL(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_flo_disk', blade_prefix='flo')
+# flo_qst_2_broadband_SPL, flo_qst_2_broadband_SPL_A_weighted = flo_gl_model.evaluate_broadband_noise(qst_2_ac_states, flo_Ct, design_condition=qst_2)
+# system_m3l_model.register_output(flo_qst_2_broadband_SPL, qst_2)
+# system_m3l_model.register_output(flo_qst_2_broadband_SPL_A_weighted, qst_2)
 
-]
 
-qst_2_total_SPL, qst_2_total_SPL_A_weighted = total_noise_model_qst_2.evaluate(noise_components, A_weighted_noise_components, design_condition=qst_2)
-system_m3l_model.register_output(qst_2_total_SPL, qst_2)
-system_m3l_model.register_output(qst_2_total_SPL_A_weighted, qst_2)
+# fli_lowson_model = Lowson(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_fli_disk', blade_prefix='fli')
+# fli_qst_2_tonal_SPL, fli_qst_2_tonal_SPL_A_weighted = fli_lowson_model.evaluate_tonal_noise(fli_dT, fli_dD, qst_2_ac_states, design_condition=qst_2)
+# system_m3l_model.register_output(fli_qst_2_tonal_SPL, qst_2)
+# system_m3l_model.register_output(fli_qst_2_tonal_SPL_A_weighted, qst_2)
+
+# fli_gl_model = GL(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_fli_disk', blade_prefix='fli')
+# fli_qst_2_broadband_SPL, fli_qst_2_broadband_SPL_A_weighted = fli_gl_model.evaluate_broadband_noise(qst_2_ac_states, fli_Ct, design_condition=qst_2)
+# system_m3l_model.register_output(fli_qst_2_broadband_SPL, qst_2)
+# system_m3l_model.register_output(fli_qst_2_broadband_SPL_A_weighted, qst_2)
+
+
+# fri_lowson_model = Lowson(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_fri_disk', blade_prefix='fri')
+# fri_qst_2_tonal_SPL, fri_qst_2_tonal_SPL_A_weighted = fri_lowson_model.evaluate_tonal_noise(fri_dT, fri_dD, qst_2_ac_states, design_condition=qst_2)
+# system_m3l_model.register_output(fri_qst_2_tonal_SPL, qst_2)
+# system_m3l_model.register_output(fri_qst_2_tonal_SPL_A_weighted, qst_2)
+
+# fri_gl_model = GL(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_fri_disk', blade_prefix='fri')
+# fri_qst_2_broadband_SPL, fri_qst_2_broadband_SPL_A_weighted = fri_gl_model.evaluate_broadband_noise(qst_2_ac_states, fri_Ct, design_condition=qst_2)
+# system_m3l_model.register_output(fri_qst_2_broadband_SPL, qst_2)
+# system_m3l_model.register_output(fri_qst_2_broadband_SPL_A_weighted, qst_2)
+
+
+# fro_lowson_model = Lowson(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_fro_disk', blade_prefix='fro')
+# fro_qst_2_tonal_SPL, fro_qst_2_tonal_SPL_A_weighted = fro_lowson_model.evaluate_tonal_noise(fro_dT, fro_dD, qst_2_ac_states, design_condition=qst_2)
+# system_m3l_model.register_output(fro_qst_2_tonal_SPL, qst_2)
+# system_m3l_model.register_output(fro_qst_2_tonal_SPL_A_weighted, qst_2)
+
+# fro_gl_model = GL(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_2_acoustics, disk_prefix='qst_2_fro_disk', blade_prefix='fro')
+# fro_qst_2_broadband_SPL, fro_qst_2_broadband_SPL_A_weighted = fro_gl_model.evaluate_broadband_noise(qst_2_ac_states, fro_Ct, design_condition=qst_2)
+# system_m3l_model.register_output(fro_qst_2_broadband_SPL, qst_2)
+# system_m3l_model.register_output(fro_qst_2_broadband_SPL_A_weighted, qst_2)
+
+
+# total_noise_model_qst_2 = TotalAircraftNoise(
+#     acoustics_data=qst_2_acoustics,
+#     component_list=[pp_disk, rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
+#     # component_list=[rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
+# )
+# noise_components = [
+#     pp_qst_2_tonal_SPL, #pp_qst_2_broadband_SPL,
+#     rlo_qst_2_tonal_SPL, rlo_qst_2_broadband_SPL,
+#     rli_qst_2_tonal_SPL, rli_qst_2_broadband_SPL,
+#     rri_qst_2_tonal_SPL, rri_qst_2_broadband_SPL,
+#     rro_qst_2_tonal_SPL, rro_qst_2_broadband_SPL,
+#     flo_qst_2_tonal_SPL, flo_qst_2_broadband_SPL,
+#     fli_qst_2_tonal_SPL, fli_qst_2_broadband_SPL,
+#     fri_qst_2_tonal_SPL, fri_qst_2_broadband_SPL,
+#     fro_qst_2_tonal_SPL, fro_qst_2_broadband_SPL,
+
+# ]
+# A_weighted_noise_components = [
+#     pp_qst_2_tonal_SPL_A_weighted, #pp_qst_2_broadband_SPL_A_weighted,
+#     rlo_qst_2_tonal_SPL_A_weighted, rlo_qst_2_broadband_SPL_A_weighted,
+#     rli_qst_2_tonal_SPL_A_weighted, rli_qst_2_broadband_SPL_A_weighted,
+#     rri_qst_2_tonal_SPL_A_weighted, rri_qst_2_broadband_SPL_A_weighted,
+#     rro_qst_2_tonal_SPL_A_weighted, rro_qst_2_broadband_SPL_A_weighted,
+#     flo_qst_2_tonal_SPL_A_weighted, flo_qst_2_broadband_SPL_A_weighted,
+#     fli_qst_2_tonal_SPL_A_weighted, fli_qst_2_broadband_SPL_A_weighted,
+#     fri_qst_2_tonal_SPL_A_weighted, fri_qst_2_broadband_SPL_A_weighted,
+#     fro_qst_2_tonal_SPL_A_weighted, fro_qst_2_broadband_SPL_A_weighted,
+
+# ]
+
+# qst_2_total_SPL, qst_2_total_SPL_A_weighted = total_noise_model_qst_2.evaluate(noise_components, A_weighted_noise_components, design_condition=qst_2)
+# system_m3l_model.register_output(qst_2_total_SPL, qst_2)
+# system_m3l_model.register_output(qst_2_total_SPL_A_weighted, qst_2)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
 total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=qst_2)
@@ -1541,148 +1541,148 @@ fro_bem_model = PittPeters(disk_prefix='qst_3_fro_disk', blade_prefix='fro', com
 fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=20, upper=4000, scaler=1e-3)
 fro_bem_forces, fro_bem_moments, fro_dT ,fro_dQ ,fro_dD, fro_Ct = fro_bem_model.evaluate(ac_states=qst_3_ac_states, design_condition=qst_3)
 
-# acoustics
-qst_3_acoustics = Acoustics(
-    aircraft_position = np.array([0.,0., 76.])
-)
+# # acoustics
+# qst_3_acoustics = Acoustics(
+#     aircraft_position = np.array([0.,0., 76.])
+# )
 
-qst_3_acoustics.add_observer(
-    name='obs1',
-    obs_position=np.array([53.74, 0., 19.26]),
-    time_vector=np.array([0. ]),
-)
+# qst_3_acoustics.add_observer(
+#     name='obs1',
+#     obs_position=np.array([53.74, 0., 19.26]),
+#     time_vector=np.array([0. ]),
+# )
 
-pp_lowson_model = Lowson(component=pp_disk, mesh=pusher_bem_mesh, acoustics_data=qst_3_acoustics, disk_prefix='pp_disk', blade_prefix='pp')
-pp_qst_3_tonal_SPL, pp_qst_3_tonal_SPL_A_weighted = pp_lowson_model.evaluate_tonal_noise(pp_dT, pp_dD, qst_3_ac_states, design_condition=qst_3)
-system_m3l_model.register_output(pp_qst_3_tonal_SPL, qst_3)
-system_m3l_model.register_output(pp_qst_3_tonal_SPL_A_weighted, qst_3)
+# pp_lowson_model = Lowson(component=pp_disk, mesh=pusher_bem_mesh, acoustics_data=qst_3_acoustics, disk_prefix='pp_disk', blade_prefix='pp')
+# pp_qst_3_tonal_SPL, pp_qst_3_tonal_SPL_A_weighted = pp_lowson_model.evaluate_tonal_noise(pp_dT, pp_dD, qst_3_ac_states, design_condition=qst_3)
+# system_m3l_model.register_output(pp_qst_3_tonal_SPL, qst_3)
+# system_m3l_model.register_output(pp_qst_3_tonal_SPL_A_weighted, qst_3)
 
-pp_gl_model = GL(component=pp_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='pp_disk', blade_prefix='pp')
-pp_qst_3_broadband_SPL, pp_qst_3_broadband_SPL_A_weighted = pp_gl_model.evaluate_broadband_noise(qst_3_ac_states, pp_Ct, design_condition=qst_3)
-system_m3l_model.register_output(pp_qst_3_broadband_SPL, qst_3)
-system_m3l_model.register_output(pp_qst_3_broadband_SPL_A_weighted, qst_3)
+# pp_gl_model = GL(component=pp_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='pp_disk', blade_prefix='pp')
+# pp_qst_3_broadband_SPL, pp_qst_3_broadband_SPL_A_weighted = pp_gl_model.evaluate_broadband_noise(qst_3_ac_states, pp_Ct, design_condition=qst_3)
+# system_m3l_model.register_output(pp_qst_3_broadband_SPL, qst_3)
+# system_m3l_model.register_output(pp_qst_3_broadband_SPL_A_weighted, qst_3)
 
-rlo_lowson_model = Lowson(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rlo_disk', blade_prefix='rlo')
-rlo_qst_3_tonal_SPL, rlo_qst_3_tonal_SPL_A_weighted = rlo_lowson_model.evaluate_tonal_noise(rlo_dT, rlo_dD, qst_3_ac_states, design_condition=qst_3)
-system_m3l_model.register_output(rlo_qst_3_tonal_SPL, qst_3)
-system_m3l_model.register_output(rlo_qst_3_tonal_SPL_A_weighted, qst_3)
+# rlo_lowson_model = Lowson(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rlo_disk', blade_prefix='rlo')
+# rlo_qst_3_tonal_SPL, rlo_qst_3_tonal_SPL_A_weighted = rlo_lowson_model.evaluate_tonal_noise(rlo_dT, rlo_dD, qst_3_ac_states, design_condition=qst_3)
+# system_m3l_model.register_output(rlo_qst_3_tonal_SPL, qst_3)
+# system_m3l_model.register_output(rlo_qst_3_tonal_SPL_A_weighted, qst_3)
 
-rlo_gl_model = GL(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rlo_disk', blade_prefix='rlo')
-rlo_qst_3_broadband_SPL, rlo_qst_3_broadband_SPL_A_weighted = rlo_gl_model.evaluate_broadband_noise(qst_3_ac_states, rlo_Ct, design_condition=qst_3)
-system_m3l_model.register_output(rlo_qst_3_broadband_SPL, qst_3)
-system_m3l_model.register_output(rlo_qst_3_broadband_SPL_A_weighted, qst_3)
-
-
-rli_lowson_model = Lowson(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rli_disk', blade_prefix='rli')
-rli_qst_3_tonal_SPL, rli_qst_3_tonal_SPL_A_weighted = rli_lowson_model.evaluate_tonal_noise(rli_dT, rli_dD, qst_3_ac_states, design_condition=qst_3)
-system_m3l_model.register_output(rli_qst_3_tonal_SPL, qst_3)
-system_m3l_model.register_output(rli_qst_3_tonal_SPL_A_weighted, qst_3)
-
-rli_gl_model = GL(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rli_disk', blade_prefix='rli')
-rli_qst_3_broadband_SPL, rli_qst_3_broadband_SPL_A_weighted = rli_gl_model.evaluate_broadband_noise(qst_3_ac_states, rli_Ct, design_condition=qst_3)
-system_m3l_model.register_output(rli_qst_3_broadband_SPL, qst_3)
-system_m3l_model.register_output(rli_qst_3_broadband_SPL_A_weighted, qst_3)
+# rlo_gl_model = GL(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rlo_disk', blade_prefix='rlo')
+# rlo_qst_3_broadband_SPL, rlo_qst_3_broadband_SPL_A_weighted = rlo_gl_model.evaluate_broadband_noise(qst_3_ac_states, rlo_Ct, design_condition=qst_3)
+# system_m3l_model.register_output(rlo_qst_3_broadband_SPL, qst_3)
+# system_m3l_model.register_output(rlo_qst_3_broadband_SPL_A_weighted, qst_3)
 
 
-rri_lowson_model = Lowson(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rri_disk', blade_prefix='rri')
-rri_qst_3_tonal_SPL, rri_qst_3_tonal_SPL_A_weighted = rri_lowson_model.evaluate_tonal_noise(rri_dT, rri_dD, qst_3_ac_states, design_condition=qst_3)
-system_m3l_model.register_output(rri_qst_3_tonal_SPL, qst_3)
-system_m3l_model.register_output(rri_qst_3_tonal_SPL_A_weighted, qst_3)
+# rli_lowson_model = Lowson(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rli_disk', blade_prefix='rli')
+# rli_qst_3_tonal_SPL, rli_qst_3_tonal_SPL_A_weighted = rli_lowson_model.evaluate_tonal_noise(rli_dT, rli_dD, qst_3_ac_states, design_condition=qst_3)
+# system_m3l_model.register_output(rli_qst_3_tonal_SPL, qst_3)
+# system_m3l_model.register_output(rli_qst_3_tonal_SPL_A_weighted, qst_3)
 
-rri_gl_model = GL(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rri_disk', blade_prefix='rri')
-rri_qst_3_broadband_SPL, rri_qst_3_broadband_SPL_A_weighted = rri_gl_model.evaluate_broadband_noise(qst_3_ac_states, rri_Ct, design_condition=qst_3)
-system_m3l_model.register_output(rri_qst_3_broadband_SPL, qst_3)
-system_m3l_model.register_output(rri_qst_3_broadband_SPL_A_weighted, qst_3)
-
-
-rro_lowson_model = Lowson(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rro_disk', blade_prefix='rro')
-rro_qst_3_tonal_SPL, rro_qst_3_tonal_SPL_A_weighted = rro_lowson_model.evaluate_tonal_noise(rro_dT, rro_dD, qst_3_ac_states, design_condition=qst_3)
-system_m3l_model.register_output(rro_qst_3_tonal_SPL, qst_3)
-system_m3l_model.register_output(rro_qst_3_tonal_SPL_A_weighted, qst_3)
-
-rro_gl_model = GL(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rro_disk', blade_prefix='rro')
-rro_qst_3_broadband_SPL, rro_qst_3_broadband_SPL_A_weighted = rro_gl_model.evaluate_broadband_noise(qst_3_ac_states, rro_Ct, design_condition=qst_3)
-system_m3l_model.register_output(rro_qst_3_broadband_SPL, qst_3)
-system_m3l_model.register_output(rro_qst_3_broadband_SPL_A_weighted, qst_3)
+# rli_gl_model = GL(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rli_disk', blade_prefix='rli')
+# rli_qst_3_broadband_SPL, rli_qst_3_broadband_SPL_A_weighted = rli_gl_model.evaluate_broadband_noise(qst_3_ac_states, rli_Ct, design_condition=qst_3)
+# system_m3l_model.register_output(rli_qst_3_broadband_SPL, qst_3)
+# system_m3l_model.register_output(rli_qst_3_broadband_SPL_A_weighted, qst_3)
 
 
-flo_lowson_model = Lowson(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_flo_disk', blade_prefix='flo')
-flo_qst_3_tonal_SPL, flo_qst_3_tonal_SPL_A_weighted = flo_lowson_model.evaluate_tonal_noise(flo_dT, flo_dD, qst_3_ac_states, design_condition=qst_3)
-system_m3l_model.register_output(flo_qst_3_tonal_SPL, qst_3)
-system_m3l_model.register_output(flo_qst_3_tonal_SPL_A_weighted, qst_3)
+# rri_lowson_model = Lowson(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rri_disk', blade_prefix='rri')
+# rri_qst_3_tonal_SPL, rri_qst_3_tonal_SPL_A_weighted = rri_lowson_model.evaluate_tonal_noise(rri_dT, rri_dD, qst_3_ac_states, design_condition=qst_3)
+# system_m3l_model.register_output(rri_qst_3_tonal_SPL, qst_3)
+# system_m3l_model.register_output(rri_qst_3_tonal_SPL_A_weighted, qst_3)
 
-flo_gl_model = GL(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_flo_disk', blade_prefix='flo')
-flo_qst_3_broadband_SPL, flo_qst_3_broadband_SPL_A_weighted = flo_gl_model.evaluate_broadband_noise(qst_3_ac_states, flo_Ct, design_condition=qst_3)
-system_m3l_model.register_output(flo_qst_3_broadband_SPL, qst_3)
-system_m3l_model.register_output(flo_qst_3_broadband_SPL_A_weighted, qst_3)
-
-
-fli_lowson_model = Lowson(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_fli_disk', blade_prefix='fli')
-fli_qst_3_tonal_SPL, fli_qst_3_tonal_SPL_A_weighted = fli_lowson_model.evaluate_tonal_noise(fli_dT, fli_dD, qst_3_ac_states, design_condition=qst_3)
-system_m3l_model.register_output(fli_qst_3_tonal_SPL, qst_3)
-system_m3l_model.register_output(fli_qst_3_tonal_SPL_A_weighted, qst_3)
-
-fli_gl_model = GL(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_fli_disk', blade_prefix='fli')
-fli_qst_3_broadband_SPL, fli_qst_3_broadband_SPL_A_weighted = fli_gl_model.evaluate_broadband_noise(qst_3_ac_states, fli_Ct, design_condition=qst_3)
-system_m3l_model.register_output(fli_qst_3_broadband_SPL, qst_3)
-system_m3l_model.register_output(fli_qst_3_broadband_SPL_A_weighted, qst_3)
+# rri_gl_model = GL(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rri_disk', blade_prefix='rri')
+# rri_qst_3_broadband_SPL, rri_qst_3_broadband_SPL_A_weighted = rri_gl_model.evaluate_broadband_noise(qst_3_ac_states, rri_Ct, design_condition=qst_3)
+# system_m3l_model.register_output(rri_qst_3_broadband_SPL, qst_3)
+# system_m3l_model.register_output(rri_qst_3_broadband_SPL_A_weighted, qst_3)
 
 
-fri_lowson_model = Lowson(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_fri_disk', blade_prefix='fri')
-fri_qst_3_tonal_SPL, fri_qst_3_tonal_SPL_A_weighted = fri_lowson_model.evaluate_tonal_noise(fri_dT, fri_dD, qst_3_ac_states, design_condition=qst_3)
-system_m3l_model.register_output(fri_qst_3_tonal_SPL, qst_3)
-system_m3l_model.register_output(fri_qst_3_tonal_SPL_A_weighted, qst_3)
+# rro_lowson_model = Lowson(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rro_disk', blade_prefix='rro')
+# rro_qst_3_tonal_SPL, rro_qst_3_tonal_SPL_A_weighted = rro_lowson_model.evaluate_tonal_noise(rro_dT, rro_dD, qst_3_ac_states, design_condition=qst_3)
+# system_m3l_model.register_output(rro_qst_3_tonal_SPL, qst_3)
+# system_m3l_model.register_output(rro_qst_3_tonal_SPL_A_weighted, qst_3)
 
-fri_gl_model = GL(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_fri_disk', blade_prefix='fri')
-fri_qst_3_broadband_SPL, fri_qst_3_broadband_SPL_A_weighted = fri_gl_model.evaluate_broadband_noise(qst_3_ac_states, fri_Ct, design_condition=qst_3)
-system_m3l_model.register_output(fri_qst_3_broadband_SPL, qst_3)
-system_m3l_model.register_output(fri_qst_3_broadband_SPL_A_weighted, qst_3)
-
-
-fro_lowson_model = Lowson(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_fro_disk', blade_prefix='fro')
-fro_qst_3_tonal_SPL, fro_qst_3_tonal_SPL_A_weighted = fro_lowson_model.evaluate_tonal_noise(fro_dT, fro_dD, qst_3_ac_states, design_condition=qst_3)
-system_m3l_model.register_output(fro_qst_3_tonal_SPL, qst_3)
-system_m3l_model.register_output(fro_qst_3_tonal_SPL_A_weighted, qst_3)
-
-fro_gl_model = GL(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_fro_disk', blade_prefix='fro')
-fro_qst_3_broadband_SPL, fro_qst_3_broadband_SPL_A_weighted = fro_gl_model.evaluate_broadband_noise(qst_3_ac_states, fro_Ct, design_condition=qst_3)
-system_m3l_model.register_output(fro_qst_3_broadband_SPL, qst_3)
-system_m3l_model.register_output(fro_qst_3_broadband_SPL_A_weighted, qst_3)
+# rro_gl_model = GL(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_rro_disk', blade_prefix='rro')
+# rro_qst_3_broadband_SPL, rro_qst_3_broadband_SPL_A_weighted = rro_gl_model.evaluate_broadband_noise(qst_3_ac_states, rro_Ct, design_condition=qst_3)
+# system_m3l_model.register_output(rro_qst_3_broadband_SPL, qst_3)
+# system_m3l_model.register_output(rro_qst_3_broadband_SPL_A_weighted, qst_3)
 
 
-total_noise_model_qst_3 = TotalAircraftNoise(
-    acoustics_data=qst_3_acoustics,
-    component_list=[pp_disk, rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
-    # component_list=[rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
-)
-noise_components = [
-    pp_qst_3_tonal_SPL, #pp_qst_3_broadband_SPL,
-    rlo_qst_3_tonal_SPL, rlo_qst_3_broadband_SPL,
-    rli_qst_3_tonal_SPL, rli_qst_3_broadband_SPL,
-    rri_qst_3_tonal_SPL, rri_qst_3_broadband_SPL,
-    rro_qst_3_tonal_SPL, rro_qst_3_broadband_SPL,
-    flo_qst_3_tonal_SPL, flo_qst_3_broadband_SPL,
-    fli_qst_3_tonal_SPL, fli_qst_3_broadband_SPL,
-    fri_qst_3_tonal_SPL, fri_qst_3_broadband_SPL,
-    fro_qst_3_tonal_SPL, fro_qst_3_broadband_SPL,
+# flo_lowson_model = Lowson(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_flo_disk', blade_prefix='flo')
+# flo_qst_3_tonal_SPL, flo_qst_3_tonal_SPL_A_weighted = flo_lowson_model.evaluate_tonal_noise(flo_dT, flo_dD, qst_3_ac_states, design_condition=qst_3)
+# system_m3l_model.register_output(flo_qst_3_tonal_SPL, qst_3)
+# system_m3l_model.register_output(flo_qst_3_tonal_SPL_A_weighted, qst_3)
 
-]
-A_weighted_noise_components = [
-    pp_qst_3_tonal_SPL_A_weighted, #pp_qst_3_broadband_SPL_A_weighted,
-    rlo_qst_3_tonal_SPL_A_weighted, rlo_qst_3_broadband_SPL_A_weighted,
-    rli_qst_3_tonal_SPL_A_weighted, rli_qst_3_broadband_SPL_A_weighted,
-    rri_qst_3_tonal_SPL_A_weighted, rri_qst_3_broadband_SPL_A_weighted,
-    rro_qst_3_tonal_SPL_A_weighted, rro_qst_3_broadband_SPL_A_weighted,
-    flo_qst_3_tonal_SPL_A_weighted, flo_qst_3_broadband_SPL_A_weighted,
-    fli_qst_3_tonal_SPL_A_weighted, fli_qst_3_broadband_SPL_A_weighted,
-    fri_qst_3_tonal_SPL_A_weighted, fri_qst_3_broadband_SPL_A_weighted,
-    fro_qst_3_tonal_SPL_A_weighted, fro_qst_3_broadband_SPL_A_weighted,
+# flo_gl_model = GL(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_flo_disk', blade_prefix='flo')
+# flo_qst_3_broadband_SPL, flo_qst_3_broadband_SPL_A_weighted = flo_gl_model.evaluate_broadband_noise(qst_3_ac_states, flo_Ct, design_condition=qst_3)
+# system_m3l_model.register_output(flo_qst_3_broadband_SPL, qst_3)
+# system_m3l_model.register_output(flo_qst_3_broadband_SPL_A_weighted, qst_3)
 
-]
 
-qst_3_total_SPL, qst_3_total_SPL_A_weighted = total_noise_model_qst_3.evaluate(noise_components, A_weighted_noise_components, design_condition=qst_3)
-system_m3l_model.register_output(qst_3_total_SPL, qst_3)
-system_m3l_model.register_output(qst_3_total_SPL_A_weighted, qst_3)
+# fli_lowson_model = Lowson(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_fli_disk', blade_prefix='fli')
+# fli_qst_3_tonal_SPL, fli_qst_3_tonal_SPL_A_weighted = fli_lowson_model.evaluate_tonal_noise(fli_dT, fli_dD, qst_3_ac_states, design_condition=qst_3)
+# system_m3l_model.register_output(fli_qst_3_tonal_SPL, qst_3)
+# system_m3l_model.register_output(fli_qst_3_tonal_SPL_A_weighted, qst_3)
+
+# fli_gl_model = GL(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_fli_disk', blade_prefix='fli')
+# fli_qst_3_broadband_SPL, fli_qst_3_broadband_SPL_A_weighted = fli_gl_model.evaluate_broadband_noise(qst_3_ac_states, fli_Ct, design_condition=qst_3)
+# system_m3l_model.register_output(fli_qst_3_broadband_SPL, qst_3)
+# system_m3l_model.register_output(fli_qst_3_broadband_SPL_A_weighted, qst_3)
+
+
+# fri_lowson_model = Lowson(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_fri_disk', blade_prefix='fri')
+# fri_qst_3_tonal_SPL, fri_qst_3_tonal_SPL_A_weighted = fri_lowson_model.evaluate_tonal_noise(fri_dT, fri_dD, qst_3_ac_states, design_condition=qst_3)
+# system_m3l_model.register_output(fri_qst_3_tonal_SPL, qst_3)
+# system_m3l_model.register_output(fri_qst_3_tonal_SPL_A_weighted, qst_3)
+
+# fri_gl_model = GL(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_fri_disk', blade_prefix='fri')
+# fri_qst_3_broadband_SPL, fri_qst_3_broadband_SPL_A_weighted = fri_gl_model.evaluate_broadband_noise(qst_3_ac_states, fri_Ct, design_condition=qst_3)
+# system_m3l_model.register_output(fri_qst_3_broadband_SPL, qst_3)
+# system_m3l_model.register_output(fri_qst_3_broadband_SPL_A_weighted, qst_3)
+
+
+# fro_lowson_model = Lowson(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_fro_disk', blade_prefix='fro')
+# fro_qst_3_tonal_SPL, fro_qst_3_tonal_SPL_A_weighted = fro_lowson_model.evaluate_tonal_noise(fro_dT, fro_dD, qst_3_ac_states, design_condition=qst_3)
+# system_m3l_model.register_output(fro_qst_3_tonal_SPL, qst_3)
+# system_m3l_model.register_output(fro_qst_3_tonal_SPL_A_weighted, qst_3)
+
+# fro_gl_model = GL(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_3_acoustics, disk_prefix='qst_3_fro_disk', blade_prefix='fro')
+# fro_qst_3_broadband_SPL, fro_qst_3_broadband_SPL_A_weighted = fro_gl_model.evaluate_broadband_noise(qst_3_ac_states, fro_Ct, design_condition=qst_3)
+# system_m3l_model.register_output(fro_qst_3_broadband_SPL, qst_3)
+# system_m3l_model.register_output(fro_qst_3_broadband_SPL_A_weighted, qst_3)
+
+
+# total_noise_model_qst_3 = TotalAircraftNoise(
+#     acoustics_data=qst_3_acoustics,
+#     component_list=[pp_disk, rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
+#     # component_list=[rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
+# )
+# noise_components = [
+#     pp_qst_3_tonal_SPL, #pp_qst_3_broadband_SPL,
+#     rlo_qst_3_tonal_SPL, rlo_qst_3_broadband_SPL,
+#     rli_qst_3_tonal_SPL, rli_qst_3_broadband_SPL,
+#     rri_qst_3_tonal_SPL, rri_qst_3_broadband_SPL,
+#     rro_qst_3_tonal_SPL, rro_qst_3_broadband_SPL,
+#     flo_qst_3_tonal_SPL, flo_qst_3_broadband_SPL,
+#     fli_qst_3_tonal_SPL, fli_qst_3_broadband_SPL,
+#     fri_qst_3_tonal_SPL, fri_qst_3_broadband_SPL,
+#     fro_qst_3_tonal_SPL, fro_qst_3_broadband_SPL,
+
+# ]
+# A_weighted_noise_components = [
+#     pp_qst_3_tonal_SPL_A_weighted, #pp_qst_3_broadband_SPL_A_weighted,
+#     rlo_qst_3_tonal_SPL_A_weighted, rlo_qst_3_broadband_SPL_A_weighted,
+#     rli_qst_3_tonal_SPL_A_weighted, rli_qst_3_broadband_SPL_A_weighted,
+#     rri_qst_3_tonal_SPL_A_weighted, rri_qst_3_broadband_SPL_A_weighted,
+#     rro_qst_3_tonal_SPL_A_weighted, rro_qst_3_broadband_SPL_A_weighted,
+#     flo_qst_3_tonal_SPL_A_weighted, flo_qst_3_broadband_SPL_A_weighted,
+#     fli_qst_3_tonal_SPL_A_weighted, fli_qst_3_broadband_SPL_A_weighted,
+#     fri_qst_3_tonal_SPL_A_weighted, fri_qst_3_broadband_SPL_A_weighted,
+#     fro_qst_3_tonal_SPL_A_weighted, fro_qst_3_broadband_SPL_A_weighted,
+
+# ]
+
+# qst_3_total_SPL, qst_3_total_SPL_A_weighted = total_noise_model_qst_3.evaluate(noise_components, A_weighted_noise_components, design_condition=qst_3)
+# system_m3l_model.register_output(qst_3_total_SPL, qst_3)
+# system_m3l_model.register_output(qst_3_total_SPL_A_weighted, qst_3)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
 total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=qst_3)
@@ -1809,148 +1809,148 @@ fro_bem_model = PittPeters(disk_prefix='qst_4_fro_disk', blade_prefix='fro', com
 fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
 fro_bem_forces, fro_bem_moments,fro_dT ,fro_dQ ,fro_dD, fro_Ct = fro_bem_model.evaluate(ac_states=qst_4_ac_states, design_condition=qst_4)
 
-# acoustics
-qst_4_acoustics = Acoustics(
-    aircraft_position = np.array([0.,0., 76.])
-)
+# # acoustics
+# qst_4_acoustics = Acoustics(
+#     aircraft_position = np.array([0.,0., 76.])
+# )
 
-qst_4_acoustics.add_observer(
-    name='obs1',
-    obs_position=np.array([53.74, 0., 19.26]),
-    time_vector=np.array([0. ]),
-)
+# qst_4_acoustics.add_observer(
+#     name='obs1',
+#     obs_position=np.array([53.74, 0., 19.26]),
+#     time_vector=np.array([0. ]),
+# )
 
-pp_lowson_model = Lowson(component=pp_disk, mesh=pusher_bem_mesh, acoustics_data=qst_4_acoustics, disk_prefix='pp_disk', blade_prefix='pp')
-pp_qst_4_tonal_SPL, pp_qst_4_tonal_SPL_A_weighted = pp_lowson_model.evaluate_tonal_noise(pp_dT, pp_dD, qst_4_ac_states, design_condition=qst_4)
-system_m3l_model.register_output(pp_qst_4_tonal_SPL, qst_4)
-system_m3l_model.register_output(pp_qst_4_tonal_SPL_A_weighted, qst_4)
+# pp_lowson_model = Lowson(component=pp_disk, mesh=pusher_bem_mesh, acoustics_data=qst_4_acoustics, disk_prefix='pp_disk', blade_prefix='pp')
+# pp_qst_4_tonal_SPL, pp_qst_4_tonal_SPL_A_weighted = pp_lowson_model.evaluate_tonal_noise(pp_dT, pp_dD, qst_4_ac_states, design_condition=qst_4)
+# system_m3l_model.register_output(pp_qst_4_tonal_SPL, qst_4)
+# system_m3l_model.register_output(pp_qst_4_tonal_SPL_A_weighted, qst_4)
 
-pp_gl_model = GL(component=pp_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='pp_disk', blade_prefix='pp')
-pp_qst_4_broadband_SPL, pp_qst_4_broadband_SPL_A_weighted = pp_gl_model.evaluate_broadband_noise(qst_4_ac_states, pp_Ct, design_condition=qst_4)
-system_m3l_model.register_output(pp_qst_4_broadband_SPL, qst_4)
-system_m3l_model.register_output(pp_qst_4_broadband_SPL_A_weighted, qst_4)
+# pp_gl_model = GL(component=pp_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='pp_disk', blade_prefix='pp')
+# pp_qst_4_broadband_SPL, pp_qst_4_broadband_SPL_A_weighted = pp_gl_model.evaluate_broadband_noise(qst_4_ac_states, pp_Ct, design_condition=qst_4)
+# system_m3l_model.register_output(pp_qst_4_broadband_SPL, qst_4)
+# system_m3l_model.register_output(pp_qst_4_broadband_SPL_A_weighted, qst_4)
 
-rlo_lowson_model = Lowson(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rlo_disk', blade_prefix='rlo')
-rlo_qst_4_tonal_SPL, rlo_qst_4_tonal_SPL_A_weighted = rlo_lowson_model.evaluate_tonal_noise(rlo_dT, rlo_dD, qst_4_ac_states, design_condition=qst_4)
-system_m3l_model.register_output(rlo_qst_4_tonal_SPL, qst_4)
-system_m3l_model.register_output(rlo_qst_4_tonal_SPL_A_weighted, qst_4)
+# rlo_lowson_model = Lowson(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rlo_disk', blade_prefix='rlo')
+# rlo_qst_4_tonal_SPL, rlo_qst_4_tonal_SPL_A_weighted = rlo_lowson_model.evaluate_tonal_noise(rlo_dT, rlo_dD, qst_4_ac_states, design_condition=qst_4)
+# system_m3l_model.register_output(rlo_qst_4_tonal_SPL, qst_4)
+# system_m3l_model.register_output(rlo_qst_4_tonal_SPL_A_weighted, qst_4)
 
-rlo_gl_model = GL(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rlo_disk', blade_prefix='rlo')
-rlo_qst_4_broadband_SPL, rlo_qst_4_broadband_SPL_A_weighted = rlo_gl_model.evaluate_broadband_noise(qst_4_ac_states, rlo_Ct, design_condition=qst_4)
-system_m3l_model.register_output(rlo_qst_4_broadband_SPL, qst_4)
-system_m3l_model.register_output(rlo_qst_4_broadband_SPL_A_weighted, qst_4)
-
-
-rli_lowson_model = Lowson(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rli_disk', blade_prefix='rli')
-rli_qst_4_tonal_SPL, rli_qst_4_tonal_SPL_A_weighted = rli_lowson_model.evaluate_tonal_noise(rli_dT, rli_dD, qst_4_ac_states, design_condition=qst_4)
-system_m3l_model.register_output(rli_qst_4_tonal_SPL, qst_4)
-system_m3l_model.register_output(rli_qst_4_tonal_SPL_A_weighted, qst_4)
-
-rli_gl_model = GL(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rli_disk', blade_prefix='rli')
-rli_qst_4_broadband_SPL, rli_qst_4_broadband_SPL_A_weighted = rli_gl_model.evaluate_broadband_noise(qst_4_ac_states, rli_Ct, design_condition=qst_4)
-system_m3l_model.register_output(rli_qst_4_broadband_SPL, qst_4)
-system_m3l_model.register_output(rli_qst_4_broadband_SPL_A_weighted, qst_4)
+# rlo_gl_model = GL(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rlo_disk', blade_prefix='rlo')
+# rlo_qst_4_broadband_SPL, rlo_qst_4_broadband_SPL_A_weighted = rlo_gl_model.evaluate_broadband_noise(qst_4_ac_states, rlo_Ct, design_condition=qst_4)
+# system_m3l_model.register_output(rlo_qst_4_broadband_SPL, qst_4)
+# system_m3l_model.register_output(rlo_qst_4_broadband_SPL_A_weighted, qst_4)
 
 
-rri_lowson_model = Lowson(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rri_disk', blade_prefix='rri')
-rri_qst_4_tonal_SPL, rri_qst_4_tonal_SPL_A_weighted = rri_lowson_model.evaluate_tonal_noise(rri_dT, rri_dD, qst_4_ac_states, design_condition=qst_4)
-system_m3l_model.register_output(rri_qst_4_tonal_SPL, qst_4)
-system_m3l_model.register_output(rri_qst_4_tonal_SPL_A_weighted, qst_4)
+# rli_lowson_model = Lowson(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rli_disk', blade_prefix='rli')
+# rli_qst_4_tonal_SPL, rli_qst_4_tonal_SPL_A_weighted = rli_lowson_model.evaluate_tonal_noise(rli_dT, rli_dD, qst_4_ac_states, design_condition=qst_4)
+# system_m3l_model.register_output(rli_qst_4_tonal_SPL, qst_4)
+# system_m3l_model.register_output(rli_qst_4_tonal_SPL_A_weighted, qst_4)
 
-rri_gl_model = GL(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rri_disk', blade_prefix='rri')
-rri_qst_4_broadband_SPL, rri_qst_4_broadband_SPL_A_weighted = rri_gl_model.evaluate_broadband_noise(qst_4_ac_states, rri_Ct, design_condition=qst_4)
-system_m3l_model.register_output(rri_qst_4_broadband_SPL, qst_4)
-system_m3l_model.register_output(rri_qst_4_broadband_SPL_A_weighted, qst_4)
-
-
-rro_lowson_model = Lowson(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rro_disk', blade_prefix='rro')
-rro_qst_4_tonal_SPL, rro_qst_4_tonal_SPL_A_weighted = rro_lowson_model.evaluate_tonal_noise(rro_dT, rro_dD, qst_4_ac_states, design_condition=qst_4)
-system_m3l_model.register_output(rro_qst_4_tonal_SPL, qst_4)
-system_m3l_model.register_output(rro_qst_4_tonal_SPL_A_weighted, qst_4)
-
-rro_gl_model = GL(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rro_disk', blade_prefix='rro')
-rro_qst_4_broadband_SPL, rro_qst_4_broadband_SPL_A_weighted = rro_gl_model.evaluate_broadband_noise(qst_4_ac_states, rro_Ct, design_condition=qst_4)
-system_m3l_model.register_output(rro_qst_4_broadband_SPL, qst_4)
-system_m3l_model.register_output(rro_qst_4_broadband_SPL_A_weighted, qst_4)
+# rli_gl_model = GL(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rli_disk', blade_prefix='rli')
+# rli_qst_4_broadband_SPL, rli_qst_4_broadband_SPL_A_weighted = rli_gl_model.evaluate_broadband_noise(qst_4_ac_states, rli_Ct, design_condition=qst_4)
+# system_m3l_model.register_output(rli_qst_4_broadband_SPL, qst_4)
+# system_m3l_model.register_output(rli_qst_4_broadband_SPL_A_weighted, qst_4)
 
 
-flo_lowson_model = Lowson(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_flo_disk', blade_prefix='flo')
-flo_qst_4_tonal_SPL, flo_qst_4_tonal_SPL_A_weighted = flo_lowson_model.evaluate_tonal_noise(flo_dT, flo_dD, qst_4_ac_states, design_condition=qst_4)
-system_m3l_model.register_output(flo_qst_4_tonal_SPL, qst_4)
-system_m3l_model.register_output(flo_qst_4_tonal_SPL_A_weighted, qst_4)
+# rri_lowson_model = Lowson(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rri_disk', blade_prefix='rri')
+# rri_qst_4_tonal_SPL, rri_qst_4_tonal_SPL_A_weighted = rri_lowson_model.evaluate_tonal_noise(rri_dT, rri_dD, qst_4_ac_states, design_condition=qst_4)
+# system_m3l_model.register_output(rri_qst_4_tonal_SPL, qst_4)
+# system_m3l_model.register_output(rri_qst_4_tonal_SPL_A_weighted, qst_4)
 
-flo_gl_model = GL(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_flo_disk', blade_prefix='flo')
-flo_qst_4_broadband_SPL, flo_qst_4_broadband_SPL_A_weighted = flo_gl_model.evaluate_broadband_noise(qst_4_ac_states, flo_Ct, design_condition=qst_4)
-system_m3l_model.register_output(flo_qst_4_broadband_SPL, qst_4)
-system_m3l_model.register_output(flo_qst_4_broadband_SPL_A_weighted, qst_4)
-
-
-fli_lowson_model = Lowson(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_fli_disk', blade_prefix='fli')
-fli_qst_4_tonal_SPL, fli_qst_4_tonal_SPL_A_weighted = fli_lowson_model.evaluate_tonal_noise(fli_dT, fli_dD, qst_4_ac_states, design_condition=qst_4)
-system_m3l_model.register_output(fli_qst_4_tonal_SPL, qst_4)
-system_m3l_model.register_output(fli_qst_4_tonal_SPL_A_weighted, qst_4)
-
-fli_gl_model = GL(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_fli_disk', blade_prefix='fli')
-fli_qst_4_broadband_SPL, fli_qst_4_broadband_SPL_A_weighted = fli_gl_model.evaluate_broadband_noise(qst_4_ac_states, fli_Ct, design_condition=qst_4)
-system_m3l_model.register_output(fli_qst_4_broadband_SPL, qst_4)
-system_m3l_model.register_output(fli_qst_4_broadband_SPL_A_weighted, qst_4)
+# rri_gl_model = GL(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rri_disk', blade_prefix='rri')
+# rri_qst_4_broadband_SPL, rri_qst_4_broadband_SPL_A_weighted = rri_gl_model.evaluate_broadband_noise(qst_4_ac_states, rri_Ct, design_condition=qst_4)
+# system_m3l_model.register_output(rri_qst_4_broadband_SPL, qst_4)
+# system_m3l_model.register_output(rri_qst_4_broadband_SPL_A_weighted, qst_4)
 
 
-fri_lowson_model = Lowson(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_fri_disk', blade_prefix='fri')
-fri_qst_4_tonal_SPL, fri_qst_4_tonal_SPL_A_weighted = fri_lowson_model.evaluate_tonal_noise(fri_dT, fri_dD, qst_4_ac_states, design_condition=qst_4)
-system_m3l_model.register_output(fri_qst_4_tonal_SPL, qst_4)
-system_m3l_model.register_output(fri_qst_4_tonal_SPL_A_weighted, qst_4)
+# rro_lowson_model = Lowson(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rro_disk', blade_prefix='rro')
+# rro_qst_4_tonal_SPL, rro_qst_4_tonal_SPL_A_weighted = rro_lowson_model.evaluate_tonal_noise(rro_dT, rro_dD, qst_4_ac_states, design_condition=qst_4)
+# system_m3l_model.register_output(rro_qst_4_tonal_SPL, qst_4)
+# system_m3l_model.register_output(rro_qst_4_tonal_SPL_A_weighted, qst_4)
 
-fri_gl_model = GL(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_fri_disk', blade_prefix='fri')
-fri_qst_4_broadband_SPL, fri_qst_4_broadband_SPL_A_weighted = fri_gl_model.evaluate_broadband_noise(qst_4_ac_states, fri_Ct, design_condition=qst_4)
-system_m3l_model.register_output(fri_qst_4_broadband_SPL, qst_4)
-system_m3l_model.register_output(fri_qst_4_broadband_SPL_A_weighted, qst_4)
-
-
-fro_lowson_model = Lowson(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_fro_disk', blade_prefix='fro')
-fro_qst_4_tonal_SPL, fro_qst_4_tonal_SPL_A_weighted = fro_lowson_model.evaluate_tonal_noise(fro_dT, fro_dD, qst_4_ac_states, design_condition=qst_4)
-system_m3l_model.register_output(fro_qst_4_tonal_SPL, qst_4)
-system_m3l_model.register_output(fro_qst_4_tonal_SPL_A_weighted, qst_4)
-
-fro_gl_model = GL(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_fro_disk', blade_prefix='fro')
-fro_qst_4_broadband_SPL, fro_qst_4_broadband_SPL_A_weighted = fro_gl_model.evaluate_broadband_noise(qst_4_ac_states, fro_Ct, design_condition=qst_4)
-system_m3l_model.register_output(fro_qst_4_broadband_SPL, qst_4)
-system_m3l_model.register_output(fro_qst_4_broadband_SPL_A_weighted, qst_4)
+# rro_gl_model = GL(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_rro_disk', blade_prefix='rro')
+# rro_qst_4_broadband_SPL, rro_qst_4_broadband_SPL_A_weighted = rro_gl_model.evaluate_broadband_noise(qst_4_ac_states, rro_Ct, design_condition=qst_4)
+# system_m3l_model.register_output(rro_qst_4_broadband_SPL, qst_4)
+# system_m3l_model.register_output(rro_qst_4_broadband_SPL_A_weighted, qst_4)
 
 
-total_noise_model_qst_4 = TotalAircraftNoise(
-    acoustics_data=qst_4_acoustics,
-    component_list=[pp_disk, rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
-    # component_list=[rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
-)
-noise_components = [
-    pp_qst_4_tonal_SPL, #pp_qst_4_broadband_SPL,
-    rlo_qst_4_tonal_SPL, rlo_qst_4_broadband_SPL,
-    rli_qst_4_tonal_SPL, rli_qst_4_broadband_SPL,
-    rri_qst_4_tonal_SPL, rri_qst_4_broadband_SPL,
-    rro_qst_4_tonal_SPL, rro_qst_4_broadband_SPL,
-    flo_qst_4_tonal_SPL, flo_qst_4_broadband_SPL,
-    fli_qst_4_tonal_SPL, fli_qst_4_broadband_SPL,
-    fri_qst_4_tonal_SPL, fri_qst_4_broadband_SPL,
-    fro_qst_4_tonal_SPL, fro_qst_4_broadband_SPL,
+# flo_lowson_model = Lowson(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_flo_disk', blade_prefix='flo')
+# flo_qst_4_tonal_SPL, flo_qst_4_tonal_SPL_A_weighted = flo_lowson_model.evaluate_tonal_noise(flo_dT, flo_dD, qst_4_ac_states, design_condition=qst_4)
+# system_m3l_model.register_output(flo_qst_4_tonal_SPL, qst_4)
+# system_m3l_model.register_output(flo_qst_4_tonal_SPL_A_weighted, qst_4)
 
-]
-A_weighted_noise_components = [
-    pp_qst_4_tonal_SPL_A_weighted, #pp_qst_4_broadband_SPL_A_weighted,
-    rlo_qst_4_tonal_SPL_A_weighted, rlo_qst_4_broadband_SPL_A_weighted,
-    rli_qst_4_tonal_SPL_A_weighted, rli_qst_4_broadband_SPL_A_weighted,
-    rri_qst_4_tonal_SPL_A_weighted, rri_qst_4_broadband_SPL_A_weighted,
-    rro_qst_4_tonal_SPL_A_weighted, rro_qst_4_broadband_SPL_A_weighted,
-    flo_qst_4_tonal_SPL_A_weighted, flo_qst_4_broadband_SPL_A_weighted,
-    fli_qst_4_tonal_SPL_A_weighted, fli_qst_4_broadband_SPL_A_weighted,
-    fri_qst_4_tonal_SPL_A_weighted, fri_qst_4_broadband_SPL_A_weighted,
-    fro_qst_4_tonal_SPL_A_weighted, fro_qst_4_broadband_SPL_A_weighted,
+# flo_gl_model = GL(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_flo_disk', blade_prefix='flo')
+# flo_qst_4_broadband_SPL, flo_qst_4_broadband_SPL_A_weighted = flo_gl_model.evaluate_broadband_noise(qst_4_ac_states, flo_Ct, design_condition=qst_4)
+# system_m3l_model.register_output(flo_qst_4_broadband_SPL, qst_4)
+# system_m3l_model.register_output(flo_qst_4_broadband_SPL_A_weighted, qst_4)
 
-]
 
-qst_4_total_SPL, qst_4_total_SPL_A_weighted = total_noise_model_qst_4.evaluate(noise_components, A_weighted_noise_components, design_condition=qst_4)
-system_m3l_model.register_output(qst_4_total_SPL, qst_4)
-system_m3l_model.register_output(qst_4_total_SPL_A_weighted, qst_4)
+# fli_lowson_model = Lowson(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_fli_disk', blade_prefix='fli')
+# fli_qst_4_tonal_SPL, fli_qst_4_tonal_SPL_A_weighted = fli_lowson_model.evaluate_tonal_noise(fli_dT, fli_dD, qst_4_ac_states, design_condition=qst_4)
+# system_m3l_model.register_output(fli_qst_4_tonal_SPL, qst_4)
+# system_m3l_model.register_output(fli_qst_4_tonal_SPL_A_weighted, qst_4)
+
+# fli_gl_model = GL(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_fli_disk', blade_prefix='fli')
+# fli_qst_4_broadband_SPL, fli_qst_4_broadband_SPL_A_weighted = fli_gl_model.evaluate_broadband_noise(qst_4_ac_states, fli_Ct, design_condition=qst_4)
+# system_m3l_model.register_output(fli_qst_4_broadband_SPL, qst_4)
+# system_m3l_model.register_output(fli_qst_4_broadband_SPL_A_weighted, qst_4)
+
+
+# fri_lowson_model = Lowson(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_fri_disk', blade_prefix='fri')
+# fri_qst_4_tonal_SPL, fri_qst_4_tonal_SPL_A_weighted = fri_lowson_model.evaluate_tonal_noise(fri_dT, fri_dD, qst_4_ac_states, design_condition=qst_4)
+# system_m3l_model.register_output(fri_qst_4_tonal_SPL, qst_4)
+# system_m3l_model.register_output(fri_qst_4_tonal_SPL_A_weighted, qst_4)
+
+# fri_gl_model = GL(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_fri_disk', blade_prefix='fri')
+# fri_qst_4_broadband_SPL, fri_qst_4_broadband_SPL_A_weighted = fri_gl_model.evaluate_broadband_noise(qst_4_ac_states, fri_Ct, design_condition=qst_4)
+# system_m3l_model.register_output(fri_qst_4_broadband_SPL, qst_4)
+# system_m3l_model.register_output(fri_qst_4_broadband_SPL_A_weighted, qst_4)
+
+
+# fro_lowson_model = Lowson(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_fro_disk', blade_prefix='fro')
+# fro_qst_4_tonal_SPL, fro_qst_4_tonal_SPL_A_weighted = fro_lowson_model.evaluate_tonal_noise(fro_dT, fro_dD, qst_4_ac_states, design_condition=qst_4)
+# system_m3l_model.register_output(fro_qst_4_tonal_SPL, qst_4)
+# system_m3l_model.register_output(fro_qst_4_tonal_SPL_A_weighted, qst_4)
+
+# fro_gl_model = GL(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_4_acoustics, disk_prefix='qst_4_fro_disk', blade_prefix='fro')
+# fro_qst_4_broadband_SPL, fro_qst_4_broadband_SPL_A_weighted = fro_gl_model.evaluate_broadband_noise(qst_4_ac_states, fro_Ct, design_condition=qst_4)
+# system_m3l_model.register_output(fro_qst_4_broadband_SPL, qst_4)
+# system_m3l_model.register_output(fro_qst_4_broadband_SPL_A_weighted, qst_4)
+
+
+# total_noise_model_qst_4 = TotalAircraftNoise(
+#     acoustics_data=qst_4_acoustics,
+#     component_list=[pp_disk, rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
+#     # component_list=[rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
+# )
+# noise_components = [
+#     pp_qst_4_tonal_SPL, #pp_qst_4_broadband_SPL,
+#     rlo_qst_4_tonal_SPL, rlo_qst_4_broadband_SPL,
+#     rli_qst_4_tonal_SPL, rli_qst_4_broadband_SPL,
+#     rri_qst_4_tonal_SPL, rri_qst_4_broadband_SPL,
+#     rro_qst_4_tonal_SPL, rro_qst_4_broadband_SPL,
+#     flo_qst_4_tonal_SPL, flo_qst_4_broadband_SPL,
+#     fli_qst_4_tonal_SPL, fli_qst_4_broadband_SPL,
+#     fri_qst_4_tonal_SPL, fri_qst_4_broadband_SPL,
+#     fro_qst_4_tonal_SPL, fro_qst_4_broadband_SPL,
+
+# ]
+# A_weighted_noise_components = [
+#     pp_qst_4_tonal_SPL_A_weighted, #pp_qst_4_broadband_SPL_A_weighted,
+#     rlo_qst_4_tonal_SPL_A_weighted, rlo_qst_4_broadband_SPL_A_weighted,
+#     rli_qst_4_tonal_SPL_A_weighted, rli_qst_4_broadband_SPL_A_weighted,
+#     rri_qst_4_tonal_SPL_A_weighted, rri_qst_4_broadband_SPL_A_weighted,
+#     rro_qst_4_tonal_SPL_A_weighted, rro_qst_4_broadband_SPL_A_weighted,
+#     flo_qst_4_tonal_SPL_A_weighted, flo_qst_4_broadband_SPL_A_weighted,
+#     fli_qst_4_tonal_SPL_A_weighted, fli_qst_4_broadband_SPL_A_weighted,
+#     fri_qst_4_tonal_SPL_A_weighted, fri_qst_4_broadband_SPL_A_weighted,
+#     fro_qst_4_tonal_SPL_A_weighted, fro_qst_4_broadband_SPL_A_weighted,
+
+# ]
+
+# qst_4_total_SPL, qst_4_total_SPL_A_weighted = total_noise_model_qst_4.evaluate(noise_components, A_weighted_noise_components, design_condition=qst_4)
+# system_m3l_model.register_output(qst_4_total_SPL, qst_4)
+# system_m3l_model.register_output(qst_4_total_SPL_A_weighted, qst_4)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
 total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=qst_4)
@@ -2077,149 +2077,149 @@ fro_bem_model = PittPeters(disk_prefix='qst_5_fro_disk', blade_prefix='fro', com
 fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
 fro_bem_forces, fro_bem_moments, fro_dT ,fro_dQ ,fro_dD, fro_Ct = fro_bem_model.evaluate(ac_states=qst_5_ac_states, design_condition=qst_5)
 
-# acoustics
-qst_5_acoustics = Acoustics(
-    aircraft_position = np.array([0.,0., 76.])
-)
+# # acoustics
+# qst_5_acoustics = Acoustics(
+#     aircraft_position = np.array([0.,0., 76.])
+# )
 
-qst_5_acoustics.add_observer(
-    name='obs1',
-    obs_position=np.array([53.74, 0., 19.26]),
-    time_vector=np.array([0. ]),
-)
+# qst_5_acoustics.add_observer(
+#     name='obs1',
+#     obs_position=np.array([53.74, 0., 19.26]),
+#     time_vector=np.array([0. ]),
+# )
 
-pp_lowson_model = Lowson(component=pp_disk, mesh=pusher_bem_mesh, acoustics_data=qst_5_acoustics, disk_prefix='pp_disk', blade_prefix='pp')
-pp_qst_5_tonal_SPL, pp_qst_5_tonal_SPL_A_weighted = pp_lowson_model.evaluate_tonal_noise(pp_dT, pp_dD, qst_5_ac_states, design_condition=qst_5)
-system_m3l_model.register_output(pp_qst_5_tonal_SPL, qst_5)
-system_m3l_model.register_output(pp_qst_5_tonal_SPL_A_weighted, qst_5)
+# pp_lowson_model = Lowson(component=pp_disk, mesh=pusher_bem_mesh, acoustics_data=qst_5_acoustics, disk_prefix='pp_disk', blade_prefix='pp')
+# pp_qst_5_tonal_SPL, pp_qst_5_tonal_SPL_A_weighted = pp_lowson_model.evaluate_tonal_noise(pp_dT, pp_dD, qst_5_ac_states, design_condition=qst_5)
+# system_m3l_model.register_output(pp_qst_5_tonal_SPL, qst_5)
+# system_m3l_model.register_output(pp_qst_5_tonal_SPL_A_weighted, qst_5)
 
-pp_gl_model = GL(component=pp_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='pp_disk', blade_prefix='pp')
-pp_qst_5_broadband_SPL, pp_qst_5_broadband_SPL_A_weighted = pp_gl_model.evaluate_broadband_noise(qst_5_ac_states, pp_Ct, design_condition=qst_5)
-system_m3l_model.register_output(pp_qst_5_broadband_SPL, qst_5)
-system_m3l_model.register_output(pp_qst_5_broadband_SPL_A_weighted, qst_5)
-
-
-rlo_lowson_model = Lowson(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rlo_disk', blade_prefix='rlo')
-rlo_qst_5_tonal_SPL, rlo_qst_5_tonal_SPL_A_weighted = rlo_lowson_model.evaluate_tonal_noise(rlo_dT, rlo_dD, qst_5_ac_states, design_condition=qst_5)
-system_m3l_model.register_output(rlo_qst_5_tonal_SPL, qst_5)
-system_m3l_model.register_output(rlo_qst_5_tonal_SPL_A_weighted, qst_5)
-
-rlo_gl_model = GL(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rlo_disk', blade_prefix='rlo')
-rlo_qst_5_broadband_SPL, rlo_qst_5_broadband_SPL_A_weighted = rlo_gl_model.evaluate_broadband_noise(qst_5_ac_states, rlo_Ct, design_condition=qst_5)
-system_m3l_model.register_output(rlo_qst_5_broadband_SPL, qst_5)
-system_m3l_model.register_output(rlo_qst_5_broadband_SPL_A_weighted, qst_5)
+# pp_gl_model = GL(component=pp_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='pp_disk', blade_prefix='pp')
+# pp_qst_5_broadband_SPL, pp_qst_5_broadband_SPL_A_weighted = pp_gl_model.evaluate_broadband_noise(qst_5_ac_states, pp_Ct, design_condition=qst_5)
+# system_m3l_model.register_output(pp_qst_5_broadband_SPL, qst_5)
+# system_m3l_model.register_output(pp_qst_5_broadband_SPL_A_weighted, qst_5)
 
 
-rli_lowson_model = Lowson(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rli_disk', blade_prefix='rli')
-rli_qst_5_tonal_SPL, rli_qst_5_tonal_SPL_A_weighted = rli_lowson_model.evaluate_tonal_noise(rli_dT, rli_dD, qst_5_ac_states, design_condition=qst_5)
-system_m3l_model.register_output(rli_qst_5_tonal_SPL, qst_5)
-system_m3l_model.register_output(rli_qst_5_tonal_SPL_A_weighted, qst_5)
+# rlo_lowson_model = Lowson(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rlo_disk', blade_prefix='rlo')
+# rlo_qst_5_tonal_SPL, rlo_qst_5_tonal_SPL_A_weighted = rlo_lowson_model.evaluate_tonal_noise(rlo_dT, rlo_dD, qst_5_ac_states, design_condition=qst_5)
+# system_m3l_model.register_output(rlo_qst_5_tonal_SPL, qst_5)
+# system_m3l_model.register_output(rlo_qst_5_tonal_SPL_A_weighted, qst_5)
 
-rli_gl_model = GL(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rli_disk', blade_prefix='rli')
-rli_qst_5_broadband_SPL, rli_qst_5_broadband_SPL_A_weighted = rli_gl_model.evaluate_broadband_noise(qst_5_ac_states, rli_Ct, design_condition=qst_5)
-system_m3l_model.register_output(rli_qst_5_broadband_SPL, qst_5)
-system_m3l_model.register_output(rli_qst_5_broadband_SPL_A_weighted, qst_5)
-
-
-rri_lowson_model = Lowson(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rri_disk', blade_prefix='rri')
-rri_qst_5_tonal_SPL, rri_qst_5_tonal_SPL_A_weighted = rri_lowson_model.evaluate_tonal_noise(rri_dT, rri_dD, qst_5_ac_states, design_condition=qst_5)
-system_m3l_model.register_output(rri_qst_5_tonal_SPL, qst_5)
-system_m3l_model.register_output(rri_qst_5_tonal_SPL_A_weighted, qst_5)
-
-rri_gl_model = GL(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rri_disk', blade_prefix='rri')
-rri_qst_5_broadband_SPL, rri_qst_5_broadband_SPL_A_weighted = rri_gl_model.evaluate_broadband_noise(qst_5_ac_states, rri_Ct, design_condition=qst_5)
-system_m3l_model.register_output(rri_qst_5_broadband_SPL, qst_5)
-system_m3l_model.register_output(rri_qst_5_broadband_SPL_A_weighted, qst_5)
+# rlo_gl_model = GL(component=rlo_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rlo_disk', blade_prefix='rlo')
+# rlo_qst_5_broadband_SPL, rlo_qst_5_broadband_SPL_A_weighted = rlo_gl_model.evaluate_broadband_noise(qst_5_ac_states, rlo_Ct, design_condition=qst_5)
+# system_m3l_model.register_output(rlo_qst_5_broadband_SPL, qst_5)
+# system_m3l_model.register_output(rlo_qst_5_broadband_SPL_A_weighted, qst_5)
 
 
-rro_lowson_model = Lowson(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rro_disk', blade_prefix='rro')
-rro_qst_5_tonal_SPL, rro_qst_5_tonal_SPL_A_weighted = rro_lowson_model.evaluate_tonal_noise(rro_dT, rro_dD, qst_5_ac_states, design_condition=qst_5)
-system_m3l_model.register_output(rro_qst_5_tonal_SPL, qst_5)
-system_m3l_model.register_output(rro_qst_5_tonal_SPL_A_weighted, qst_5)
+# rli_lowson_model = Lowson(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rli_disk', blade_prefix='rli')
+# rli_qst_5_tonal_SPL, rli_qst_5_tonal_SPL_A_weighted = rli_lowson_model.evaluate_tonal_noise(rli_dT, rli_dD, qst_5_ac_states, design_condition=qst_5)
+# system_m3l_model.register_output(rli_qst_5_tonal_SPL, qst_5)
+# system_m3l_model.register_output(rli_qst_5_tonal_SPL_A_weighted, qst_5)
 
-rro_gl_model = GL(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rro_disk', blade_prefix='rro')
-rro_qst_5_broadband_SPL, rro_qst_5_broadband_SPL_A_weighted = rro_gl_model.evaluate_broadband_noise(qst_5_ac_states, rro_Ct, design_condition=qst_5)
-system_m3l_model.register_output(rro_qst_5_broadband_SPL, qst_5)
-system_m3l_model.register_output(rro_qst_5_broadband_SPL_A_weighted, qst_5)
-
-
-flo_lowson_model = Lowson(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_flo_disk', blade_prefix='flo')
-flo_qst_5_tonal_SPL, flo_qst_5_tonal_SPL_A_weighted = flo_lowson_model.evaluate_tonal_noise(flo_dT, flo_dD, qst_5_ac_states, design_condition=qst_5)
-system_m3l_model.register_output(flo_qst_5_tonal_SPL, qst_5)
-system_m3l_model.register_output(flo_qst_5_tonal_SPL_A_weighted, qst_5)
-
-flo_gl_model = GL(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_flo_disk', blade_prefix='flo')
-flo_qst_5_broadband_SPL, flo_qst_5_broadband_SPL_A_weighted = flo_gl_model.evaluate_broadband_noise(qst_5_ac_states, flo_Ct, design_condition=qst_5)
-system_m3l_model.register_output(flo_qst_5_broadband_SPL, qst_5)
-system_m3l_model.register_output(flo_qst_5_broadband_SPL_A_weighted, qst_5)
+# rli_gl_model = GL(component=rli_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rli_disk', blade_prefix='rli')
+# rli_qst_5_broadband_SPL, rli_qst_5_broadband_SPL_A_weighted = rli_gl_model.evaluate_broadband_noise(qst_5_ac_states, rli_Ct, design_condition=qst_5)
+# system_m3l_model.register_output(rli_qst_5_broadband_SPL, qst_5)
+# system_m3l_model.register_output(rli_qst_5_broadband_SPL_A_weighted, qst_5)
 
 
-fli_lowson_model = Lowson(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_fli_disk', blade_prefix='fli')
-fli_qst_5_tonal_SPL, fli_qst_5_tonal_SPL_A_weighted = fli_lowson_model.evaluate_tonal_noise(fli_dT, fli_dD, qst_5_ac_states, design_condition=qst_5)
-system_m3l_model.register_output(fli_qst_5_tonal_SPL, qst_5)
-system_m3l_model.register_output(fli_qst_5_tonal_SPL_A_weighted, qst_5)
+# rri_lowson_model = Lowson(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rri_disk', blade_prefix='rri')
+# rri_qst_5_tonal_SPL, rri_qst_5_tonal_SPL_A_weighted = rri_lowson_model.evaluate_tonal_noise(rri_dT, rri_dD, qst_5_ac_states, design_condition=qst_5)
+# system_m3l_model.register_output(rri_qst_5_tonal_SPL, qst_5)
+# system_m3l_model.register_output(rri_qst_5_tonal_SPL_A_weighted, qst_5)
 
-fli_gl_model = GL(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_fli_disk', blade_prefix='fli')
-fli_qst_5_broadband_SPL, fli_qst_5_broadband_SPL_A_weighted = fli_gl_model.evaluate_broadband_noise(qst_5_ac_states, fli_Ct, design_condition=qst_5)
-system_m3l_model.register_output(fli_qst_5_broadband_SPL, qst_5)
-system_m3l_model.register_output(fli_qst_5_broadband_SPL_A_weighted, qst_5)
-
-
-fri_lowson_model = Lowson(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_fri_disk', blade_prefix='fri')
-fri_qst_5_tonal_SPL, fri_qst_5_tonal_SPL_A_weighted = fri_lowson_model.evaluate_tonal_noise(fri_dT, fri_dD, qst_5_ac_states, design_condition=qst_5)
-system_m3l_model.register_output(fri_qst_5_tonal_SPL, qst_5)
-system_m3l_model.register_output(fri_qst_5_tonal_SPL_A_weighted, qst_5)
-
-fri_gl_model = GL(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_fri_disk', blade_prefix='fri')
-fri_qst_5_broadband_SPL, fri_qst_5_broadband_SPL_A_weighted = fri_gl_model.evaluate_broadband_noise(qst_5_ac_states, fri_Ct, design_condition=qst_5)
-system_m3l_model.register_output(fri_qst_5_broadband_SPL, qst_5)
-system_m3l_model.register_output(fri_qst_5_broadband_SPL_A_weighted, qst_5)
+# rri_gl_model = GL(component=rri_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rri_disk', blade_prefix='rri')
+# rri_qst_5_broadband_SPL, rri_qst_5_broadband_SPL_A_weighted = rri_gl_model.evaluate_broadband_noise(qst_5_ac_states, rri_Ct, design_condition=qst_5)
+# system_m3l_model.register_output(rri_qst_5_broadband_SPL, qst_5)
+# system_m3l_model.register_output(rri_qst_5_broadband_SPL_A_weighted, qst_5)
 
 
-fro_lowson_model = Lowson(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_fro_disk', blade_prefix='fro')
-fro_qst_5_tonal_SPL, fro_qst_5_tonal_SPL_A_weighted = fro_lowson_model.evaluate_tonal_noise(fro_dT, fro_dD, qst_5_ac_states, design_condition=qst_5)
-system_m3l_model.register_output(fro_qst_5_tonal_SPL, qst_5)
-system_m3l_model.register_output(fro_qst_5_tonal_SPL_A_weighted, qst_5)
+# rro_lowson_model = Lowson(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rro_disk', blade_prefix='rro')
+# rro_qst_5_tonal_SPL, rro_qst_5_tonal_SPL_A_weighted = rro_lowson_model.evaluate_tonal_noise(rro_dT, rro_dD, qst_5_ac_states, design_condition=qst_5)
+# system_m3l_model.register_output(rro_qst_5_tonal_SPL, qst_5)
+# system_m3l_model.register_output(rro_qst_5_tonal_SPL_A_weighted, qst_5)
 
-fro_gl_model = GL(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_fro_disk', blade_prefix='fro')
-fro_qst_5_broadband_SPL, fro_qst_5_broadband_SPL_A_weighted = fro_gl_model.evaluate_broadband_noise(qst_5_ac_states, fro_Ct, design_condition=qst_5)
-system_m3l_model.register_output(fro_qst_5_broadband_SPL, qst_5)
-system_m3l_model.register_output(fro_qst_5_broadband_SPL_A_weighted, qst_5)
+# rro_gl_model = GL(component=rro_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_rro_disk', blade_prefix='rro')
+# rro_qst_5_broadband_SPL, rro_qst_5_broadband_SPL_A_weighted = rro_gl_model.evaluate_broadband_noise(qst_5_ac_states, rro_Ct, design_condition=qst_5)
+# system_m3l_model.register_output(rro_qst_5_broadband_SPL, qst_5)
+# system_m3l_model.register_output(rro_qst_5_broadband_SPL_A_weighted, qst_5)
 
 
-total_noise_model_qst_5 = TotalAircraftNoise(
-    acoustics_data=qst_5_acoustics,
-    # component_list=[rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
-    component_list=[pp_disk, rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
-)
-noise_components = [
-    pp_qst_5_tonal_SPL, # pp_qst_5_broadband_SPL,
-    rlo_qst_5_tonal_SPL, rlo_qst_5_broadband_SPL,
-    rli_qst_5_tonal_SPL, rli_qst_5_broadband_SPL,
-    rri_qst_5_tonal_SPL, rri_qst_5_broadband_SPL,
-    rro_qst_5_tonal_SPL, rro_qst_5_broadband_SPL,
-    flo_qst_5_tonal_SPL, flo_qst_5_broadband_SPL,
-    fli_qst_5_tonal_SPL, fli_qst_5_broadband_SPL,
-    fri_qst_5_tonal_SPL, fri_qst_5_broadband_SPL,
-    fro_qst_5_tonal_SPL, fro_qst_5_broadband_SPL,
+# flo_lowson_model = Lowson(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_flo_disk', blade_prefix='flo')
+# flo_qst_5_tonal_SPL, flo_qst_5_tonal_SPL_A_weighted = flo_lowson_model.evaluate_tonal_noise(flo_dT, flo_dD, qst_5_ac_states, design_condition=qst_5)
+# system_m3l_model.register_output(flo_qst_5_tonal_SPL, qst_5)
+# system_m3l_model.register_output(flo_qst_5_tonal_SPL_A_weighted, qst_5)
 
-]
-A_weighted_noise_components = [
-    pp_qst_5_tonal_SPL_A_weighted, # pp_qst_5_broadband_SPL_A_weighted,
-    rlo_qst_5_tonal_SPL_A_weighted, rlo_qst_5_broadband_SPL_A_weighted,
-    rli_qst_5_tonal_SPL_A_weighted, rli_qst_5_broadband_SPL_A_weighted,
-    rri_qst_5_tonal_SPL_A_weighted, rri_qst_5_broadband_SPL_A_weighted,
-    rro_qst_5_tonal_SPL_A_weighted, rro_qst_5_broadband_SPL_A_weighted,
-    flo_qst_5_tonal_SPL_A_weighted, flo_qst_5_broadband_SPL_A_weighted,
-    fli_qst_5_tonal_SPL_A_weighted, fli_qst_5_broadband_SPL_A_weighted,
-    fri_qst_5_tonal_SPL_A_weighted, fri_qst_5_broadband_SPL_A_weighted,
-    fro_qst_5_tonal_SPL_A_weighted, fro_qst_5_broadband_SPL_A_weighted,
+# flo_gl_model = GL(component=flo_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_flo_disk', blade_prefix='flo')
+# flo_qst_5_broadband_SPL, flo_qst_5_broadband_SPL_A_weighted = flo_gl_model.evaluate_broadband_noise(qst_5_ac_states, flo_Ct, design_condition=qst_5)
+# system_m3l_model.register_output(flo_qst_5_broadband_SPL, qst_5)
+# system_m3l_model.register_output(flo_qst_5_broadband_SPL_A_weighted, qst_5)
 
-]
 
-qst_5_total_SPL, qst_5_total_SPL_A_weighted = total_noise_model_qst_5.evaluate(noise_components, A_weighted_noise_components, design_condition=qst_5)
-system_m3l_model.register_output(qst_5_total_SPL, qst_5)
-system_m3l_model.register_output(qst_5_total_SPL_A_weighted, qst_5)
+# fli_lowson_model = Lowson(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_fli_disk', blade_prefix='fli')
+# fli_qst_5_tonal_SPL, fli_qst_5_tonal_SPL_A_weighted = fli_lowson_model.evaluate_tonal_noise(fli_dT, fli_dD, qst_5_ac_states, design_condition=qst_5)
+# system_m3l_model.register_output(fli_qst_5_tonal_SPL, qst_5)
+# system_m3l_model.register_output(fli_qst_5_tonal_SPL_A_weighted, qst_5)
+
+# fli_gl_model = GL(component=fli_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_fli_disk', blade_prefix='fli')
+# fli_qst_5_broadband_SPL, fli_qst_5_broadband_SPL_A_weighted = fli_gl_model.evaluate_broadband_noise(qst_5_ac_states, fli_Ct, design_condition=qst_5)
+# system_m3l_model.register_output(fli_qst_5_broadband_SPL, qst_5)
+# system_m3l_model.register_output(fli_qst_5_broadband_SPL_A_weighted, qst_5)
+
+
+# fri_lowson_model = Lowson(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_fri_disk', blade_prefix='fri')
+# fri_qst_5_tonal_SPL, fri_qst_5_tonal_SPL_A_weighted = fri_lowson_model.evaluate_tonal_noise(fri_dT, fri_dD, qst_5_ac_states, design_condition=qst_5)
+# system_m3l_model.register_output(fri_qst_5_tonal_SPL, qst_5)
+# system_m3l_model.register_output(fri_qst_5_tonal_SPL_A_weighted, qst_5)
+
+# fri_gl_model = GL(component=fri_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_fri_disk', blade_prefix='fri')
+# fri_qst_5_broadband_SPL, fri_qst_5_broadband_SPL_A_weighted = fri_gl_model.evaluate_broadband_noise(qst_5_ac_states, fri_Ct, design_condition=qst_5)
+# system_m3l_model.register_output(fri_qst_5_broadband_SPL, qst_5)
+# system_m3l_model.register_output(fri_qst_5_broadband_SPL_A_weighted, qst_5)
+
+
+# fro_lowson_model = Lowson(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_fro_disk', blade_prefix='fro')
+# fro_qst_5_tonal_SPL, fro_qst_5_tonal_SPL_A_weighted = fro_lowson_model.evaluate_tonal_noise(fro_dT, fro_dD, qst_5_ac_states, design_condition=qst_5)
+# system_m3l_model.register_output(fro_qst_5_tonal_SPL, qst_5)
+# system_m3l_model.register_output(fro_qst_5_tonal_SPL_A_weighted, qst_5)
+
+# fro_gl_model = GL(component=fro_disk, mesh=bem_mesh_lift, acoustics_data=qst_5_acoustics, disk_prefix='qst_5_fro_disk', blade_prefix='fro')
+# fro_qst_5_broadband_SPL, fro_qst_5_broadband_SPL_A_weighted = fro_gl_model.evaluate_broadband_noise(qst_5_ac_states, fro_Ct, design_condition=qst_5)
+# system_m3l_model.register_output(fro_qst_5_broadband_SPL, qst_5)
+# system_m3l_model.register_output(fro_qst_5_broadband_SPL_A_weighted, qst_5)
+
+
+# total_noise_model_qst_5 = TotalAircraftNoise(
+#     acoustics_data=qst_5_acoustics,
+#     # component_list=[rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
+#     component_list=[pp_disk, rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk],
+# )
+# noise_components = [
+#     pp_qst_5_tonal_SPL, # pp_qst_5_broadband_SPL,
+#     rlo_qst_5_tonal_SPL, rlo_qst_5_broadband_SPL,
+#     rli_qst_5_tonal_SPL, rli_qst_5_broadband_SPL,
+#     rri_qst_5_tonal_SPL, rri_qst_5_broadband_SPL,
+#     rro_qst_5_tonal_SPL, rro_qst_5_broadband_SPL,
+#     flo_qst_5_tonal_SPL, flo_qst_5_broadband_SPL,
+#     fli_qst_5_tonal_SPL, fli_qst_5_broadband_SPL,
+#     fri_qst_5_tonal_SPL, fri_qst_5_broadband_SPL,
+#     fro_qst_5_tonal_SPL, fro_qst_5_broadband_SPL,
+
+# ]
+# A_weighted_noise_components = [
+#     pp_qst_5_tonal_SPL_A_weighted, # pp_qst_5_broadband_SPL_A_weighted,
+#     rlo_qst_5_tonal_SPL_A_weighted, rlo_qst_5_broadband_SPL_A_weighted,
+#     rli_qst_5_tonal_SPL_A_weighted, rli_qst_5_broadband_SPL_A_weighted,
+#     rri_qst_5_tonal_SPL_A_weighted, rri_qst_5_broadband_SPL_A_weighted,
+#     rro_qst_5_tonal_SPL_A_weighted, rro_qst_5_broadband_SPL_A_weighted,
+#     flo_qst_5_tonal_SPL_A_weighted, flo_qst_5_broadband_SPL_A_weighted,
+#     fli_qst_5_tonal_SPL_A_weighted, fli_qst_5_broadband_SPL_A_weighted,
+#     fri_qst_5_tonal_SPL_A_weighted, fri_qst_5_broadband_SPL_A_weighted,
+#     fro_qst_5_tonal_SPL_A_weighted, fro_qst_5_broadband_SPL_A_weighted,
+
+# ]
+
+# qst_5_total_SPL, qst_5_total_SPL_A_weighted = total_noise_model_qst_5.evaluate(noise_components, A_weighted_noise_components, design_condition=qst_5)
+# system_m3l_model.register_output(qst_5_total_SPL, qst_5)
+# system_m3l_model.register_output(qst_5_total_SPL_A_weighted, qst_5)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
 total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=qst_5)
@@ -3323,55 +3323,55 @@ caddee_csdl_model.connect('system_model.system_m3l_model.mass_model.wing_beam_tw
 caddee_csdl_model.connect('system_model.system_m3l_model.mass_model.wing_beam_tcap', 'system_model.system_m3l_model.minus_1g_sizing_wing_eb_beam_model.Aframe.wing_beam_tcap')
 
 
-lrps = ['rlo', 'rli', 'rri', 'rro', 'flo', 'fli', 'fri', 'fro']
-for i in range(5):
-    for j in range(8):
-        lrp = lrps[j]
-        if i == 0: # hover and qst 1
-            connect_phi_from_bem_hover = f'system_model.system_m3l_model.hover_{i+1}_{lrp}_disk_bem_model.phi_bracketed_search_group.phi_distribution'
-            connect_phi_to_noise_hover = f'system_model.system_m3l_model.hover_{i+1}_{lrp}_disk_KS_tonal_model.ks_spl_model.phi'
+# lrps = ['rlo', 'rli', 'rri', 'rro', 'flo', 'fli', 'fri', 'fro']
+# for i in range(5):
+#     for j in range(8):
+#         lrp = lrps[j]
+#         if i == 0: # hover and qst 1
+#             connect_phi_from_bem_hover = f'system_model.system_m3l_model.hover_{i+1}_{lrp}_disk_bem_model.phi_bracketed_search_group.phi_distribution'
+#             connect_phi_to_noise_hover = f'system_model.system_m3l_model.hover_{i+1}_{lrp}_disk_KS_tonal_model.ks_spl_model.phi'
             
-            connect_phi_from_bem_qst_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_bem_model.phi_bracketed_search_group.phi_distribution'
-            connect_phi_to_noise_qst_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_KS_tonal_model.ks_spl_model.phi'
+#             connect_phi_from_bem_qst_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_bem_model.phi_bracketed_search_group.phi_distribution'
+#             connect_phi_to_noise_qst_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_KS_tonal_model.ks_spl_model.phi'
 
-            connect_rpm_from_bem_hover = f'system_model.system_m3l_model.hover_{i+1}_{lrp}_disk_bem_model.rpm'
-            connect_rpm_to_noise_1_hover = f'system_model.system_m3l_model.hover_{i+1}_{lrp}_disk_KS_tonal_model.rpm'
-            connect_rpm_to_noise_2_hover = f'system_model.system_m3l_model.hover_{i+1}_{lrp}_disk_GL_broadband_model.rpm'
+#             connect_rpm_from_bem_hover = f'system_model.system_m3l_model.hover_{i+1}_{lrp}_disk_bem_model.rpm'
+#             connect_rpm_to_noise_1_hover = f'system_model.system_m3l_model.hover_{i+1}_{lrp}_disk_KS_tonal_model.rpm'
+#             connect_rpm_to_noise_2_hover = f'system_model.system_m3l_model.hover_{i+1}_{lrp}_disk_GL_broadband_model.rpm'
 
-            connect_rpm_from_bem_qst_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_bem_model.rpm'
-            connect_rpm_to_noise_1_qst_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_KS_tonal_model.rpm'
-            connect_rpm_to_noise_2_qst_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_GL_broadband_model.rpm'
+#             connect_rpm_from_bem_qst_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_bem_model.rpm'
+#             connect_rpm_to_noise_1_qst_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_KS_tonal_model.rpm'
+#             connect_rpm_to_noise_2_qst_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_GL_broadband_model.rpm'
 
-            caddee_csdl_model.connect(connect_phi_from_bem_hover, connect_phi_to_noise_hover)
-            caddee_csdl_model.connect(connect_phi_from_bem_qst_1, connect_phi_to_noise_qst_1)
+#             caddee_csdl_model.connect(connect_phi_from_bem_hover, connect_phi_to_noise_hover)
+#             caddee_csdl_model.connect(connect_phi_from_bem_qst_1, connect_phi_to_noise_qst_1)
 
-            caddee_csdl_model.connect(connect_rpm_from_bem_hover, connect_rpm_to_noise_1_hover)
-            caddee_csdl_model.connect(connect_rpm_from_bem_hover, connect_rpm_to_noise_2_hover)
+#             caddee_csdl_model.connect(connect_rpm_from_bem_hover, connect_rpm_to_noise_1_hover)
+#             caddee_csdl_model.connect(connect_rpm_from_bem_hover, connect_rpm_to_noise_2_hover)
 
-            caddee_csdl_model.connect(connect_rpm_from_bem_qst_1, connect_rpm_to_noise_1_qst_1)
-            caddee_csdl_model.connect(connect_rpm_from_bem_qst_1, connect_rpm_to_noise_2_qst_1)
+#             caddee_csdl_model.connect(connect_rpm_from_bem_qst_1, connect_rpm_to_noise_1_qst_1)
+#             caddee_csdl_model.connect(connect_rpm_from_bem_qst_1, connect_rpm_to_noise_2_qst_1)
         
-        else: # qst 2-5
-            connect_from_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_pitt_peters_model.pitt_peters_external_inputs_model.in_plane_ex'
-            connect_to_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_Lowson_tonal_model.lowson_spl_model.in_plane_ex'
+#         else: # qst 2-5
+#             connect_from_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_pitt_peters_model.pitt_peters_external_inputs_model.in_plane_ex'
+#             connect_to_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_Lowson_tonal_model.lowson_spl_model.in_plane_ex'
             
-            connect_from_1_pp = f'system_model.system_m3l_model.qst_{i+1}_pp_disk_bem_model.BEM_external_inputs_model.in_plane_ex'
-            connect_to_1_pp = f'system_model.system_m3l_model.qst_{i+1}_pp_disk_Lowson_tonal_model.lowson_spl_model.in_plane_ex'
+#             connect_from_1_pp = f'system_model.system_m3l_model.qst_{i+1}_pp_disk_bem_model.BEM_external_inputs_model.in_plane_ex'
+#             connect_to_1_pp = f'system_model.system_m3l_model.qst_{i+1}_pp_disk_Lowson_tonal_model.lowson_spl_model.in_plane_ex'
 
-            connect_from_rpm = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_pitt_peters_model.rpm'
-            connect_to_rpm_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_GL_broadband_model.rpm'
-            connect_to_rpm_2 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_Lowson_tonal_model.rpm'
+#             connect_from_rpm = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_pitt_peters_model.rpm'
+#             connect_to_rpm_1 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_GL_broadband_model.rpm'
+#             connect_to_rpm_2 = f'system_model.system_m3l_model.qst_{i+1}_{lrp}_disk_Lowson_tonal_model.rpm'
 
-            connect_from_rpm_pp = f'system_model.system_m3l_model.qst_{i+1}_pp_disk_bem_model.rpm'
-            # connect_to_rpm_1_pp = f'system_model.system_m3l_model.qst_{i+1}_pp_disk_GL_broadband_model.rpm'
-            connect_to_rpm_2_pp = f'system_model.system_m3l_model.qst_{i+1}_pp_disk_Lowson_tonal_model.rpm'
+#             connect_from_rpm_pp = f'system_model.system_m3l_model.qst_{i+1}_pp_disk_bem_model.rpm'
+#             # connect_to_rpm_1_pp = f'system_model.system_m3l_model.qst_{i+1}_pp_disk_GL_broadband_model.rpm'
+#             connect_to_rpm_2_pp = f'system_model.system_m3l_model.qst_{i+1}_pp_disk_Lowson_tonal_model.rpm'
         
-            caddee_csdl_model.connect(connect_from_1, connect_to_1)
-            caddee_csdl_model.connect(connect_from_1_pp, connect_to_1_pp)
+#             caddee_csdl_model.connect(connect_from_1, connect_to_1)
+#             caddee_csdl_model.connect(connect_from_1_pp, connect_to_1_pp)
             
-            caddee_csdl_model.connect(connect_from_rpm, connect_to_rpm_1)
-            caddee_csdl_model.connect(connect_from_rpm, connect_to_rpm_2)
-            caddee_csdl_model.connect(connect_from_rpm_pp, connect_to_rpm_2_pp)
+#             caddee_csdl_model.connect(connect_from_rpm, connect_to_rpm_1)
+#             caddee_csdl_model.connect(connect_from_rpm, connect_to_rpm_2)
+#             caddee_csdl_model.connect(connect_from_rpm_pp, connect_to_rpm_2_pp)
 
 # for i in range(4):
 #     connect_rpm_from_bem = f'system_model.system_m3l_model.qst_{i+6}_pp_disk_bem_model.rpm'
@@ -3783,147 +3783,147 @@ caddee_csdl_model.add_design_variable('hover_1_oei_fli_fro_disk_actuation_2', lo
 # endregion
 
 # region geometric constraints/dvs
-wing_twist = caddee_csdl_model.create_input('wing_twist_distribution', val=np.zeros((10, )))
-caddee_csdl_model.add_design_variable('wing_twist_distribution', lower=np.deg2rad(-5), upper=np.deg2rad(5))
+# wing_twist = caddee_csdl_model.create_input('wing_twist_distribution', val=np.zeros((10, )))
+# caddee_csdl_model.add_design_variable('wing_twist_distribution', lower=np.deg2rad(-5), upper=np.deg2rad(5))
 
 
-pp_radius = caddee_csdl_model.create_input('pp_radius', val=4.6)
-pp_blade_twist = caddee_csdl_model.create_input('pp_blade_twist', np.array([0., 0., 0., 0., 0.]))
-pp_blade_chord = caddee_csdl_model.create_input('pp_blade_chord', np.array([0., 0., 0., 0.]))
-caddee_csdl_model.add_design_variable('pp_radius', lower=3.5, upper=6., scaler=1e-1)
+# pp_radius = caddee_csdl_model.create_input('pp_radius', val=4.6)
+# pp_blade_twist = caddee_csdl_model.create_input('pp_blade_twist', np.array([0., 0., 0., 0., 0.]))
+# pp_blade_chord = caddee_csdl_model.create_input('pp_blade_chord', np.array([0., 0., 0., 0.]))
+# caddee_csdl_model.add_design_variable('pp_radius', lower=3.5, upper=6., scaler=1e-1)
 # caddee_csdl_model.add_design_variable('pp_blade_twist', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('pp_blade_chord', lower=-0.5, upper=0.5)
+# caddee_csdl_model.add_design_variable('pp_blade_chord', lower=-0.5, upper=0.5)
 
-caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r1')
-caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r2')
-caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r3')
-caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r4')
-caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r5')
-caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r6')
-caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_1_chord')
-caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_2_chord')
-caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_3_chord')
-caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_4_chord')
-caddee_csdl_model.connect('pp_blade_twist', 'pp_blade_1_twist')
-caddee_csdl_model.connect('pp_blade_twist', 'pp_blade_2_twist')
-caddee_csdl_model.connect('pp_blade_twist', 'pp_blade_3_twist')
-caddee_csdl_model.connect('pp_blade_twist', 'pp_blade_4_twist')
-
-
-rear_outer_radius = caddee_csdl_model.create_input('rear_outer_radius', val=5)
-rear_outer_blade_twist = caddee_csdl_model.create_input('rear_outer_blade_twist', np.deg2rad(np.array([0., 0., 0., 0., 0.])))
-rear_outer_blade_twist = caddee_csdl_model.create_input('rear_outer_blade_twist_2', np.deg2rad(np.array([0., 0., 0., 0., 0.])))
-rear_outer_blade_chord = caddee_csdl_model.create_input('rear_outer_blade_chord', np.array([0., 0., 0., 0.]))
-rear_outer_blade_chord = caddee_csdl_model.create_input('rear_outer_blade_chord_2', np.array([0., 0., 0., 0.]))
-caddee_csdl_model.add_design_variable('rear_outer_radius', lower=3.5, upper=6.5, scaler=1e-1)
-# caddee_csdl_model.add_design_variable('rear_outer_blade_twist', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-# caddee_csdl_model.add_design_variable('rear_outer_blade_twist_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('rear_outer_blade_chord', lower=-0.5, upper=0.5)
-caddee_csdl_model.add_design_variable('rear_outer_blade_chord_2', lower=-0.5, upper=0.5)
-
-caddee_csdl_model.connect('rear_outer_blade_twist', 'rlo_blade_1_twist')
-caddee_csdl_model.connect('rear_outer_blade_twist', 'rlo_blade_2_twist')
-caddee_csdl_model.connect('rear_outer_blade_twist_2', 'rro_blade_1_twist')
-caddee_csdl_model.connect('rear_outer_blade_twist_2', 'rro_blade_2_twist')
-caddee_csdl_model.connect('rear_outer_blade_chord', 'rlo_blade_1_chord')
-caddee_csdl_model.connect('rear_outer_blade_chord', 'rlo_blade_2_chord')
-caddee_csdl_model.connect('rear_outer_blade_chord_2', 'rro_blade_1_chord')
-caddee_csdl_model.connect('rear_outer_blade_chord_2', 'rro_blade_2_chord')
-caddee_csdl_model.connect('rear_outer_radius', 'rlo_in_plane_r1')
-caddee_csdl_model.connect('rear_outer_radius', 'rlo_in_plane_r2')
-caddee_csdl_model.connect('rear_outer_radius', 'rlo_in_plane_r3')
-caddee_csdl_model.connect('rear_outer_radius', 'rlo_in_plane_r4')
-caddee_csdl_model.connect('rear_outer_radius', 'rro_in_plane_r1')
-caddee_csdl_model.connect('rear_outer_radius', 'rro_in_plane_r2')
-caddee_csdl_model.connect('rear_outer_radius', 'rro_in_plane_r3')
-caddee_csdl_model.connect('rear_outer_radius', 'rro_in_plane_r4')
+# caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r1')
+# caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r2')
+# caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r3')
+# caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r4')
+# caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r5')
+# caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r6')
+# caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_1_chord')
+# caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_2_chord')
+# caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_3_chord')
+# caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_4_chord')
+# caddee_csdl_model.connect('pp_blade_twist', 'pp_blade_1_twist')
+# caddee_csdl_model.connect('pp_blade_twist', 'pp_blade_2_twist')
+# caddee_csdl_model.connect('pp_blade_twist', 'pp_blade_3_twist')
+# caddee_csdl_model.connect('pp_blade_twist', 'pp_blade_4_twist')
 
 
-rear_inner_radius = caddee_csdl_model.create_input('rear_inner_radius', val=5)
-rear_inner_blade_twist = caddee_csdl_model.create_input('rear_inner_blade_twist', np.array([0., 0., 0., 0., 0.]))
-rear_inner_blade_twist = caddee_csdl_model.create_input('rear_inner_blade_twist_2', np.array([0., 0., 0., 0., 0.]))
-rear_inner_blade_chord = caddee_csdl_model.create_input('rear_inner_blade_chord', np.array([0., 0., 0., 0.]))
-rear_inner_blade_chord = caddee_csdl_model.create_input('rear_inner_blade_chord_2', np.array([0., 0., 0., 0.]))
-caddee_csdl_model.add_design_variable('rear_inner_radius', lower=3.5, upper=6.5, scaler=1e-1)
-# caddee_csdl_model.add_design_variable('rear_inner_blade_twist', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-# caddee_csdl_model.add_design_variable('rear_inner_blade_twist_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('rear_inner_blade_chord', lower=-0.5, upper=0.5)
-caddee_csdl_model.add_design_variable('rear_inner_blade_chord_2', lower=-0.5, upper=0.5)
+# rear_outer_radius = caddee_csdl_model.create_input('rear_outer_radius', val=5)
+# rear_outer_blade_twist = caddee_csdl_model.create_input('rear_outer_blade_twist', np.deg2rad(np.array([0., 0., 0., 0., 0.])))
+# rear_outer_blade_twist = caddee_csdl_model.create_input('rear_outer_blade_twist_2', np.deg2rad(np.array([0., 0., 0., 0., 0.])))
+# rear_outer_blade_chord = caddee_csdl_model.create_input('rear_outer_blade_chord', np.array([0., 0., 0., 0.]))
+# rear_outer_blade_chord = caddee_csdl_model.create_input('rear_outer_blade_chord_2', np.array([0., 0., 0., 0.]))
+# caddee_csdl_model.add_design_variable('rear_outer_radius', lower=3.5, upper=6.5, scaler=1e-1)
+# # caddee_csdl_model.add_design_variable('rear_outer_blade_twist', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# # caddee_csdl_model.add_design_variable('rear_outer_blade_twist_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('rear_outer_blade_chord', lower=-0.5, upper=0.5)
+# caddee_csdl_model.add_design_variable('rear_outer_blade_chord_2', lower=-0.5, upper=0.5)
 
-caddee_csdl_model.connect('rear_inner_blade_twist', 'rli_blade_1_twist')
-caddee_csdl_model.connect('rear_inner_blade_twist', 'rli_blade_2_twist')
-caddee_csdl_model.connect('rear_inner_blade_twist_2', 'rri_blade_1_twist')
-caddee_csdl_model.connect('rear_inner_blade_twist_2', 'rri_blade_2_twist')
-caddee_csdl_model.connect('rear_inner_blade_chord', 'rli_blade_1_chord')
-caddee_csdl_model.connect('rear_inner_blade_chord', 'rli_blade_2_chord')
-caddee_csdl_model.connect('rear_inner_blade_chord_2', 'rri_blade_1_chord')
-caddee_csdl_model.connect('rear_inner_blade_chord_2', 'rri_blade_2_chord')
-caddee_csdl_model.connect('rear_inner_radius', 'rli_in_plane_r1')
-caddee_csdl_model.connect('rear_inner_radius', 'rli_in_plane_r2')
-caddee_csdl_model.connect('rear_inner_radius', 'rli_in_plane_r3')
-caddee_csdl_model.connect('rear_inner_radius', 'rli_in_plane_r4')
-caddee_csdl_model.connect('rear_inner_radius', 'rri_in_plane_r1')
-caddee_csdl_model.connect('rear_inner_radius', 'rri_in_plane_r2')
-caddee_csdl_model.connect('rear_inner_radius', 'rri_in_plane_r3')
-caddee_csdl_model.connect('rear_inner_radius', 'rri_in_plane_r4')
-
-
-front_outer_radius = caddee_csdl_model.create_input('front_outer_radius', val=5)
-front_outer_blade_twist = caddee_csdl_model.create_input('front_outer_blade_twist', np.array([0., 0., 0., 0., 0.]))
-front_outer_blade_twist = caddee_csdl_model.create_input('front_outer_blade_twist_2', np.array([0., 0., 0., 0., 0.]))
-front_outer_blade_chord = caddee_csdl_model.create_input('front_outer_blade_chord', np.array([0., 0., 0., 0.]))
-front_outer_blade_chord = caddee_csdl_model.create_input('front_outer_blade_chord_2', np.array([0., 0., 0., 0.]))
-caddee_csdl_model.add_design_variable('front_outer_radius', lower=3.5, upper=6.5, scaler=1e-1)
-# caddee_csdl_model.add_design_variable('front_outer_blade_twist', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-# caddee_csdl_model.add_design_variable('front_outer_blade_twist_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('front_outer_blade_chord', lower=-0.5, upper=0.5)
-caddee_csdl_model.add_design_variable('front_outer_blade_chord_2', lower=-0.5, upper=0.5)
-
-caddee_csdl_model.connect('front_outer_blade_twist', 'flo_blade_1_twist')
-caddee_csdl_model.connect('front_outer_blade_twist', 'flo_blade_2_twist')
-caddee_csdl_model.connect('front_outer_blade_twist_2', 'fro_blade_1_twist')
-caddee_csdl_model.connect('front_outer_blade_twist_2', 'fro_blade_2_twist')
-caddee_csdl_model.connect('front_outer_blade_chord', 'flo_blade_1_chord')
-caddee_csdl_model.connect('front_outer_blade_chord', 'flo_blade_2_chord')
-caddee_csdl_model.connect('front_outer_blade_chord_2', 'fro_blade_1_chord')
-caddee_csdl_model.connect('front_outer_blade_chord_2', 'fro_blade_2_chord')
-caddee_csdl_model.connect('front_outer_radius', 'flo_in_plane_r1')
-caddee_csdl_model.connect('front_outer_radius', 'flo_in_plane_r2')
-caddee_csdl_model.connect('front_outer_radius', 'flo_in_plane_r3')
-caddee_csdl_model.connect('front_outer_radius', 'flo_in_plane_r4')
-caddee_csdl_model.connect('front_outer_radius', 'fro_in_plane_r1')
-caddee_csdl_model.connect('front_outer_radius', 'fro_in_plane_r2')
-caddee_csdl_model.connect('front_outer_radius', 'fro_in_plane_r3')
-caddee_csdl_model.connect('front_outer_radius', 'fro_in_plane_r4')
+# caddee_csdl_model.connect('rear_outer_blade_twist', 'rlo_blade_1_twist')
+# caddee_csdl_model.connect('rear_outer_blade_twist', 'rlo_blade_2_twist')
+# caddee_csdl_model.connect('rear_outer_blade_twist_2', 'rro_blade_1_twist')
+# caddee_csdl_model.connect('rear_outer_blade_twist_2', 'rro_blade_2_twist')
+# caddee_csdl_model.connect('rear_outer_blade_chord', 'rlo_blade_1_chord')
+# caddee_csdl_model.connect('rear_outer_blade_chord', 'rlo_blade_2_chord')
+# caddee_csdl_model.connect('rear_outer_blade_chord_2', 'rro_blade_1_chord')
+# caddee_csdl_model.connect('rear_outer_blade_chord_2', 'rro_blade_2_chord')
+# caddee_csdl_model.connect('rear_outer_radius', 'rlo_in_plane_r1')
+# caddee_csdl_model.connect('rear_outer_radius', 'rlo_in_plane_r2')
+# caddee_csdl_model.connect('rear_outer_radius', 'rlo_in_plane_r3')
+# caddee_csdl_model.connect('rear_outer_radius', 'rlo_in_plane_r4')
+# caddee_csdl_model.connect('rear_outer_radius', 'rro_in_plane_r1')
+# caddee_csdl_model.connect('rear_outer_radius', 'rro_in_plane_r2')
+# caddee_csdl_model.connect('rear_outer_radius', 'rro_in_plane_r3')
+# caddee_csdl_model.connect('rear_outer_radius', 'rro_in_plane_r4')
 
 
-front_inner_radius = caddee_csdl_model.create_input('front_inner_radius', val=5)
-front_inner_blade_twist = caddee_csdl_model.create_input('front_inner_blade_twist', np.array([0., 0., 0., 0., 0.]))
-front_inner_blade_twist = caddee_csdl_model.create_input('front_inner_blade_twist_2', np.array([0., 0., 0., 0., 0.]))
-front_inner_blade_chord = caddee_csdl_model.create_input('front_inner_blade_chord', np.array([0., 0., 0., 0.]))
-front_inner_blade_chord = caddee_csdl_model.create_input('front_inner_blade_chord_2', np.array([0., 0., 0., 0.]))
-caddee_csdl_model.add_design_variable('front_inner_radius', lower=3.5, upper=6.5, scaler=1e-1)
-# caddee_csdl_model.add_design_variable('front_inner_blade_twist', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-# caddee_csdl_model.add_design_variable('front_inner_blade_twist_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('front_inner_blade_chord', lower=-0.5, upper=0.5)
-caddee_csdl_model.add_design_variable('front_inner_blade_chord_2', lower=-0.5, upper=0.5)
+# rear_inner_radius = caddee_csdl_model.create_input('rear_inner_radius', val=5)
+# rear_inner_blade_twist = caddee_csdl_model.create_input('rear_inner_blade_twist', np.array([0., 0., 0., 0., 0.]))
+# rear_inner_blade_twist = caddee_csdl_model.create_input('rear_inner_blade_twist_2', np.array([0., 0., 0., 0., 0.]))
+# rear_inner_blade_chord = caddee_csdl_model.create_input('rear_inner_blade_chord', np.array([0., 0., 0., 0.]))
+# rear_inner_blade_chord = caddee_csdl_model.create_input('rear_inner_blade_chord_2', np.array([0., 0., 0., 0.]))
+# caddee_csdl_model.add_design_variable('rear_inner_radius', lower=3.5, upper=6.5, scaler=1e-1)
+# # caddee_csdl_model.add_design_variable('rear_inner_blade_twist', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# # caddee_csdl_model.add_design_variable('rear_inner_blade_twist_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('rear_inner_blade_chord', lower=-0.5, upper=0.5)
+# caddee_csdl_model.add_design_variable('rear_inner_blade_chord_2', lower=-0.5, upper=0.5)
 
-caddee_csdl_model.connect('front_inner_blade_twist', 'fli_blade_1_twist')
-caddee_csdl_model.connect('front_inner_blade_twist', 'fli_blade_2_twist')
-caddee_csdl_model.connect('front_inner_blade_twist_2', 'fri_blade_1_twist')
-caddee_csdl_model.connect('front_inner_blade_twist_2', 'fri_blade_2_twist')
-caddee_csdl_model.connect('front_inner_blade_chord', 'fli_blade_1_chord')
-caddee_csdl_model.connect('front_inner_blade_chord', 'fli_blade_2_chord')
-caddee_csdl_model.connect('front_inner_blade_chord_2', 'fri_blade_1_chord')
-caddee_csdl_model.connect('front_inner_blade_chord_2', 'fri_blade_2_chord')
-caddee_csdl_model.connect('front_inner_radius', 'fli_in_plane_r1')
-caddee_csdl_model.connect('front_inner_radius', 'fli_in_plane_r2')
-caddee_csdl_model.connect('front_inner_radius', 'fli_in_plane_r3')
-caddee_csdl_model.connect('front_inner_radius', 'fli_in_plane_r4')
-caddee_csdl_model.connect('front_inner_radius', 'fri_in_plane_r1')
-caddee_csdl_model.connect('front_inner_radius', 'fri_in_plane_r2')
-caddee_csdl_model.connect('front_inner_radius', 'fri_in_plane_r3')
-caddee_csdl_model.connect('front_inner_radius', 'fri_in_plane_r4')
+# caddee_csdl_model.connect('rear_inner_blade_twist', 'rli_blade_1_twist')
+# caddee_csdl_model.connect('rear_inner_blade_twist', 'rli_blade_2_twist')
+# caddee_csdl_model.connect('rear_inner_blade_twist_2', 'rri_blade_1_twist')
+# caddee_csdl_model.connect('rear_inner_blade_twist_2', 'rri_blade_2_twist')
+# caddee_csdl_model.connect('rear_inner_blade_chord', 'rli_blade_1_chord')
+# caddee_csdl_model.connect('rear_inner_blade_chord', 'rli_blade_2_chord')
+# caddee_csdl_model.connect('rear_inner_blade_chord_2', 'rri_blade_1_chord')
+# caddee_csdl_model.connect('rear_inner_blade_chord_2', 'rri_blade_2_chord')
+# caddee_csdl_model.connect('rear_inner_radius', 'rli_in_plane_r1')
+# caddee_csdl_model.connect('rear_inner_radius', 'rli_in_plane_r2')
+# caddee_csdl_model.connect('rear_inner_radius', 'rli_in_plane_r3')
+# caddee_csdl_model.connect('rear_inner_radius', 'rli_in_plane_r4')
+# caddee_csdl_model.connect('rear_inner_radius', 'rri_in_plane_r1')
+# caddee_csdl_model.connect('rear_inner_radius', 'rri_in_plane_r2')
+# caddee_csdl_model.connect('rear_inner_radius', 'rri_in_plane_r3')
+# caddee_csdl_model.connect('rear_inner_radius', 'rri_in_plane_r4')
+
+
+# front_outer_radius = caddee_csdl_model.create_input('front_outer_radius', val=5)
+# front_outer_blade_twist = caddee_csdl_model.create_input('front_outer_blade_twist', np.array([0., 0., 0., 0., 0.]))
+# front_outer_blade_twist = caddee_csdl_model.create_input('front_outer_blade_twist_2', np.array([0., 0., 0., 0., 0.]))
+# front_outer_blade_chord = caddee_csdl_model.create_input('front_outer_blade_chord', np.array([0., 0., 0., 0.]))
+# front_outer_blade_chord = caddee_csdl_model.create_input('front_outer_blade_chord_2', np.array([0., 0., 0., 0.]))
+# caddee_csdl_model.add_design_variable('front_outer_radius', lower=3.5, upper=6.5, scaler=1e-1)
+# # caddee_csdl_model.add_design_variable('front_outer_blade_twist', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# # caddee_csdl_model.add_design_variable('front_outer_blade_twist_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('front_outer_blade_chord', lower=-0.5, upper=0.5)
+# caddee_csdl_model.add_design_variable('front_outer_blade_chord_2', lower=-0.5, upper=0.5)
+
+# caddee_csdl_model.connect('front_outer_blade_twist', 'flo_blade_1_twist')
+# caddee_csdl_model.connect('front_outer_blade_twist', 'flo_blade_2_twist')
+# caddee_csdl_model.connect('front_outer_blade_twist_2', 'fro_blade_1_twist')
+# caddee_csdl_model.connect('front_outer_blade_twist_2', 'fro_blade_2_twist')
+# caddee_csdl_model.connect('front_outer_blade_chord', 'flo_blade_1_chord')
+# caddee_csdl_model.connect('front_outer_blade_chord', 'flo_blade_2_chord')
+# caddee_csdl_model.connect('front_outer_blade_chord_2', 'fro_blade_1_chord')
+# caddee_csdl_model.connect('front_outer_blade_chord_2', 'fro_blade_2_chord')
+# caddee_csdl_model.connect('front_outer_radius', 'flo_in_plane_r1')
+# caddee_csdl_model.connect('front_outer_radius', 'flo_in_plane_r2')
+# caddee_csdl_model.connect('front_outer_radius', 'flo_in_plane_r3')
+# caddee_csdl_model.connect('front_outer_radius', 'flo_in_plane_r4')
+# caddee_csdl_model.connect('front_outer_radius', 'fro_in_plane_r1')
+# caddee_csdl_model.connect('front_outer_radius', 'fro_in_plane_r2')
+# caddee_csdl_model.connect('front_outer_radius', 'fro_in_plane_r3')
+# caddee_csdl_model.connect('front_outer_radius', 'fro_in_plane_r4')
+
+
+# front_inner_radius = caddee_csdl_model.create_input('front_inner_radius', val=5)
+# front_inner_blade_twist = caddee_csdl_model.create_input('front_inner_blade_twist', np.array([0., 0., 0., 0., 0.]))
+# front_inner_blade_twist = caddee_csdl_model.create_input('front_inner_blade_twist_2', np.array([0., 0., 0., 0., 0.]))
+# front_inner_blade_chord = caddee_csdl_model.create_input('front_inner_blade_chord', np.array([0., 0., 0., 0.]))
+# front_inner_blade_chord = caddee_csdl_model.create_input('front_inner_blade_chord_2', np.array([0., 0., 0., 0.]))
+# caddee_csdl_model.add_design_variable('front_inner_radius', lower=3.5, upper=6.5, scaler=1e-1)
+# # caddee_csdl_model.add_design_variable('front_inner_blade_twist', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# # caddee_csdl_model.add_design_variable('front_inner_blade_twist_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('front_inner_blade_chord', lower=-0.5, upper=0.5)
+# caddee_csdl_model.add_design_variable('front_inner_blade_chord_2', lower=-0.5, upper=0.5)
+
+# caddee_csdl_model.connect('front_inner_blade_twist', 'fli_blade_1_twist')
+# caddee_csdl_model.connect('front_inner_blade_twist', 'fli_blade_2_twist')
+# caddee_csdl_model.connect('front_inner_blade_twist_2', 'fri_blade_1_twist')
+# caddee_csdl_model.connect('front_inner_blade_twist_2', 'fri_blade_2_twist')
+# caddee_csdl_model.connect('front_inner_blade_chord', 'fli_blade_1_chord')
+# caddee_csdl_model.connect('front_inner_blade_chord', 'fli_blade_2_chord')
+# caddee_csdl_model.connect('front_inner_blade_chord_2', 'fri_blade_1_chord')
+# caddee_csdl_model.connect('front_inner_blade_chord_2', 'fri_blade_2_chord')
+# caddee_csdl_model.connect('front_inner_radius', 'fli_in_plane_r1')
+# caddee_csdl_model.connect('front_inner_radius', 'fli_in_plane_r2')
+# caddee_csdl_model.connect('front_inner_radius', 'fli_in_plane_r3')
+# caddee_csdl_model.connect('front_inner_radius', 'fli_in_plane_r4')
+# caddee_csdl_model.connect('front_inner_radius', 'fri_in_plane_r1')
+# caddee_csdl_model.connect('front_inner_radius', 'fri_in_plane_r2')
+# caddee_csdl_model.connect('front_inner_radius', 'fri_in_plane_r3')
+# caddee_csdl_model.connect('front_inner_radius', 'fri_in_plane_r4')
 
 
 caddee_csdl_model.create_input('pp_twist_cp', val=np.deg2rad(np.array([65, 45, 30, 15])))
@@ -3936,48 +3936,48 @@ caddee_csdl_model.create_input('rli_twist_cp', val=np.deg2rad(np.array([30, 20, 
 caddee_csdl_model.create_input('rri_twist_cp', val=np.deg2rad(np.array([30, 20, 10, 5])))
 caddee_csdl_model.create_input('rro_twist_cp', val=np.deg2rad(np.array([30, 20, 10, 5])))
 
-caddee_csdl_model.add_design_variable('pp_twist_cp', lower=0, upper=np.deg2rad(85))
-caddee_csdl_model.add_design_variable('flo_twist_cp', lower=0, upper=np.deg2rad(85))
-caddee_csdl_model.add_design_variable('fli_twist_cp', lower=0, upper=np.deg2rad(85))
-caddee_csdl_model.add_design_variable('fri_twist_cp', lower=0, upper=np.deg2rad(85))
-caddee_csdl_model.add_design_variable('fro_twist_cp', lower=0, upper=np.deg2rad(85))
-caddee_csdl_model.add_design_variable('rlo_twist_cp', lower=0, upper=np.deg2rad(85))
-caddee_csdl_model.add_design_variable('rli_twist_cp', lower=0, upper=np.deg2rad(85))
-caddee_csdl_model.add_design_variable('rri_twist_cp', lower=0, upper=np.deg2rad(85))
-caddee_csdl_model.add_design_variable('rro_twist_cp', lower=0, upper=np.deg2rad(85))
+# caddee_csdl_model.add_design_variable('pp_twist_cp', lower=0, upper=np.deg2rad(85))
+# caddee_csdl_model.add_design_variable('flo_twist_cp', lower=0, upper=np.deg2rad(85))
+# caddee_csdl_model.add_design_variable('fli_twist_cp', lower=0, upper=np.deg2rad(85))
+# caddee_csdl_model.add_design_variable('fri_twist_cp', lower=0, upper=np.deg2rad(85))
+# caddee_csdl_model.add_design_variable('fro_twist_cp', lower=0, upper=np.deg2rad(85))
+# caddee_csdl_model.add_design_variable('rlo_twist_cp', lower=0, upper=np.deg2rad(85))
+# caddee_csdl_model.add_design_variable('rli_twist_cp', lower=0, upper=np.deg2rad(85))
+# caddee_csdl_model.add_design_variable('rri_twist_cp', lower=0, upper=np.deg2rad(85))
+# caddee_csdl_model.add_design_variable('rro_twist_cp', lower=0, upper=np.deg2rad(85))
 
 # endregion
 
 # region rpm constraints
-hover_1_rlo_rpm = caddee_csdl_model.declare_variable('hover_1_rlo_disk_bem_model_rpm', shape=(1, 1))
-hover_1_rro_rpm = caddee_csdl_model.declare_variable('hover_1_rro_disk_bem_model_rpm', shape=(1, 1))
-hover_1_ro_rpm_constraint = hover_1_rlo_rpm * 1 - hover_1_rro_rpm * 1
+# hover_1_rlo_rpm = caddee_csdl_model.declare_variable('hover_1_rlo_disk_bem_model_rpm', shape=(1, 1))
+# hover_1_rro_rpm = caddee_csdl_model.declare_variable('hover_1_rro_disk_bem_model_rpm', shape=(1, 1))
+# hover_1_ro_rpm_constraint = hover_1_rlo_rpm * 1 - hover_1_rro_rpm * 1
 
-hover_1_rli_rpm = caddee_csdl_model.declare_variable('hover_1_rli_disk_bem_model_rpm', shape=(1, 1))
-hover_1_rri_rpm = caddee_csdl_model.declare_variable('hover_1_rri_disk_bem_model_rpm', shape=(1, 1))
-hover_1_ri_rpm_constraint = hover_1_rli_rpm * 1 - hover_1_rri_rpm * 1
+# hover_1_rli_rpm = caddee_csdl_model.declare_variable('hover_1_rli_disk_bem_model_rpm', shape=(1, 1))
+# hover_1_rri_rpm = caddee_csdl_model.declare_variable('hover_1_rri_disk_bem_model_rpm', shape=(1, 1))
+# hover_1_ri_rpm_constraint = hover_1_rli_rpm * 1 - hover_1_rri_rpm * 1
 
-hover_1_flo_rpm = caddee_csdl_model.declare_variable('hover_1_flo_disk_bem_model_rpm', shape=(1, 1))
-hover_1_fro_rpm = caddee_csdl_model.declare_variable('hover_1_fro_disk_bem_model_rpm', shape=(1, 1))
-hover_1_fo_rpm_constraint = hover_1_flo_rpm * 1 - hover_1_fro_rpm * 1
+# hover_1_flo_rpm = caddee_csdl_model.declare_variable('hover_1_flo_disk_bem_model_rpm', shape=(1, 1))
+# hover_1_fro_rpm = caddee_csdl_model.declare_variable('hover_1_fro_disk_bem_model_rpm', shape=(1, 1))
+# hover_1_fo_rpm_constraint = hover_1_flo_rpm * 1 - hover_1_fro_rpm * 1
 
-hover_1_fli_rpm = caddee_csdl_model.declare_variable('hover_1_fli_disk_bem_model_rpm', shape=(1, 1))
-hover_1_fri_rpm = caddee_csdl_model.declare_variable('hover_1_fri_disk_bem_model_rpm', shape=(1, 1))
-hover_1_fi_rpm_constraint = hover_1_fli_rpm * 1 - hover_1_fri_rpm * 1
+# hover_1_fli_rpm = caddee_csdl_model.declare_variable('hover_1_fli_disk_bem_model_rpm', shape=(1, 1))
+# hover_1_fri_rpm = caddee_csdl_model.declare_variable('hover_1_fri_disk_bem_model_rpm', shape=(1, 1))
+# hover_1_fi_rpm_constraint = hover_1_fli_rpm * 1 - hover_1_fri_rpm * 1
 
-caddee_csdl_model.register_output('hover_1_ro_rpm_constraint', hover_1_ro_rpm_constraint *  1)
-caddee_csdl_model.register_output('hover_1_ri_rpm_constraint', hover_1_ri_rpm_constraint)
-caddee_csdl_model.register_output('hover_1_fo_rpm_constraint', hover_1_fo_rpm_constraint)
-caddee_csdl_model.register_output('hover_1_fi_rpm_constraint', hover_1_fi_rpm_constraint)
+# caddee_csdl_model.register_output('hover_1_ro_rpm_constraint', hover_1_ro_rpm_constraint *  1)
+# caddee_csdl_model.register_output('hover_1_ri_rpm_constraint', hover_1_ri_rpm_constraint)
+# caddee_csdl_model.register_output('hover_1_fo_rpm_constraint', hover_1_fo_rpm_constraint)
+# caddee_csdl_model.register_output('hover_1_fi_rpm_constraint', hover_1_fi_rpm_constraint)
 
-caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_rlo_disk_bem_model.rpm','hover_1_rlo_disk_bem_model_rpm')
-caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_rro_disk_bem_model.rpm','hover_1_rro_disk_bem_model_rpm')
-caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_rli_disk_bem_model.rpm','hover_1_rli_disk_bem_model_rpm')
-caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_rri_disk_bem_model.rpm','hover_1_rri_disk_bem_model_rpm')
-caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_flo_disk_bem_model.rpm','hover_1_flo_disk_bem_model_rpm')
-caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_fro_disk_bem_model.rpm','hover_1_fro_disk_bem_model_rpm')
-caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_fli_disk_bem_model.rpm','hover_1_fli_disk_bem_model_rpm')
-caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_fri_disk_bem_model.rpm','hover_1_fri_disk_bem_model_rpm')
+# caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_rlo_disk_bem_model.rpm','hover_1_rlo_disk_bem_model_rpm')
+# caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_rro_disk_bem_model.rpm','hover_1_rro_disk_bem_model_rpm')
+# caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_rli_disk_bem_model.rpm','hover_1_rli_disk_bem_model_rpm')
+# caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_rri_disk_bem_model.rpm','hover_1_rri_disk_bem_model_rpm')
+# caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_flo_disk_bem_model.rpm','hover_1_flo_disk_bem_model_rpm')
+# caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_fro_disk_bem_model.rpm','hover_1_fro_disk_bem_model_rpm')
+# caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_fli_disk_bem_model.rpm','hover_1_fli_disk_bem_model_rpm')
+# caddee_csdl_model.connect('system_model.system_m3l_model.hover_1_fri_disk_bem_model.rpm','hover_1_fri_disk_bem_model_rpm')
 # endregion
 
 # region system level constraints and objective
@@ -4003,15 +4003,15 @@ caddee_csdl_model.add_constraint('system_model.system_m3l_model.cruise_euler_eom
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.descent_1_euler_eom_gen_ref_pt.trim_residual', equals=0)
 
 # caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress',upper=427E6/1.,scaler=1E-8)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress',upper=500E6,scaler=1E-8)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.Aframe.wing_beam_displacement', upper=0.5, scaler=1)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress',upper=427E6,scaler=1E-8)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.Aframe.wing_beam_displacement', upper=0.25, scaler=1)
 # caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.Aframe.wing_beam_displacement', upper=0.25, scaler=1)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.hover_1_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_1_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_2_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_3_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_4_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_5_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
+# caddee_csdl_model.add_constraint('system_model.system_m3l_model.hover_1_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
+# caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_1_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
+# caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_2_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
+# caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_3_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
+# caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_4_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
+# caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_5_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
 
 caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_mass_properties.total_constant_mass', scaler=5e-4)
 
@@ -4038,79 +4038,79 @@ caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_ma
 
 # region TC 2 csdl model
 import csdl
-upstream_model = csdl.Model()
-wing_area = upstream_model.create_input('wing_area', val=200.)
-wing_taper_ratio = upstream_model.create_input('wing_taper_ratio', val=0.45)
-aspect_ratio = upstream_model.create_input('wing_aspect_ratio', val=13)
+# upstream_model = csdl.Model()
+# wing_area = upstream_model.create_input('wing_area', val=200.)
+# wing_taper_ratio = upstream_model.create_input('wing_taper_ratio', val=0.45)
+# aspect_ratio = upstream_model.create_input('wing_aspect_ratio', val=13)
 
-wing_span = (aspect_ratio * wing_area)**0.5
-wing_root_chord = 2 * wing_area/((1 + wing_taper_ratio) * wing_span)
-wing_tip_chord = wing_root_chord * wing_taper_ratio
+# wing_span = (aspect_ratio * wing_area)**0.5
+# wing_root_chord = 2 * wing_area/((1 + wing_taper_ratio) * wing_span)
+# wing_tip_chord = wing_root_chord * wing_taper_ratio
 
-tm = upstream_model.create_input('tail_moment_arm_input', val=17.23)
+# tm = upstream_model.create_input('tail_moment_arm_input', val=17.23)
 
-tail_area = upstream_model.create_input('tail_area', val=30)
-tail_taper_ratio = upstream_model.create_input('tail_taper_ratio', val=0.6)
-tail_aspect_ratio = upstream_model.create_input('tail_aspect_ratio', val=5)
+# tail_area = upstream_model.create_input('tail_area', val=30)
+# tail_taper_ratio = upstream_model.create_input('tail_taper_ratio', val=0.6)
+# tail_aspect_ratio = upstream_model.create_input('tail_aspect_ratio', val=5)
 
-upstream_model.add_design_variable('wing_area', upper=300, lower=100, scaler=5e-3)
-upstream_model.add_design_variable('wing_aspect_ratio', upper=16, lower=8, scaler=1e-1)
-upstream_model.add_design_variable('tail_area', upper=80, lower=10, scaler=5e-2)
-upstream_model.add_design_variable('tail_aspect_ratio', upper=9, lower=1, scaler=1e-1)
-upstream_model.add_design_variable('tail_moment_arm_input', upper=20, lower=14, scaler=5e-2)
+# upstream_model.add_design_variable('wing_area', upper=300, lower=100, scaler=5e-3)
+# upstream_model.add_design_variable('wing_aspect_ratio', upper=16, lower=8, scaler=1e-1)
+# upstream_model.add_design_variable('tail_area', upper=80, lower=10, scaler=5e-2)
+# upstream_model.add_design_variable('tail_aspect_ratio', upper=9, lower=1, scaler=1e-1)
+# upstream_model.add_design_variable('tail_moment_arm_input', upper=20, lower=14, scaler=5e-2)
 
 
 
-front_outer_r = upstream_model.declare_variable('front_outer_radius_up', shape=(1, ))
-front_inner_r = upstream_model.declare_variable('front_inner_radius_up', shape=(1, ))
-rear_outer_r = upstream_model.declare_variable('rear_outer_radius_up', shape=(1, ))
-rear_inner_r = upstream_model.declare_variable('rear_inner_radius_up', shape=(1, ))
+# front_outer_r = upstream_model.declare_variable('front_outer_radius_up', shape=(1, ))
+# front_inner_r = upstream_model.declare_variable('front_inner_radius_up', shape=(1, ))
+# rear_outer_r = upstream_model.declare_variable('rear_outer_radius_up', shape=(1, ))
+# rear_inner_r = upstream_model.declare_variable('rear_inner_radius_up', shape=(1, ))
 
-radii_front_wing_ratio = (front_outer_r * 1 + front_inner_r * 1) / (0.5 * wing_span)
-radii_rear_wing_ratio = (rear_outer_r * 1 + rear_inner_r * 1) / (0.5 * wing_span)
-upstream_model.register_output('radii_front_wing_ratio', radii_front_wing_ratio * 1)
-upstream_model.register_output('radii_rear_wing_ratio', radii_rear_wing_ratio)
-upstream_model.add_constraint('radii_front_wing_ratio', equals=0.4)
-upstream_model.add_constraint('radii_rear_wing_ratio', equals=0.4)
+# radii_front_wing_ratio = (front_outer_r * 1 + front_inner_r * 1) / (0.5 * wing_span)
+# radii_rear_wing_ratio = (rear_outer_r * 1 + rear_inner_r * 1) / (0.5 * wing_span)
+# upstream_model.register_output('radii_front_wing_ratio', radii_front_wing_ratio * 1)
+# upstream_model.register_output('radii_rear_wing_ratio', radii_rear_wing_ratio)
+# upstream_model.add_constraint('radii_front_wing_ratio', equals=0.4)
+# upstream_model.add_constraint('radii_rear_wing_ratio', equals=0.4)
 
-tail_span = (tail_aspect_ratio * tail_area)**0.5
-tail_root_chord = 2 * tail_area/((1 + tail_taper_ratio) * tail_span)
-tail_tip_chord = tail_root_chord * tail_taper_ratio
+# tail_span = (tail_aspect_ratio * tail_area)**0.5
+# tail_root_chord = 2 * tail_area/((1 + tail_taper_ratio) * tail_span)
+# tail_tip_chord = tail_root_chord * tail_taper_ratio
 
-upstream_model.register_output('tail_moment_arm', tm * 1)
-upstream_model.register_output('wing_root_chord', wing_root_chord)
-upstream_model.register_output('wing_tip_chord_left', wing_tip_chord)
-upstream_model.register_output('wing_tip_chord_right', wing_tip_chord * 1)
-upstream_model.register_output('wing_span', wing_span)
+# upstream_model.register_output('tail_moment_arm', tm * 1)
+# upstream_model.register_output('wing_root_chord', wing_root_chord)
+# upstream_model.register_output('wing_tip_chord_left', wing_tip_chord)
+# upstream_model.register_output('wing_tip_chord_right', wing_tip_chord * 1)
+# upstream_model.register_output('wing_span', wing_span)
 
-upstream_model.register_output('tail_root_chord', tail_root_chord)
-upstream_model.register_output('tail_tip_chord_left', tail_tip_chord)
-upstream_model.register_output('tail_tip_chord_right', tail_tip_chord * 1)
-upstream_model.register_output('tail_span', tail_span)
+# upstream_model.register_output('tail_root_chord', tail_root_chord)
+# upstream_model.register_output('tail_tip_chord_left', tail_tip_chord)
+# upstream_model.register_output('tail_tip_chord_right', tail_tip_chord * 1)
+# upstream_model.register_output('tail_span', tail_span)
 
 tc2_model = csdl.Model()
-tc2_model.add(submodel=upstream_model, name='geometry_processing_model', promotes=[])
+# tc2_model.add(submodel=upstream_model, name='geometry_processing_model', promotes=[])
 tc2_model.add(submodel=caddee_csdl_model, name='caddee_csdl_model', promotes=[])
 
-tc2_model.connect('caddee_csdl_model.rear_outer_radius', 'geometry_processing_model.rear_outer_radius_up')
-tc2_model.connect('caddee_csdl_model.rear_inner_radius', 'geometry_processing_model.rear_inner_radius_up')
-tc2_model.connect('caddee_csdl_model.front_outer_radius', 'geometry_processing_model.front_outer_radius_up')
-tc2_model.connect('caddee_csdl_model.front_inner_radius', 'geometry_processing_model.front_inner_radius_up')
+# tc2_model.connect('caddee_csdl_model.rear_outer_radius', 'geometry_processing_model.rear_outer_radius_up')
+# tc2_model.connect('caddee_csdl_model.rear_inner_radius', 'geometry_processing_model.rear_inner_radius_up')
+# tc2_model.connect('caddee_csdl_model.front_outer_radius', 'geometry_processing_model.front_outer_radius_up')
+# tc2_model.connect('caddee_csdl_model.front_inner_radius', 'geometry_processing_model.front_inner_radius_up')
 
-tc2_model.connect('geometry_processing_model.wing_root_chord', 'caddee_csdl_model.wing_root_chord')
-tc2_model.connect('geometry_processing_model.wing_tip_chord_left', 'caddee_csdl_model.wing_tip_chord_left')
-tc2_model.connect('geometry_processing_model.wing_tip_chord_right', 'caddee_csdl_model.wing_tip_chord_right')
-tc2_model.connect('geometry_processing_model.wing_span', 'caddee_csdl_model.wing_span')
-tc2_model.connect('geometry_processing_model.tail_moment_arm', 'caddee_csdl_model.tail_moment_arm')
+# tc2_model.connect('geometry_processing_model.wing_root_chord', 'caddee_csdl_model.wing_root_chord')
+# tc2_model.connect('geometry_processing_model.wing_tip_chord_left', 'caddee_csdl_model.wing_tip_chord_left')
+# tc2_model.connect('geometry_processing_model.wing_tip_chord_right', 'caddee_csdl_model.wing_tip_chord_right')
+# tc2_model.connect('geometry_processing_model.wing_span', 'caddee_csdl_model.wing_span')
+# tc2_model.connect('geometry_processing_model.tail_moment_arm', 'caddee_csdl_model.tail_moment_arm')
 
-tc2_model.connect('geometry_processing_model.tail_root_chord', 'caddee_csdl_model.tail_root_chord')
-tc2_model.connect('geometry_processing_model.tail_tip_chord_left', 'caddee_csdl_model.tail_tip_chord_left')
-tc2_model.connect('geometry_processing_model.tail_tip_chord_right', 'caddee_csdl_model.tail_tip_chord_right')
-tc2_model.connect('geometry_processing_model.tail_span', 'caddee_csdl_model.tail_span')
+# tc2_model.connect('geometry_processing_model.tail_root_chord', 'caddee_csdl_model.tail_root_chord')
+# tc2_model.connect('geometry_processing_model.tail_tip_chord_left', 'caddee_csdl_model.tail_tip_chord_left')
+# tc2_model.connect('geometry_processing_model.tail_tip_chord_right', 'caddee_csdl_model.tail_tip_chord_right')
+# tc2_model.connect('geometry_processing_model.tail_span', 'caddee_csdl_model.tail_span')
 
 # tc2_model.connect('caddee_csdl_model.system_representation.outputs_model.design_outputs_model.fuselage_length', 'caddee_csdl_model.system_model.system_m3l_model.m4_regression.fuselage_length')
-tc2_model.connect('geometry_processing_model.wing_area', 'caddee_csdl_model.system_model.system_m3l_model.m4_regression.wing_area')
-tc2_model.connect('geometry_processing_model.tail_area', 'caddee_csdl_model.system_model.system_m3l_model.m4_regression.tail_area')
+# tc2_model.connect('geometry_processing_model.wing_area', 'caddee_csdl_model.system_model.system_m3l_model.m4_regression.wing_area')
+# tc2_model.connect('geometry_processing_model.tail_area', 'caddee_csdl_model.system_model.system_m3l_model.m4_regression.tail_area')
 # endregion
 
 # run commond: mpirun -n 2 python tc2_main_script
@@ -4135,7 +4135,7 @@ updated_primitives_names = list(lpc_rep.spatial_representation.primitives.keys()
 lpc_rep.spatial_representation.update(cruise_geometry, updated_primitives_names)
 lpc_rep.spatial_representation.plot()
 
-prob = CSDLProblem(problem_name='TC_2_problem_full', simulator=sim)
+prob = CSDLProblem(problem_name='TC_2_problem_trim', simulator=sim)
 
 optimizer = SNOPT(
     prob, 

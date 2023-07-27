@@ -1305,6 +1305,15 @@ wing_lower_surface_ml_2 = wing.project(new_chord_surface_2 - np.array([0., 0., 0
 
 print(wing_lower_surface_ml_2.value.shape)
 # exit()
+# wing_upper_surface_np_array = wing_upper_surface_ml_2.value
+# for i in range(num_spanwise_vlm-1):
+#     for j in range(100):
+#         if j==0:
+#             dy = np.linalg.norm(wing_upper_surface_np_array[j, i+1, :] - wing_upper_surface_np_array[j, i, :])
+#             dx = np.linalg.norm(wing_upper_surface_np_array[j, i, :] +  (wing_upper_surface_np_array[j, i, :] + wing_upper_surface_np_array[j, i, :])/2)
+#             area = dy * dx
+
+# exit()
 wing_oml_mesh_name_ml = 'wing_oml_mesh_ML'
 wing_oml_mesh_ml = am.vstack((wing_upper_surface_ml, wing_lower_surface_ml))
 # spatial_rep.plot_meshes([wing_camber_surface])
