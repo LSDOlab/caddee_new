@@ -10,6 +10,7 @@ from caddee.core.caddee_core.system_representation.utils.io.step_io import read_
 from caddee.core.caddee_core.system_representation.utils.io.iges_io import read_iges, write_iges
 from caddee import IMPORTS_FILES_FOLDER
 from caddee import PROJECTIONS_FOLDER
+import sys
 
 class SpatialRepresentation:
     '''
@@ -178,8 +179,10 @@ class SpatialRepresentation:
                 
                 num_targets = len(targets)
                 projected_points_on_each_target = []
+                target_names = []
                 # Project all points onto each target
                 for target in targets:   # TODO Parallelize this for loop
+                    target_names.append(target.name)
                     target_projected_points = target.project(points=points, direction=direction, grid_search_n=grid_search_n,
                             max_iter=max_iterations, properties=['geometry', 'parametric_coordinates'])
                             # properties are not passed in here because we NEED geometry
@@ -217,25 +220,36 @@ class SpatialRepresentation:
                 #         projection_receiving_primitives.append(receiving_target)
 
                 for property in properties:
-                    num_control_points = np.cumprod(self.control_points[property].shape[:-1])[-1]
-                    linear_map = sps.lil_array((num_points, num_control_points))
+                    if property == 'parametric_coordinates':
+                        nodes_parametric = []
+                        for i in range(num_points):
+                            target_index = flattened_surface_indices[i]
+                            receiving_target_name = target_names[target_index]
+                            receiving_target = targets[target_index]
+                            u_coord = projected_points_on_each_target[target_index]['parametric_coordinates'][0][i]
+                            v_coord = projected_points_on_each_target[target_index]['parametric_coordinates'][1][i]
+                            node_parametric_coordinates = np.array([u_coord, v_coord])
+                            nodes_parametric.append((receiving_target_name, node_parametric_coordinates))
+                        projection_outputs[property] = nodes_parametric
+                    else:
+                        num_control_points = np.cumprod(self.control_points[property].shape[:-1])[-1]
+                        linear_map = sps.lil_array((num_points, num_control_points))
+                        for i in range(num_points):
+                            target_index = flattened_surface_indices[i]
+                            receiving_target = targets[target_index]
+                            receiving_target_control_point_indices = self.primitive_indices[receiving_target.name][property]
+                            point_parametric_coordinates = projected_points_on_each_target[target_index]['parametric_coordinates']
+                            if property == 'geometry':
+                                point_map_on_receiving_target = receiving_target.geometry_primitive.compute_evaluation_map(u_vec=np.array([point_parametric_coordinates[0][i]]), 
+                                                                                                    v_vec=np.array([point_parametric_coordinates[1][i]]))    
+                            else:
+                                point_map_on_receiving_target = receiving_target.material_primitives[property].compute_evaluation_map(u_vec=np.array([point_parametric_coordinates[0][i]]), 
+                                                                                                    v_vec=np.array([point_parametric_coordinates[1][i]]))
+                            linear_map[i, receiving_target_control_point_indices] = point_map_on_receiving_target
 
-                    for i in range(num_points):
-                        target_index = flattened_surface_indices[i]
-                        receiving_target = targets[target_index]
-                        receiving_target_control_point_indices = self.primitive_indices[receiving_target.name][property]
-                        point_parametric_coordinates = projected_points_on_each_target[target_index]['parametric_coordinates']
-                        if property == 'geometry':
-                            point_map_on_receiving_target = receiving_target.geometry_primitive.compute_evaluation_map(u_vec=np.array([point_parametric_coordinates[0][i]]), 
-                                                                                                v_vec=np.array([point_parametric_coordinates[1][i]]))
-                        else:
-                            point_map_on_receiving_target = receiving_target.material_primitives[property].compute_evaluation_map(u_vec=np.array([point_parametric_coordinates[0][i]]), 
-                                                                                                v_vec=np.array([point_parametric_coordinates[1][i]]))
-                        linear_map[i, receiving_target_control_point_indices] = point_map_on_receiving_target
-
-                    property_shape = points.shape[:-1] + (self.control_points[property].shape[-1],)
-                    property_mapped_array = am.array(self.control_points[property], linear_map=linear_map.tocsc(), offset=offset, shape=property_shape)
-                    projection_outputs[property] = property_mapped_array
+                        property_shape = points.shape[:-1] + (self.control_points[property].shape[-1],)
+                        property_mapped_array = am.array(self.control_points[property], linear_map=linear_map.tocsc(), offset=offset, shape=property_shape)
+                        projection_outputs[property] = property_mapped_array
 
                 data_dict['projection_outputs'] = projection_outputs
                 if direction is not None:
@@ -290,7 +304,10 @@ class SpatialRepresentation:
             num_targets = len(targets)
             projected_points_on_each_target = []
             # Project all points onto each target
+            target_names = []
+            # Project all points onto each target
             for target in targets:   # TODO Parallelize this for loop
+                target_names.append(target.name)
                 target_projected_points = target.project(points=points, direction=direction, grid_search_n=grid_search_n,
                         max_iter=max_iterations, properties=['geometry', 'parametric_coordinates'])
                         # properties are not passed in here because we NEED geometry
@@ -328,25 +345,36 @@ class SpatialRepresentation:
             #         projection_receiving_primitives.append(receiving_target)
 
             for property in properties:
-                num_control_points = np.cumprod(self.control_points[property].shape[:-1])[-1]
-                linear_map = sps.lil_array((num_points, num_control_points))
+                if property == 'parametric_coordinates':
+                    nodes_parametric = []
+                    for i in range(num_points):
+                        target_index = flattened_surface_indices[i]
+                        receiving_target_name = target_names[target_index]
+                        receiving_target = targets[target_index]
+                        u_coord = projected_points_on_each_target[target_index]['parametric_coordinates'][0][i]
+                        v_coord = projected_points_on_each_target[target_index]['parametric_coordinates'][1][i]
+                        node_parametric_coordinates = np.array([u_coord, v_coord])
+                        nodes_parametric.append((receiving_target_name, node_parametric_coordinates))
+                    projection_outputs[property] = nodes_parametric
+                else:
+                    num_control_points = np.cumprod(self.control_points[property].shape[:-1])[-1]
+                    linear_map = sps.lil_array((num_points, num_control_points))
+                    for i in range(num_points):
+                        target_index = flattened_surface_indices[i]
+                        receiving_target = targets[target_index]
+                        receiving_target_control_point_indices = self.primitive_indices[receiving_target.name][property]
+                        point_parametric_coordinates = projected_points_on_each_target[target_index]['parametric_coordinates']
+                        if property == 'geometry':
+                            point_map_on_receiving_target = receiving_target.geometry_primitive.compute_evaluation_map(u_vec=np.array([point_parametric_coordinates[0][i]]), 
+                                                                                                v_vec=np.array([point_parametric_coordinates[1][i]]))
+                        else:
+                            point_map_on_receiving_target = receiving_target.material_primitives[property].compute_evaluation_map(u_vec=np.array([point_parametric_coordinates[0][i]]), 
+                                                                                                v_vec=np.array([point_parametric_coordinates[1][i]]))
+                        linear_map[i, receiving_target_control_point_indices] = point_map_on_receiving_target
 
-                for i in range(num_points):
-                    target_index = flattened_surface_indices[i]
-                    receiving_target = targets[target_index]
-                    receiving_target_control_point_indices = self.primitive_indices[receiving_target.name][property]
-                    point_parametric_coordinates = projected_points_on_each_target[target_index]['parametric_coordinates']
-                    if property == 'geometry':
-                        point_map_on_receiving_target = receiving_target.geometry_primitive.compute_evaluation_map(u_vec=np.array([point_parametric_coordinates[0][i]]), 
-                                                                                            v_vec=np.array([point_parametric_coordinates[1][i]]))
-                    else:
-                        point_map_on_receiving_target = receiving_target.material_primitives[property].compute_evaluation_map(u_vec=np.array([point_parametric_coordinates[0][i]]), 
-                                                                                            v_vec=np.array([point_parametric_coordinates[1][i]]))
-                    linear_map[i, receiving_target_control_point_indices] = point_map_on_receiving_target
-
-                property_shape = points.shape[:-1] + (self.control_points[property].shape[-1],)
-                property_mapped_array = am.array(self.control_points[property], linear_map=linear_map.tocsc(), offset=offset, shape=property_shape)
-                projection_outputs[property] = property_mapped_array
+                    property_shape = points.shape[:-1] + (self.control_points[property].shape[-1],)
+                    property_mapped_array = am.array(self.control_points[property], linear_map=linear_map.tocsc(), offset=offset, shape=property_shape)
+                    projection_outputs[property] = property_mapped_array
 
             data_dict['projection_outputs'] = projection_outputs
             if direction is not None:
@@ -378,6 +406,19 @@ class SpatialRepresentation:
         else:
             return projection_outputs
 
+    def evaluate_parametric(self, parametric_nodes:list) -> am.MappedArray:
+        num_control_points = np.cumprod(self.control_points['geometry'].shape[:-1])[-1]
+        num_points = len(parametric_nodes)
+        linear_map = sps.lil_array((num_points, num_control_points))
+        i = 0
+        for node in parametric_nodes:
+            receiving_target = self.primitives[node[0]]
+            point_map_on_receiving_target = receiving_target.geometry_primitive.compute_evaluation_map(u_vec=np.array([node[1][0,0]]), v_vec=np.array([node[1][0,1]]))
+            receiving_target_control_point_indices = self.primitive_indices[receiving_target.name]['geometry']
+            linear_map[i, receiving_target_control_point_indices] = point_map_on_receiving_target
+            i += 1
+        shape = (len(parametric_nodes),self.control_points['geometry'].shape[-1],)
+        return am.array(self.control_points['geometry'], linear_map=linear_map.tocsc(), shape=shape)
 
     def add_input(self, name, quantity, val=None):
         '''
