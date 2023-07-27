@@ -175,7 +175,7 @@ def setup_geometry(include_wing_flag=False, num_wing_spanwise_vlm = 21, num_wing
         offset = np.array([0, 0, 0.5])
         top = wing.project(wing_beam.value + offset, direction=np.array([0., 0., -1.]), plot=debug_geom_flag)
         bot = wing.project(wing_beam.value - offset, direction=np.array([0., 0., 1.]), plot=debug_geom_flag)
-        height = am.norm((top - bot) * 1)
+        height = am.norm((top.reshape((-1,3)) - bot.reshape((-1,3))) * 1)
 
         sys_rep.add_output(name='wing_beam_mesh', quantity=wing_beam)
         sys_rep.add_output(name='wing_beam_width', quantity=width)
@@ -803,7 +803,7 @@ def trim_at_cruise(wing_cl0=0.3475):
     return twist_cp, chord_cp
 
 
-def trim_at_hover():
+def trim_at_hover(debug_geom_flag=False):
     caddee = cd.CADDEE()
     caddee.system_model = system_model = cd.SystemModel()
     caddee.system_representation = sys_rep = cd.SystemRepresentation()
@@ -959,7 +959,7 @@ def trim_at_hover():
                                dv_flag=True,
                                lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
                                )
-    lr_r1_bem_forces, lr_r1_bem_moments, _, _, _ = lr_r1_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_r1_bem_forces, lr_r1_bem_moments, _, _, _, _ = lr_r1_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_r1_bem_forces)
     hover_model.register_output(lr_r1_bem_moments)
     # endregion
@@ -991,7 +991,7 @@ def trim_at_hover():
                                      dv_flag=True,
                                      lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
                                      )
-    lr_r2_bem_forces, lr_r2_bem_moments, _, _, _ = lr_r2_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_r2_bem_forces, lr_r2_bem_moments, _, _, _, _ = lr_r2_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_r2_bem_forces)
     hover_model.register_output(lr_r2_bem_moments)
     # endregion
@@ -1023,7 +1023,7 @@ def trim_at_hover():
                                      dv_flag=True,
                                      lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
                                      )
-    lr_r3_bem_forces, lr_r3_bem_moments, _, _, _ = lr_r3_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_r3_bem_forces, lr_r3_bem_moments, _, _, _, _ = lr_r3_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_r3_bem_forces)
     hover_model.register_output(lr_r3_bem_moments)
     # endregion
@@ -1055,7 +1055,7 @@ def trim_at_hover():
                                      dv_flag=True,
                                      lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
                                      )
-    lr_r4_bem_forces, lr_r4_bem_moments, _, _, _ = lr_r4_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_r4_bem_forces, lr_r4_bem_moments, _, _, _, _ = lr_r4_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_r4_bem_forces)
     hover_model.register_output(lr_r4_bem_moments)
     # endregion
@@ -1087,7 +1087,7 @@ def trim_at_hover():
                                      dv_flag=True,
                                      lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
                                      )
-    lr_l1_bem_forces, lr_l1_bem_moments, _, _, _ = lr_l1_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_l1_bem_forces, lr_l1_bem_moments, _, _, _, _ = lr_l1_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_l1_bem_forces)
     hover_model.register_output(lr_l1_bem_moments)
     # endregion
@@ -1119,7 +1119,7 @@ def trim_at_hover():
                                      dv_flag=True,
                                      lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
                                      )
-    lr_l2_bem_forces, lr_l2_bem_moments, _, _, _ = lr_l2_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_l2_bem_forces, lr_l2_bem_moments, _, _, _, _ = lr_l2_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_l2_bem_forces)
     hover_model.register_output(lr_l2_bem_moments)
     # endregion
@@ -1151,7 +1151,7 @@ def trim_at_hover():
                                      dv_flag=True,
                                      lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
                                      )
-    lr_l3_bem_forces, lr_l3_bem_moments, _, _, _ = lr_l3_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_l3_bem_forces, lr_l3_bem_moments, _, _, _, _ = lr_l3_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_l3_bem_forces)
     hover_model.register_output(lr_l3_bem_moments)
     # endregion
@@ -1183,7 +1183,7 @@ def trim_at_hover():
                                      dv_flag=True,
                                      lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
                                      )
-    lr_l4_bem_forces, lr_l4_bem_moments, _, _, _ = lr_l4_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_l4_bem_forces, lr_l4_bem_moments, _, _, _, _ = lr_l4_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_l4_bem_forces)
     hover_model.register_output(lr_l4_bem_moments)
     # endregion
@@ -1191,14 +1191,14 @@ def trim_at_hover():
     # Total loads
     total_forces_moments_model = cd.TotalForcesMomentsM3L()
     total_forces, total_moments = total_forces_moments_model.evaluate(
-        lr_r1_bem_forces, lr_r1_bem_moments,
-        lr_r2_bem_forces, lr_r2_bem_moments,
-        lr_r3_bem_forces, lr_r3_bem_moments,
-        lr_r4_bem_forces, lr_r4_bem_moments,
-        lr_l1_bem_forces, lr_l1_bem_moments,
-        lr_l2_bem_forces, lr_l2_bem_moments,
-        lr_l3_bem_forces, lr_l3_bem_moments,
-        lr_l4_bem_forces, lr_l4_bem_moments,
+        # lr_r1_bem_forces, lr_r1_bem_moments,
+        # lr_r2_bem_forces, lr_r2_bem_moments,
+        # lr_r3_bem_forces, lr_r3_bem_moments,
+        # lr_r4_bem_forces, lr_r4_bem_moments,
+        # lr_l1_bem_forces, lr_l1_bem_moments,
+        # lr_l2_bem_forces, lr_l2_bem_moments,
+        # lr_l3_bem_forces, lr_l3_bem_moments,
+        # lr_l4_bem_forces, lr_l4_bem_moments,
         inertial_forces, inertial_moments
     )
     hover_model.register_output(total_forces)
@@ -1229,100 +1229,100 @@ def trim_at_hover():
 
     caddee_csdl_model = caddee.assemble_csdl()
 
-    # region Optimization Setup
-    caddee_csdl_model.add_objective('system_model.aircraft_trim.hover.hover.euler_eom_gen_ref_pt.trim_residual')
-
-    caddee_csdl_model.create_output(
-        name='dss', val=9.
-    )
-    caddee_csdl_model.add_constraint()
-    # caddee_csdl_model.add_constraint(
-    #     name='system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.induced_velocity_model.FOM',
-    #     equals=0.76,
-    #     scaler=1
+    # # region Optimization Setup
+    # caddee_csdl_model.add_objective('system_model.aircraft_trim.hover.hover.euler_eom_gen_ref_pt.trim_residual')
+    #
+    # caddee_csdl_model.create_output(
+    #     name='dss', val=9.
     # )
-    # caddee_csdl_model.add_constraint(
-    #     name='system_model.aircraft_trim.hover.hover.lr_r2_disk_bem_model.induced_velocity_model.FOM',
-    #     equals=0.76,
-    #     scaler=1
-    # )
-    # caddee_csdl_model.add_constraint(
-    #     name='system_model.aircraft_trim.hover.hover.lr_r3_disk_bem_model.induced_velocity_model.FOM',
-    #     equals=0.76,
-    #     scaler=1
-    # )
-    # caddee_csdl_model.add_constraint(
-    #     name='system_model.aircraft_trim.hover.hover.lr_r4_disk_bem_model.induced_velocity_model.FOM',
-    #     equals=0.76,
-    #     scaler=1
-    # )
-    # caddee_csdl_model.add_constraint(
-    #     name='system_model.aircraft_trim.hover.hover.lr_l1_disk_bem_model.induced_velocity_model.FOM',
-    #     equals=0.76,
-    #     scaler=1
-    # )
-    # caddee_csdl_model.add_constraint(
-    #     name='system_model.aircraft_trim.hover.hover.lr_l2_disk_bem_model.induced_velocity_model.FOM',
-    #     equals=0.76,
-    #     scaler=1
-    # )
-    # caddee_csdl_model.add_constraint(
-    #     name='system_model.aircraft_trim.hover.hover.lr_l3_disk_bem_model.induced_velocity_model.FOM',
-    #     equals=0.76,
-    #     scaler=1
-    # )
-    # caddee_csdl_model.add_constraint(
-    #     name='system_model.aircraft_trim.hover.hover.lr_l4_disk_bem_model.induced_velocity_model.FOM',
-    #     equals=0.76,
-    #     scaler=1
-    # )
-    # endregion
+    # caddee_csdl_model.add_constraint()
+    # # caddee_csdl_model.add_constraint(
+    # #     name='system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.induced_velocity_model.FOM',
+    # #     equals=0.76,
+    # #     scaler=1
+    # # )
+    # # caddee_csdl_model.add_constraint(
+    # #     name='system_model.aircraft_trim.hover.hover.lr_r2_disk_bem_model.induced_velocity_model.FOM',
+    # #     equals=0.76,
+    # #     scaler=1
+    # # )
+    # # caddee_csdl_model.add_constraint(
+    # #     name='system_model.aircraft_trim.hover.hover.lr_r3_disk_bem_model.induced_velocity_model.FOM',
+    # #     equals=0.76,
+    # #     scaler=1
+    # # )
+    # # caddee_csdl_model.add_constraint(
+    # #     name='system_model.aircraft_trim.hover.hover.lr_r4_disk_bem_model.induced_velocity_model.FOM',
+    # #     equals=0.76,
+    # #     scaler=1
+    # # )
+    # # caddee_csdl_model.add_constraint(
+    # #     name='system_model.aircraft_trim.hover.hover.lr_l1_disk_bem_model.induced_velocity_model.FOM',
+    # #     equals=0.76,
+    # #     scaler=1
+    # # )
+    # # caddee_csdl_model.add_constraint(
+    # #     name='system_model.aircraft_trim.hover.hover.lr_l2_disk_bem_model.induced_velocity_model.FOM',
+    # #     equals=0.76,
+    # #     scaler=1
+    # # )
+    # # caddee_csdl_model.add_constraint(
+    # #     name='system_model.aircraft_trim.hover.hover.lr_l3_disk_bem_model.induced_velocity_model.FOM',
+    # #     equals=0.76,
+    # #     scaler=1
+    # # )
+    # # caddee_csdl_model.add_constraint(
+    # #     name='system_model.aircraft_trim.hover.hover.lr_l4_disk_bem_model.induced_velocity_model.FOM',
+    # #     equals=0.76,
+    # #     scaler=1
+    # # )
+    # # endregion
 
     # Create and run simulator
     sim = Simulator(caddee_csdl_model, analytics=True)
     sim.run()
 
-    prob = CSDLProblem(problem_name='lpc', simulator=sim)
-    optimizer = SLSQP(prob, maxiter=1000, ftol=1E-10)
-    optimizer.solve()
-    optimizer.print_results()
+    # prob = CSDLProblem(problem_name='lpc', simulator=sim)
+    # optimizer = SLSQP(prob, maxiter=1000, ftol=1E-10)
+    # optimizer.solve()
+    # optimizer.print_results()
 
     print('Trim residual: ', sim['system_model.aircraft_trim.hover.hover.euler_eom_gen_ref_pt.trim_residual'])
 
     print('Total forces: ', sim['system_model.aircraft_trim.hover.hover.euler_eom_gen_ref_pt.total_forces'])
     print('Total moments:', sim['system_model.aircraft_trim.hover.hover.euler_eom_gen_ref_pt.total_moments'])
 
-    print('Lift rotor right 1 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.rpm'])
-    print('Lift rotor right 1 FoM: ',
-          sim['system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.induced_velocity_model.FOM'])
-
-    print('Lift rotor right 2 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r2_disk_bem_model.rpm'])
-    print('Lift rotor right 2 FoM: ',
-          sim['system_model.aircraft_trim.hover.hover.lr_r2_disk_bem_model.induced_velocity_model.FOM'])
-
-    print('Lift rotor right 3 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r3_disk_bem_model.rpm'])
-    print('Lift rotor right 3 FoM: ',
-          sim['system_model.aircraft_trim.hover.hover.lr_r3_disk_bem_model.induced_velocity_model.FOM'])
-
-    print('Lift rotor right 4 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r4_disk_bem_model.rpm'])
-    print('Lift rotor right 4 FoM: ',
-          sim['system_model.aircraft_trim.hover.hover.lr_r4_disk_bem_model.induced_velocity_model.FOM'])
-
-    print('Lift rotor left 1 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l1_disk_bem_model.rpm'])
-    print('Lift rotor left 1 FoM: ',
-          sim['system_model.aircraft_trim.hover.hover.lr_l1_disk_bem_model.induced_velocity_model.FOM'])
-
-    print('Lift rotor left 2 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l2_disk_bem_model.rpm'])
-    print('Lift rotor left 2 FoM: ',
-          sim['system_model.aircraft_trim.hover.hover.lr_l2_disk_bem_model.induced_velocity_model.FOM'])
-
-    print('Lift rotor left 3 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l3_disk_bem_model.rpm'])
-    print('Lift rotor left 3 FoM: ',
-          sim['system_model.aircraft_trim.hover.hover.lr_l3_disk_bem_model.induced_velocity_model.FOM'])
-
-    print('Lift rotor left 4 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l4_disk_bem_model.rpm'])
-    print('Lift rotor left 4 FoM: ',
-          sim['system_model.aircraft_trim.hover.hover.lr_l4_disk_bem_model.induced_velocity_model.FOM'])
+    # print('Lift rotor right 1 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.rpm'])
+    # print('Lift rotor right 1 FoM: ',
+    #       sim['system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.induced_velocity_model.FOM'])
+    #
+    # print('Lift rotor right 2 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r2_disk_bem_model.rpm'])
+    # print('Lift rotor right 2 FoM: ',
+    #       sim['system_model.aircraft_trim.hover.hover.lr_r2_disk_bem_model.induced_velocity_model.FOM'])
+    #
+    # print('Lift rotor right 3 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r3_disk_bem_model.rpm'])
+    # print('Lift rotor right 3 FoM: ',
+    #       sim['system_model.aircraft_trim.hover.hover.lr_r3_disk_bem_model.induced_velocity_model.FOM'])
+    #
+    # print('Lift rotor right 4 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r4_disk_bem_model.rpm'])
+    # print('Lift rotor right 4 FoM: ',
+    #       sim['system_model.aircraft_trim.hover.hover.lr_r4_disk_bem_model.induced_velocity_model.FOM'])
+    #
+    # print('Lift rotor left 1 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l1_disk_bem_model.rpm'])
+    # print('Lift rotor left 1 FoM: ',
+    #       sim['system_model.aircraft_trim.hover.hover.lr_l1_disk_bem_model.induced_velocity_model.FOM'])
+    #
+    # print('Lift rotor left 2 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l2_disk_bem_model.rpm'])
+    # print('Lift rotor left 2 FoM: ',
+    #       sim['system_model.aircraft_trim.hover.hover.lr_l2_disk_bem_model.induced_velocity_model.FOM'])
+    #
+    # print('Lift rotor left 3 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l3_disk_bem_model.rpm'])
+    # print('Lift rotor left 3 FoM: ',
+    #       sim['system_model.aircraft_trim.hover.hover.lr_l3_disk_bem_model.induced_velocity_model.FOM'])
+    #
+    # print('Lift rotor left 4 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l4_disk_bem_model.rpm'])
+    # print('Lift rotor left 4 FoM: ',
+    #       sim['system_model.aircraft_trim.hover.hover.lr_l4_disk_bem_model.induced_velocity_model.FOM'])
 
     return
 
@@ -1644,7 +1644,7 @@ if __name__ == '__main__':
     # vlm_evaluation_wing_only_aoa_sweep()
     # vlm_evaluation_wing_tail_aoa_sweep()
     # pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
-    trim_at_3g()
-    # structural_wingbox_beam_evaluation()
+    # trim_at_3g()
+    structural_wingbox_beam_evaluation()
 
     # trim_at_hover()
