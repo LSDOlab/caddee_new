@@ -862,7 +862,7 @@ fro_bem_forces, fro_bem_moments, fro_dT ,fro_dQ ,fro_dD, fro_Ct, fro_Q = fro_bem
 
 rlo_motor_model = MotorAnalysis()
 rlo_input_power, rlo_efficiency = rlo_motor_model.evaluate(rlo_Q, rli_motor_parameters, design_condition=hover_1)
-
+# Note, rename 'rlo_input_power' to 'hover_rlo_input_power'
 rli_motor_model = MotorAnalysis()
 rli_input_power, rli_efficiency = rli_motor_model.evaluate(rli_Q, rli_motor_parameters, design_condition=hover_1)
 
@@ -3410,6 +3410,24 @@ trim_residual = eom_m3l_model.evaluate(
 system_m3l_model.register_output(trim_residual, descent_1)
 # endregion
 
+# endregion
+
+total_energy_model = cd.EnergyModel()
+total_energy_consumed = total_energy_model.evaluate(hover_energy, cruise_energy)
+
+soc_model = cd.SoCModel(battery_energy_density=400) # Note, either turn this parameter into csdl variable or connect it from battery sizing 
+final_soc = energy_model.evaluate(
+    battery_mass, total_energy_consumed, # ... 
+)
+
+system_m3l_model.register_output(final_soc)
+
+# region soc calculation
+battery_mass = self.declare_variable('battery_mass', shape=(1, ))
+battery_energy_density = self.declare_variable('battery_energy_density', shape=(1, ))
+total_consumed = self.declare_variable('total_consumed_energy', shape=(1, ))
+total_available_energy = battery_mass * battery_energy_density
+final_soc = (total_available_energy - total_consumed) / total_available_energy
 
 # endregion
 
@@ -3904,8 +3922,7 @@ caddee_csdl_model.create_input('descent_wing_actuation', val=np.deg2rad(3.2))
 # caddee_csdl_model.create_input('hover_1_oei_fli_fri_disk_actuation_2', val=tilt_2)
 # caddee_csdl_model.add_design_variable('hover_1_oei_fli_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
 # caddee_csdl_model.add_design_variable('hover_1_oei_fli_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-# caddee_csdl_model.create_input('hover_1_oei_fli_fro_disk_actuation_1', val=tilt_1)
+../TC2_backup/
 # caddee_csdl_model.create_input('hover_1_oei_fli_fro_disk_actuation_2', val=tilt_2)
 # caddee_csdl_model.add_design_variable('hover_1_oei_fli_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
 # caddee_csdl_model.add_design_variable('hover_1_oei_fli_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
