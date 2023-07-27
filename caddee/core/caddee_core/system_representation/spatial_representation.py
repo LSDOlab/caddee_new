@@ -58,7 +58,7 @@ class SpatialRepresentation:
 
     def project(self, points:np.ndarray, targets:list=None, direction:np.ndarray=None,
                 grid_search_n:int=25, max_iterations=100, properties:list=['geometry'],
-                offset:np.ndarray=None, plot:bool=False, comp_name:str=''):
+                offset:np.ndarray=None, plot:bool=False, comp_name:str='', force_reprojection:bool=False):
         '''
         Projects points onto the system.
 
@@ -143,7 +143,7 @@ class SpatialRepresentation:
             else:
                 new_projections = True
 
-            if new_projections:
+            if new_projections or force_reprojection:
                 print(f"Stored projections do not exist for component '{comp_name}' contained in file '{fn}'. Proceed with projection algorithm.")
                 targets_list = []
                 for target in targets:
@@ -228,7 +228,7 @@ class SpatialRepresentation:
                             receiving_target = targets[target_index]
                             u_coord = projected_points_on_each_target[target_index]['parametric_coordinates'][0][i]
                             v_coord = projected_points_on_each_target[target_index]['parametric_coordinates'][1][i]
-                            node_parametric_coordinates = np.array([u_coord, v_coord])
+                            node_parametric_coordinates = np.array([u_coord, v_coord]).reshape(1,2)
                             nodes_parametric.append((receiving_target_name, node_parametric_coordinates))
                         projection_outputs[property] = nodes_parametric
                     else:
@@ -353,7 +353,7 @@ class SpatialRepresentation:
                         receiving_target = targets[target_index]
                         u_coord = projected_points_on_each_target[target_index]['parametric_coordinates'][0][i]
                         v_coord = projected_points_on_each_target[target_index]['parametric_coordinates'][1][i]
-                        node_parametric_coordinates = np.array([u_coord, v_coord])
+                        node_parametric_coordinates = np.array([u_coord, v_coord]).reshape(1,2)
                         nodes_parametric.append((receiving_target_name, node_parametric_coordinates))
                     projection_outputs[property] = nodes_parametric
                 else:
