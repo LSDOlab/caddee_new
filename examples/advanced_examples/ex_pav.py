@@ -1327,7 +1327,9 @@ def trim_at_hover(debug_geom_flag=False):
     return
 
 
-def structural_wingbox_beam_evaluation(wing_cl0=0.3475, num_wing_beam_nodes=21,
+def structural_wingbox_beam_evaluation(wing_cl0=0.3475,
+                                       pitch_angle=np.deg2rad(6.),
+                                       num_wing_beam_nodes=21,
                                        debug_geom_flag = False, visualize_flag = False):
     # region Geometry and meshes
     caddee, system_model, sys_rep, sys_param, \
@@ -1356,7 +1358,7 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3475, num_wing_beam_nodes=21,
     cruise_condition.set_module_input(name='altitude', val=600 * ft2m)
     cruise_condition.set_module_input(name='mach_number', val=0.145972)  # 112 mph = 0.145972 Mach
     cruise_condition.set_module_input(name='range', val=80467.2)  # 50 miles = 80467.2 m
-    cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(6.))
+    cruise_condition.set_module_input(name='pitch_angle', val=pitch_angle)
     cruise_condition.set_module_input(name='flight_path_angle', val=0)
     cruise_condition.set_module_input(name='roll_angle', val=0)
     cruise_condition.set_module_input(name='yaw_angle', val=0)
@@ -1639,12 +1641,12 @@ def trim_at_3g(pusher_prop_twist_cp=np.array([1.10595917, 0.71818285, 0.47990602
 
 
 if __name__ == '__main__':
-    # vlm_as_ll()
-    # cl0 = tuning_cl0()
-    # vlm_evaluation_wing_only_aoa_sweep()
+    vlm_as_ll()
+    cl0 = tuning_cl0()
+    vlm_evaluation_wing_only_aoa_sweep()
     # vlm_evaluation_wing_tail_aoa_sweep()
-    # pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
-    # trim_at_3g()
-    structural_wingbox_beam_evaluation()
+    pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
+    trim_at_3g()
+    structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(6))
 
     # trim_at_hover()
