@@ -1337,6 +1337,7 @@ def trim_at_hover(debug_geom_flag=False):
 def structural_wingbox_beam_evaluation(wing_cl0=0.3475,
                                        pitch_angle=np.deg2rad(6.),
                                        num_wing_beam_nodes=21,
+                                       youngs_modulus=73.1E9, poissons_ratio=0.33, density=2780, yield_strength=324E6,  # SI
                                        debug_geom_flag = False, visualize_flag = False):
     # region Geometry and meshes
     caddee, system_model, sys_rep, sys_param, \
@@ -1413,7 +1414,9 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3475,
 
     # create the aframe dictionaries:
     joints, bounds, beams = {}, {}, {}
-    beams['wing_beam'] = {'E': 70E9, 'G': 70E9 / (2 * (1 + 0.33)), 'rho': 2700, 'cs': 'box',
+    beams['wing_beam'] = {'E': youngs_modulus,
+                          'G': youngs_modulus / (2 * (1 + poissons_ratio)),
+                          'rho': density, 'cs': 'box',
                           'nodes': list(range(num_wing_beam_nodes))}
     bounds['wing_root'] = {'beam': 'wing_beam', 'node': 10, 'fdim': [1, 1, 1, 1, 1, 1]}
 
@@ -1479,7 +1482,10 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3475,
 
     print('Wingbox mass (kg): ', sim[
         'system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.MassProp.struct_mass'])
-    print('Stress (N/m^2): ', sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.new_stress'])
+
+    vmstress = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.new_stress']
+    print('Stress (N/m^2): ', vmstress)
+    print('Max stress (N/m^2): ', np.max(np.max(vmstress)))
     print('Wing beam forces (N): ',
           sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.wing_beam_forces'])
 
@@ -1674,12 +1680,12 @@ def trim_at_3g(pusher_prop_twist_cp=np.array([1.10595917, 0.71818285, 0.47990602
 
 
 if __name__ == '__main__':
-    vlm_as_ll()
-    cl0 = tuning_cl0()
-    vlm_evaluation_wing_only_aoa_sweep()
-    vlm_evaluation_wing_tail_aoa_sweep(debug_geom_flag=False, visualize_flag=False)
-    pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
-    trim_at_3g()
-    structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(0.50921594))
+    # vlm_as_ll()
+    # cl0 = tuning_cl0()
+    # vlm_evaluation_wing_only_aoa_sweep()
+    # vlm_evaluation_wing_tail_aoa_sweep(debug_geom_flag=False, visualize_flag=False)
+    # pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
+    # trim_at_3g(pusher_prop_twist_cp=pusher_prop_twist_cp, pusher_prop_chord_cp=pusher_prop_chord_cp)
+    structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(13.74084308))
 
     # trim_at_hover()
