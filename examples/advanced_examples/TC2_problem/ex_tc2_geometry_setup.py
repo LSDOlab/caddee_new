@@ -1337,7 +1337,7 @@ wing_beam = am.linear_combination(leading_edge, trailing_edge, 1, start_weights=
 width = am.norm((leading_edge - trailing_edge)*0.5)
 # width = am.subtract(leading_edge, trailing_edge)
 
-if True:
+if do_plots:
     spatial_rep.plot_meshes([wing_beam])
 
 wing_beam = wing_beam.reshape((num_wing_beam , 3))#*0.304
@@ -1429,6 +1429,47 @@ pp_tot_v_dist = am.subtract(pp_v_dist_te, pp_v_dist_le)
 # region rear left outer (rlo) rotor meshes
 # disk
 rlo_origin = rlo_disk.project(np.array([19.2, -18.75, 9.01]), direction=np.array([0., 0., -1.]))
+# along y
+y11 = rlo_disk.project(np.array([19.2, -13.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
+y12 = rlo_disk.project(np.array([19.2, -23.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
+# along x
+y21 = rlo_disk.project(np.array([14.2, -18.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
+y22 = rlo_disk.project(np.array([24.2, -18.75, 9.01]), direction=np.array([0., 0., -1.]), plot=False)
+
+rlo_in_plane_y = am.subtract(y12, y11)
+rlo_in_plane_x = am.subtract(y21, y22)
+
+rlo_radial_discretization = rlo_disk.project(am.linspace(y11, rlo_origin, 25).value, plot=True)
+rlo_radial_discretization_np = rlo_radial_discretization.value.reshape(25, 3)
+
+num_tangential = 4
+radius = np.linspace(0.2 * 10, 10, 25)
+angles = np.linspace(0, 2*np.pi, num_tangential, endpoint=False)
+
+# polar_mesh = np.meshgrid(radius, angles)
+# # print(polar_mesh)
+# # exit()
+# angles = np.linspace(0, 2 * np.pi, num_tangential)
+# rlo_disk_mesh = np.zeros((25, num_tangential, 3))
+# for i in range(num_tangential):
+#     th = angles[i]
+#     rot_mat = np.array([
+#         [np.cos(th), -np.sin(th), 0],
+#         [np.sin(th), np.cos(th), 0],
+#         [0, 0, 1],
+#     ])
+#     for j in range(25):
+#         vec = rlo_radial_discretization_np[j, :]
+#         array = np.matmul(rot_mat, vec)
+#         # print(array)
+    
+#         rlo_disk_mesh[j, i, :] = array #np.matmul(rlo_radial_discretization_np, rot_mat)#.reshape(25, 1, 3)
+#         # rlo_disk.project(array, plot=True)
+
+# rlo_disk.project(rlo_disk_mesh, direction=np.array([0., 0., -1.]) ,plot=True)
+# print(rlo_disk_mesh)
+# exit()
+
 
 # lifting line mesh
 # blade 1
