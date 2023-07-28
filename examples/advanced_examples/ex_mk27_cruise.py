@@ -23,7 +23,7 @@ import numpy as np
 
 ft2m = 0.3048
 
-debug_geom_flag = True
+debug_geom_flag = False
 visualize_flag = False
 
 caddee = cd.CADDEE()
@@ -65,17 +65,34 @@ sys_rep.add_component(upper_wing)
 # endregion
 
 # region Rotors
-# Pusher prop
-pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropPusher']).keys())
-pp_disk = cd.Rotor(name='pp_disk', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
+
+# Prop pair #1 (upper)
+pp1_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Upper Props']).keys())
+pp1_disk = cd.Rotor(name='pp1_disk', spatial_representation=spatial_rep, primitive_names=pp1_disk_prim_names)
 if debug_geom_flag:
-    pp_disk.plot()
-sys_rep.add_component(pp_disk)
-# endregion
+    pp1_disk.plot()
+sys_rep.add_component(pp1_disk)
+
+# Prop pair #2 (middle)
+pp2_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Middle Props']).keys())
+pp2_disk = cd.Rotor(name='pp2_disk', spatial_representation=spatial_rep, primitive_names=pp2_disk_prim_names)
+if debug_geom_flag:
+    pp2_disk.plot()
+sys_rep.add_component(pp2_disk)
+
+# Prop pair #3 (lower)
+pp3_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Lower Props']).keys())
+pp3_disk = cd.Rotor(name='pp3_disk', spatial_representation=spatial_rep, primitive_names=pp3_disk_prim_names)
+if debug_geom_flag:
+    pp3_disk.plot()
+sys_rep.add_component(pp3_disk)
 
 # endregion
 
-# # region Actuations
+# endregion
+
+
+# region Actuations
 # # Tail FFD
 # htail_geometry_primitives = htail.get_geometry_primitives()
 # htail_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
@@ -98,7 +115,8 @@ sys_rep.add_component(pp_disk)
 # )
 # sys_param.add_geometry_parameterization(ffd_set)
 # sys_param.setup()
-# # endregion
+# endregion
+
 
 # region Meshes
 
@@ -255,40 +273,124 @@ if debug_geom_flag:
 if visualize_flag:
     spatial_rep.plot_meshes([main_wing_camber_surface, lower_wing_camber_surface, upper_wing_camber_surface])
 
-# region Pusher prop
-y11 = pp_disk.project(np.array([23.500 + 0.1, 0.00, 0.800]), direction=np.array([-1., 0., 0.]), plot=False)
-y12 = pp_disk.project(np.array([23.500 + 0.1, 0.00, 5.800]), direction=np.array([-1., 0., 0.]), plot=False)
-y21 = pp_disk.project(np.array([23.500 + 0.1, -2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
-y22 = pp_disk.project(np.array([23.500 + 0.1, 2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
-pp_disk_in_plane_y = am.subtract(y11, y12)
-pp_disk_in_plane_x = am.subtract(y21, y22)
-pp_disk_origin = pp_disk.project(np.array([32.625, 0., 7.79]), direction=np.array([-1., 0., 0.]))
-sys_rep.add_output(f"{pp_disk.parameters['name']}_in_plane_1", pp_disk_in_plane_y)
-sys_rep.add_output(f"{pp_disk.parameters['name']}_in_plane_2", pp_disk_in_plane_x)
-sys_rep.add_output(f"{pp_disk.parameters['name']}_origin", pp_disk_origin)
+# region Pusher prop (upper pair) (coordinates are not set yet)
+# Right
+y11_right1 = pp1_disk.project(np.array([23.500 + 0.1, 0.00, 0.800]), direction=np.array([-1., 0., 0.]), plot=False)
+y12_right1 = pp1_disk.project(np.array([23.500 + 0.1, 0.00, 5.800]), direction=np.array([-1., 0., 0.]), plot=False)
+y21_right1 = pp1_disk.project(np.array([23.500 + 0.1, -2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
+y22_right1 = pp1_disk.project(np.array([23.500 + 0.1, 2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
+
+pp_right1_disk_in_plane_y = am.subtract(y11_right1, y12_right1)
+pp_right1_disk_in_plane_x = am.subtract(y21_right1, y22_right1)
+pp_right1_disk_origin = pp1_disk.project(np.array([32.625, 0., 7.79]), direction=np.array([-1., 0., 0.]))
+
+sys_rep.add_output(f"{pp1_disk.parameters['name']}_in_plane_1", pp_right1_disk_in_plane_y)
+sys_rep.add_output(f"{pp1_disk.parameters['name']}_in_plane_2", pp_right1_disk_in_plane_x)
+sys_rep.add_output(f"{pp1_disk.parameters['name']}_origin", pp_right1_disk_origin)
+
+# Left
+y11_left1 = pp1_disk.project(np.array([23.500 + 0.1, 0.00, 0.800]), direction=np.array([-1., 0., 0.]), plot=False)
+y12_left1 = pp1_disk.project(np.array([23.500 + 0.1, 0.00, 5.800]), direction=np.array([-1., 0., 0.]), plot=False)
+y21_left1 = pp1_disk.project(np.array([23.500 + 0.1, -2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
+y22_left1 = pp1_disk.project(np.array([23.500 + 0.1, 2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
+
+pp_left1_disk_in_plane_y = am.subtract(y11_left1, y12_left1)
+pp_left1_disk_in_plane_x = am.subtract(y21_left1, y22_left1)
+pp_left1_disk_origin = pp1_disk.project(np.array([32.625, 0., 7.79]), direction=np.array([-1., 0., 0.]))
+
+sys_rep.add_output(f"{pp1_disk.parameters['name']}_in_plane_1", pp_left1_disk_in_plane_y)
+sys_rep.add_output(f"{pp1_disk.parameters['name']}_in_plane_2", pp_left1_disk_in_plane_x)
+sys_rep.add_output(f"{pp1_disk.parameters['name']}_origin", pp_left1_disk_origin)
+# endregion
+
+# region Pusher prop (middle pair) (coordinates are not set yet)
+# Right
+y11_right2 = pp2_disk.project(np.array([23.500 + 0.1, 0.00, 0.800]), direction=np.array([-1., 0., 0.]), plot=False)
+y12_right2 = pp2_disk.project(np.array([23.500 + 0.1, 0.00, 5.800]), direction=np.array([-1., 0., 0.]), plot=False)
+y21_right2 = pp2_disk.project(np.array([23.500 + 0.1, -2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
+y22_right2 = pp2_disk.project(np.array([23.500 + 0.1, 2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
+
+pp_right2_disk_in_plane_y = am.subtract(y11_right2, y12_right2)
+pp_right2_disk_in_plane_x = am.subtract(y21_right2, y22_right2)
+pp_right2_disk_origin = pp2_disk.project(np.array([32.625, 0., 7.79]), direction=np.array([-1., 0., 0.]))
+
+sys_rep.add_output(f"{pp2_disk.parameters['name']}_in_plane_1", pp_right2_disk_in_plane_y)
+sys_rep.add_output(f"{pp2_disk.parameters['name']}_in_plane_2", pp_right2_disk_in_plane_x)
+sys_rep.add_output(f"{pp2_disk.parameters['name']}_origin", pp_right2_disk_origin)
+
+# Left
+y11_left2 = pp2_disk.project(np.array([23.500 + 0.1, 0.00, 0.800]), direction=np.array([-1., 0., 0.]), plot=False)
+y12_left2 = pp2_disk.project(np.array([23.500 + 0.1, 0.00, 5.800]), direction=np.array([-1., 0., 0.]), plot=False)
+y21_left2 = pp2_disk.project(np.array([23.500 + 0.1, -2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
+y22_left2 = pp2_disk.project(np.array([23.500 + 0.1, 2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
+
+pp_left2_disk_in_plane_y = am.subtract(y11_left2, y12_left2)
+pp_left2_disk_in_plane_x = am.subtract(y21_left2, y22_left2)
+pp_left2_disk_origin = pp2_disk.project(np.array([32.625, 0., 7.79]), direction=np.array([-1., 0., 0.]))
+
+sys_rep.add_output(f"{pp2_disk.parameters['name']}_in_plane_1", pp_left2_disk_in_plane_y)
+sys_rep.add_output(f"{pp2_disk.parameters['name']}_in_plane_2", pp_left2_disk_in_plane_x)
+sys_rep.add_output(f"{pp2_disk.parameters['name']}_origin", pp_left2_disk_origin)
+# endregion
+
+# region Pusher prop (lower pair) (coordinates are not set yet)
+# Right
+y11_right3 = pp3_disk.project(np.array([23.500 + 0.1, 0.00, 0.800]), direction=np.array([-1., 0., 0.]), plot=False)
+y12_right3 = pp3_disk.project(np.array([23.500 + 0.1, 0.00, 5.800]), direction=np.array([-1., 0., 0.]), plot=False)
+y21_right3 = pp3_disk.project(np.array([23.500 + 0.1, -2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
+y22_right3 = pp3_disk.project(np.array([23.500 + 0.1, 2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
+
+pp_right3_disk_in_plane_y = am.subtract(y11_right3, y12_right3)
+pp_right3_disk_in_plane_x = am.subtract(y21_right3, y22_right3)
+pp_right3_disk_origin = pp3_disk.project(np.array([32.625, 0., 7.79]), direction=np.array([-1., 0., 0.]))
+
+sys_rep.add_output(f"{pp3_disk.parameters['name']}_in_plane_1", pp_right3_disk_in_plane_y)
+sys_rep.add_output(f"{pp3_disk.parameters['name']}_in_plane_2", pp_right3_disk_in_plane_x)
+sys_rep.add_output(f"{pp3_disk.parameters['name']}_origin", pp_right3_disk_origin)
+
+# Left
+y11_left3 = pp3_disk.project(np.array([23.500 + 0.1, 0.00, 0.800]), direction=np.array([-1., 0., 0.]), plot=False)
+y12_left3 = pp3_disk.project(np.array([23.500 + 0.1, 0.00, 5.800]), direction=np.array([-1., 0., 0.]), plot=False)
+y21_left3 = pp3_disk.project(np.array([23.500 + 0.1, -2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
+y22_left3 = pp3_disk.project(np.array([23.500 + 0.1, 2.500, 3.300]), direction=np.array([-1., 0., 0.]), plot=False)
+
+pp_left3_disk_in_plane_y = am.subtract(y11_left3, y12_left3)
+pp_left3_disk_in_plane_x = am.subtract(y21_left3, y22_left3)
+pp_left3_disk_origin = pp3_disk.project(np.array([32.625, 0., 7.79]), direction=np.array([-1., 0., 0.]))
+
+sys_rep.add_output(f"{pp3_disk.parameters['name']}_in_plane_1", pp_left3_disk_in_plane_y)
+sys_rep.add_output(f"{pp3_disk.parameters['name']}_in_plane_2", pp_left3_disk_in_plane_x)
+sys_rep.add_output(f"{pp3_disk.parameters['name']}_origin", pp_left3_disk_origin)
 # endregion
 
 # endregion
+
 
 # region Sizing
-pav_wt = PavMassProperties()
-mass, cg, I = pav_wt.evaluate()
+mk27_wt = PavMassProperties() # mk27 mass properties??
+mass, cg, I = mk27_wt.evaluate()
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
 total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass, cg, I)
 # endregion
 
+
 # region Mission
 
 design_scenario = cd.DesignScenario(name='aircraft_trim')
 
-# region Cruise condition
+# region Cruise condition 
+
+# The proposed concept of operations (CONOPS) for the Model MK27-2 identifies a maximum operating
+# altitude of 400 feet above ground level (AGL), a maximum cruise speed of 60 knots, operations beyond
+# visual line of sight (BVLOS) of the pilot, and operations over human beings. cruise at ~50 mph
+
 cruise_model = m3l.Model()
 cruise_condition = cd.CruiseCondition(name="cruise_1")
 cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
-cruise_condition.set_module_input(name='altitude', val=600*ft2m)
-cruise_condition.set_module_input(name='mach_number', val=0.145972)  # 112 mph = 0.145972 Mach
-cruise_condition.set_module_input(name='range', val=80467.2)  # 50 miles = 80467.2 m
+cruise_condition.set_module_input(name='altitude', val=400*ft2m)
+cruise_condition.set_module_input(name='mach_number', val=0.0651662)  # 50 mph = 0.0651662 Mach
+cruise_condition.set_module_input(name='range', val=14484.1)  # 9 miles = 14484.1 m
 cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-10), upper=np.deg2rad(10))
 cruise_condition.set_module_input(name='flight_path_angle', val=0)
 cruise_condition.set_module_input(name='roll_angle', val=0)
