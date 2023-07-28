@@ -76,8 +76,48 @@ system_representation.add_output(name='wing_root_chord_vector', quantity=root_ch
 from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_functions import create_cartesian_enclosure_volume
 from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock
 
+# points = np.array([
+#     [
+#         [
+#             [10., -26., 5.],
+#             [10., -26., 10.]
+#         ],
+#         [
+#             [14., -26., 5.],
+#             [14., -26., 10.]
+#         ]
+#     ],
+#     [
+#         [
+#             [8., 0., 5.],
+#             [8., 0., 10.]
+#         ],
+#         [
+#             [15., 0., 5.],
+#             [15., 0., 10.]
+#         ]
+#     ],
+#     [
+#         [
+#             [10., 26., 5.],
+#             [10., 26., 10.]
+#         ],
+#         [
+#             [14., 26., 5.],
+#             [14., 26., 10.]
+#         ]
+#     ]
+# ])
+# wing_geometry_primitives = wing.get_geometry_primitives()
+# from caddee.core.primitives.bsplines.bspline_functions import create_bspline_from_corners
+# wing_ffd_bspline_volume = create_bspline_from_corners(points, order=(3,2,2), num_control_points=(2,2,2))
+# # wing_ffd_bspline_volume.plot()
+# wing_ffd_block = SRBGFFDBlock(name='wing_ffd_block', primitive=wing_ffd_bspline_volume, embedded_entities=wing_geometry_primitives)
+# wing_ffd_block.plot(plot_embedded_entities=True)
+# wing_ffd_block.plot_sections(opacity=1.)
+
 wing_geometry_primitives = wing.get_geometry_primitives()
-wing_ffd_bspline_volume = create_cartesian_enclosure_volume(wing_geometry_primitives, num_control_points=(5, 2, 2), order=(4,2,2),
+wing_ffd_bspline_volume = create_cartesian_enclosure_volume(wing_geometry_primitives, num_control_points=(3, 2, 2), order=(3,2,2),
                                                             xyz_to_uvw_indices=(1,0,2))
 wing_ffd_block = SRBGFFDBlock(name='wing_ffd_block', primitive=wing_ffd_bspline_volume, embedded_entities=wing_geometry_primitives)
 wing_ffd_block.add_scale_v(name='linear_taper', order=2, num_dof=3, cost_factor=1.)
@@ -173,7 +213,7 @@ ffd_embedded_entities = ffd_set.evaluate_embedded_entities()
 # updated_primitives_names.extend(horizontal_stabilizer.primitive_names.copy())
 
 print('wing to tail distance: ', sim['wing_to_tail_distance'])
-exit()
+# exit()
 for t in range(cruise_num_nodes):
     updated_primitives_names = list(spatial_rep.primitives.keys()).copy()
     if cruise_num_nodes == 1:
@@ -201,5 +241,6 @@ for t in range(cruise_num_nodes):
     # print("Python and CSDL difference: horizontal stabilizer camber surface", 
     #       np.linalg.norm(horizontal_stabilizer_camber_surface_csdl - horizontal_stabilizer_camber_surface.value))
 
-    print(f'wing to tail distance at time {t}: ', sim['wing_to_tail_distance'][t])
+    # print(f'wing to tail distance at time {t}: ', sim['wing_to_tail_distance'][t])
+    # spatial_rep.plot()
     spatial_rep.plot_meshes([wing_camber_surface_csdl, horizontal_stabilizer_camber_surface_csdl], mesh_plot_types=['wireframe'], mesh_opacity=1.)
