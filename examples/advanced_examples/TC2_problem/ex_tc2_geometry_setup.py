@@ -1439,36 +1439,22 @@ y22 = rlo_disk.project(np.array([24.2, -18.75, 9.01]), direction=np.array([0., 0
 rlo_in_plane_y = am.subtract(y12, y11)
 rlo_in_plane_x = am.subtract(y21, y22)
 
-rlo_radial_discretization = rlo_disk.project(am.linspace(y11, rlo_origin, 25).value, plot=True)
-rlo_radial_discretization_np = rlo_radial_discretization.value.reshape(25, 3)
-
-num_tangential = 4
-radius = np.linspace(0.2 * 10, 10, 25)
+num_tangential = 25
+radius = np.linspace(0.2 * 5, 5, 25)
 angles = np.linspace(0, 2*np.pi, num_tangential, endpoint=False)
 
-# polar_mesh = np.meshgrid(radius, angles)
-# # print(polar_mesh)
-# # exit()
-# angles = np.linspace(0, 2 * np.pi, num_tangential)
-# rlo_disk_mesh = np.zeros((25, num_tangential, 3))
-# for i in range(num_tangential):
-#     th = angles[i]
-#     rot_mat = np.array([
-#         [np.cos(th), -np.sin(th), 0],
-#         [np.sin(th), np.cos(th), 0],
-#         [0, 0, 1],
-#     ])
-#     for j in range(25):
-#         vec = rlo_radial_discretization_np[j, :]
-#         array = np.matmul(rot_mat, vec)
-#         # print(array)
-    
-#         rlo_disk_mesh[j, i, :] = array #np.matmul(rlo_radial_discretization_np, rot_mat)#.reshape(25, 1, 3)
-#         # rlo_disk.project(array, plot=True)
 
-# rlo_disk.project(rlo_disk_mesh, direction=np.array([0., 0., -1.]) ,plot=True)
-# print(rlo_disk_mesh)
-# exit()
+cartesian = np.zeros((25, num_tangential, 3))
+
+for i in range(25):
+    for j in range(num_tangential):
+        cartesian[i, j, 0] = radius[i] * np.cos(angles[j])
+        cartesian[i, j, 1] = radius[i] * np.sin(angles[j])
+        cartesian[i, j, 2] = 0
+
+cartesian_plus_origin = cartesian + rlo_origin.value
+
+rlo_disk_mesh = rlo_disk.project(cartesian_plus_origin, direction=np.array([0., 0., -1.]) ,plot=True)
 
 
 # lifting line mesh
@@ -1666,14 +1652,25 @@ fro_tot_v_dist = am.subtract(fro_v_dist_le, fro_v_dist_te)
 
 # region rear left inner (rli) rotor meshes
 # disk
-# y11 = rli_disk.project(np.array([18.760, -3.499, 9.996]), direction=np.array([0., 0., -1.]), plot=False)
-# y12 = rli_disk.project(np.array([18.760, -13.401, 8.604]), direction=np.array([0., 0., -1.]), plot=False)
-# y21 = rli_disk.project(np.array([13.760, -8.450, 9.300]), direction=np.array([0., 0., -1.]), plot=False)
-# y22 = rli_disk.project(np.array([23.760, -8.450, 9.300]), direction=np.array([0., 0., -1.]), plot=False)
-# rli_in_plane_y = am.subtract(y12, y11)
-# rli_in_plane_x = am.subtract(y21, y22)
+y11 = rli_disk.project(np.array([18.760, -3.499, 9.996]), direction=np.array([0., 0., -1.]), plot=False)
+y12 = rli_disk.project(np.array([18.760, -13.401, 8.604]), direction=np.array([0., 0., -1.]), plot=False)
+y21 = rli_disk.project(np.array([13.760, -8.450, 9.300]), direction=np.array([0., 0., -1.]), plot=False)
+y22 = rli_disk.project(np.array([23.760, -8.450, 9.300]), direction=np.array([0., 0., -1.]), plot=False)
+rli_in_plane_y = am.subtract(y12, y11)
+rli_in_plane_x = am.subtract(y21, y22)
 rli_origin = rli_disk.project(np.array([18.760, -8.537, 9.919]), direction=np.array([0., 0., -1.]))
 
+cartesian = np.zeros((25, num_tangential, 3))
+
+for i in range(25):
+    for j in range(num_tangential):
+        cartesian[i, j, 0] = radius[i] * np.cos(angles[j])
+        cartesian[i, j, 1] = radius[i] * np.sin(angles[j])
+        cartesian[i, j, 2] = 0
+
+cartesian_plus_origin = cartesian + rli_origin.value
+
+rli_disk_mesh = rli_disk.project(cartesian_plus_origin, plot=True)
 # lifting line mesh
 # blade 1
 b1_le_low_res_numpy = np.linspace(np.array([19.810 - off_set_long_le, -8.243 + off_set, 9.381 + off_set]), np.array([23.760 + off_set_long_le, -8.298 + off_set, 9.315 + off_set]), num_lifting_line)
@@ -2998,12 +2995,14 @@ lpc_rep.add_output(name=f"{pp_disk.parameters['name']}_origin", quantity=pp_disk
 lpc_rep.add_output(name="pp_chord_length", quantity=pp_chord_length)
 lpc_rep.add_output(name='pp_twist', quantity=pp_tot_v_dist)
 
+lpc_rep.add_output(name=f"{rlo_disk.parameters['name']}_mesh", quantity=rlo_disk_mesh)
 lpc_rep.add_output(name=f"{rlo_disk.parameters['name']}_in_plane_1", quantity=rlo_in_plane_y)
 lpc_rep.add_output(name=f"{rlo_disk.parameters['name']}_in_plane_2", quantity=rlo_in_plane_x)
 lpc_rep.add_output(name=f"{rlo_disk.parameters['name']}_origin", quantity=rlo_origin)
 lpc_rep.add_output(name="rlo_chord_length", quantity=rlo_chord_length)
 lpc_rep.add_output(name='rlo_twist', quantity=rlo_tot_v_dist)
 
+lpc_rep.add_output(name=f"{rli_disk.parameters['name']}_mesh", quantity=rli_disk_mesh)
 lpc_rep.add_output(name=f"{rli_disk.parameters['name']}_in_plane_1", quantity=rli_in_plane_y)
 lpc_rep.add_output(name=f"{rli_disk.parameters['name']}_in_plane_2", quantity=rli_in_plane_x)
 lpc_rep.add_output(name=f"{rli_disk.parameters['name']}_origin", quantity=rli_origin)
