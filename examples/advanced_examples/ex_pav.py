@@ -1337,7 +1337,7 @@ def trim_at_hover(debug_geom_flag=False):
 def structural_wingbox_beam_evaluation(wing_cl0=0.3475,
                                        pitch_angle=np.deg2rad(6.),
                                        num_wing_beam_nodes=21,
-                                       youngs_modulus=73.1E9, poissons_ratio=0.33, density=2780, yield_strength=324E6,  # SI
+                                       youngs_modulus=73.1E9, poissons_ratio=0.33, density=2780,  # SI
                                        debug_geom_flag = False, visualize_flag = False):
     # region Geometry and meshes
     caddee, system_model, sys_rep, sys_param, \
@@ -1349,9 +1349,7 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3475,
         include_wing_beam_flag=True,
         visualize_flag=visualize_flag,
         debug_geom_flag=debug_geom_flag,
-        num_wing_spanwise_vlm=21,
-        num_wing_chordwise_vlm=5,
-        num_wing_beam_nodes=21
+        num_wing_beam_nodes=num_wing_beam_nodes
     )
     # endregion
 
@@ -1678,6 +1676,173 @@ def trim_at_3g(pusher_prop_twist_cp=np.array([1.10595917, 0.71818285, 0.47990602
 
     return
 
+def structural_wingbox_beam_sizing(wing_cl0=0.3475,
+                                   pitch_angle=np.deg2rad(6.),
+                                   num_wing_beam_nodes=21,
+                                   youngs_modulus=73.1E9, poissons_ratio=0.33, density=2780, yield_strength=324E6, FoS=1.5,  # SI
+                                   ):
+    # region Geometry and meshes
+    caddee, system_model, sys_rep, sys_param, \
+        wing_vlm_mesh_name, wing_camber_surface, \
+        wing_oml_mesh, wing_component, \
+        beam_mesh, beam_mass_mesh = setup_geometry(
+        include_wing_flag=True,
+        include_tail_flag=False,
+        include_wing_beam_flag=True,
+        num_wing_beam_nodes=num_wing_beam_nodes
+    )
+    # endregion
+
+    # region Mission
+
+    design_scenario = cd.DesignScenario(name='aircraft_trim')
+
+    # region Cruise condition
+    cruise_model = m3l.Model()
+    cruise_condition = cd.CruiseCondition(name="cruise_1")
+    cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
+    cruise_condition.set_module_input(name='altitude', val=600 * ft2m)
+    cruise_condition.set_module_input(name='mach_number', val=0.145972)  # 112 mph = 0.145972 Mach
+    cruise_condition.set_module_input(name='range', val=80467.2)  # 50 miles = 80467.2 m
+    cruise_condition.set_module_input(name='pitch_angle', val=pitch_angle)
+    cruise_condition.set_module_input(name='flight_path_angle', val=0)
+    cruise_condition.set_module_input(name='roll_angle', val=0)
+    cruise_condition.set_module_input(name='yaw_angle', val=0)
+    cruise_condition.set_module_input(name='wind_angle', val=0)
+    cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 600 * ft2m]))
+
+    cruise_ac_states = cruise_condition.evaluate_ac_states()
+    cruise_model.register_output(cruise_ac_states)
+
+    # region VLM Solver
+    vlm_model = VASTFluidSover(
+        surface_names=[
+            wing_vlm_mesh_name,
+        ],
+        surface_shapes=[
+            (1,) + wing_camber_surface.evaluate().shape[1:],
+        ],
+        fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+        mesh_unit='ft',
+        cl0=[wing_cl0, ]
+    )
+    vlm_panel_forces, vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=cruise_ac_states)
+    cruise_model.register_output(vlm_forces)
+    cruise_model.register_output(vlm_moments)
+
+    vlm_force_mapping_model = VASTNodalForces(
+        surface_names=[
+            wing_vlm_mesh_name,
+        ],
+        surface_shapes=[
+            (1,) + wing_camber_surface.evaluate().shape[1:],
+        ],
+        initial_meshes=[
+            wing_camber_surface,
+        ]
+    )
+
+    oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces,
+                                                  nodal_force_meshes=[wing_oml_mesh, ])
+    wing_forces = oml_forces[0]
+
+    # endregion
+
+    # region Beam Solver
+
+    # create the aframe dictionaries:
+    joints, bounds, beams = {}, {}, {}
+    beams['wing_beam'] = {'E': youngs_modulus,
+                          'G': youngs_modulus / (2 * (1 + poissons_ratio)),
+                          'rho': density, 'cs': 'box',
+                          'nodes': list(range(num_wing_beam_nodes))}
+    bounds['wing_root'] = {'beam': 'wing_beam', 'node': 10, 'fdim': [1, 1, 1, 1, 1, 1]}
+
+    beam_mass = Mass(component=wing_component, mesh=beam_mass_mesh, beams=beams, mesh_units='ft')
+    beam_mass.set_module_input('wing_beam_tcap', val=0.000508,
+                               dv_flag=True, lower=0.000508, upper=0.02,
+                               scaler=1E3)
+    beam_mass.set_module_input('wing_beam_tweb', val=0.000508,
+                               dv_flag=True, lower=0.000508, upper=0.02,
+                               scaler=1E3)
+
+    mass_model_wing_mass = beam_mass.evaluate()
+    cruise_model.register_output(mass_model_wing_mass)
+
+    dummy_b_spline_space = lg.BSplineSpace(name='dummy_b_spline_space', order=(3, 1), control_points_shape=((35, 1)))
+    dummy_function_space = lg.BSplineSetSpace(name='dummy_space', spaces={'dummy_b_spline_space': dummy_b_spline_space})
+
+    cruise_wing_displacement_coefficients = m3l.Variable(name='cruise_wing_displacement_coefficients', shape=(35, 3))
+    cruise_wing_displacement = m3l.Function(name='cruise_wing_displacement', space=dummy_function_space,
+                                            coefficients=cruise_wing_displacement_coefficients)
+
+    beam_force_map_model = ebbeam.EBBeamForces(component=wing_component,
+                                               beam_mesh=beam_mesh,
+                                               beams=beams,
+                                               exclude_middle=True)
+    cruise_structural_wing_mesh_forces = beam_force_map_model.evaluate(nodal_forces=wing_forces,
+                                                                       nodal_forces_mesh=wing_oml_mesh)
+
+    beam_displacements_model = ebbeam.EBBeam(component=wing_component, mesh=beam_mesh, beams=beams, bounds=bounds,
+                                             joints=joints)
+
+    cruise_structural_wing_mesh_displacements, cruise_structural_wing_mesh_rotations, \
+        wing_mass, wing_cg, wing_inertia_tensor = beam_displacements_model.evaluate(
+        forces=cruise_structural_wing_mesh_forces)
+    cruise_model.register_output(cruise_structural_wing_mesh_displacements)
+
+    # endregion
+
+    # Add cruise m3l model to cruise condition
+    cruise_condition.add_m3l_model('cruise_model', cruise_model)
+
+    # Add design condition to design scenario
+    design_scenario.add_design_condition(cruise_condition)
+    # endregion
+
+    system_model.add_design_scenario(design_scenario=design_scenario)
+    # endregion
+
+    caddee_csdl_model = caddee.assemble_csdl()
+
+    caddee_csdl_model.connect('system_model.aircraft_trim.cruise_1.cruise_1.mass_model.wing_beam_tweb',
+                              'system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_tweb')
+    caddee_csdl_model.connect('system_model.aircraft_trim.cruise_1.cruise_1.mass_model.wing_beam_tcap',
+                              'system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_tcap')
+
+    # region Optimization
+    caddee_csdl_model.add_constraint(
+        'system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.new_stress', upper=yield_strength/FoS,
+        scaler=1E-8)
+    # caddee_csdl_model.add_constraint('system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual',
+    #                                  equals=0.)
+    caddee_csdl_model.add_objective(
+        'system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.MassProp.struct_mass', scaler=1e-3)
+    # endregion
+
+    # Create and run simulator
+    sim = Simulator(caddee_csdl_model, analytics=True)
+    sim.run()
+
+    prob = CSDLProblem(problem_name='lpc', simulator=sim)
+    optimizer = SLSQP(prob, maxiter=1000, ftol=1E-5)
+    optimizer.solve()
+    optimizer.print_results()
+
+    # region Results
+    displ = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_displacement']
+    print("Beam displacement (m): ", displ)
+    print('Tip displacement (m): ', displ[-1, 2])
+
+    print('Wingbox mass (kg): ', sim[
+        'system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.MassProp.struct_mass'])
+
+    vmstress = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.new_stress']
+    print('Stress (N/m^2): ', vmstress)
+    print('Max stress (N/m^2): ', np.max(np.max(vmstress)))
+    # endregion
+    return
+
 
 if __name__ == '__main__':
     # vlm_as_ll()
@@ -1686,6 +1851,7 @@ if __name__ == '__main__':
     # vlm_evaluation_wing_tail_aoa_sweep(debug_geom_flag=False, visualize_flag=False)
     # pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
     # trim_at_3g(pusher_prop_twist_cp=pusher_prop_twist_cp, pusher_prop_chord_cp=pusher_prop_chord_cp)
-    structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(13.74084308))
+    structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(0.50920074))
+    # structural_wingbox_beam_sizing(pitch_angle=np.deg2rad(13.74084308))
 
     # trim_at_hover()
