@@ -29,8 +29,8 @@ caddee = cd.CADDEE()
 
 # Import representation and the geometry from another file for brevity
 from examples.advanced_examples.TC2_problem.ex_tc2_geometry_setup import lpc_rep, lpc_param, wing_camber_surface, htail_camber_surface, \
-    wing_vlm_mesh_name, htail_vlm_mesh_name, wing_oml_mesh, wing_upper_surface_ml, htail_upper_surface_ml, \
-    pp_disk_in_plane_x, pp_disk_in_plane_y, pp_disk_origin, pp_disk, \
+    wing_vlm_mesh_name, htail_vlm_mesh_name, wing_oml_mesh,htail_oml_mesh,  wing_upper_surface_ml, htail_upper_surface_ml, \
+    pp_disk_in_plane_x, pp_disk_in_plane_y, pp_disk_origin, pp_disk, wing,\
     wing_beam, width, height, num_wing_beam, wing, wing_upper_surface_wireframe, wing_lower_surface_wireframe,\
     rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk 
 
@@ -96,7 +96,7 @@ shear_modulus = youngs_modulus / (2 * (1 + poisson_ratio))
 material_density = 2780
 
 beams['wing_beam'] = {'E': youngs_modulus, 'G': shear_modulus, 'rho': material_density, 'cs': 'box', 'nodes': list(range(num_wing_beam))}
-bounds['wing_root'] = {'beam': 'wing_beam','node': 5,'fdim': [1, 1, 1, 1, 1, 1]}
+bounds['wing_root'] = {'beam': 'wing_beam','node': 10,'fdim': [1, 1, 1, 1, 1, 1]}
 
 beam_mass_mesh = MassMesh(
     meshes = dict(
@@ -106,10 +106,12 @@ beam_mass_mesh = MassMesh(
     )
 )
 beam_mass = Mass(component=wing, mesh=beam_mass_mesh, beams=beams, mesh_units='ft')
-wing_beam_tcap = np.array([0.00299052, 0.00161066, 0.00256325, 0.0049267,  0.00713053, 0.00387933, 0.00149764, 0.00141774, 0.00199601, 0.00299244])
-wing_beam_tweb = np.array([[0.00437991, 0.00353425, 0.0035855, 0.00373859, 0.00381257, 0.00342, 0.0032762,  0.003281, 0.00368699, 0.00437148]])
-beam_mass.set_module_input('wing_beam_tcap', val=wing_beam_tcap, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
-beam_mass.set_module_input('wing_beam_tweb', val=wing_beam_tweb, dv_flag=True, lower=0.001, upper=0.02, scaler=1E3)
+# wing_beam_tcap = np.array([0.00299052, 0.00161066, 0.00256325, 0.0049267,  0.00713053, 0.00387933, 0.00149764, 0.00141774, 0.00199601, 0.00299244])
+# wing_beam_tweb = np.array([[0.00437991, 0.00353425, 0.0035855, 0.00373859, 0.00381257, 0.00342, 0.0032762,  0.003281, 0.00368699, 0.00437148]])
+wing_beam_tcap = 0.05 * np.ones((20, ))
+wing_beam_tweb = 0.05 * np.ones((20, ))
+beam_mass.set_module_input('wing_beam_tcap', val=wing_beam_tcap, dv_flag=True, lower=0.000508, upper=0.02, scaler=1E3)
+beam_mass.set_module_input('wing_beam_tweb', val=wing_beam_tweb, dv_flag=True, lower=0.000508, upper=0.02, scaler=1E3)
 mass_model_wing_mass = beam_mass.evaluate()
 
 # total constant mass 
@@ -185,6 +187,17 @@ vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_state
 system_m3l_model.register_output(vlm_force, plus_3g_condition)
 system_m3l_model.register_output(vlm_moment, plus_3g_condition)
 
+surfaces = list(wing.get_primitives())
+oml_para_mesh = []
+grid_num = 20
+for name in surfaces:
+    for u in np.linspace(0,1,grid_num):
+        for v in np.linspace(0,1,grid_num):
+            oml_para_mesh.append((name, np.array([u,v]).reshape((1,2))))
+
+oml_geo_mesh = lpc_rep.spatial_representation.evaluate_parametric(oml_para_mesh)
+# create the beam model:
+
 vlm_force_mapping_model = VASTNodalForces(
     surface_names=[
         f'{wing_vlm_mesh_name}_plus_3g',
@@ -199,7 +212,7 @@ vlm_force_mapping_model = VASTNodalForces(
         htail_camber_surface]
 )
 
-oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces, nodal_force_meshes=[wing_oml_mesh, wing_oml_mesh], design_condition=plus_3g_condition)
+oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces, nodal_force_meshes=[oml_geo_mesh, htail_oml_mesh], design_condition=plus_3g_condition)
 wing_forces = oml_forces[0]
 htail_forces = oml_forces[1]
 
@@ -225,7 +238,7 @@ bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mes
 bem_model.set_module_input('rpm', val=1639.17444615, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
 bem_forces, bem_moments, _, _, _, _ = bem_model.evaluate(ac_states=ac_states, design_condition=plus_3g_condition)
 
-# create the beam model:
+
 beam_mesh = LinearBeamMesh(
     meshes = dict(
         wing_beam = wing_beam,
@@ -248,9 +261,9 @@ dummy_function_space = lg.BSplineSetSpace(name='dummy_space', spaces={'dummy_b_s
 cruise_wing_displacement_coefficients = m3l.Variable(name='cruise_wing_displacement_coefficients', shape=(35,3))
 cruise_wing_displacement = m3l.Function(name='cruise_wing_displacement', space=dummy_function_space, coefficients=cruise_wing_displacement_coefficients)
 
-beam_force_map_model = ebbeam.EBBeamForces(component=wing, beam_mesh=beam_mesh, beams=beams)
+beam_force_map_model = ebbeam.EBBeamForces(component=wing, beam_mesh=beam_mesh, beams=beams, exclude_middle=True)
 cruise_structural_wing_mesh_forces = beam_force_map_model.evaluate(nodal_forces=wing_forces,
-                                                                   nodal_forces_mesh=wing_oml_mesh,
+                                                                   nodal_forces_mesh=oml_geo_mesh,
                                                                    design_condition=plus_3g_condition)
 
 beam_displacements_model = ebbeam.EBBeam(component=wing, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints)
@@ -4125,7 +4138,7 @@ sim = Simulator(
     comm=comm,
 )
 
-import pickle
+# import pickle
 # with open('trim_dv.pickle', 'rb') as handle:
 #     trim_dvs = pickle.load(handle)
 
@@ -4133,8 +4146,8 @@ import pickle
 #     sim[key] = val
 
 # # sim = Simulator(tc2_model, analytics=True)
-# sim.run()
-# exit()
+sim.run()
+exit()
 # print('\n')
 # sim.check_totals(of='system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', wrt='system_model.system_m3l_model.qst_3_pp_disk_bem_model.rpm')
 # sim.check_totals()

@@ -1327,24 +1327,23 @@ point11 = np.array([14.332,   0.000, 8.439 + 0.1])
 point20 = np.array([12.356, -25.250, 7.618 + 0.1]) 
 point21 = np.array([13.400, -25.250, 7.617 + 0.1]) 
 do_plots = False
-num_wing_beam = 11
+num_wing_beam = 21
 leading_edge_points = np.concatenate((np.linspace(point00, point10, int(num_wing_beam/2+1))[0:-1,:], np.linspace(point10, point20, int(num_wing_beam/2+1))), axis=0)
 trailing_edge_points = np.concatenate((np.linspace(point01, point11, int(num_wing_beam/2+1))[0:-1,:], np.linspace(point11, point21, int(num_wing_beam/2+1))), axis=0)
 
-leading_edge = wing.project(leading_edge_points, direction=np.array([-1., 0., 0.]), plot=do_plots)
-trailing_edge = wing.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=do_plots)
+leading_edge = wing.project(leading_edge_points, direction=np.array([-1., 0., 0.]), plot=do_plots, grid_search_n=50)
+trailing_edge = wing.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=do_plots, grid_search_n=50)
 wing_beam = am.linear_combination(leading_edge, trailing_edge, 1, start_weights=np.ones((num_wing_beam, ))*0.75, stop_weights=np.ones((num_wing_beam, ))*0.25)
 width = am.norm((leading_edge - trailing_edge)*0.5)
 # width = am.subtract(leading_edge, trailing_edge)
 
-if do_plots:
+if True:
     spatial_rep.plot_meshes([wing_beam])
 
-wing_beam = wing_beam.reshape((11,3))#*0.304
-
+wing_beam = wing_beam.reshape((num_wing_beam , 3))#*0.304
 offset = np.array([0,0,0.5])
-top = wing.project(wing_beam.value+offset, direction=np.array([0., 0., -1.]), plot=do_plots)
-bot = wing.project(wing_beam.value-offset, direction=np.array([0., 0., 1.]), plot=do_plots)
+top = wing.project(wing_beam.value+offset, direction=np.array([0., 0., -1.]), plot=do_plots).reshape((num_wing_beam, 3))
+bot = wing.project(wing_beam.value-offset, direction=np.array([0., 0., 1.]), plot=do_plots).reshape((num_wing_beam, 3))
 height = am.norm((top - bot)*1)
 # endregion
 
@@ -1358,6 +1357,7 @@ tail_chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
 htail_upper_surface_wireframe = htail.project(tail_chord_surface.value + np.array([0., 0., 1.]), direction=np.array([0., 0., -1.]), grid_search_n=25, plot=plot_tail_mesh)
 htail_lower_surface_wireframe = htail.project(tail_chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_n=25, plot=plot_tail_mesh)
 htail_camber_surface = am.linspace(htail_upper_surface_wireframe, htail_lower_surface_wireframe, 1) 
+htail_oml_mesh = am.vstack((htail_upper_surface_wireframe, htail_lower_surface_wireframe))
 
 
 # OML mesh for ML pressures tail
