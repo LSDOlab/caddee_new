@@ -1494,6 +1494,8 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3475,
 
     print('Web thickness (m)', sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_tweb'])
     print('Cap thickness (m)', sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_tcap'])
+
+    print('VLM OML forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_mesh_vlm_force_mapping_model.wing_vlm_mesh_oml_forces'])
     return
 
 
@@ -1830,6 +1832,8 @@ def structural_wingbox_beam_sizing(wing_cl0=0.3475,
     optimizer.print_results()
 
     # region Results
+
+    # Displacement
     displ = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_displacement']
     print("Beam displacement (m): ", displ)
     print('Tip displacement (m): ', displ[-1, 2])
@@ -1837,9 +1841,34 @@ def structural_wingbox_beam_sizing(wing_cl0=0.3475,
     print('Wingbox mass (kg): ', sim[
         'system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.MassProp.struct_mass'])
 
+    # Stress
     vmstress = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.new_stress']
     print('Stress (N/m^2): ', vmstress)
     print('Max stress (N/m^2): ', np.max(np.max(vmstress)))
+
+    # Thicknesses
+    web_t = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_tweb']
+    print('Web thickness (m)', web_t)
+    cap_t = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_tcap']
+    print('Cap thickness (m)', cap_t)
+
+    # endregion
+
+    # region Output Dataframe
+    spanwise_node_y_loc = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_mesh'].reshape(num_wing_beam_nodes, 3)[:, 1]
+    spanwise_max_stress = np.max(vmstress, axis=1)
+    spanwise_z_disp = displ[:, 2]
+    spanwise_z_force = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.wing_beam_forces'].reshape(num_wing_beam_nodes, 3)[:, 2]
+    sol_dict = {'Spanwise loc (m)': spanwise_node_y_loc,
+                'Node z force (N)': spanwise_z_force,
+               'Displacement (m)': spanwise_z_disp}
+    sizing_dict = {'Max stress (N/m^2)': spanwise_max_stress,
+               'Web thickness (m)': web_t,
+               'Cap thickness (m)': cap_t}
+    sol_df = pd.DataFrame(data=sol_dict)
+    sol_df.to_excel('BeamWingboxSizing_3g_Solution.xlsx')
+    sizing_df = pd.DataFrame(data=sizing_dict)
+    sizing_df.to_excel('BeamWingboxSizing_3g_Sizing.xlsx')
     # endregion
     return
 
@@ -1851,7 +1880,7 @@ if __name__ == '__main__':
     # vlm_evaluation_wing_tail_aoa_sweep(debug_geom_flag=False, visualize_flag=False)
     # pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
     # trim_at_3g(pusher_prop_twist_cp=pusher_prop_twist_cp, pusher_prop_chord_cp=pusher_prop_chord_cp)
-    structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(0.50920074))
-    # structural_wingbox_beam_sizing(pitch_angle=np.deg2rad(13.74084308))
+    # structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(0.50920074))
+    structural_wingbox_beam_sizing(pitch_angle=np.deg2rad(13.74084308))
 
     # trim_at_hover()
