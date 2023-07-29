@@ -1439,7 +1439,7 @@ y22 = rlo_disk.project(np.array([24.2, -18.75, 9.01]), direction=np.array([0., 0
 rlo_in_plane_y = am.subtract(y12, y11)
 rlo_in_plane_x = am.subtract(y21, y22)
 
-rlo_radial_discretization = rlo_disk.project(am.linspace(y11, rlo_origin, 25).value, plot=True)
+rlo_radial_discretization = rlo_disk.project(am.linspace(y11, rlo_origin, 25).value, plot=False)
 rlo_radial_discretization_np = rlo_radial_discretization.value.reshape(25, 3)
 
 num_tangential = 4

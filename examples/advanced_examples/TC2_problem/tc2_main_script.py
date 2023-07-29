@@ -90,10 +90,10 @@ mass_m4, cg_m4, I_m4 = m4_regression.evaluate(battery_mass=battery_mass)
 # beam sizing
 # create the aframe dictionaries:
 joints, bounds, beams = {}, {}, {}
-youngs_modulus = 46E9
+youngs_modulus = 46E9 # 72.4E9 #
 poisson_ratio = 0.33
 shear_modulus = youngs_modulus / (2 * (1 + poisson_ratio))
-material_density = 1320
+material_density =  1320  # 2780 #
 
 beams['wing_beam'] = {'E': youngs_modulus, 'G': shear_modulus, 'rho': material_density, 'cs': 'box', 'nodes': list(range(num_wing_beam))}
 bounds['wing_root'] = {'beam': 'wing_beam','node': 10,'fdim': [1, 1, 1, 1, 1, 1]}
@@ -106,12 +106,20 @@ beam_mass_mesh = MassMesh(
     )
 )
 beam_mass = Mass(component=wing, mesh=beam_mass_mesh, beams=beams, mesh_units='ft')
+tweb_array = np.array([0.00722213, 0.00122947, 0.00060947, 0.0005723,  0.00056801 ,0.00056522,
+ 0.00056304, 0.00058129, 0.00064809, 0.00066848, 0.00066848, 0.00064809,
+ 0.00058129, 0.00056304, 0.00056522, 0.00056801, 0.0005723  ,0.00060947,
+ 0.00122947, 0.00722213])
+tcap_array = np.array([0.01414826, 0.00188506, 0.00241721, 0.00360027, 0.00492075,0.00635837,
+ 0.00781769, 0.0092473,  0.01067087, 0.0119696 , 0.0119696 , 0.01067087,
+ 0.0092473,  0.00781769 ,0.00635837, 0.00492075, 0.00360027 ,0.00241721,
+ 0.00188506 ,0.01414826])
 # wing_beam_tcap = np.array([0.00299052, 0.00161066, 0.00256325, 0.0049267,  0.00713053, 0.00387933, 0.00149764, 0.00141774, 0.00199601, 0.00299244])
 # wing_beam_tweb = np.array([[0.00437991, 0.00353425, 0.0035855, 0.00373859, 0.00381257, 0.00342, 0.0032762,  0.003281, 0.00368699, 0.00437148]])
 wing_beam_tcap = 0.005 * np.ones((20, ))
 wing_beam_tweb = 0.005 * np.ones((20, ))
-beam_mass.set_module_input('wing_beam_tcap', val=wing_beam_tcap, dv_flag=True, lower=0.000508, upper=0.02, scaler=1E3)
-beam_mass.set_module_input('wing_beam_tweb', val=wing_beam_tweb, dv_flag=True, lower=0.000508, upper=0.02, scaler=1E3)
+beam_mass.set_module_input('wing_beam_tcap', val=wing_beam_tcap, dv_flag=True, lower=0.0008, upper=0.02, scaler=1E2)
+beam_mass.set_module_input('wing_beam_tweb', val=wing_beam_tweb, dv_flag=True, lower=0.000508, upper=0.02, scaler=1E2)
 mass_model_wing_mass = beam_mass.evaluate()
 
 # total constant mass 
@@ -156,7 +164,7 @@ design_scenario = cd.DesignScenario(name='quasi_steady_transition')
 plus_3g_condition = cd.CruiseCondition(name="plus_3g_sizing")
 plus_3g_condition.atmosphere_model = cd.SimpleAtmosphereModel()
 plus_3g_condition.set_module_input(name='altitude', val=1000)
-plus_3g_condition.set_module_input(name='mach_number', val=0.23, dv_flag=False, lower=0.17, upper=0.19)
+plus_3g_condition.set_module_input(name='mach_number', val=0.24, dv_flag=False, lower=0.17, upper=0.19)
 plus_3g_condition.set_module_input(name='range', val=1)
 plus_3g_condition.set_module_input(name='pitch_angle', val=np.deg2rad(12.249534565223376), dv_flag=True, lower=np.deg2rad(-20), upper=np.deg2rad(20))
 plus_3g_condition.set_module_input(name='flight_path_angle', val=0)
@@ -286,7 +294,7 @@ system_m3l_model.register_output(total_cg, plus_3g_condition)
 system_m3l_model.register_output(total_inertia, plus_3g_condition)
 
 # inertial forces and moments
-inertial_loads_model = cd.InertialLoadsM3L(load_factor=3)
+inertial_loads_model = cd.InertialLoadsM3L(load_factor=2.5)
 inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass, ac_states=ac_states, design_condition=plus_3g_condition)
 system_m3l_model.register_output(inertial_forces, plus_3g_condition)
 system_m3l_model.register_output(inertial_moments, plus_3g_condition)
@@ -3430,371 +3438,371 @@ caddee_csdl_model.add_design_variable('minus_1g_tail_actuation',
                             )
 wing_act_minis_1g = caddee_csdl_model.create_input('minus_1g_wing_actuation', val=np.deg2rad(3.2))
 
-caddee_csdl_model.create_input('qst_1_rlo_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_1_rlo_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_1_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_1_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_1_rli_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_1_rli_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_1_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_1_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_1_rri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_1_rri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_1_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_1_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_1_rro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_1_rro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_1_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_1_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_1_flo_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_1_flo_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_1_flo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_1_flo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_1_fli_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_1_fli_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_1_fli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_1_fli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_1_fri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_1_fri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_1_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_1_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_1_fro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_1_fro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_1_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_1_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-
-caddee_csdl_model.create_input('qst_2_tail_actuation', val=np.deg2rad(-0.5))
-caddee_csdl_model.add_design_variable('qst_2_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
-caddee_csdl_model.create_input('qst_2_wing_actuation', val=np.deg2rad(3.2))
-
-caddee_csdl_model.create_input('qst_2_rlo_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_2_rlo_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_2_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_2_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_2_rli_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_2_rli_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_2_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_2_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_2_rri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_2_rri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_2_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_2_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_2_rro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_2_rro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_2_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_2_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_2_flo_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_2_flo_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_2_flo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_2_flo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_2_fli_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_2_fli_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_2_fli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_2_fli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_2_fri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_2_fri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_2_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_2_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_2_fro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_2_fro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_2_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_2_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-
-caddee_csdl_model.create_input('qst_3_tail_actuation', val=np.deg2rad(-0.5))
-caddee_csdl_model.add_design_variable('qst_3_tail_actuation', lower=np.deg2rad(-30), upper=np.deg2rad(15))
-caddee_csdl_model.create_input('qst_3_wing_actuation', val=np.deg2rad(3.2))
-
-caddee_csdl_model.create_input('qst_3_rlo_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_3_rlo_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_3_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_3_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_3_rli_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_3_rli_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_3_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_3_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_3_rri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_3_rri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_3_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_3_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_3_rro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_3_rro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_3_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_3_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_3_flo_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_3_flo_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_3_flo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_3_flo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_3_fli_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_3_fli_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_3_fli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_3_fli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_3_fri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_3_fri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_3_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_3_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_3_fro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_3_fro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_3_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_3_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-
-caddee_csdl_model.create_input('qst_4_tail_actuation', val=np.deg2rad(-0.5))
-caddee_csdl_model.add_design_variable('qst_4_tail_actuation', lower=np.deg2rad(-25), upper=np.deg2rad(15))
-caddee_csdl_model.create_input('qst_4_wing_actuation', val=np.deg2rad(3.2))
-
-caddee_csdl_model.create_input('qst_4_rlo_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_4_rlo_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_4_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_4_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_4_rli_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_4_rli_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_4_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_4_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_4_rri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_4_rri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_4_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_4_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_4_rro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_4_rro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_4_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_4_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_4_flo_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_4_flo_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_4_flo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_4_flo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_4_fli_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_4_fli_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_4_fli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_4_fli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_4_fri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_4_fri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_4_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_4_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_4_fro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_4_fro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_4_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_4_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-
-caddee_csdl_model.create_input('qst_5_tail_actuation', val=np.deg2rad(-0.5))
-caddee_csdl_model.add_design_variable('qst_5_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
-caddee_csdl_model.create_input('qst_5_wing_actuation', val=np.deg2rad(3.2))
-
-caddee_csdl_model.create_input('qst_5_rlo_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_5_rlo_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_5_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_5_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_5_rli_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_5_rli_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_5_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_5_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_5_rri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_5_rri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_5_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_5_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_5_rro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_5_rro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_5_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_5_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_5_flo_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_5_flo_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_5_flo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_5_flo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_5_fli_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_5_fli_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_5_fli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_5_fli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_5_fri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_5_fri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_5_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_5_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('qst_5_fro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('qst_5_fro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('qst_5_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('qst_5_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-
-caddee_csdl_model.create_input('qst_6_tail_actuation', val=np.deg2rad(-0.5))
-caddee_csdl_model.add_design_variable('qst_6_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
-caddee_csdl_model.create_input('qst_6_wing_actuation', val=np.deg2rad(3.2))
-
-caddee_csdl_model.create_input('qst_7_tail_actuation', val=np.deg2rad(-0.5))
-caddee_csdl_model.add_design_variable('qst_7_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
-caddee_csdl_model.create_input('qst_7_wing_actuation', val=np.deg2rad(3.2))
-
-caddee_csdl_model.create_input('qst_8_tail_actuation', val=np.deg2rad(-0.5))
-caddee_csdl_model.add_design_variable('qst_8_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
-caddee_csdl_model.create_input('qst_8_wing_actuation', val=np.deg2rad(3.2))
-
-caddee_csdl_model.create_input('qst_9_tail_actuation', val=np.deg2rad(-0.5))
-caddee_csdl_model.add_design_variable('qst_9_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
-caddee_csdl_model.create_input('qst_9_wing_actuation', val=np.deg2rad(3.2))
-
-caddee_csdl_model.create_input('qst_10_tail_actuation', val=np.deg2rad(-0.5))
-caddee_csdl_model.add_design_variable('qst_10_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
-caddee_csdl_model.create_input('qst_10_wing_actuation', val=np.deg2rad(3.2))
-
-
-caddee_csdl_model.create_input('hover_1_rlo_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_rlo_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_rli_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_rli_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_rri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_rri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_rro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_rro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_flo_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_flo_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_flo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_flo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_fli_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_fli_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_fli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_fli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_fri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_fri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_fro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_fro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('climb_tail_actuation', val=np.deg2rad(-0.5))
-caddee_csdl_model.add_design_variable('climb_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
-caddee_csdl_model.create_input('climb_wing_actuation', val=np.deg2rad(3.2))
-
-caddee_csdl_model.create_input('cruise_tail_actuation', val=np.deg2rad(-0.5))
-caddee_csdl_model.add_design_variable('cruise_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
-caddee_csdl_model.create_input('cruise_wing_actuation', val=np.deg2rad(3.2))
-
-caddee_csdl_model.create_input('descent_tail_actuation', val=np.deg2rad(0.5))
-caddee_csdl_model.add_design_variable('descent_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
-caddee_csdl_model.create_input('descent_wing_actuation', val=np.deg2rad(3.2))
-
-# OEI flo
-caddee_csdl_model.create_input('hover_1_oei_flo_rlo_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_oei_flo_rlo_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_oei_flo_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_oei_flo_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_oei_flo_rli_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_oei_flo_rli_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_oei_flo_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_oei_flo_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_oei_flo_rri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_oei_flo_rri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_oei_flo_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_oei_flo_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_oei_flo_rro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_oei_flo_rro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_oei_flo_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_oei_flo_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_oei_flo_fli_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_oei_flo_fli_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_oei_flo_fli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_oei_flo_fli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_oei_flo_fri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_oei_flo_fri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_oei_flo_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_oei_flo_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_oei_flo_fro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_oei_flo_fro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_oei_flo_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_oei_flo_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-# OEI fli
-caddee_csdl_model.create_input('hover_1_oei_fli_rlo_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_oei_fli_rlo_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_oei_fli_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_oei_fli_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_oei_fli_rli_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_oei_fli_rli_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_oei_fli_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_oei_fli_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_oei_fli_rri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_oei_fli_rri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_oei_fli_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_oei_fli_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_oei_fli_rro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_oei_fli_rro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_oei_fli_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_oei_fli_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_oei_fli_flo_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_oei_fli_flo_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_oei_fli_flo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_oei_fli_flo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_oei_fli_fri_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_oei_fli_fri_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_oei_fli_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_oei_fli_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-
-caddee_csdl_model.create_input('hover_1_oei_fli_fro_disk_actuation_1', val=tilt_1)
-caddee_csdl_model.create_input('hover_1_oei_fli_fro_disk_actuation_2', val=tilt_2)
-caddee_csdl_model.add_design_variable('hover_1_oei_fli_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-caddee_csdl_model.add_design_variable('hover_1_oei_fli_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.create_input('qst_1_rlo_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_1_rlo_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_1_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_1_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_1_rli_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_1_rli_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_1_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_1_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_1_rri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_1_rri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_1_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_1_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_1_rro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_1_rro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_1_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_1_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_1_flo_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_1_flo_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_1_flo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_1_flo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_1_fli_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_1_fli_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_1_fli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_1_fli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_1_fri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_1_fri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_1_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_1_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_1_fro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_1_fro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_1_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_1_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+
+# caddee_csdl_model.create_input('qst_2_tail_actuation', val=np.deg2rad(-0.5))
+# caddee_csdl_model.add_design_variable('qst_2_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
+# caddee_csdl_model.create_input('qst_2_wing_actuation', val=np.deg2rad(3.2))
+
+# caddee_csdl_model.create_input('qst_2_rlo_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_2_rlo_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_2_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_2_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_2_rli_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_2_rli_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_2_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_2_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_2_rri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_2_rri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_2_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_2_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_2_rro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_2_rro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_2_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_2_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_2_flo_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_2_flo_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_2_flo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_2_flo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_2_fli_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_2_fli_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_2_fli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_2_fli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_2_fri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_2_fri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_2_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_2_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_2_fro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_2_fro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_2_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_2_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+
+# caddee_csdl_model.create_input('qst_3_tail_actuation', val=np.deg2rad(-0.5))
+# caddee_csdl_model.add_design_variable('qst_3_tail_actuation', lower=np.deg2rad(-30), upper=np.deg2rad(15))
+# caddee_csdl_model.create_input('qst_3_wing_actuation', val=np.deg2rad(3.2))
+
+# caddee_csdl_model.create_input('qst_3_rlo_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_3_rlo_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_3_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_3_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_3_rli_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_3_rli_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_3_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_3_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_3_rri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_3_rri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_3_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_3_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_3_rro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_3_rro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_3_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_3_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_3_flo_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_3_flo_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_3_flo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_3_flo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_3_fli_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_3_fli_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_3_fli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_3_fli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_3_fri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_3_fri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_3_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_3_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_3_fro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_3_fro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_3_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_3_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+
+# caddee_csdl_model.create_input('qst_4_tail_actuation', val=np.deg2rad(-0.5))
+# caddee_csdl_model.add_design_variable('qst_4_tail_actuation', lower=np.deg2rad(-25), upper=np.deg2rad(15))
+# caddee_csdl_model.create_input('qst_4_wing_actuation', val=np.deg2rad(3.2))
+
+# caddee_csdl_model.create_input('qst_4_rlo_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_4_rlo_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_4_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_4_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_4_rli_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_4_rli_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_4_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_4_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_4_rri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_4_rri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_4_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_4_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_4_rro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_4_rro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_4_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_4_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_4_flo_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_4_flo_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_4_flo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_4_flo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_4_fli_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_4_fli_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_4_fli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_4_fli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_4_fri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_4_fri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_4_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_4_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_4_fro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_4_fro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_4_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_4_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+
+# caddee_csdl_model.create_input('qst_5_tail_actuation', val=np.deg2rad(-0.5))
+# caddee_csdl_model.add_design_variable('qst_5_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
+# caddee_csdl_model.create_input('qst_5_wing_actuation', val=np.deg2rad(3.2))
+
+# caddee_csdl_model.create_input('qst_5_rlo_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_5_rlo_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_5_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_5_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_5_rli_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_5_rli_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_5_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_5_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_5_rri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_5_rri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_5_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_5_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_5_rro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_5_rro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_5_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_5_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_5_flo_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_5_flo_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_5_flo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_5_flo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_5_fli_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_5_fli_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_5_fli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_5_fli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_5_fri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_5_fri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_5_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_5_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('qst_5_fro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('qst_5_fro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('qst_5_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('qst_5_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+
+# caddee_csdl_model.create_input('qst_6_tail_actuation', val=np.deg2rad(-0.5))
+# caddee_csdl_model.add_design_variable('qst_6_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
+# caddee_csdl_model.create_input('qst_6_wing_actuation', val=np.deg2rad(3.2))
+
+# caddee_csdl_model.create_input('qst_7_tail_actuation', val=np.deg2rad(-0.5))
+# caddee_csdl_model.add_design_variable('qst_7_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
+# caddee_csdl_model.create_input('qst_7_wing_actuation', val=np.deg2rad(3.2))
+
+# caddee_csdl_model.create_input('qst_8_tail_actuation', val=np.deg2rad(-0.5))
+# caddee_csdl_model.add_design_variable('qst_8_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
+# caddee_csdl_model.create_input('qst_8_wing_actuation', val=np.deg2rad(3.2))
+
+# caddee_csdl_model.create_input('qst_9_tail_actuation', val=np.deg2rad(-0.5))
+# caddee_csdl_model.add_design_variable('qst_9_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
+# caddee_csdl_model.create_input('qst_9_wing_actuation', val=np.deg2rad(3.2))
+
+# caddee_csdl_model.create_input('qst_10_tail_actuation', val=np.deg2rad(-0.5))
+# caddee_csdl_model.add_design_variable('qst_10_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
+# caddee_csdl_model.create_input('qst_10_wing_actuation', val=np.deg2rad(3.2))
+
+
+# caddee_csdl_model.create_input('hover_1_rlo_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_rlo_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_rli_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_rli_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_rri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_rri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_rro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_rro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_flo_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_flo_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_flo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_flo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_fli_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_fli_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_fli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_fli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_fri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_fri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_fro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_fro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('climb_tail_actuation', val=np.deg2rad(-0.5))
+# caddee_csdl_model.add_design_variable('climb_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
+# caddee_csdl_model.create_input('climb_wing_actuation', val=np.deg2rad(3.2))
+
+# caddee_csdl_model.create_input('cruise_tail_actuation', val=np.deg2rad(-0.5))
+# caddee_csdl_model.add_design_variable('cruise_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
+# caddee_csdl_model.create_input('cruise_wing_actuation', val=np.deg2rad(3.2))
+
+# caddee_csdl_model.create_input('descent_tail_actuation', val=np.deg2rad(0.5))
+# caddee_csdl_model.add_design_variable('descent_tail_actuation', lower=np.deg2rad(-15), upper=np.deg2rad(15))
+# caddee_csdl_model.create_input('descent_wing_actuation', val=np.deg2rad(3.2))
+
+# # OEI flo
+# caddee_csdl_model.create_input('hover_1_oei_flo_rlo_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_oei_flo_rlo_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_oei_flo_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_oei_flo_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_oei_flo_rli_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_oei_flo_rli_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_oei_flo_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_oei_flo_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_oei_flo_rri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_oei_flo_rri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_oei_flo_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_oei_flo_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_oei_flo_rro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_oei_flo_rro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_oei_flo_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_oei_flo_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_oei_flo_fli_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_oei_flo_fli_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_oei_flo_fli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_oei_flo_fli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_oei_flo_fri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_oei_flo_fri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_oei_flo_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_oei_flo_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_oei_flo_fro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_oei_flo_fro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_oei_flo_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_oei_flo_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# # OEI fli
+# caddee_csdl_model.create_input('hover_1_oei_fli_rlo_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_oei_fli_rlo_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_oei_fli_rlo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_oei_fli_rlo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_oei_fli_rli_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_oei_fli_rli_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_oei_fli_rli_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_oei_fli_rli_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_oei_fli_rri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_oei_fli_rri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_oei_fli_rri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_oei_fli_rri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_oei_fli_rro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_oei_fli_rro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_oei_fli_rro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_oei_fli_rro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_oei_fli_flo_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_oei_fli_flo_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_oei_fli_flo_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_oei_fli_flo_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_oei_fli_fri_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_oei_fli_fri_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_oei_fli_fri_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_oei_fli_fri_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+# caddee_csdl_model.create_input('hover_1_oei_fli_fro_disk_actuation_1', val=tilt_1)
+# caddee_csdl_model.create_input('hover_1_oei_fli_fro_disk_actuation_2', val=tilt_2)
+# caddee_csdl_model.add_design_variable('hover_1_oei_fli_fro_disk_actuation_1', lower=np.deg2rad(-10), upper=np.deg2rad(10))
+# caddee_csdl_model.add_design_variable('hover_1_oei_fli_fro_disk_actuation_2', lower=np.deg2rad(-10), upper=np.deg2rad(10))
 # endregion
 
 # region geometric constraints/dvs
@@ -3996,8 +4004,8 @@ caddee_csdl_model.create_input('rro_twist_cp', val=np.deg2rad(np.array([30, 20, 
 # endregion
 
 # region system level constraints and objective
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_euler_eom_gen_ref_pt.trim_residual', equals=0)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.minus_1g_sizing_euler_eom_gen_ref_pt.trim_residual', equals=0)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=1e-2)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.minus_1g_sizing_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=1e-2)
 # caddee_csdl_model.add_constraint('system_model.system_m3l_model.hover_1_oei_flo_euler_eom_gen_ref_pt.trim_residual', equals=0)
 # caddee_csdl_model.add_constraint('system_model.system_m3l_model.hover_1_oei_fli_euler_eom_gen_ref_pt.trim_residual', equals=0)
 
@@ -4018,10 +4026,10 @@ caddee_csdl_model.add_constraint('system_model.system_m3l_model.minus_1g_sizing_
 # caddee_csdl_model.add_constraint('system_model.system_m3l_model.descent_1_euler_eom_gen_ref_pt.trim_residual', equals=0)
 
 # caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress',upper=427E6/1.,scaler=1E-8)
-# caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress',upper=427E6,scaler=1E-8)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress_composite',lower=-1/1.5, upper=1/1.5, scaler=1)
-# caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress', upper=427E6, scaler=1e-8) # If constraining VM
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.Aframe.wing_beam_displacement', lower=-0.5, upper=0.5, scaler=1)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress', upper=600E6/2.5, scaler=1E-8) # Quasi isotropic 
+# caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress_composite',lower=-1/1.5, upper=1/1.5, scaler=1) # Quasi isotropic 
+# caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress', upper=350E6/1.5, scaler=1e-8) # Aluminum alloy
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.Aframe.wing_beam_displacement', lower=-0.5, upper=0.5, scaler=0.5)
 # caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.Aframe.wing_beam_displacement', upper=0.25, scaler=1)
 # caddee_csdl_model.add_constraint('system_model.system_m3l_model.hover_1_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
 # caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_1_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
@@ -4030,7 +4038,10 @@ caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_w
 # caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_4_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
 # caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_5_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
 
-caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_mass_properties.total_constant_mass', scaler=5e-4)
+caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_mass_properties.total_constant_mass', scaler=1e-3)
+
+# t3g = caddee_csdl_model.declare_variable('system_model.system_m3l_model.plus_3g_sizing_euler_eom_gen_ref_pt.trim_residual', shape=(1, ))
+# tm1g = caddee_csdl_model.declare_variable('system_model.system_m3l_model.minus_1g_sizing_euler_eom_gen_ref_pt.trim_residual', shape=(1, ))
 
 # t1 = caddee_csdl_model.declare_variable('system_model.system_m3l_model.hover_1_euler_eom_gen_ref_pt.trim_residual', shape=(1, ))
 # t2 = caddee_csdl_model.declare_variable('system_model.system_m3l_model.climb_1_euler_eom_gen_ref_pt.trim_residual', shape=(1, ))
@@ -4048,7 +4059,7 @@ caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_ma
 # trim_10 = caddee_csdl_model.declare_variable('system_model.system_m3l_model.qst_10_euler_eom_gen_ref_pt.trim_residual', shape=(1, ))
 # # caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_mass_properties.total_mass', scaler=1e-3)
 
-# combined_trim = caddee_csdl_model.register_output('combined_trim', t1 * 1 + t2 * 1 + t3 * 1)
+# combined_trim = caddee_csdl_model.register_output('combined_trim', t3g * 1 + tm1g * 1)
 # combined_trim = caddee_csdl_model.register_output('combined_trim', trim_1 *1 + trim_2*1 + trim_3*1 + trim_4*1 + trim_5 * 1 + trim_6 * 1 + trim_7 * 1 + trim_8 * 1 + trim_9 * 1 + trim_10*1)
 # caddee_csdl_model.add_objective('combined_trim')
 # endregion
@@ -4129,6 +4140,24 @@ tc2_model.add(submodel=caddee_csdl_model, name='caddee_csdl_model', promotes=[])
 # tc2_model.connect('caddee_csdl_model.system_representation.outputs_model.design_outputs_model.fuselage_length', 'caddee_csdl_model.system_model.system_m3l_model.m4_regression.fuselage_length')
 # tc2_model.connect('geometry_processing_model.wing_area', 'caddee_csdl_model.system_model.system_m3l_model.m4_regression.wing_area')
 # tc2_model.connect('geometry_processing_model.tail_area', 'caddee_csdl_model.system_model.system_m3l_model.m4_regression.tail_area')
+
+wing_beam_tcap = tc2_model.declare_variable('caddee_csdl_model.system_model.system_m3l_model.mass_model.wing_beam_tcap', shape=(20,))
+wing_beam_tweb = tc2_model.declare_variable('caddee_csdl_model.system_model.system_m3l_model.mass_model.wing_beam_tweb', shape=(20,))
+left_tcap = wing_beam_tcap[0:10]
+left_tweb = wing_beam_tweb[0:10]
+# right_tcap = wing_beam_tcap[-1:-10]
+right_tcap = tc2_model.create_output('right_tcap', shape=(10, ))
+right_tweb = tc2_model.create_output('right_tweb', shape=(10, ))
+indices = np.flip(np.arange(10, 20, 1, dtype=int))
+for i in range(10):
+    right_tcap[i] = wing_beam_tcap[int(indices[i])]
+    right_tweb[i] = wing_beam_tweb[int(indices[i])]
+
+tc2_model.register_output('tcap_symmetry', right_tcap-left_tcap)
+tc2_model.register_output('tweb_symmetry', right_tweb-left_tweb)
+
+tc2_model.add_constraint('tcap_symmetry', equals=0, scaler=1e-2)
+tc2_model.add_constraint('tweb_symmetry', equals=0, scaler=1e-2)
 # endregion
 
 # run commond: mpirun -n 2 python tc2_main_script
@@ -4137,15 +4166,16 @@ comm = MPI.COMM_WORLD
 sim = Simulator(
     tc2_model, 
     analytics=True,
+    display_scripts=True,
     comm=comm,
 )
 
 import pickle
-# with open('trim_dv.pickle', 'rb') as handle:
-#     trim_dvs = pickle.load(handle)
+with open('quasi_isotropic_trim_dv.pickle', 'rb') as handle:
+    trim_dvs = pickle.load(handle)
 
-# for key, val in trim_dvs.items():
-#     sim[key] = val
+for key, val in trim_dvs.items():
+    sim[key] = val
 
 # # sim = Simulator(tc2_model, analytics=True)
 # sim.run()
@@ -4154,17 +4184,17 @@ import pickle
 # sim.check_totals(of='system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', wrt='system_model.system_m3l_model.qst_3_pp_disk_bem_model.rpm')
 # sim.check_totals()
 
-cruise_geometry = sim['caddee_csdl_model.design_geometry']    
-updated_primitives_names = list(lpc_rep.spatial_representation.primitives.keys()).copy()
-# cruise_geometry = sim['design_geometry']
-lpc_rep.spatial_representation.update(cruise_geometry, updated_primitives_names)
-lpc_rep.spatial_representation.plot()
+# cruise_geometry = sim['caddee_csdl_model.design_geometry']    
+# updated_primitives_names = list(lpc_rep.spatial_representation.primitives.keys()).copy()
+# # cruise_geometry = sim['design_geometry']
+# lpc_rep.spatial_representation.update(cruise_geometry, updated_primitives_names)
+# lpc_rep.spatial_representation.plot()
 
-prob = CSDLProblem(problem_name='TC_2_problem_trim', simulator=sim)
+prob = CSDLProblem(problem_name='TC_2_problem_trim_quasi_isotropic', simulator=sim)
 
 optimizer = SNOPT(
     prob, 
-    Major_iterations=500, 
+    Major_iterations=300, 
     Major_optimality=1e-5, 
     Major_feasibility=1e-5,
     append2file=True,
@@ -4186,7 +4216,7 @@ for dv_name, dv_dict in sim.dvs.items():
     dv_dictionary[dv_name] = sim[dv_name]
 print('\n')
 print('\n')
-with open('trim_dv.pickle', 'wb') as handle:
+with open('quasi_isotropic_trim_plus_mass_dv.pickle', 'wb') as handle:
     pickle.dump(dv_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 c_dictionary = {}
@@ -4194,7 +4224,7 @@ for c_name, c_dict in sim.cvs.items():
     print(c_name, c_dict['index_lower'], c_dict['index_upper'])
     print(sim[c_name])
     c_dict[c_name] = sim[c_name]
-with open('trim_constraints.pickle', 'wb') as handle:
+with open('quasi_isotropic_trim_plus_mass_constraints.pickle', 'wb') as handle:
     pickle.dump(c_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 cruise_geometry = sim['caddee_csdl_model.design_geometry']    

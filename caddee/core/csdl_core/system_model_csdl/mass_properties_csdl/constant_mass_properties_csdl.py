@@ -195,6 +195,8 @@ class VaryingMassPropertiesCSDL(BaseModelCSDL):
         # sizing_group = self.parameters['sizing_group']
         mass_input_names = self.parameters['mass_input_names']
         cg_input_names = self.parameters['cg_input_names']
+        # print(cg_input_names)
+        # exit()
         inertia_input_names = self.parameters['inertia_input_names']
         
         
@@ -259,7 +261,7 @@ class VaryingMassPropertiesCSDL(BaseModelCSDL):
             # Compute total mass
             m = m + m_model
 
-        m_fudge = self.declare_variable('m_fudge', shape=(1, ), val=562)
+        m_fudge = self.declare_variable('m_fudge', shape=(1, ), val=0)
         m = m + m_fudge
 
 
