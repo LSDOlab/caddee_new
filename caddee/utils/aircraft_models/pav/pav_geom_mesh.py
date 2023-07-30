@@ -5,6 +5,8 @@ import numpy as np
 from typing import Type
 
 from caddee.core.caddee_core.system_representation.component.component import LiftingSurface, Component
+from aframe.core.mass import MassMesh
+import aframe.core.beam_module as ebbeam
 import array_mapper as am
 
 
@@ -12,7 +14,6 @@ in2m = 0.0254
 ft2m = 0.3048
 lbs2kg = 0.453592
 psf2pa = 50
-
 
 
 class PavGeomMesh:
@@ -23,13 +24,22 @@ class PavGeomMesh:
         self.geom_data = {
             'components': {
                 'wing': Type[cd.LiftingSurface],
-                'htail': Type[cd.LiftingSurface]},
+                'htail': Type[cd.LiftingSurface]
+            },
             'primitive_names': {
                 'wing': list(), 'left_wing': list(), 'right_wing': list(),
                 'htail': list(),
             }
         }
         self.mesh_data ={
+            'oml': {
+                'oml_surface': {
+                    'wing': None, 'htail': None
+                },
+                'mesh_name': {
+                    'wing': Type[str], 'htail': Type[str]
+                }
+            },
             'vlm': {
                 'chamber_surface': {
                     'wing': None, 'htail': None
@@ -37,6 +47,10 @@ class PavGeomMesh:
                 'mesh_name': {
                     'wing': Type[str], 'htail': Type[str]
                 }
+            },
+            'beam': {
+                'ebbeam': Type[ebbeam.LinearBeamMesh],
+                'mass': Type[MassMesh]
             }
         }
         return
@@ -151,6 +165,23 @@ class PavGeomMesh:
         # endregion
         return
 
+    def setup_index_functions(self):
+
+        # wing force function
+        num = 25
+        u, v = np.meshgrid(np.linspace(0, 1, num), np.linspace(0, 1, num))
+        u = np.array(u).flatten()
+        v = np.array(v).flatten()
+        points = np.vstack((u, v)).T
+        space_f = IDWFunctionSpace(name='force_base_space', points=points, order=1,
+                                   coefficients_shape=(points.shape[0],))
+        wing_force = index_functions(
+            self.geom_data['primitive_names']['left_wing'] + self.geom_data['primitive_names']['right_wing'],
+            'wing_force',
+            space_f,
+            3)
+        return
+
     def vlm_meshes(
             self,
             include_wing_flag=False, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=5,
@@ -231,6 +262,9 @@ class PavGeomMesh:
             wing_oml_mesh = am.vstack((wing_upper_surface_wireframe, wing_lower_surface_wireframe))
             wing_oml_mesh_name = 'wing_oml_mesh'
             self.sys_rep.add_output(wing_oml_mesh_name, wing_oml_mesh)
+            self.mesh_data['oml']['oml_surface']['wing'] = wing_oml_mesh
+            self.mesh_data['oml']['mesh_name']['wing'] = wing_oml_mesh_name
+
             if debug_geom_flag:
                 spatial_rep.plot_meshes([wing_oml_mesh])
 
@@ -304,12 +338,99 @@ class PavGeomMesh:
                 spatial_rep.plot_meshes([wing_camber_surface, htail_camber_surface])
         return
 
+    def actuations(self,
+                   include_tail_actuation_flag):
+        if include_tail_actuation_flag:
+            # Tail FFD
+            htail_geometry_primitives = self.geom_data['components']['htail'].get_geometry_primitives()
+            htail_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
+                htail_geometry_primitives,
+                num_control_points=(11, 2, 2), order=(4, 2, 2),
+                xyz_to_uvw_indices=(1, 0, 2)
+            )
+            htail_ffd_block = cd.SRBGFFDBlock(name='htail_ffd_block',
+                                              primitive=htail_ffd_bspline_volume,
+                                              embedded_entities=htail_geometry_primitives)
+            htail_ffd_block.add_scale_v(name='htail_linear_taper',
+                                        order=2, num_dof=3, value=np.array([0., 0., 0.]),
+                                        cost_factor=1.)
+            htail_ffd_block.add_rotation_u(name='htail_twist_distribution',
+                                           connection_name='h_tail_act', order=1,
+                                           num_dof=1, value=np.array([np.deg2rad(1.75)]))
+            ffd_set = cd.SRBGFFDSet(
+                name='ffd_set',
+                ffd_blocks={htail_ffd_block.name: htail_ffd_block}
+            )
+            self.sys_param.add_geometry_parameterization(ffd_set)
+        # endregion
+        return
 
-def create_vlm_meshes():
-    return
+    def beam_mesh(self,
+                  include_wing_flag=False, num_wing_beam_nodes=21,
+                  debug_geom_flag=False, visualize_flag=False,
+                  force_reprojection=True
+                  ):
 
-def create_beam_meshes():
-    return
+        spatial_rep = self.sys_rep.spatial_representation
 
-def create_shell_mesh():
-    return
+        if include_wing_flag:
+
+            wing_component = self.geom_data['components']['wing']
+            wing_te_component = self.geom_data['components']['wing_te']
+
+            root_te = np.array([15.170, 0., 1.961]) * ft2m
+            root_le = np.array([8.800, 0, 1.989]) * ft2m
+            l_tip_te = np.array([11.300, -14.000, 1.978]) * ft2m
+            l_tip_le = np.array([8.796, -14.000, 1.989]) * ft2m
+            r_tip_te = np.array([11.300, 14.000, 1.978]) * ft2m
+            r_tip_le = np.array([8.796, 14.000, 1.989]) * ft2m
+
+            le_offset = np.array([-10, 0, 0])
+
+            leading_edge_points = np.linspace(r_tip_le, l_tip_le, num_wing_beam_nodes)
+            trailing_edge_points = np.vstack((np.linspace(r_tip_te, root_te, int(num_wing_beam_nodes / 2) + 1),
+                                              np.linspace(root_te, l_tip_te, int(num_wing_beam_nodes / 2) + 1)[1:,
+                                              :]))
+
+            wing_leading_edge = wing_component.project(leading_edge_points + le_offset, direction=np.array([0., 0., -1]),
+                                                  plot=debug_geom_flag, force_reprojection=force_reprojection)
+            wing_trailing_edge = wing_te_component.project(trailing_edge_points, direction=np.array([1., 0., 0.]),
+                                                      plot=debug_geom_flag, force_reprojection=force_reprojection)
+
+
+            wing_beam = am.linear_combination(wing_leading_edge, wing_trailing_edge, 1,
+                                              start_weights=np.ones((num_wing_beam_nodes,)) * 0.75,
+                                              stop_weights=np.ones((num_wing_beam_nodes,)) * 0.25)
+            width = am.norm((wing_leading_edge - wing_trailing_edge) * 0.5)
+
+            if debug_geom_flag:
+                spatial_rep.plot_meshes([wing_beam])
+
+            offset = np.array([0, 0, 0.5])
+            top = wing_component.project(wing_beam.value + offset, direction=np.array([0., 0., -1.]), plot=debug_geom_flag)
+            bot = wing_component.project(wing_beam.value - offset, direction=np.array([0., 0., 1.]), plot=debug_geom_flag)
+            height = am.norm((top.reshape((-1, 3)) - bot.reshape((-1, 3))) * 1)
+
+            self.sys_rep.add_output(name='wing_beam_mesh', quantity=wing_beam)
+            self.sys_rep.add_output(name='wing_beam_width', quantity=width)
+            self.sys_rep.add_output(name='wing_beam_height', quantity=height)
+
+            # pass the beam meshes to aframe:
+            beam_mesh = ebbeam.LinearBeamMesh(
+                meshes=dict(
+                    wing_beam=wing_beam,
+                    wing_beam_width=width,
+                    wing_beam_height=height, ))
+            self.mesh_data['beam']['ebbeam'] = beam_mesh
+
+            # pass the beam meshes to the aframe mass model:
+            beam_mass_mesh = MassMesh(
+                meshes=dict(
+                    wing_beam=wing_beam,
+                    wing_beam_width=width,
+                    wing_beam_height=height, ))
+            self.mesh_data['beam']['mass'] = beam_mass_mesh
+
+            if visualize_flag:
+                spatial_rep.plot_meshes([wing_beam])
+        return
