@@ -266,7 +266,7 @@ def setup_geometry(include_wing_flag=False, num_wing_spanwise_vlm = 21, num_wing
         raise NotImplementedError
 
 
-def vlm_as_ll(debug_geom_flag = False, visualize_flag = False):
+def vlm_as_ll():
     """
     Script that tests if the VLM when defaulted to a lifting line returns CL=0 at 0 deg pitch angle
     """
@@ -368,9 +368,10 @@ def tuning_cl0(cl0_expected=0.55,
         pav_geom_mesh = PavGeomMesh()
         pav_geom_mesh.setup_geometry(
             include_wing_flag=True,
+            debug_geom_flag=debug_geom_flag
         )
         pav_geom_mesh.vlm_meshes(include_wing_flag=True, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=5,
-                                 force_reprojection=False)
+                                 force_reprojection=False, visualize_flag=visualize_flag)
 
         caddee.system_representation = sys_rep = pav_geom_mesh.sys_rep
         caddee.system_parameterization = sys_param = pav_geom_mesh.sys_param
@@ -451,22 +452,26 @@ def tuning_cl0(cl0_expected=0.55,
     return res.x
 
 
-def vlm_evaluation_wing_only_aoa_sweep(wing_cl0=0.3366,
-                                       debug_geom_flag = False, visualize_flag = False):
+def vlm_evaluation_wing_only_aoa_sweep(wing_cl0=0.3366):
     resolution = 21
     pitch_angle_range = np.deg2rad(np.linspace(-10, 10, num=resolution))
     CL = np.empty(resolution)
     CD = np.empty(resolution)
 
     for idx, pitch_angle in enumerate(pitch_angle_range):
+        caddee = cd.CADDEE()
+        caddee.system_model = system_model = cd.SystemModel()
+
         # region Geometry and meshes
-        caddee, system_model, sys_rep, sys_param, \
-            wing_vlm_mesh_name, wing_camber_surface = setup_geometry(
+        pav_geom_mesh = PavGeomMesh()
+        pav_geom_mesh.setup_geometry(
             include_wing_flag=True,
-            include_tail_flag=False,
-            visualize_flag=visualize_flag,
-            debug_geom_flag=debug_geom_flag,
         )
+        pav_geom_mesh.vlm_meshes(include_wing_flag=True, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=5,
+                                 force_reprojection=False)
+
+        caddee.system_representation = sys_rep = pav_geom_mesh.sys_rep
+        caddee.system_parameterization = sys_param = pav_geom_mesh.sys_param
         # endregion
 
         # region Mission
@@ -493,13 +498,13 @@ def vlm_evaluation_wing_only_aoa_sweep(wing_cl0=0.3366,
         # region Aerodynamics
         vlm_model = VASTFluidSover(
             surface_names=[
-                wing_vlm_mesh_name,
+                pav_geom_mesh.mesh_data['vlm']['mesh_name']['wing'],
             ],
             surface_shapes=[
-                (1,) + wing_camber_surface.evaluate().shape[1:],
+                (1,) + pav_geom_mesh.mesh_data['vlm']['chamber_surface']['wing'].evaluate().shape[1:],
             ],
             fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
-            mesh_unit='ft',
+            mesh_unit='m',
             cl0=[wing_cl0]
         )
         vlm_panel_forces, vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=cruise_ac_states)
@@ -544,15 +549,22 @@ def vlm_evaluation_wing_tail_aoa_sweep(wing_cl0=0.3366,
     CD = np.empty(resolution)
 
     for idx, pitch_angle in enumerate(pitch_angle_range):
+        caddee = cd.CADDEE()
+        caddee.system_model = system_model = cd.SystemModel()
+
         # region Geometry and meshes
-        caddee, system_model, sys_rep, sys_param, \
-            wing_vlm_mesh_name, wing_camber_surface, \
-            htail_vlm_mesh_name, htail_camber_surface = setup_geometry(
+        pav_geom_mesh = PavGeomMesh()
+        pav_geom_mesh.setup_geometry(
             include_wing_flag=True,
-            include_tail_flag=True,
-            visualize_flag=visualize_flag,
-            debug_geom_flag=debug_geom_flag,
+            include_htail_flag=True,
+            debug_geom_flag=debug_geom_flag
         )
+        pav_geom_mesh.vlm_meshes(include_wing_flag=True, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=5,
+                                 include_htail_flag=True, num_htail_spanwise_vlm=21, num_htail_chordwise_vlm=5,
+                                 force_reprojection=False, visualize_flag=False)
+
+        caddee.system_representation = sys_rep = pav_geom_mesh.sys_rep
+        caddee.system_parameterization = sys_param = pav_geom_mesh.sys_param
         # endregion
 
         # region Mission
@@ -579,15 +591,15 @@ def vlm_evaluation_wing_tail_aoa_sweep(wing_cl0=0.3366,
         # region Aerodynamics
         vlm_model = VASTFluidSover(
             surface_names=[
-                wing_vlm_mesh_name,
-                htail_vlm_mesh_name
+                pav_geom_mesh.mesh_data['vlm']['mesh_name']['wing'],
+                pav_geom_mesh.mesh_data['vlm']['mesh_name']['htail']
             ],
             surface_shapes=[
-                (1,) + wing_camber_surface.evaluate().shape[1:],
-                (1,) + htail_camber_surface.evaluate().shape[1:],
+                (1,) + pav_geom_mesh.mesh_data['vlm']['chamber_surface']['wing'].evaluate().shape[1:],
+                (1,) + pav_geom_mesh.mesh_data['vlm']['chamber_surface']['htail'].evaluate().shape[1:],
             ],
             fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
-            mesh_unit='ft',
+            mesh_unit='m',
             cl0=[wing_cl0, 0.]
         )
         vlm_panel_forces, vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=cruise_ac_states)
@@ -1344,7 +1356,7 @@ def trim_at_hover(debug_geom_flag=False):
     return
 
 
-def structural_wingbox_beam_evaluation(wing_cl0=0.3475,
+def structural_wingbox_beam_evaluation(wing_cl0=0.3366,
                                        pitch_angle=np.deg2rad(6.),
                                        num_wing_beam_nodes=21,
                                        youngs_modulus=73.1E9, poissons_ratio=0.33, density=2780,  # SI
@@ -1511,7 +1523,7 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3475,
 
 def trim_at_3g(pusher_prop_twist_cp=np.array([1.10595917, 0.71818285, 0.47990602, 0.35717703]),
                pusher_prop_chord_cp=np.array([0.09891285, 0.15891845, 0.14555978, 0.06686854]),
-               wing_cl0=0.3475):
+               wing_cl0=0.3366):
 
     # region Geometry and meshes
 
@@ -1688,7 +1700,7 @@ def trim_at_3g(pusher_prop_twist_cp=np.array([1.10595917, 0.71818285, 0.47990602
 
     return
 
-def structural_wingbox_beam_sizing(wing_cl0=0.3475,
+def structural_wingbox_beam_sizing(wing_cl0=0.3366,
                                    pitch_angle=np.deg2rad(6.),
                                    num_wing_beam_nodes=21,
                                    youngs_modulus=73.1E9, poissons_ratio=0.33, density=2780, yield_strength=324E6, FoS=1.5,  # SI
@@ -1885,9 +1897,9 @@ def structural_wingbox_beam_sizing(wing_cl0=0.3475,
 
 if __name__ == '__main__':
     # vlm_as_ll()
-    cl0 = tuning_cl0()
+    # cl0 = tuning_cl0()
     # vlm_evaluation_wing_only_aoa_sweep()
-    # vlm_evaluation_wing_tail_aoa_sweep(debug_geom_flag=False, visualize_flag=False)
+    vlm_evaluation_wing_tail_aoa_sweep(visualize_flag=True)
     # pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
     # trim_at_3g(pusher_prop_twist_cp=pusher_prop_twist_cp, pusher_prop_chord_cp=pusher_prop_chord_cp)
     # structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(0.50920074))
