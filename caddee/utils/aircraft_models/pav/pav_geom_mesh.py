@@ -254,10 +254,10 @@ class PavGeomMesh:
             trailing_edge_points = np.linspace(point01, point21, num_htail_spanwise_vlm)
 
             leading_edge = htail_component.project(leading_edge_points, direction=np.array([0., 0., -1.]),
-                                                   force_reprojection=True,
+                                                   force_reprojection=force_reprojection,
                                                    plot=debug_geom_flag)
             trailing_edge = htail_component.project(trailing_edge_points, direction=np.array([1., 0., 0.]),
-                                                    force_reprojection=True,
+                                                    force_reprojection=force_reprojection,
                                                     plot=debug_geom_flag)
 
             # Chord Surface
