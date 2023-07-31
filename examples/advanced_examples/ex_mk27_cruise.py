@@ -23,7 +23,7 @@ import numpy as np
 
 ft2m = 0.3048
 
-debug_geom_flag = False
+debug_geom_flag = True
 visualize_flag = False
 
 caddee = cd.CADDEE()
