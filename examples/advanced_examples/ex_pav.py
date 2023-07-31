@@ -30,240 +30,241 @@ import pandas as pd
 
 
 ft2m = 0.3048
+force_reprojection = False
 
-def setup_geometry(include_wing_flag=False, num_wing_spanwise_vlm = 21, num_wing_chordwise_vlm = 5,
-                   include_tail_flag=False, num_htail_vlm = 21, num_chordwise_vlm = 5,
-                   include_tail_actuation_flag=False,
-                   include_wing_beam_flag=False, num_wing_beam_nodes=21,
-                   debug_geom_flag = False, visualize_flag = False):
-    caddee = cd.CADDEE()
-    caddee.system_model = system_model = cd.SystemModel()
-    caddee.system_representation = sys_rep = cd.SystemRepresentation()
-    caddee.system_parameterization = sys_param = cd.SystemParameterization(system_representation=sys_rep)
-
-    # region Geometry
-    file_name = 'pav.stp'
-
-    spatial_rep = sys_rep.spatial_representation
-    spatial_rep.import_file(file_name=GEOMETRY_FILES_FOLDER / file_name)
-    spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
-
-    # region Lifting surfaces
-    if include_wing_flag:
-        # Wing
-        wing_primitive_names = list(spatial_rep.get_primitives(search_names=['Wing']).keys())
-        wing = LiftingSurface(name='Wing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)
-        if debug_geom_flag:
-            wing.plot()
-        sys_rep.add_component(wing)
-
-    # Horizontal tail
-    if include_tail_flag:
-        tail_primitive_names = list(spatial_rep.get_primitives(search_names=['Stabilizer']).keys())
-        htail = cd.LiftingSurface(name='HTail', spatial_representation=spatial_rep, primitive_names=tail_primitive_names)
-        if debug_geom_flag:
-            htail.plot()
-        sys_rep.add_component(htail)
-    # endregion
-
-    # endregion
-
-    # region Meshes
-
-    # region Wing
-    if include_wing_flag:
-        point00 = np.array([8.796, 14.000, 1.989])  # * ft2m # Right tip leading edge
-        point01 = np.array([11.300, 14.000, 1.989])  # * ft2m # Right tip trailing edge
-        point10 = np.array([8.800, 0.000, 1.989])  # * ft2m # Center Leading Edge
-        point11 = np.array([15.170, 0.000, 1.989])  # * ft2m # Center Trailing edge
-        point20 = np.array([8.796, -14.000, 1.989])  # * ft2m # Left tip leading edge
-        point21 = np.array([11.300, -14.000, 1.989])  # * ft2m # Left tip
-
-        leading_edge_points = np.concatenate(
-            (np.linspace(point00, point10, int(num_wing_spanwise_vlm / 2 + 1))[0:-1, :],
-             np.linspace(point10, point20, int(num_wing_spanwise_vlm / 2 + 1))),
-            axis=0)
-        trailing_edge_points = np.concatenate(
-            (np.linspace(point01, point11, int(num_wing_spanwise_vlm / 2 + 1))[0:-1, :],
-             np.linspace(point11, point21, int(num_wing_spanwise_vlm / 2 + 1))),
-            axis=0)
-
-        wing_leading_edge = wing.project(leading_edge_points, direction=np.array([-1., 0., 0.]), plot=debug_geom_flag)
-        wing_trailing_edge = wing.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=debug_geom_flag)
-
-        # Chord Surface
-        wing_chord_surface = am.linspace(wing_leading_edge, wing_trailing_edge, num_wing_chordwise_vlm)
-        if debug_geom_flag:
-            spatial_rep.plot_meshes([wing_chord_surface])
-
-        # Upper and lower surface
-        wing_upper_surface_wireframe = wing.project(wing_chord_surface.value + np.array([0., 0., 0.5]),
-                                                    direction=np.array([0., 0., -1.]), grid_search_n=25,
-                                                    plot=debug_geom_flag, max_iterations=200)
-        wing_lower_surface_wireframe = wing.project(wing_chord_surface.value - np.array([0., 0., 0.5]),
-                                                    direction=np.array([0., 0., 1.]), grid_search_n=25,
-                                                    plot=debug_geom_flag, max_iterations=200)
-
-        # Chamber surface
-        wing_camber_surface = am.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1)
-        wing_vlm_mesh_name = 'wing_vlm_mesh'
-        sys_rep.add_output(wing_vlm_mesh_name, wing_camber_surface)
-        if debug_geom_flag:
-            spatial_rep.plot_meshes([wing_camber_surface])
-
-        # OML mesh
-        wing_oml_mesh = am.vstack((wing_upper_surface_wireframe, wing_lower_surface_wireframe))
-        wing_oml_mesh_name = 'wing_oml_mesh'
-        sys_rep.add_output(wing_oml_mesh_name, wing_oml_mesh)
-        if debug_geom_flag:
-            spatial_rep.plot_meshes([wing_oml_mesh])
-    # endregion
-
-    # region Tail
-    if include_tail_flag:
-
-        point00 = np.array([20.713 - 4., 8.474 + 1.5, 0.825 + 1.5])  # * ft2m # Right tip leading edge
-        point01 = np.array([22.916, 8.474, 0.825])  # * ft2m # Right tip trailing edge
-        point10 = np.array([18.085, 0.000, 0.825])  # * ft2m # Center Leading Edge
-        point11 = np.array([23.232, 0.000, 0.825])  # * ft2m # Center Trailing edge
-        point20 = np.array([20.713 - 4., -8.474 - 1.5, 0.825 + 1.5])  # * ft2m # Left tip leading edge
-        point21 = np.array([22.916, -8.474, 0.825])  # * ft2m # Left tip trailing edge
-
-        leading_edge_points = np.linspace(point00, point20, num_htail_vlm)
-        trailing_edge_points = np.linspace(point01, point21, num_htail_vlm)
-
-        leading_edge = htail.project(leading_edge_points, direction=np.array([0., 0., -1.]), plot=debug_geom_flag)
-        trailing_edge = htail.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=debug_geom_flag)
-
-        # Chord Surface
-        htail_chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
-        if debug_geom_flag:
-            spatial_rep.plot_meshes([htail_chord_surface])
-
-        # Upper and lower surface
-        htail_upper_surface_wireframe = htail.project(htail_chord_surface.value + np.array([0., 0., 0.5]),
-                                                      direction=np.array([0., 0., -1.]), grid_search_n=25,
-                                                      plot=debug_geom_flag, max_iterations=200)
-        htail_lower_surface_wireframe = htail.project(htail_chord_surface.value - np.array([0., 0., 0.5]),
-                                                      direction=np.array([0., 0., 1.]), grid_search_n=25,
-                                                      plot=debug_geom_flag, max_iterations=200)
-
-        # Chamber surface
-        htail_camber_surface = am.linspace(htail_upper_surface_wireframe, htail_lower_surface_wireframe, 1)
-        htail_vlm_mesh_name = 'htail_vlm_mesh'
-        sys_rep.add_output(htail_vlm_mesh_name, htail_camber_surface)
-        if debug_geom_flag:
-            spatial_rep.plot_meshes([htail_camber_surface])
-
-        # OML mesh
-        htail_oml_mesh = am.vstack((htail_upper_surface_wireframe, htail_lower_surface_wireframe))
-        htail_oml_mesh_name = 'htail_oml_mesh'
-        sys_rep.add_output(htail_oml_mesh_name, htail_oml_mesh)
-        if debug_geom_flag:
-            spatial_rep.plot_meshes([htail_oml_mesh])
-        # endregion
-    # endregion
-
-    # region Wing Beam Mesh
-    if include_wing_flag and include_wing_beam_flag:
-
-        wing_beam = am.linear_combination(wing_leading_edge, wing_trailing_edge, 1,
-                                          start_weights=np.ones((num_wing_beam_nodes,)) * 0.75,
-                                          stop_weights=np.ones((num_wing_beam_nodes,)) * 0.25)
-        width = am.norm((wing_leading_edge - wing_trailing_edge) * 0.5)
-
-        if debug_geom_flag:
-            spatial_rep.plot_meshes([wing_beam])
-
-        offset = np.array([0, 0, 0.5])
-        top = wing.project(wing_beam.value + offset, direction=np.array([0., 0., -1.]), plot=debug_geom_flag)
-        bot = wing.project(wing_beam.value - offset, direction=np.array([0., 0., 1.]), plot=debug_geom_flag)
-        height = am.norm((top.reshape((-1,3)) - bot.reshape((-1,3))) * 1)
-
-        sys_rep.add_output(name='wing_beam_mesh', quantity=wing_beam)
-        sys_rep.add_output(name='wing_beam_width', quantity=width)
-        sys_rep.add_output(name='wing_beam_height', quantity=height)
-
-        # pass the beam meshes to aframe:
-        beam_mesh = ebbeam.LinearBeamMesh(
-            meshes=dict(
-                wing_beam=wing_beam,
-                wing_beam_width=width,
-                wing_beam_height=height, ))
-
-        # pass the beam meshes to the aframe mass model:
-        beam_mass_mesh = MassMesh(
-            meshes=dict(
-                wing_beam=wing_beam,
-                wing_beam_width=width,
-                wing_beam_height=height, ))
-    # endregion
-
-    if visualize_flag:
-        if include_wing_flag and not include_tail_flag and \
-                not include_tail_actuation_flag and not include_wing_beam_flag:  # Wing-Only VLM Analysis
-            spatial_rep.plot_meshes([wing_camber_surface])
-        elif include_tail_flag and not include_wing_flag:
-            raise NotImplementedError
-        elif include_wing_flag and include_tail_flag and include_tail_actuation_flag \
-                 and not include_wing_beam_flag:  # Trimming
-            spatial_rep.plot_meshes([wing_camber_surface, htail_camber_surface])
-        elif include_wing_flag and not include_tail_flag and not include_tail_actuation_flag \
-                and include_wing_beam_flag:  # Wing-only structural analysis
-            spatial_rep.plot_meshes([wing_camber_surface, wing_beam])
-        else:
-            raise NotImplementedError
-    # endregion
-
-    # region Actuations
-    if include_tail_flag and include_tail_actuation_flag:
-        # Tail FFD
-        htail_geometry_primitives = htail.get_geometry_primitives()
-        htail_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
-            htail_geometry_primitives,
-            num_control_points=(11, 2, 2), order=(4, 2, 2),
-            xyz_to_uvw_indices=(1, 0, 2)
-        )
-        htail_ffd_block = cd.SRBGFFDBlock(name='htail_ffd_block',
-                                          primitive=htail_ffd_bspline_volume,
-                                          embedded_entities=htail_geometry_primitives)
-        htail_ffd_block.add_scale_v(name='htail_linear_taper',
-                                    order=2, num_dof=3, value=np.array([0., 0., 0.]),
-                                    cost_factor=1.)
-        htail_ffd_block.add_rotation_u(name='htail_twist_distribution',
-                                       connection_name='h_tail_act', order=1,
-                                       num_dof=1, value=np.array([np.deg2rad(1.75)]))
-        ffd_set = cd.SRBGFFDSet(
-            name='ffd_set',
-            ffd_blocks={htail_ffd_block.name: htail_ffd_block}
-        )
-        sys_param.add_geometry_parameterization(ffd_set)
-    sys_param.setup()
-    # endregion
-
-    if include_wing_flag and not include_tail_flag and \
-            not include_tail_actuation_flag and not include_wing_beam_flag:  # Wing-Only VLM Analysis
-        return caddee, system_model, sys_rep, sys_param, \
-            wing_vlm_mesh_name, wing_camber_surface
-    elif include_tail_flag and not include_wing_flag:
-        raise NotImplementedError
-    elif include_wing_flag and include_tail_flag and include_tail_actuation_flag \
-            and not include_wing_beam_flag:  # Trimming
-        return caddee, system_model, sys_rep, sys_param, \
-            wing_vlm_mesh_name, wing_camber_surface, \
-            htail_vlm_mesh_name, htail_camber_surface
-    elif include_wing_flag and not include_tail_flag and not include_tail_actuation_flag \
-            and include_wing_beam_flag:  # Wing-only structural analysis
-        return caddee, system_model, sys_rep, sys_param, \
-            wing_vlm_mesh_name, wing_camber_surface, wing_oml_mesh, \
-            wing, beam_mesh, beam_mass_mesh
-    elif include_wing_flag and include_tail_flag and \
-            not include_tail_actuation_flag and not include_wing_beam_flag:  # Wing-Tail VLM Analysis without actuation
-        return caddee, system_model, sys_rep, sys_param, \
-            wing_vlm_mesh_name, wing_camber_surface, \
-            htail_vlm_mesh_name, htail_camber_surface
-    else:
-        raise NotImplementedError
+# def setup_geometry(include_wing_flag=False, num_wing_spanwise_vlm = 21, num_wing_chordwise_vlm = 5,
+#                    include_tail_flag=False, num_htail_vlm = 21, num_chordwise_vlm = 5,
+#                    include_tail_actuation_flag=False,
+#                    include_wing_beam_flag=False, num_wing_beam_nodes=21,
+#                    debug_geom_flag = False, visualize_flag = False):
+#     caddee = cd.CADDEE()
+#     caddee.system_model = system_model = cd.SystemModel()
+#     caddee.system_representation = sys_rep = cd.SystemRepresentation()
+#     caddee.system_parameterization = sys_param = cd.SystemParameterization(system_representation=sys_rep)
+#
+#     # region Geometry
+#     file_name = 'pav.stp'
+#
+#     spatial_rep = sys_rep.spatial_representation
+#     spatial_rep.import_file(file_name=GEOMETRY_FILES_FOLDER / file_name)
+#     spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
+#
+#     # region Lifting surfaces
+#     if include_wing_flag:
+#         # Wing
+#         wing_primitive_names = list(spatial_rep.get_primitives(search_names=['Wing']).keys())
+#         wing = LiftingSurface(name='Wing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)
+#         if debug_geom_flag:
+#             wing.plot()
+#         sys_rep.add_component(wing)
+#
+#     # Horizontal tail
+#     if include_tail_flag:
+#         tail_primitive_names = list(spatial_rep.get_primitives(search_names=['Stabilizer']).keys())
+#         htail = cd.LiftingSurface(name='HTail', spatial_representation=spatial_rep, primitive_names=tail_primitive_names)
+#         if debug_geom_flag:
+#             htail.plot()
+#         sys_rep.add_component(htail)
+#     # endregion
+#
+#     # endregion
+#
+#     # region Meshes
+#
+#     # region Wing
+#     if include_wing_flag:
+#         point00 = np.array([8.796, 14.000, 1.989])  # * ft2m # Right tip leading edge
+#         point01 = np.array([11.300, 14.000, 1.989])  # * ft2m # Right tip trailing edge
+#         point10 = np.array([8.800, 0.000, 1.989])  # * ft2m # Center Leading Edge
+#         point11 = np.array([15.170, 0.000, 1.989])  # * ft2m # Center Trailing edge
+#         point20 = np.array([8.796, -14.000, 1.989])  # * ft2m # Left tip leading edge
+#         point21 = np.array([11.300, -14.000, 1.989])  # * ft2m # Left tip
+#
+#         leading_edge_points = np.concatenate(
+#             (np.linspace(point00, point10, int(num_wing_spanwise_vlm / 2 + 1))[0:-1, :],
+#              np.linspace(point10, point20, int(num_wing_spanwise_vlm / 2 + 1))),
+#             axis=0)
+#         trailing_edge_points = np.concatenate(
+#             (np.linspace(point01, point11, int(num_wing_spanwise_vlm / 2 + 1))[0:-1, :],
+#              np.linspace(point11, point21, int(num_wing_spanwise_vlm / 2 + 1))),
+#             axis=0)
+#
+#         wing_leading_edge = wing.project(leading_edge_points, direction=np.array([-1., 0., 0.]), plot=debug_geom_flag)
+#         wing_trailing_edge = wing.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=debug_geom_flag)
+#
+#         # Chord Surface
+#         wing_chord_surface = am.linspace(wing_leading_edge, wing_trailing_edge, num_wing_chordwise_vlm)
+#         if debug_geom_flag:
+#             spatial_rep.plot_meshes([wing_chord_surface])
+#
+#         # Upper and lower surface
+#         wing_upper_surface_wireframe = wing.project(wing_chord_surface.value + np.array([0., 0., 0.5]),
+#                                                     direction=np.array([0., 0., -1.]), grid_search_n=25,
+#                                                     plot=debug_geom_flag, max_iterations=200)
+#         wing_lower_surface_wireframe = wing.project(wing_chord_surface.value - np.array([0., 0., 0.5]),
+#                                                     direction=np.array([0., 0., 1.]), grid_search_n=25,
+#                                                     plot=debug_geom_flag, max_iterations=200)
+#
+#         # Chamber surface
+#         wing_camber_surface = am.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1)
+#         wing_vlm_mesh_name = 'wing_vlm_mesh'
+#         sys_rep.add_output(wing_vlm_mesh_name, wing_camber_surface)
+#         if debug_geom_flag:
+#             spatial_rep.plot_meshes([wing_camber_surface])
+#
+#         # OML mesh
+#         wing_oml_mesh = am.vstack((wing_upper_surface_wireframe, wing_lower_surface_wireframe))
+#         wing_oml_mesh_name = 'wing_oml_mesh'
+#         sys_rep.add_output(wing_oml_mesh_name, wing_oml_mesh)
+#         if debug_geom_flag:
+#             spatial_rep.plot_meshes([wing_oml_mesh])
+#     # endregion
+#
+#     # region Tail
+#     if include_tail_flag:
+#
+#         point00 = np.array([20.713 - 4., 8.474 + 1.5, 0.825 + 1.5])  # * ft2m # Right tip leading edge
+#         point01 = np.array([22.916, 8.474, 0.825])  # * ft2m # Right tip trailing edge
+#         point10 = np.array([18.085, 0.000, 0.825])  # * ft2m # Center Leading Edge
+#         point11 = np.array([23.232, 0.000, 0.825])  # * ft2m # Center Trailing edge
+#         point20 = np.array([20.713 - 4., -8.474 - 1.5, 0.825 + 1.5])  # * ft2m # Left tip leading edge
+#         point21 = np.array([22.916, -8.474, 0.825])  # * ft2m # Left tip trailing edge
+#
+#         leading_edge_points = np.linspace(point00, point20, num_htail_vlm)
+#         trailing_edge_points = np.linspace(point01, point21, num_htail_vlm)
+#
+#         leading_edge = htail.project(leading_edge_points, direction=np.array([0., 0., -1.]), plot=debug_geom_flag)
+#         trailing_edge = htail.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=debug_geom_flag)
+#
+#         # Chord Surface
+#         htail_chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
+#         if debug_geom_flag:
+#             spatial_rep.plot_meshes([htail_chord_surface])
+#
+#         # Upper and lower surface
+#         htail_upper_surface_wireframe = htail.project(htail_chord_surface.value + np.array([0., 0., 0.5]),
+#                                                       direction=np.array([0., 0., -1.]), grid_search_n=25,
+#                                                       plot=debug_geom_flag, max_iterations=200)
+#         htail_lower_surface_wireframe = htail.project(htail_chord_surface.value - np.array([0., 0., 0.5]),
+#                                                       direction=np.array([0., 0., 1.]), grid_search_n=25,
+#                                                       plot=debug_geom_flag, max_iterations=200)
+#
+#         # Chamber surface
+#         htail_camber_surface = am.linspace(htail_upper_surface_wireframe, htail_lower_surface_wireframe, 1)
+#         htail_vlm_mesh_name = 'htail_vlm_mesh'
+#         sys_rep.add_output(htail_vlm_mesh_name, htail_camber_surface)
+#         if debug_geom_flag:
+#             spatial_rep.plot_meshes([htail_camber_surface])
+#
+#         # OML mesh
+#         htail_oml_mesh = am.vstack((htail_upper_surface_wireframe, htail_lower_surface_wireframe))
+#         htail_oml_mesh_name = 'htail_oml_mesh'
+#         sys_rep.add_output(htail_oml_mesh_name, htail_oml_mesh)
+#         if debug_geom_flag:
+#             spatial_rep.plot_meshes([htail_oml_mesh])
+#         # endregion
+#     # endregion
+#
+#     # region Wing Beam Mesh
+#     if include_wing_flag and include_wing_beam_flag:
+#
+#         wing_beam = am.linear_combination(wing_leading_edge, wing_trailing_edge, 1,
+#                                           start_weights=np.ones((num_wing_beam_nodes,)) * 0.75,
+#                                           stop_weights=np.ones((num_wing_beam_nodes,)) * 0.25)
+#         width = am.norm((wing_leading_edge - wing_trailing_edge) * 0.5)
+#
+#         if debug_geom_flag:
+#             spatial_rep.plot_meshes([wing_beam])
+#
+#         offset = np.array([0, 0, 0.5])
+#         top = wing.project(wing_beam.value + offset, direction=np.array([0., 0., -1.]), plot=debug_geom_flag)
+#         bot = wing.project(wing_beam.value - offset, direction=np.array([0., 0., 1.]), plot=debug_geom_flag)
+#         height = am.norm((top.reshape((-1,3)) - bot.reshape((-1,3))) * 1)
+#
+#         sys_rep.add_output(name='wing_beam_mesh', quantity=wing_beam)
+#         sys_rep.add_output(name='wing_beam_width', quantity=width)
+#         sys_rep.add_output(name='wing_beam_height', quantity=height)
+#
+#         # pass the beam meshes to aframe:
+#         beam_mesh = ebbeam.LinearBeamMesh(
+#             meshes=dict(
+#                 wing_beam=wing_beam,
+#                 wing_beam_width=width,
+#                 wing_beam_height=height, ))
+#
+#         # pass the beam meshes to the aframe mass model:
+#         beam_mass_mesh = MassMesh(
+#             meshes=dict(
+#                 wing_beam=wing_beam,
+#                 wing_beam_width=width,
+#                 wing_beam_height=height, ))
+#     # endregion
+#
+#     if visualize_flag:
+#         if include_wing_flag and not include_tail_flag and \
+#                 not include_tail_actuation_flag and not include_wing_beam_flag:  # Wing-Only VLM Analysis
+#             spatial_rep.plot_meshes([wing_camber_surface])
+#         elif include_tail_flag and not include_wing_flag:
+#             raise NotImplementedError
+#         elif include_wing_flag and include_tail_flag and include_tail_actuation_flag \
+#                  and not include_wing_beam_flag:  # Trimming
+#             spatial_rep.plot_meshes([wing_camber_surface, htail_camber_surface])
+#         elif include_wing_flag and not include_tail_flag and not include_tail_actuation_flag \
+#                 and include_wing_beam_flag:  # Wing-only structural analysis
+#             spatial_rep.plot_meshes([wing_camber_surface, wing_beam])
+#         else:
+#             raise NotImplementedError
+#     # endregion
+#
+#     # region Actuations
+#     if include_tail_flag and include_tail_actuation_flag:
+#         # Tail FFD
+#         htail_geometry_primitives = htail.get_geometry_primitives()
+#         htail_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
+#             htail_geometry_primitives,
+#             num_control_points=(11, 2, 2), order=(4, 2, 2),
+#             xyz_to_uvw_indices=(1, 0, 2)
+#         )
+#         htail_ffd_block = cd.SRBGFFDBlock(name='htail_ffd_block',
+#                                           primitive=htail_ffd_bspline_volume,
+#                                           embedded_entities=htail_geometry_primitives)
+#         htail_ffd_block.add_scale_v(name='htail_linear_taper',
+#                                     order=2, num_dof=3, value=np.array([0., 0., 0.]),
+#                                     cost_factor=1.)
+#         htail_ffd_block.add_rotation_u(name='htail_twist_distribution',
+#                                        connection_name='h_tail_act', order=1,
+#                                        num_dof=1, value=np.array([np.deg2rad(1.75)]))
+#         ffd_set = cd.SRBGFFDSet(
+#             name='ffd_set',
+#             ffd_blocks={htail_ffd_block.name: htail_ffd_block}
+#         )
+#         sys_param.add_geometry_parameterization(ffd_set)
+#     sys_param.setup()
+#     # endregion
+#
+#     if include_wing_flag and not include_tail_flag and \
+#             not include_tail_actuation_flag and not include_wing_beam_flag:  # Wing-Only VLM Analysis
+#         return caddee, system_model, sys_rep, sys_param, \
+#             wing_vlm_mesh_name, wing_camber_surface
+#     elif include_tail_flag and not include_wing_flag:
+#         raise NotImplementedError
+#     elif include_wing_flag and include_tail_flag and include_tail_actuation_flag \
+#             and not include_wing_beam_flag:  # Trimming
+#         return caddee, system_model, sys_rep, sys_param, \
+#             wing_vlm_mesh_name, wing_camber_surface, \
+#             htail_vlm_mesh_name, htail_camber_surface
+#     elif include_wing_flag and not include_tail_flag and not include_tail_actuation_flag \
+#             and include_wing_beam_flag:  # Wing-only structural analysis
+#         return caddee, system_model, sys_rep, sys_param, \
+#             wing_vlm_mesh_name, wing_camber_surface, wing_oml_mesh, \
+#             wing, beam_mesh, beam_mass_mesh
+#     elif include_wing_flag and include_tail_flag and \
+#             not include_tail_actuation_flag and not include_wing_beam_flag:  # Wing-Tail VLM Analysis without actuation
+#         return caddee, system_model, sys_rep, sys_param, \
+#             wing_vlm_mesh_name, wing_camber_surface, \
+#             htail_vlm_mesh_name, htail_camber_surface
+#     else:
+#         raise NotImplementedError
 
 
 def vlm_as_ll():
@@ -277,9 +278,10 @@ def vlm_as_ll():
     pav_geom_mesh = PavGeomMesh()
     pav_geom_mesh.setup_geometry(
         include_wing_flag=True,
+        force_reprojection=force_reprojection
     )
     pav_geom_mesh.vlm_meshes(include_wing_flag=True, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=2,
-                             force_reprojection=True)
+                             force_reprojection=force_reprojection)
 
     caddee.system_representation = sys_rep = pav_geom_mesh.sys_rep
     caddee.system_parameterization = sys_param = pav_geom_mesh.sys_param
@@ -368,10 +370,11 @@ def tuning_cl0(cl0_expected=0.55,
         pav_geom_mesh = PavGeomMesh()
         pav_geom_mesh.setup_geometry(
             include_wing_flag=True,
-            debug_geom_flag=debug_geom_flag
+            debug_geom_flag=debug_geom_flag,
+            force_reprojection=force_reprojection
         )
         pav_geom_mesh.vlm_meshes(include_wing_flag=True, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=5,
-                                 force_reprojection=False, visualize_flag=visualize_flag)
+                                 visualize_flag=visualize_flag, force_reprojection=force_reprojection)
 
         caddee.system_representation = sys_rep = pav_geom_mesh.sys_rep
         caddee.system_parameterization = sys_param = pav_geom_mesh.sys_param
@@ -466,6 +469,7 @@ def vlm_evaluation_wing_only_aoa_sweep(wing_cl0=0.3366):
         pav_geom_mesh = PavGeomMesh()
         pav_geom_mesh.setup_geometry(
             include_wing_flag=True,
+            force_reprojection=force_reprojection
         )
         pav_geom_mesh.vlm_meshes(include_wing_flag=True, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=5,
                                  force_reprojection=False)
@@ -557,11 +561,12 @@ def vlm_evaluation_wing_tail_aoa_sweep(wing_cl0=0.3366,
         pav_geom_mesh.setup_geometry(
             include_wing_flag=True,
             include_htail_flag=True,
-            debug_geom_flag=debug_geom_flag
+            debug_geom_flag=debug_geom_flag,
+            force_reprojection=force_reprojection
         )
         pav_geom_mesh.vlm_meshes(include_wing_flag=True, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=5,
                                  include_htail_flag=True, num_htail_spanwise_vlm=21, num_htail_chordwise_vlm=5,
-                                 force_reprojection=False, visualize_flag=visualize_flag)
+                                 force_reprojection=force_reprojection, visualize_flag=visualize_flag)
 
         caddee.system_representation = sys_rep = pav_geom_mesh.sys_rep
         caddee.system_parameterization = sys_param = pav_geom_mesh.sys_param
@@ -647,9 +652,11 @@ def trim_at_cruise(wing_cl0=0.3366):
     pav_geom_mesh.setup_geometry(
         include_wing_flag=True,
         include_htail_flag=True,
+        force_reprojection=force_reprojection
     )
     pav_geom_mesh.vlm_meshes(include_wing_flag=True, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=5,
-                             include_htail_flag=True, num_htail_spanwise_vlm=21, num_htail_chordwise_vlm=5)
+                             include_htail_flag=True, num_htail_spanwise_vlm=21, num_htail_chordwise_vlm=5,
+                             force_reprojection=force_reprojection)
     pav_geom_mesh.actuations(include_tail_actuation_flag=True)
 
     caddee.system_representation = sys_rep = pav_geom_mesh.sys_rep
@@ -1378,9 +1385,13 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3366,
         include_wing_flag=True,
         include_htail_flag=False,
     )
-    pav_geom_mesh.vlm_meshes(include_wing_flag=True, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=5)
+    pav_geom_mesh.sys_rep.spatial_representation.assemble()
+    pav_geom_mesh.oml_mesh(include_wing_flag=True,
+                           debug_geom_flag=True, force_reprojection=force_reprojection)
+    pav_geom_mesh.vlm_meshes(include_wing_flag=True, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=5,
+                             visualize_flag=visualize_flag, force_reprojection=force_reprojection)
     pav_geom_mesh.beam_mesh(include_wing_flag=True, num_wing_beam_nodes=21,
-                            visualize_flag=visualize_flag, force_reprojection=True)
+                            visualize_flag=visualize_flag, force_reprojection=force_reprojection)
 
     caddee.system_representation = sys_rep = pav_geom_mesh.sys_rep
     caddee.system_parameterization = sys_param = pav_geom_mesh.sys_param
@@ -1436,7 +1447,7 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3366,
         ]
     )
 
-    wing_oml_mesh = pav_geom_mesh.mesh_data['oml']['oml_surface']['wing']
+    wing_oml_mesh = pav_geom_mesh.mesh_data['oml']['oml_geo_nodes']['wing']
     oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=wing_vlm_panel_forces,
                                                   nodal_force_meshes=[wing_oml_mesh, ])
     wing_forces = oml_forces[0]
@@ -1943,14 +1954,44 @@ def structural_wingbox_beam_sizing(wing_cl0=0.3366,
     return
 
 
+def structural_wingbox_shell_evaluation(wing_cl0=0.3366,
+                                       pitch_angle=np.deg2rad(6.),
+                                        visualize_flag=False):
+    caddee = cd.CADDEE()
+    caddee.system_model = system_model = cd.SystemModel()
+
+    # region Geometry and meshes
+    pav_geom_mesh = PavGeomMesh()
+    pav_geom_mesh.setup_geometry(
+        include_wing_flag=True,
+        include_htail_flag=False,
+    )
+    pav_geom_mesh.setup_internal_wingbox_geometry(debug_geom_flag=True,
+                                                  force_reprojection=force_reprojection)
+    pav_geom_mesh.sys_rep.spatial_representation.assemble()
+    pav_geom_mesh.oml_mesh(include_wing_flag=True,
+                           debug_geom_flag=True, force_reprojection=force_reprojection)
+    pav_geom_mesh.vlm_meshes(include_wing_flag=True, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=5,
+                             visualize_flag=visualize_flag, force_reprojection=force_reprojection)
+    pav_geom_mesh.setup_index_functions()
+
+    caddee.system_representation = sys_rep = pav_geom_mesh.sys_rep
+    caddee.system_parameterization = sys_param = pav_geom_mesh.sys_param
+    sys_param.setup()
+    # endregion
+    return
+
+
 if __name__ == '__main__':
     # vlm_as_ll()
     # cl0 = tuning_cl0()
     # vlm_evaluation_wing_only_aoa_sweep()
-    # vlm_evaluation_wing_tail_aoa_sweep(visualize_flag=True)
+    # vlm_evaluation_wing_tail_aoa_sweep()
     # pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
     # trim_at_3g()
-    structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(-0.02403544), visualize_flag=False)
+    # structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.48100761), visualize_flag=False)
     # structural_wingbox_beam_sizing(pitch_angle=np.deg2rad(13.74084308))
+
+    structural_wingbox_shell_evaluation(pitch_angle=np.deg2rad(12.48100761), visualize_flag=True)
 
     # trim_at_hover()
