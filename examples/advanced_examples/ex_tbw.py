@@ -756,9 +756,8 @@ def trim_at_2_point_5g():
     # endregion
 
     # region Propulsion loads
-    from caddee.utils.aircraft_models.tbw.tbw_weights_3g import tbwPropulsionModel1
     ref_pt = np.array([0., 0., 2.8])
-    tbw_left_prop_model = tbwPropulsionModel1()
+    tbw_left_prop_model = tbwPropulsionModel()
     tbw_left_prop_model.set_module_input('thrust_origin', val=np.array([0., 0., 6.256]))
     tbw_left_prop_model.set_module_input('ref_pt', val=ref_pt)
     tbw_left_prop_model.set_module_input('throttle', val = 1., dv_flag=True, lower=0., upper=1.)
@@ -874,7 +873,7 @@ def trim_at_2_point_5g():
     print('throttle', sim['system_model.aircraft_trim.cruise_1.cruise_1.tbw_prop_model.throttle'])
     print('L_over_D',sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.L_over_D'])
 
-def trim_at_1g_beam():
+def structural_wingbox_beam_evaluation():
 
     caddee = cd.CADDEE()
     caddee.system_model = system_model = cd.SystemModel()
@@ -1131,7 +1130,66 @@ def trim_at_1g_beam():
     total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass, cg, I)
 
     # endregion
+    debug_geom_flag = False
+    visualize_flag = False
+    num_wing_beam_nodes = 21
+    r_tip_le = point00  # * ft2m # Right tip leading edge
+    r_tip_te = point01 # * ft2m # Right tip trailing edge
+    root_le = point10 # * ft2m # Center leading edge
+    root_te = point11 # * ft2m # Center trailing edge
+    l_tip_le = point20  # * ft2m # Left tip leading edge
+    l_tip_te = point21 # * ft2m # Left tip trailing edge
 
+    le_offset = np.array([-10, 0, 0])
+
+    leading_edge_points = np.linspace(r_tip_le, l_tip_le, num_wing_beam_nodes)
+    trailing_edge_points = np.vstack((np.linspace(r_tip_te, root_te, int(num_wing_beam_nodes / 2) + 1),
+                                      np.linspace(root_te, l_tip_te, int(num_wing_beam_nodes / 2) + 1)[1:,
+                                              :]))
+
+    wing_leading_edge = wing.project(leading_edge_points + le_offset, direction=np.array([0., 0., -1]),
+                                                plot=debug_geom_flag, force_reprojection = True)
+    wing_trailing_edge = wing.project(trailing_edge_points, direction=np.array([1., 0., 0.]),
+                                                    plot=debug_geom_flag, force_reprojection = True)
+
+
+    wing_beam = am.linear_combination(wing_leading_edge, wing_trailing_edge, 1,
+                                        start_weights=np.ones((num_wing_beam_nodes,)) * 0.75,
+                                        stop_weights=np.ones((num_wing_beam_nodes,)) * 0.25)
+    width = am.norm((wing_leading_edge - wing_trailing_edge) * 0.5)
+
+    if debug_geom_flag:
+                spatial_rep.plot_meshes([wing_beam])
+    offset = np.array([0, 0, 0.5])
+    top = wing.project(wing_beam.value + offset, direction=np.array([0., 0., -1.]), plot=debug_geom_flag)
+    bot = wing.project(wing_beam.value - offset, direction=np.array([0., 0., 1.]), plot=debug_geom_flag)
+    height = am.norm((top.reshape((-1, 3)) - bot.reshape((-1, 3))) * 1)
+
+
+    sys_rep.add_output(name='wing_beam_mesh', quantity=wing_beam)
+    sys_rep.add_output(name='wing_beam_width', quantity=width)
+    sys_rep.add_output(name='wing_beam_height', quantity=height)
+
+    # # pass the beam meshes to aframe:
+    # beam_mesh = ebbeam.LinearBeamMesh(
+    #     meshes=dict(
+    #         wing_beam=wing_beam,
+    #         wing_beam_width=width,
+    #         wing_beam_height=height, ))
+    #         self.mesh_data['beam']['ebbeam'] = beam_mesh
+
+    # # pass the beam meshes to the aframe mass model:
+    # beam_mass_mesh = MassMesh(
+    #     meshes=dict(
+    #         wing_beam=wing_beam,
+    #         wing_beam_width=width,
+    #         wing_beam_height=height, ))
+    # self.mesh_data['beam']['mass'] = beam_mass_mesh
+
+    # if visualize_flag:
+    #             spatial_rep.plot_meshes([wing_beam])    
+    
+    exit()
     # region design scenario
     design_scenario = cd.DesignScenario(name='aircraft_trim')
 
@@ -1213,4 +1271,4 @@ def trim_at_1g_beam():
 if __name__ == '__main__':
     #trim_at_1g()
     trim_at_2_point_5g()
-    #trim_at_1g_beam()
+    #structural_wingbox_beam_evaluation()
