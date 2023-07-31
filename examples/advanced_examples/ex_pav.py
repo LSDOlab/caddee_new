@@ -24,6 +24,7 @@ from caddee import GEOMETRY_FILES_FOLDER
 
 import numpy as np
 import pandas as pd
+import unittest
 
 
 # endregion
@@ -345,9 +346,11 @@ def vlm_as_ll():
     CL = sim[
             'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.total_CL']
     print('CL when VLM is made LL: ', CL)
+    if CL > 0.02:
+        raise ValueError
     return
 
-def tuning_cl0(cl0_expected=0.55,
+def tuning_cl0(cl0_expected=0.57965,
                debug_geom_flag = False, visualize_flag = False):
     """
     Fixing the number of chordwise VLM panels
@@ -452,12 +455,15 @@ def tuning_cl0(cl0_expected=0.55,
     res = minimize(find_cl0, 0.35, method='Nelder-Mead', tol=1e-6)
     print(res)
 
+    if (res.x - 0.3662)**2 > 1e-4:
+        raise ValueError
+
     return res.x
 
 
-def vlm_evaluation_wing_only_aoa_sweep(wing_cl0=0.3366):
-    resolution = 21
-    pitch_angle_range = np.deg2rad(np.linspace(-10, 10, num=resolution))
+def vlm_evaluation_wing_only_aoa_sweep(wing_cl0=0.3662):
+    resolution = 27
+    pitch_angle_range = np.deg2rad(np.linspace(-10, 16, num=resolution))
     CL = np.empty(resolution)
     CD = np.empty(resolution)
 
@@ -545,10 +551,10 @@ def vlm_evaluation_wing_only_aoa_sweep(wing_cl0=0.3366):
     return
 
 
-def vlm_evaluation_wing_tail_aoa_sweep(wing_cl0=0.3366,
+def vlm_evaluation_wing_tail_aoa_sweep(wing_cl0=0.3662,
                                        debug_geom_flag = False, visualize_flag = False):
-    resolution = 21
-    pitch_angle_range = np.deg2rad(np.linspace(-10, 10, num=resolution))
+    resolution = 27
+    pitch_angle_range = np.deg2rad(np.linspace(-10, 16, num=resolution))
     CL = np.empty(resolution)
     CD = np.empty(resolution)
 
@@ -640,7 +646,7 @@ def vlm_evaluation_wing_tail_aoa_sweep(wing_cl0=0.3366,
     print(df)
     return
 
-def trim_at_cruise(wing_cl0=0.3366):
+def trim_at_cruise(wing_cl0=0.3662):
 
     caddee = cd.CADDEE()
     caddee.system_model = system_model = cd.SystemModel()
@@ -825,14 +831,16 @@ def trim_at_cruise(wing_cl0=0.3366):
     optimizer.solve()
     optimizer.print_results()
 
+    pitch_angle = np.rad2deg(sim['system_model.aircraft_trim.cruise_1.cruise_1.cruise_1_ac_states_operation.cruise_1_pitch_angle'])
+    rpm = sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.rpm']
+    tail_actuation = np.rad2deg(sim['system_parameterization.ffd_set.rotational_section_properties_model.h_tail_act'])
+
     print('Trim residual: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual'])
     print('Trim forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_forces'])
     print('Trim moments:', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_moments'])
-    print('Pitch: ', np.rad2deg(
-        sim['system_model.aircraft_trim.cruise_1.cruise_1.cruise_1_ac_states_operation.cruise_1_pitch_angle']))
-    print('RPM: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.rpm'])
-    print('Horizontal tail actuation: ',
-          np.rad2deg(sim['system_parameterization.ffd_set.rotational_section_properties_model.h_tail_act']))
+    print('Pitch: ', pitch_angle)
+    print('RPM: ', rpm)
+    print('Horizontal tail actuation: ', tail_actuation)
 
     print('Cruise propeller efficiency: ',
           sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.induced_velocity_model.eta'])
@@ -844,6 +852,12 @@ def trim_at_cruise(wing_cl0=0.3366):
     print('Cruise prop twist cp: ', twist_cp)
     chord_cp = sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.chord_cp']
     print('Cruise prop chord cp: ', chord_cp)
+
+    tolerence = 1e-4
+    if (pitch_angle - (-0.38129494)) ** 2 > tolerence or \
+            (rpm - 2877.73471511) ** 2 > tolerence or \
+            (tail_actuation - (-0.07463752)) ** 2 > tolerence:
+        raise ValueError
     return twist_cp, chord_cp
 
 
@@ -1371,7 +1385,7 @@ def trim_at_hover(debug_geom_flag=False):
     return
 
 
-def structural_wingbox_beam_evaluation(wing_cl0=0.3366,
+def structural_wingbox_beam_evaluation(wing_cl0=0.3662,
                                        pitch_angle=np.deg2rad(6.),
                                        num_wing_beam_nodes=21,
                                        youngs_modulus=73.1E9, poissons_ratio=0.33, density=2780,  # SI
@@ -1387,7 +1401,7 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3366,
     )
     pav_geom_mesh.sys_rep.spatial_representation.assemble()
     pav_geom_mesh.oml_mesh(include_wing_flag=True,
-                           debug_geom_flag=True, force_reprojection=force_reprojection)
+                           debug_geom_flag=False, force_reprojection=force_reprojection)
     pav_geom_mesh.vlm_meshes(include_wing_flag=True, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=5,
                              visualize_flag=visualize_flag, force_reprojection=force_reprojection)
     pav_geom_mesh.beam_mesh(include_wing_flag=True, num_wing_beam_nodes=21,
@@ -1575,7 +1589,7 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3366,
 
 def trim_at_3g(pusher_prop_twist_cp=np.array([1.10595917, 0.71818285, 0.47990602, 0.35717703]),
                pusher_prop_chord_cp=np.array([0.09891285, 0.15891845, 0.14555978, 0.06686854]),
-               wing_cl0=0.3366):
+               wing_cl0=0.3662):
     caddee = cd.CADDEE()
     caddee.system_model = system_model = cd.SystemModel()
 
@@ -1759,7 +1773,7 @@ def trim_at_3g(pusher_prop_twist_cp=np.array([1.10595917, 0.71818285, 0.47990602
 
     return
 
-def structural_wingbox_beam_sizing(wing_cl0=0.3366,
+def structural_wingbox_beam_sizing(wing_cl0=0.3662,
                                    pitch_angle=np.deg2rad(6.),
                                    num_wing_beam_nodes=21,
                                    youngs_modulus=73.1E9, poissons_ratio=0.33, density=2780, yield_strength=324E6, FoS=1.5,  # SI
@@ -1955,7 +1969,8 @@ def structural_wingbox_beam_sizing(wing_cl0=0.3366,
 
 
 def structural_wingbox_shell_evaluation(wing_cl0=0.3366,
-                                       pitch_angle=np.deg2rad(6.),
+                                        pitch_angle=np.deg2rad(6.),
+                                        debug_geom_flag=False,
                                         visualize_flag=False):
     caddee = cd.CADDEE()
     caddee.system_model = system_model = cd.SystemModel()
@@ -1966,11 +1981,11 @@ def structural_wingbox_shell_evaluation(wing_cl0=0.3366,
         include_wing_flag=True,
         include_htail_flag=False,
     )
-    pav_geom_mesh.setup_internal_wingbox_geometry(debug_geom_flag=True,
+    pav_geom_mesh.setup_internal_wingbox_geometry(debug_geom_flag=debug_geom_flag,
                                                   force_reprojection=force_reprojection)
     pav_geom_mesh.sys_rep.spatial_representation.assemble()
     pav_geom_mesh.oml_mesh(include_wing_flag=True,
-                           debug_geom_flag=True, force_reprojection=force_reprojection)
+                           debug_geom_flag=debug_geom_flag, force_reprojection=force_reprojection)
     pav_geom_mesh.vlm_meshes(include_wing_flag=True, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=5,
                              visualize_flag=visualize_flag, force_reprojection=force_reprojection)
     pav_geom_mesh.setup_index_functions()
@@ -1988,10 +2003,13 @@ if __name__ == '__main__':
     # vlm_evaluation_wing_only_aoa_sweep()
     # vlm_evaluation_wing_tail_aoa_sweep()
     # pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
-    # trim_at_3g()
-    # structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.48100761), visualize_flag=False)
+    # trim_at_3g(
+    #     pusher_prop_twist_cp=pusher_prop_twist_cp,
+    #     pusher_prop_chord_cp=pusher_prop_chord_cp
+    # )
+    structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.11391141), visualize_flag=False)
     # structural_wingbox_beam_sizing(pitch_angle=np.deg2rad(13.74084308))
 
-    structural_wingbox_shell_evaluation(pitch_angle=np.deg2rad(12.48100761), visualize_flag=True)
+    # structural_wingbox_shell_evaluation(pitch_angle=np.deg2rad(12.48100761), visualize_flag=False)
 
     # trim_at_hover()
