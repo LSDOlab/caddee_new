@@ -124,6 +124,9 @@ wing_ffd_block.add_scale_v(name='linear_taper', order=2, num_dof=3, cost_factor=
 wing_ffd_block.add_scale_w(name='constant_thickness_scaling', order=1, num_dof=1)
 wing_ffd_block.add_rotation_u(name='twist_distribution', order=4, num_dof=10,
                               value=1/4*np.array([0., 0.11, 0.22, 0.33, 0.44, 0.44, 0.33, 0.22, 0.11, 0.]))
+wing_ffd_block.set_section_origins(np.array([[0., 0.5],
+                                            [1., 0.5],
+                                            [0.5, 0.5]]))
 
 horizontal_stabilizer_geometry_primitives = horizontal_stabilizer.get_geometry_primitives()
 horizontal_stabilizer_ffd_bspline_volume = create_cartesian_enclosure_volume(horizontal_stabilizer_geometry_primitives,num_control_points=(4, 2, 2),
