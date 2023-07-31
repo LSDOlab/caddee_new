@@ -62,7 +62,7 @@ wing_width = am.norm((leading_edge - trailing_edge)*0.43)
 
 wing_top = wing.project(wing_beam_mesh+np.array([0., 0., 1.]), direction=np.array([0., 0., -1.]), plot=False)
 wing_bot = wing.project(wing_beam_mesh-np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), plot=False)
-wing_height = am.norm((wing_top - wing_bot)*0.75)
+wing_height = am.norm((wing_top.reshape((-1,3)) - wing_bot.reshape((-1,3)))*0.75)
 
 # pass the beam meshes to aframe:
 beam_mesh = LinearBeamMesh(
@@ -159,6 +159,8 @@ cruise_structural_wing_nodal_displacements = beam_displacement_map_model.evaluat
 test = cruise_structural_wing_nodal_displacements + cruise_structural_wing_nodal_forces
 
 cruise_model = m3l.Model()
+cruise_model.define_submodel(name='beam_submodel', input_variables=[cruise_structural_wing_nodal_forces], 
+                             output_variables=[cruise_structural_wing_nodal_displacements])
 cruise_model.register_output(cruise_structural_wing_nodal_displacements)
 cruise_model.register_output(test)
 
@@ -177,11 +179,11 @@ sim.run()
 
 import vedo
 plotter = vedo.Plotter()
-points = vedo.Points(sim['wing_eb_beam_model.wing_beam_displacement'] + wing_beam_mesh.value.reshape((-1,3)))
+points = vedo.Points(sim['beam_submodel.wing_eb_beam_model.wing_beam_displacement'] + wing_beam_mesh.value.reshape((-1,3)))
 plotter.show([points], interactive=True, axes=1)    # Plotting beam solution
 
 plotter = vedo.Plotter()
-plotting_point_cloud = cruise_wing_structural_nodal_displacements_mesh.value.reshape((-1,3)) + sim['wing_eb_beam_displacement_map.wing_beam_nodal_displacement']
+plotting_point_cloud = cruise_wing_structural_nodal_displacements_mesh.value.reshape((-1,3)) + sim['beam_submodel.wing_eb_beam_displacement_map.wing_beam_nodal_displacement']
 points = vedo.Points(plotting_point_cloud)
 plotter.show([points], interactive=True, axes=1)    # Plotting point cloud
 spatial_rep.plot_meshes([plotting_point_cloud.reshape(cruise_wing_structural_nodal_displacements_mesh.shape)],

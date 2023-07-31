@@ -14,8 +14,6 @@ class RotationalSectionPropertiesCSDL(csdl.Model):
     def define(self):
         ffd_set = self.parameters['ffd_set']
         ffd_blocks = ffd_set.ffd_blocks
-
-        # ffd_set.setup(project_points=False)       I want SystemParam to perform setup as CSDL models are instantiated.
         
         # Create variables for free and prescribed dof
         if ffd_set.num_rotational_dof != 0:
@@ -30,7 +28,7 @@ class RotationalSectionPropertiesCSDL(csdl.Model):
             if ffd_block.num_rotational_dof == 0:
                 continue
 
-            for parameter in list(ffd_block.parameters.values()):
+            for parameter_name, parameter in ffd_block.parameters.items():
                 if parameter.property_type != 'rotation_u' \
                     and parameter.property_type != 'rotation_v' \
                     and parameter.property_type != 'rotation_w':
@@ -43,9 +41,11 @@ class RotationalSectionPropertiesCSDL(csdl.Model):
                         dof = self.declare_variable(parameter.connection_name, shape=(parameter.num_dof,))
                 else:
                     if parameter.value is not None:
-                        dof = self.create_input(f'{ffd_block.name}_order_{parameter.order}_{parameter.property_type}', val=parameter.value)
+                        dof = self.create_input(parameter_name, val=parameter.value)
+                        # dof = self.create_input(f'{ffd_block.name}_order_{parameter.order}_{parameter.property_type}', val=parameter.value)
                     else:   # no connection name and no value means it's not prescribed (it's free)
-                        continue
+                        dof = self.create_input(parameter_name, shape=(parameter.num_dof,))
+
                 
                 parameter_ending_index = parameter_starting_index + parameter.num_dof
                 ffd_rotational_dof[parameter_starting_index:parameter_ending_index] = dof
