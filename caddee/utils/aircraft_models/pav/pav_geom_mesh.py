@@ -399,6 +399,9 @@ class PavGeomMesh:
             self.sys_rep.add_output(left_wing_oml_geo_name, left_oml_geo_nodes)
             if debug_geom_flag:
                 spatial_rep.plot_meshes([left_oml_geo_nodes])
+            self.mesh_data['oml']['oml_geo_nodes']['left_wing'] = left_oml_geo_nodes
+            self.mesh_data['oml']['oml_para_nodes']['left_wing'] = left_wing_oml_para_coords
+            self.mesh_data['oml']['mesh_name']['left_wing'] = left_wing_oml_geo_name
             # endregion
 
             # # region OML mesh (geometric)
