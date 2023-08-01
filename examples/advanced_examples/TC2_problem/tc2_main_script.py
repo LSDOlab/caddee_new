@@ -3015,7 +3015,7 @@ system_m3l_model.register_output(inertial_moments, climb_1)
 
 total_forces_moments_model = cd.TotalForcesMomentsM3L()
 # total_forces, total_moments = total_forces_moments_model.evaluate(vlm_F, vlm_M, bem_forces, bem_moments, inertial_forces, inertial_moments, design_condition=climb_1)
-total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment, bem_forces, bem_moments, inertial_forces, inertial_moments)
+total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment, bem_forces, bem_moments, inertial_forces, inertial_moments, design_condition=climb_1)
 system_m3l_model.register_output(total_forces, climb_1)
 system_m3l_model.register_output(total_moments, climb_1)
 
@@ -3058,7 +3058,7 @@ vlm_model = VASTFluidSover(
     fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
     mesh_unit='ft',
     cl0=[0.25, 0.],
-    ML=True,
+    ML=False,
 )
 
 # aero forces and moments
@@ -3066,6 +3066,7 @@ cl_distribution, re_spans, vlm_panel_forces, panel_areas, evaluation_pt, vlm_for
 # vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states, design_condition=cruise_condition)
 system_m3l_model.register_output(vlm_force, design_condition=cruise_condition)
 system_m3l_model.register_output(vlm_moment, design_condition=cruise_condition)
+
 system_m3l_model.register_output(cl_distribution, design_condition=cruise_condition)
 system_m3l_model.register_output(re_spans, design_condition=cruise_condition)
 
@@ -3154,7 +3155,7 @@ system_m3l_model.register_output(inertial_moments, cruise_condition)
 
 total_forces_moments_model = cd.TotalForcesMomentsM3L()
 total_forces, total_moments = total_forces_moments_model.evaluate(vlm_F, vlm_M, bem_forces, bem_moments, inertial_forces, inertial_moments, design_condition=cruise_condition)
-# total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment, bem_forces, bem_moments, inertial_forces, inertial_moments)
+# total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment, bem_forces, bem_moments, inertial_forces, inertial_moments, design_condition=cruise_condition)
 system_m3l_model.register_output(total_forces, cruise_condition)
 system_m3l_model.register_output(total_moments, cruise_condition)
 
@@ -3295,7 +3296,7 @@ system_m3l_model.register_output(inertial_moments, descent_1)
 
 total_forces_moments_model = cd.TotalForcesMomentsM3L()
 # total_forces, total_moments = total_forces_moments_model.evaluate(vlm_F, vlm_M, bem_forces, bem_moments, inertial_forces, inertial_moments, design_condition=descent_1)
-total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment, bem_forces, bem_moments, inertial_forces, inertial_moments)
+total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment, bem_forces, bem_moments, inertial_forces, inertial_moments, design_condition=descent_1)
 system_m3l_model.register_output(total_forces, descent_1)
 system_m3l_model.register_output(total_moments, descent_1)
 
@@ -3815,8 +3816,8 @@ caddee_csdl_model.add_design_variable('hover_1_oei_fli_fro_disk_actuation_2', lo
 # endregion
 
 # region geometric constraints/dvs
-wing_twist = caddee_csdl_model.create_input('wing_twist_distribution', val=np.zeros((10, )))
-caddee_csdl_model.add_design_variable('wing_twist_distribution', lower=np.deg2rad(-2), upper=np.deg2rad(2))
+# wing_twist = caddee_csdl_model.create_input('wing_twist_distribution', val=np.zeros((10, )))
+# caddee_csdl_model.add_design_variable('wing_twist_distribution', lower=np.deg2rad(-2), upper=np.deg2rad(2))
 
 
 # pp_radius = caddee_csdl_model.create_input('pp_radius', val=4.6)
@@ -4097,7 +4098,7 @@ wing_span = (aspect_ratio * wing_area)**0.5
 wing_root_chord = 2 * wing_area/((1 + wing_taper_ratio) * wing_span)
 wing_tip_chord = wing_root_chord * wing_taper_ratio
 
-tm = upstream_model.create_input('tail_moment_arm_input', val=17.23)
+# tm = upstream_model.create_input('tail_moment_arm_input', val=17.23)
 
 tail_area = upstream_model.create_input('tail_area', val=30)
 tail_taper_ratio = upstream_model.create_input('tail_taper_ratio', val=0.6)
@@ -4107,7 +4108,7 @@ upstream_model.add_design_variable('wing_area', upper=250, lower=150, scaler=5e-
 upstream_model.add_design_variable('wing_aspect_ratio', upper=15, lower=9, scaler=1e-1)
 upstream_model.add_design_variable('tail_area', upper=80, lower=10, scaler=5e-2)
 upstream_model.add_design_variable('tail_aspect_ratio', upper=9, lower=1, scaler=1e-1)
-upstream_model.add_design_variable('tail_moment_arm_input', upper=20, lower=14, scaler=5e-2)
+# upstream_model.add_design_variable('tail_moment_arm_input', upper=20, lower=16, scaler=5e-2)
 
 
 
@@ -4127,7 +4128,7 @@ tail_span = (tail_aspect_ratio * tail_area)**0.5
 tail_root_chord = 2 * tail_area/((1 + tail_taper_ratio) * tail_span)
 tail_tip_chord = tail_root_chord * tail_taper_ratio
 
-upstream_model.register_output('tail_moment_arm', tm * 1)
+# upstream_model.register_output('tail_moment_arm', tm * 1)
 upstream_model.register_output('wing_root_chord', wing_root_chord)
 upstream_model.register_output('wing_tip_chord_left', wing_tip_chord)
 upstream_model.register_output('wing_tip_chord_right', wing_tip_chord * 1)
@@ -4151,15 +4152,15 @@ tc2_model.connect('geometry_processing_model.wing_root_chord', 'caddee_csdl_mode
 tc2_model.connect('geometry_processing_model.wing_tip_chord_left', 'caddee_csdl_model.wing_tip_chord_left')
 tc2_model.connect('geometry_processing_model.wing_tip_chord_right', 'caddee_csdl_model.wing_tip_chord_right')
 tc2_model.connect('geometry_processing_model.wing_span', 'caddee_csdl_model.wing_span')
-tc2_model.connect('geometry_processing_model.tail_moment_arm', 'caddee_csdl_model.tail_moment_arm')
+# tc2_model.connect('geometry_processing_model.tail_moment_arm', 'caddee_csdl_model.tail_moment_arm')
 
 tc2_model.connect('geometry_processing_model.tail_root_chord', 'caddee_csdl_model.tail_root_chord')
 tc2_model.connect('geometry_processing_model.tail_tip_chord_left', 'caddee_csdl_model.tail_tip_chord_left')
 tc2_model.connect('geometry_processing_model.tail_tip_chord_right', 'caddee_csdl_model.tail_tip_chord_right')
 tc2_model.connect('geometry_processing_model.tail_span', 'caddee_csdl_model.tail_span')
 
-tc2_model.add_constraint('caddee_csdl_model.system_representation.outputs_model.design_outputs_model.fuselage_length', lower=30, scaler=1e-2)
-tc2_model.connect('caddee_csdl_model.system_representation.outputs_model.design_outputs_model.fuselage_length', 'caddee_csdl_model.system_model.system_m3l_model.m4_regression.fuselage_length')
+# tc2_model.add_constraint('caddee_csdl_model.system_representation.outputs_model.design_outputs_model.fuselage_length', lower=30, scaler=1e-2)
+# tc2_model.connect('caddee_csdl_model.system_representation.outputs_model.design_outputs_model.fuselage_length', 'caddee_csdl_model.system_model.system_m3l_model.m4_regression.fuselage_length')
 tc2_model.connect('geometry_processing_model.wing_area', 'caddee_csdl_model.system_model.system_m3l_model.m4_regression.wing_area')
 tc2_model.connect('geometry_processing_model.tail_area', 'caddee_csdl_model.system_model.system_m3l_model.m4_regression.tail_area')
 
