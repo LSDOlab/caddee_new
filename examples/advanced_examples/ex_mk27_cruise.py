@@ -178,18 +178,6 @@ ppl_right_ffd_block = cd.SRBGFFDBlock(name='ppl_right_ffd_block',
 ppl_right_ffd_block.add_scale_v(name='ppl_right_scale_v',order=1, num_dof=1, cost_factor=1.)
 ppl_right_ffd_block.add_scale_w(name='ppl_right_scale_w', order=1, num_dof=1)
 
-ffd_set = cd.SRBGFFDSet(
-    name='ffd_set',
-    ffd_blocks={ppm_left_ffd_block.name : ppm_left_ffd_block,
-                ppm_right_ffd_block.name : ppm_right_ffd_block,
-                ppu_left_ffd_block.name : ppu_left_ffd_block,
-                ppu_right_ffd_block.name : ppu_right_ffd_block,
-                ppl_left_ffd_block.name : ppl_left_ffd_block,
-                ppl_right_ffd_block.name : ppl_right_ffd_block,
-                }
-)
-sys_param.add_geometry_parameterization(ffd_set)
-sys_param.setup()
 # endregion
 
 
@@ -430,7 +418,25 @@ sys_rep.add_output(f"{ppl_right.parameters['name']}_origin", ppl_right_origin)
 # endregion
 
 # endregion
+ppm_left_radius_1 = am.norm(ppm_left_plane_x/2)
+ppm_left_radius_2 = am.norm(ppm_left_plane_y/2)
+sys_param.add_input(name='ppm_left_radius_1', quantity=ppm_left_radius_1, value=np.array([0.5]))
+sys_param.add_input(name='ppm_left_radius_2', quantity=ppm_left_radius_2, value=np.array([0.5]))
 
+# region setup parameterization
+ffd_set = cd.SRBGFFDSet(
+    name='ffd_set',
+    ffd_blocks={ppm_left_ffd_block.name : ppm_left_ffd_block,
+                ppm_right_ffd_block.name : ppm_right_ffd_block,
+                ppu_left_ffd_block.name : ppu_left_ffd_block,
+                ppu_right_ffd_block.name : ppu_right_ffd_block,
+                ppl_left_ffd_block.name : ppl_left_ffd_block,
+                ppl_right_ffd_block.name : ppl_right_ffd_block,
+                }
+)
+sys_param.add_geometry_parameterization(ffd_set)
+sys_param.setup()
+# endregion
 
 # region Sizing
 mk27_wt = PavMassProperties() # mk27 mass properties??
@@ -468,7 +474,7 @@ cruise_ac_states = cruise_condition.evaluate_ac_states()
 cruise_model.register_output(cruise_ac_states)
 
 # region Propulsion
-pusher_bem_mesh = BEMMesh(
+ppm_left_bem_mesh = BEMMesh(
     airfoil='NACA_4412',
     num_blades=5,
     num_radial=25,
@@ -478,22 +484,22 @@ pusher_bem_mesh = BEMMesh(
     chord_b_spline_rep=True,
     twist_b_spline_rep=True
 )
-bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
-bem_model.set_module_input('rpm', val=4000)
-bem_model.set_module_input('propeller_radius', val=3.97727/2*ft2m)
-bem_model.set_module_input('thrust_vector', val=np.array([1., 0., 0.]))
-bem_model.set_module_input('thrust_origin', val=np.array([19.700, 0., 2.625]))
-bem_model.set_module_input('chord_cp', val=np.linspace(0.2, 0.05, 4),
+ppm_left_bem_model = BEM(disk_prefix='ppm_left', blade_prefix='pp', component=ppm_left, mesh=ppm_left_bem_mesh)
+ppm_left_bem_model.set_module_input('ppm_left_rpm', val=4000)
+ppm_left_bem_model.set_module_input('ppm_left_propeller_radius', val=3.97727/2*ft2m)
+ppm_left_bem_model.set_module_input('ppm_left_thrust_vector', val=np.array([1., 0., 0.]))
+ppm_left_bem_model.set_module_input('ppm_left_thrust_origin', val=np.array([19.700, 0., 2.625]))
+ppm_left_bem_model.set_module_input('ppm_left_chord_cp', val=np.linspace(0.2, 0.05, 4),
                            dv_flag=True,
                            upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]), scaler=1
                            )
-bem_model.set_module_input('twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
+ppm_left_bem_model.set_module_input('ppm_left_twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
                            dv_flag=True,
                            lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
                            )
-bem_forces, bem_moments, _, _, _ = bem_model.evaluate(ac_states=cruise_ac_states)
-cruise_model.register_output(bem_forces)
-cruise_model.register_output(bem_moments)
+ppm_left_bem_forces, ppm_left_bem_moments, _, _, _ = ppm_left_bem_model.evaluate(ac_states=cruise_ac_states)
+cruise_model.register_output(ppm_left_bem_forces)
+cruise_model.register_output(ppm_left_bem_moments)
 # endregion
 
 # region Inertial loads
