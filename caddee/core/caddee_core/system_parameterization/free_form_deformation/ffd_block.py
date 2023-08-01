@@ -77,6 +77,7 @@ class SRBGFFDBlock(FFDBlock):
         self.parameters = parameters.copy()
 
         # attributes that define the FFD block's initial properties for use in transformations
+        self.parametric_section_origins = None
         self.section_origins = None
         self.control_points_section_frame = None
         self.initial_scale_v = None
@@ -125,7 +126,14 @@ class SRBGFFDBlock(FFDBlock):
     
     def embed_entity(self, name:str, entity):
         self.embedded_entities[name] = entity
-        
+
+    
+    def set_section_origins(self, parametric_coordinates:np.ndarray):
+        if len(parametric_coordinates.shape) == 1 and parametric_coordinates.shape[0] == 2:
+            parametric_coordinates = np.tile(parametric_coordinates, (self.num_sections, 1))
+
+        self.parametric_section_origins = parametric_coordinates
+
 
     def add_parameter(self, name:str, parameter:Parameter):
         self.parameters[name] = parameter
@@ -205,6 +213,7 @@ class SRBGFFDBlock(FFDBlock):
         parameter = Parameter(property_type=property_type, order=order, num_dof=num_dof, 
                 value=value, connection_name=connection_name, cost_factor=None)
         self.add_parameter(name=name, parameter=parameter)
+
 
 
     def assemble_affine_section_properties_maps(self):
@@ -351,8 +360,12 @@ class SRBGFFDBlock(FFDBlock):
         parametric_coordinates = self.primitive.project(control_points_reshaped[:,0,0,:], return_parametric_coordinates=True, plot=False)
         u_sections = parametric_coordinates[:,0]
         # u_sections = np.linspace(0., 1., self.num_sections)
-        section_origins_v = np.ones((self.num_sections,))*0.5
-        section_origins_w = np.ones((self.num_sections,))*0.5
+        if self.parametric_section_origins is not None:
+            section_origins_v = self.parametric_section_origins[:,0]
+            section_origins_w = self.parametric_section_origins[:,1]
+        else:
+            section_origins_v = np.ones((self.num_sections,))*0.5
+            section_origins_w = np.ones((self.num_sections,))*0.5
         self.section_origins = self.primitive.evaluate_points(u_sections.copy(), section_origins_v, section_origins_w)
         # get uvw basis
         # -- identifies w axis then v axis since they should be easier to identify (sections should be parallel/normal to the cartesian axes)

@@ -50,7 +50,10 @@ def import_mesh(file, ms, targets=None, component=None, rescale:float=1e-3, remo
         # assign nodes to their cells, cell to a surface in ms
         # TODO: look into vectorization for this
         if targets is None:
-            targets = list(ms.primitives.values())
+            if component is None:
+                targets = list(ms.primitives.values())
+            else:
+                targets = list(component.get_primitives())
         targets = np.array(targets)
         cells = np.array(cells)
         cell_targets = np.full(targets.shape[0], None)
