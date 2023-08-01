@@ -185,18 +185,6 @@ ppl_right_ffd_block = cd.SRBGFFDBlock(name='ppl_right_ffd_block',
 ppl_right_ffd_block.add_scale_v(name='ppl_right_scale_v',order=1, num_dof=1, cost_factor=1.)
 ppl_right_ffd_block.add_scale_w(name='ppl_right_scale_w', order=1, num_dof=1)
 
-ffd_set = cd.SRBGFFDSet(
-    name='ffd_set',
-    ffd_blocks={ppm_left_ffd_block.name : ppm_left_ffd_block,
-                ppm_right_ffd_block.name : ppm_right_ffd_block,
-                ppu_left_ffd_block.name : ppu_left_ffd_block,
-                ppu_right_ffd_block.name : ppu_right_ffd_block,
-                ppl_left_ffd_block.name : ppl_left_ffd_block,
-                ppl_right_ffd_block.name : ppl_right_ffd_block,
-                }
-)
-sys_param.add_geometry_parameterization(ffd_set)
-sys_param.setup()
 # endregion
 
 # region pusher prop (pp) meshes
@@ -307,7 +295,30 @@ ppl_right_radius_2 = am.norm(ppl_right_plane_y/2)
 sys_param.add_input(name='ppl_right_radius_1', quantity=ppl_right_radius_1, value=np.array([0.5]))
 sys_param.add_input(name='ppl_right_radius_2', quantity=ppl_right_radius_2, value=np.array([0.5]))
 
+ffd_set = cd.SRBGFFDSet(
+    name='ffd_set',
+    ffd_blocks={ppm_left_ffd_block.name : ppm_left_ffd_block,
+                ppm_right_ffd_block.name : ppm_right_ffd_block,
+                ppu_left_ffd_block.name : ppu_left_ffd_block,
+                ppu_right_ffd_block.name : ppu_right_ffd_block,
+                ppl_left_ffd_block.name : ppl_left_ffd_block,
+                ppl_right_ffd_block.name : ppl_right_ffd_block,
+                }
+)
+sys_param.add_geometry_parameterization(ffd_set)
+sys_param.setup()
 
+# TEMPORARY
+system_representation_model = sys_rep.assemble_csdl()
+system_parameterization_model = sys_param.assemble_csdl()
+
+my_model = csdl.Model()
+my_model.add(system_parameterization_model, 'system_parameterization')
+my_model.add(system_representation_model, 'system_representation')
+
+sim = Simulator(my_model, analytics=True, display_scripts=True)
+sim.run()
+exit()
 # removed blade meshes, twist
 
 # design scenario
