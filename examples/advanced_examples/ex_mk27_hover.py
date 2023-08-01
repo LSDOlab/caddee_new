@@ -204,6 +204,7 @@ sys_rep.add_output(f"{ppm_left.parameters['name']}_origin", ppm_left_origin)
 
 #right
 y11 = ppm_right.project(np.array([2.5,2.57,0]), direction=np.array([-1., 0., 0.]), plot=False)
+y12 = ppm_left.project(np.array([2.5,2.57,0]), direction=np.array([-1., 0., 0.]), plot=False)
 y21 = ppm_right.project(np.array([2.5,1.75,0.82]), direction=np.array([-1., 0., 0.]), plot=False)
 y22 = ppm_right.project(np.array([2.5,1.75,-0.82]), direction=np.array([-1., 0., 0.]), plot=False)
 ppm_right_plane_y = am.subtract(y11, y12)
