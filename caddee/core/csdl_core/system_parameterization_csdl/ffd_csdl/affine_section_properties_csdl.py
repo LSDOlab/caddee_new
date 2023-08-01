@@ -28,7 +28,6 @@ class AffineSectionPropertiesCSDL(csdl.Model):
             ffd_free_dof = self.declare_variable('ffd_free_dof', val=ffd_set.free_affine_dof)
             free_section_properties_map = ffd_set.free_affine_section_properties_map
         if num_affine_prescribed_dof != 0:
-            # ffd_prescribed_dof = self.create_output(f'ffd_prescribed_dof', shape=(num_affine_prescribed_dof,))
             ffd_prescribed_dof = self.create_output(f'ffd_prescribed_dof', val=ffd_set.prescribed_affine_dof)
             prescribed_affine_section_properties_map = ffd_set.prescribed_affine_section_properties_map
 
@@ -38,7 +37,7 @@ class AffineSectionPropertiesCSDL(csdl.Model):
             if ffd_block.num_affine_prescribed_dof == 0:
                 continue
 
-            for parameter in list(ffd_block.parameters.values()):
+            for parameter_name, parameter in ffd_block.parameters.items():
                 if parameter.property_type == 'rotation_u' \
                     or parameter.property_type == 'rotation_v' \
                     or parameter.property_type == 'rotation_w':
@@ -51,9 +50,11 @@ class AffineSectionPropertiesCSDL(csdl.Model):
                         dof = self.declare_variable(parameter.connection_name, shape=(parameter.num_dof,))
                 else:
                     if parameter.value is not None:
-                        dof = self.create_input(f'{ffd_block.name}_order_{parameter.order}_{parameter.property_type}', val=parameter.value)
+                        dof = self.create_input(parameter_name, val=parameter.value)
+                        # dof = self.create_input(f'{ffd_block.name}_order_{parameter.order}_{parameter.property_type}', val=parameter.value)
                     else:   # no connection name and no value means it's not prescribed (it's free)
-                        continue
+                        dof = self.create_input(parameter_name, shape=(parameter.num_dof,))
+
                 
                 parameter_ending_index = parameter_starting_index + parameter.num_dof
                 ffd_prescribed_dof[parameter_starting_index:parameter_ending_index] = dof

@@ -12,6 +12,7 @@ class RotationalBlockDeformationsCSDL(csdl.Model):
 
     def define(self):
         ffd_set = self.parameters['ffd_set']
+
         rotational_section_properties = self.declare_variable('ffd_rotational_section_properties', val=ffd_set.rotational_section_properties)
         translations_flattened = self.declare_variable('ffd_translations', val=ffd_set.translations)
         # translations = csdl.reshape(translations_flattened, (ffd_set.num_sections, 3))  # 3 translational properties # NOTE: This reshapes in wrong order.
@@ -32,6 +33,12 @@ class RotationalBlockDeformationsCSDL(csdl.Model):
             ending_index_control_points = starting_index_control_points + ffd_block.num_control_points
             ending_index_sections = starting_index_sections + ffd_block.num_sections
             ending_index_section_properties = starting_index_section_properties + ffd_block.num_sections*ffd_block.num_rotational_properties
+
+            if ffd_block.num_rotational_dof == 0:
+                rotated_control_points[starting_index_control_points:ending_index_control_points,:] = affine_deformed_control_points[starting_index_control_points:ending_index_control_points,:]*1.
+                starting_index_control_points = ending_index_control_points
+                starting_index_sections = ending_index_sections
+                continue
 
             ffd_block_affine_deformed_control_points = affine_deformed_control_points[starting_index_control_points:ending_index_control_points,:]
             ffd_block_translations = translations[starting_index_sections:ending_index_sections,:]
