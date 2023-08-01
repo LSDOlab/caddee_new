@@ -3058,7 +3058,7 @@ vlm_model = VASTFluidSover(
     fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
     mesh_unit='ft',
     cl0=[0.25, 0.],
-    ML=False,
+    ML=True,
 )
 
 # aero forces and moments
@@ -4237,7 +4237,7 @@ prob = CSDLProblem(problem_name='TC_2_problem_full_mdo', simulator=sim)
 
 optimizer = SNOPT(
     prob, 
-    Major_iterations=200, 
+    Major_iterations=1000, 
     Major_optimality=1e-5, 
     Major_feasibility=1e-5,
     append2file=True,
