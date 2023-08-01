@@ -281,7 +281,7 @@ htail_forces = oml_forces[1]
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=2000, scaler=1e-3)
-bem_forces, bem_moments,_ ,_ ,_,_ = bem_model.evaluate(ac_states=ac_states, design_condition=cruise_condition)
+bem_forces, bem_moments,_ ,_ ,_,_,_,_ = bem_model.evaluate(ac_states=ac_states, design_condition=cruise_condition)
 
 system_m3l_model.register_output(bem_forces, design_condition=cruise_condition)
 system_m3l_model.register_output(bem_moments, design_condition=cruise_condition)
@@ -350,7 +350,7 @@ import csdl
 upstream_model = csdl.Model()
 wing_area = upstream_model.create_input('wing_area', val=200.)
 wing_taper_ratio = upstream_model.create_input('wing_taper_ratio', val=0.45)
-aspect_ratio = upstream_model.create_input('wing_aspect_ratio', val=13)
+aspect_ratio = upstream_model.create_input('wing_aspect_ratio', val=20)
 
 wing_span = (aspect_ratio * wing_area)**0.5
 wing_root_chord = 2 * wing_area/((1 + wing_taper_ratio) * wing_span)
@@ -400,6 +400,20 @@ upstream_model.register_output('tail_span', tail_span)
 tc2_model = csdl.Model()
 tc2_model.add(submodel=upstream_model, name='geometry_processing_model', promotes=[])
 tc2_model.add(submodel=caddee_csdl_model, name='caddee_csdl_model', promotes=[])
+
+
+
+tc2_model.connect('geometry_processing_model.wing_root_chord', 'caddee_csdl_model.wing_root_chord')
+tc2_model.connect('geometry_processing_model.wing_tip_chord_left', 'caddee_csdl_model.wing_tip_chord_left')
+tc2_model.connect('geometry_processing_model.wing_tip_chord_right', 'caddee_csdl_model.wing_tip_chord_right')
+tc2_model.connect('geometry_processing_model.wing_span', 'caddee_csdl_model.wing_span')
+tc2_model.connect('geometry_processing_model.tail_moment_arm', 'caddee_csdl_model.tail_moment_arm')
+
+tc2_model.connect('geometry_processing_model.tail_root_chord', 'caddee_csdl_model.tail_root_chord')
+tc2_model.connect('geometry_processing_model.tail_tip_chord_left', 'caddee_csdl_model.tail_tip_chord_left')
+tc2_model.connect('geometry_processing_model.tail_tip_chord_right', 'caddee_csdl_model.tail_tip_chord_right')
+tc2_model.connect('geometry_processing_model.tail_span', 'caddee_csdl_model.tail_span')
+
 # endregion
 
 # run commond: mpirun -n 2 python tc2_main_script

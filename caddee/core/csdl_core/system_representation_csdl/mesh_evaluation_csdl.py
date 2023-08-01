@@ -101,7 +101,8 @@ class NonlinearOutputsOperation(csdl.CustomExplicitOperation):
 
         self.add_output(name=mesh_name, val=mesh.value)
 
-        self.declare_derivatives('*','*')
+        # self.declare_derivatives('*','*')
+        self.declare_derivatives(mesh_name,'system_representation_geometry')
 
 
     def compute(self, inputs, outputs):

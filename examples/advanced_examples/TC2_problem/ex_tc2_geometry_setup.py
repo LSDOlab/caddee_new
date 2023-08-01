@@ -341,9 +341,20 @@ fuselage_ffd_block.add_translation_w(name='fuselage_tw', order=1, num_dof=1) # t
 vtail_geometry_primitives = vtail.get_geometry_primitives()
 vtail_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(vtail_geometry_primitives, num_control_points=(2, 2, 2), order=(2,2,2), xyz_to_uvw_indices=(2,1,0))
 vtail_ffd_block = cd.SRBGFFDBlock(name='vtail_ffd_block', primitive=vtail_ffd_bspline_volume, embedded_entities=vtail_geometry_primitives)
-vtail_ffd_block.add_translation_u(name='vtail_tu', order=1, num_dof=1) # to use inner optimization, don't specify 'connection_name' and 'val'
-vtail_ffd_block.add_translation_v(name='vtail_tv', order=1, num_dof=1) # to use inner optimization, don't specify 'connection_name' and 'val'
+vtail_ffd_block.add_translation_u(name='vtail_tu', order=2, num_dof=2) # to use inner optimization, don't specify 'connection_name' and 'val'
+vtail_ffd_block.add_translation_v(name='vtail_tv', order=2, num_dof=2) # to use inner optimization, don't specify 'connection_name' and 'val'
 vtail_ffd_block.add_translation_w(name='vtail_tw', order=1, num_dof=1) # to use inner optimization, don't specify 'connection_name' and 'val'
+
+
+# vtail_root_1 = vtail.project(np.array([30.543, 0., 8.231]))
+# vtail_root_2 = vtail.project(np.array([20.843, 0., 8.231]))
+# vtail_root_chord = am.norm(vtail_root_1 - vtail_root_2)
+
+# vtail_tip_1 = vtail.project(np.array([32.065, 0., 13.911]))
+# vtail_tip_2 = vtail.project(np.array([29.434, 0., 13.911]))
+# vtail_tip_chord = am.norm(vtail_tip_1 - vtail_tip_2)
+
+# vtail_height_2 = am.norm(vtail_tip_1 - vtail_root_1)
 
 wing_te_fuselage_am = fuselage.project(np.array([14.332, 0.0, 8.429]))
 fuselage_vtail_le_am = fuselage.project(np.array([20.843, 0.000, 8.231]))
@@ -371,6 +382,17 @@ fuselage_front = fuselage.project(np.array([1.889, 0.000, 4.249]))
 fuselage_rear = fuselage.project(np.array([31.889, 0.000, 7.798]))
 feslage_length = am.norm(fuselage_front-fuselage_rear)
 lpc_rep.add_output('fuselage_length', feslage_length)
+
+# vtail_tip_chord_fus_ratio = vtail_tip_chord/feslage_length
+# vtail_root_chord_fus_ratio = vtail_root_chord/feslage_length
+# vtail_height_fus_ratio = vtail_height_2/feslage_length
+
+
+# lpc_param.add_input('vtail_tip_chord_fus_ratio', vtail_tip_chord/feslage_length)
+# lpc_param.add_input('vtail_tip_chord_fus_ratio', vtail_root_chord/feslage_length)
+# lpc_param.add_input('vtail_height_fus_ratio', vtail_height_2/feslage_length)
+
+
 # endregion
 
 # region Pusher prop

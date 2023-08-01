@@ -76,6 +76,10 @@ class ConfigurationOutputsModel(csdl.Model):
                 configuration_geometry = configuration_geometry_tensor*1
 
             configuration_geometry_t = self.register_output(f'{configuration_name}_geometry_{t}', configuration_geometry)
+
+            configuration_geometry_t_norm = csdl.pnorm(configuration_geometry_t)
+            self.register_output(f'{configuration_name}_geometry_{t}_norm', configuration_geometry_t_norm)
+
             nonlinear_outputs = csdl.custom(configuration_geometry_t,
                                     op=NonlinearOutputsOperation(configuration_name=configuration_name, configuration=configuration, t=t))
             nonlinear_outputs_list.append(nonlinear_outputs)
@@ -173,7 +177,11 @@ class NonlinearOutputsOperation(csdl.CustomExplicitOperation):
             if type(output) is am.NonlinearMappedArray:
                 self.add_output(name=output_name+f'_{t}', val=output.value)
 
-        self.declare_derivatives('*','*')
+        # self.declare_derivatives('*','*')
+
+        for output_name, output in geo_outputs.items():
+            if type(output) is am.NonlinearMappedArray:
+                self.declare_derivatives(output_name+f'_{t}',f'{configuration_name}_geometry_{t}')
 
 
     def compute(self, inputs, outputs):
@@ -217,7 +225,8 @@ class NonlinearOutputsOperation(csdl.CustomExplicitOperation):
         for output_name, output in geo_outputs.items():
 
             if type(output) is am.NonlinearMappedArray:
-                derivatives[output_name+f'_{t}', f'{configuration_name}_geometry'] = output.evaluate_derivative(input)
+                derivatives[output_name+f'_{t}', f'{configuration_name}_geometry_{t}'] = output.evaluate_derivative(input)
+                # print(f'partials {output_name}', derivatives[output_name+f'_{t}', f'{configuration_name}_geometry'], np.linalg.norm( derivatives[output_name+f'_{t}', f'{configuration_name}_geometry']), np.max( derivatives[output_name+f'_{t}', f'{configuration_name}_geometry']), np.min( derivatives[output_name+f'_{t}', f'{configuration_name}_geometry']))
 
 
 if __name__ == "__main__":
