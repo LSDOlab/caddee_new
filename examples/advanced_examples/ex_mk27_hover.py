@@ -92,41 +92,79 @@ do_plots=False
 
 # region pusher prop (pp) meshes
 
-# disk: middle
-y11 = ppm.project(np.array([2.5,-.93,0]), direction=np.array([-1., 0., 0.]), plot=False)
-y12 = ppm.project(np.array([2.5,-2.57,0]), direction=np.array([-1., 0., 0.]), plot=False)
-y21 = ppm.project(np.array([2.5,-1.75,0.82]), direction=np.array([-1., 0., 0.]), plot=False)
-y22 = ppm.project(np.array([2.5,-1.75,-0.82]), direction=np.array([-1., 0., 0.]), plot=False)
-ppm_plane_y = am.subtract(y11, y12)
-ppm_plane_x = am.subtract(y21, y22)
-ppm_origin = ppm.project(np.array([2.5,-1.75,0]), direction=np.array([-1., 0., 0.]))
-sys_rep.add_output(f"{ppm.parameters['name']}_in_plane_1", ppm_plane_y)
-sys_rep.add_output(f"{ppm.parameters['name']}_in_plane_2", ppm_plane_x)
-sys_rep.add_output(f"{ppm.parameters['name']}_origin", ppm_origin)
+# disk: middle 
+#left
+y11 = ppm_left.project(np.array([2.5,-.93,0]), direction=np.array([-1., 0., 0.]), plot=False)
+y12 = ppm_left.project(np.array([2.5,-2.57,0]), direction=np.array([-1., 0., 0.]), plot=False)
+y21 = ppm_left.project(np.array([2.5,-1.75,0.82]), direction=np.array([-1., 0., 0.]), plot=False)
+y22 = ppm_left.project(np.array([2.5,-1.75,-0.82]), direction=np.array([-1., 0., 0.]), plot=False)
+ppm_left_plane_y = am.subtract(y11, y12)
+ppm_left_plane_x = am.subtract(y21, y22)
+ppm_left_origin = ppm.project(np.array([2.5,-1.75,0]), direction=np.array([-1., 0., 0.]))
+sys_rep.add_output(f"{ppm_left.parameters['name']}_in_plane_1", ppm_left_plane_y)
+sys_rep.add_output(f"{ppm_left.parameters['name']}_in_plane_2", ppm_left_plane_x)
+sys_rep.add_output(f"{ppm_left.parameters['name']}_origin", ppm_left_origin)
+
+#right
+y11 = ppm_right.project(np.array([2.5,2.57,0]), direction=np.array([-1., 0., 0.]), plot=False)
+y21 = ppm_right.project(np.array([2.5,1.75,0.82]), direction=np.array([-1., 0., 0.]), plot=False)
+y22 = ppm_right.project(np.array([2.5,1.75,-0.82]), direction=np.array([-1., 0., 0.]), plot=False)
+ppm_right_plane_y = am.subtract(y11, y12)
+ppm_right_plane_x = am.subtract(y21, y22)
+ppm_right_origin = ppm.project(np.array([2.5,1.75,0]), direction=np.array([-1., 0., 0.]))
+sys_rep.add_output(f"{ppm_right.parameters['name']}_in_plane_1", ppm_right_plane_y)
+sys_rep.add_output(f"{ppm_right.parameters['name']}_in_plane_2", ppm_right_plane_x)
+sys_rep.add_output(f"{ppm_right.parameters['name']}_origin", ppm_right_origin)
 
 # disk: uppers
-y11 = ppu.project(np.array([3.976,1.458,2.193]), direction=np.array([-.683,-0.259,0.683]), plot=False)
-y12 = ppu.project(np.array([3.024,0.842,1.007]), direction=np.array([-.683,-0.259,0.683]), plot=False)
-y21 = ppu.project(np.array([3.136,1.88,1.513]), direction=np.array([-.683,-0.259,0.683]), plot=False)
-y22 = ppu.project(np.array([3.846,0.42,1.687]), direction=np.array([-.683,-0.259,0.683]), plot=False)
-ppu_plane_y = am.subtract(y11, y12)
-ppu_plane_x = am.subtract(y21, y22)
-ppu_origin = ppm.project(np.array([3.5,1.15,1.6]), direction=np.array([-.683,-0.259,0.683]))
-sys_rep.add_output(f"{ppu.parameters['name']}_in_plane_1", ppu_plane_y)
-sys_rep.add_output(f"{ppu.parameters['name']}_in_plane_2", ppu_plane_x)
-sys_rep.add_output(f"{ppu.parameters['name']}_origin", ppu_origin)
+#left
+y11 = ppu_left.project(np.array([3.976,-1.458,2.193]), direction=np.array([-.683,0.259,0.683]), plot=False)
+y12 = ppu_left.project(np.array([3.024,-0.842,1.007]), direction=np.array([-.683,0.259,0.683]), plot=False)
+y21 = ppu_left.project(np.array([3.136,-1.88,1.513]), direction=np.array([-.683,0.259,0.683]), plot=False)
+y22 = ppu_left.project(np.array([3.846,-0.42,1.687]), direction=np.array([-.683,0.259,0.683]), plot=False)
+ppu_left_plane_y = am.subtract(y11, y12)
+ppu_left_plane_x = am.subtract(y21, y22)
+ppu_left_origin = ppm.project(np.array([3.5,-1.15,1.6]), direction=np.array([-.683,0.259,0.683]))
+sys_rep.add_output(f"{ppu_left.parameters['name']}_in_plane_1", ppu_left_plane_y)
+sys_rep.add_output(f"{ppu_left.parameters['name']}_in_plane_2", ppu_left_plane_x)
+sys_rep.add_output(f"{ppu_left.parameters['name']}_origin", ppu_left_origin)
+
+#right
+y11 = ppu_right.project(np.array([3.976,1.458,2.193]), direction=np.array([-.683,-0.259,0.683]), plot=False)
+y12 = ppu_right.project(np.array([3.024,0.842,1.007]), direction=np.array([-.683,-0.259,0.683]), plot=False)
+y21 = ppu_right.project(np.array([3.136,1.88,1.513]), direction=np.array([-.683,-0.259,0.683]), plot=False)
+y22 = ppu_right.project(np.array([3.846,0.42,1.687]), direction=np.array([-.683,-0.259,0.683]), plot=False)
+ppu_right_plane_y = am.subtract(y11, y12)
+ppu_right_plane_x = am.subtract(y21, y22)
+ppu_right_origin = ppm.project(np.array([3.5,1.15,1.6]), direction=np.array([-.683,-0.259,0.683]))
+sys_rep.add_output(f"{ppu_right.parameters['name']}_in_plane_1", ppu_right_plane_y)
+sys_rep.add_output(f"{ppu_right.parameters['name']}_in_plane_2", ppu_right_plane_x)
+sys_rep.add_output(f"{ppu_right.parameters['name']}_origin", ppu_right_origin)
 
 # disk: lowers
-y11 = ppl.project(np.array([1.66,0.775,-1.03]), direction=np.array([-0.75,0.5,0.433]), plot=False)
-y12 = ppl.project(np.array([0.84,0.775,-2.45]), direction=np.array([-0.75,0.5,0.433]), plot=False)
-y21 = ppl.project(np.array([0.895,0.065,-1.535]), direction=np.array([-0.75,0.5,0.433]), plot=False)
-y22 = ppl.project(np.array([1.605,1.485,-1.945]), direction=np.array([-0.75,0.5,0.433]), plot=False)
-ppl_plane_y = am.subtract(y11, y12)
-ppl_plane_x = am.subtract(y21, y22)
-ppl_origin = ppl.project(np.array([1.25,0.775,-1.74]), direction=np.array([-0.75,0.5,0.433]))
-sys_rep.add_output(f"{ppm.parameters['name']}_in_plane_1", ppl_plane_y)
-sys_rep.add_output(f"{ppm.parameters['name']}_in_plane_2", ppl_plane_x)
-sys_rep.add_output(f"{ppm.parameters['name']}_origin", ppl_origin)
+#left
+y11 = ppl_left.project(np.array([1.66,-0.775,-1.03]), direction=np.array([-0.75,0.5,0.433]), plot=False)
+y12 = ppl_left.project(np.array([0.84,-0.775,-2.45]), direction=np.array([-0.75,0.5,0.433]), plot=False)
+y21 = ppl_left.project(np.array([0.895,-0.065,-1.535]), direction=np.array([-0.75,0.5,0.433]), plot=False)
+y22 = ppl_left.project(np.array([1.605,-1.485,-1.945]), direction=np.array([-0.75,0.5,0.433]), plot=False)
+ppl_left_plane_y = am.subtract(y11, y12)
+ppl_left_plane_x = am.subtract(y21, y22)
+ppl_left_origin = ppl_left.project(np.array([1.25,0.775,-1.74]), direction=np.array([-0.75,0.5,0.433]))
+sys_rep.add_output(f"{ppm.parameters['name']}_in_plane_1", ppl_left_plane_y)
+sys_rep.add_output(f"{ppm.parameters['name']}_in_plane_2", ppl_left_plane_x)
+sys_rep.add_output(f"{ppm.parameters['name']}_origin", ppl_left_origin)
+
+#right
+y11 = ppl_right.project(np.array([1.66,0.775,-1.03]), direction=np.array([-0.75,-0.5,0.433]), plot=False)
+y12 = ppl_right.project(np.array([0.84,0.775,-2.45]), direction=np.array([-0.75,-0.5,0.433]), plot=False)
+y21 = ppl_right.project(np.array([0.895,0.065,-1.535]), direction=np.array([-0.75,-0.5,0.433]), plot=False)
+y22 = ppl_right.project(np.array([1.605,1.485,-1.945]), direction=np.array([-0.75,-0.5,0.433]), plot=False)
+ppl_right_plane_y = am.subtract(y11, y12)
+ppl_right_plane_x = am.subtract(y21, y22)
+ppl_right_origin = ppl_right.project(np.array([1.25,-0.775,-1.74]), direction=np.array([-0.75,-0.5,0.433]))
+sys_rep.add_output(f"{ppl_right.parameters['name']}_in_plane_1", pplr_plane_y)
+sys_rep.add_output(f"{ppl_right.parameters['name']}_in_plane_2", pplr_plane_x)
+sys_rep.add_output(f"{ppl_right.parameters['name']}_origin", pplr_origin)
 
 # endregion
 
@@ -139,15 +177,15 @@ design_scenario = cd.DesignScenario(name='aircraft_hover')
 hover_model = m3l.Model()
 hover_condition = cd.CruiseCondition(name="hover_1")
 hover_condition.atmosphere_model = cd.SimpleAtmosphereModel()
-hover_condition.set_module_input(name='altitude', val=1000)
-hover_condition.set_module_input(name='mach_number', val=0.17, dv_flag=True, lower=0.17, upper=0.19)
-hover_condition.set_module_input(name='range', val=40000)
-hover_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=0., upper=np.deg2rad(10))
+hover_condition.set_module_input(name='altitude', val=0)
+hover_condition.set_module_input(name='mach_number', val=0, dv_flag=True, lower=0, upper=0)
+hover_condition.set_module_input(name='range', val=0)
+hover_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=0., upper=np.deg2rad(0))
 hover_condition.set_module_input(name='flight_path_angle', val=0)
 hover_condition.set_module_input(name='roll_angle', val=0)
 hover_condition.set_module_input(name='yaw_angle', val=0)
 hover_condition.set_module_input(name='wind_angle', val=0)
-hover_condition.set_module_input(name='observer_location', val=np.array([0, 0, 500]))
+hover_condition.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
 
 ac_states = hover_condition.evaluate_ac_states()
 hover_condition.register_output(ac_states)
@@ -169,9 +207,9 @@ pusher_bem_mesh = BEMMesh(
     mesh_units='ft'
 )
 
-bem_model = BEM(disk_prefix='ppu', blade_prefix='pp', component=ppu, mesh=pusher_bem_mesh)
-bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=2000, scaler=1e-3)
-bem_forces, bem_moments, _, _, _ = bem_model.evaluate(ac_states=ac_states)
+bem_model_mid = BEM(disk_prefix='ppu', blade_prefix='pp', component=ppu, mesh=pusher_bem_mesh)
+bem_model_mid.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=2000, scaler=1e-3)
+bem_forces, bem_moments, _, _, _ = bem_model_mid.evaluate(ac_states=ac_states)
 
 # create the aframe dictionaries:
 joints, bounds, beams = {}, {}, {}
