@@ -1,0 +1,20 @@
+Motor-only optimizations: 
+Hover (sizing the hover motors) -> STORE DIAMETER, LENGTH AND RPM 
+- objective: 3.791578860411431
+- fro: D = 0.08, L = 0.05, rpm = 970.56478254
+- flo: D = 0.08, L = 0.05, rpm = 883.37865766
+- rro: D = 0.08, L = 0.05, rpm = 763.07426595
+- rlo: D = 0.08, L = 0.05, rpm = 872.35981661
+- fri: D = 0.08, L = 0.05, rpm = 1032.14236676
+- fli: D = 0.08, L = 0.05, rpm = 1034.44227989
+- rri: D = 0.08, L = 0.05, rpm = 808.61425089
+- rli: D = 0.08, L = 0.05, rpm = 808.06516804
+
+Climb (sizing the pusher motor) -> SUCCESSFUL
+- objective: 3.7888307652437168
+- pp motor: diameter = 0.08, length = 0.05
+- pp prop: 1428.81484397 RPM
+- pitch angle: 0.10777456
+- tail actuation: -0.09659968
+
+NOTE: The motor dimensions will always approach the lower bound.

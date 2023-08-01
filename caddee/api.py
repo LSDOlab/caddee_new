@@ -25,6 +25,10 @@ from caddee.core.csdl_core.system_model_csdl.mass_properties_csdl.constant_mass_
 from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.loads_csdl.inertial_loads_csdl import InertialLoadsM3L
 from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.loads_csdl.total_forces_moments_csdl import TotalForcesMomentsM3L
 
+from caddee.core.csdl_core.system_model_csdl.energy_group_csdl.design_condition_energy_m3l import EnergyModelM3L
+from caddee.core.csdl_core.system_model_csdl.energy_group_csdl.total_energy_m3l import TotalEnergyModelM3L
+from caddee.core.csdl_core.system_model_csdl.energy_group_csdl.final_SoC_m3l import SOCModelM3L
+
 from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_functions import create_cartesian_enclosure_volume
 from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock
 from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_set import SRBGFFDSet

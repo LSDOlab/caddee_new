@@ -217,7 +217,7 @@ class NonlinearOutputsOperation(csdl.CustomExplicitOperation):
         for output_name, output in geo_outputs.items():
 
             if type(output) is am.NonlinearMappedArray:
-                derivatives[output_name+f'_{t}', f'{configuration_name}_geometry'] = output.evaluate_derivative(input)
+                derivatives[output_name+f'_{t}', f'{configuration_name}_geometry_{t}'] = output.evaluate_derivative(input)
 
 
 if __name__ == "__main__":

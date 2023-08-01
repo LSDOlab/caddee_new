@@ -112,6 +112,8 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
         self.register_module_output('x', x * 1)
         self.register_module_output('y', y * 1)
         self.register_module_output('z', z * 1)
+
+        self.register_module_output('time', time * 1)
         return
 
 
@@ -157,6 +159,8 @@ class HoverConditionCSDL(SteadyDesignConditionCSDL):
         self.register_module_output('x', x * 1)
         self.register_module_output('y', y * 1)
         self.register_module_output('z', z * 1)
+        
+        self.register_module_output('time', t * 1.)
         return
 
 
@@ -191,7 +195,7 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
 
             V = cg / csdl.sin(gamma)
             self.register_module_output(f'{climb_name}_speed', V)
-            raise Exception("This part of if-else has not been tested")
+            raise Exception("This part of if-else has not been tested. Time needs to be computed as well.")
         elif set(['mach_number', 'pitch_angle', 'initial_altitude', 'final_altitude', 'time']).issubset(climb_module.inputs):
             a = self.register_module_input(f'{climb_name}_speed_of_sound', shape=(1,))
             M = self.register_module_input(f'{climb_name}_mach_number', shape=(1,), computed_upstream=False)
@@ -257,6 +261,8 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
         self.register_module_output('x', x * 1)
         self.register_module_output('y', y * 1)
         self.register_module_output('z', z * 1)
+        
+        self.register_module_output('time', t * 1.)
         return
 
         
