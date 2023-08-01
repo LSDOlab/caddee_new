@@ -173,6 +173,8 @@ class NonlinearOutputsOperation(csdl.CustomExplicitOperation):
             if type(output) is am.NonlinearMappedArray:
                 self.add_output(name=output_name+f'_{t}', val=output.value)
 
+        # NOTE TO SELF: Might want to replace the '*' api with looping because this method doesn't throw errors
+        # and there was also the bug in the implicit operation which makes this sketchy.
         self.declare_derivatives('*','*')
 
 
