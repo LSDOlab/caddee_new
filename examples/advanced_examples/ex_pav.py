@@ -31,7 +31,7 @@ import unittest
 
 
 ft2m = 0.3048
-force_reprojection = False
+force_reprojection = True
 
 # def setup_geometry(include_wing_flag=False, num_wing_spanwise_vlm = 21, num_wing_chordwise_vlm = 5,
 #                    include_tail_flag=False, num_htail_vlm = 21, num_chordwise_vlm = 5,
@@ -861,7 +861,145 @@ def trim_at_cruise(wing_cl0=0.3662):
     return twist_cp, chord_cp
 
 
-def trim_at_hover(debug_geom_flag=False):
+def optimize_lift_rotor_blade(expected_thrust=980.665,
+                              debug_geom_flag=True):
+    caddee = cd.CADDEE()
+    caddee.system_model = system_model = cd.SystemModel()
+    caddee.system_representation = sys_rep = cd.SystemRepresentation()
+    caddee.system_parameterization = sys_param = cd.SystemParameterization(system_representation=sys_rep)
+
+    # region Geometry
+    file_name = 'pav.stp'
+
+    spatial_rep = sys_rep.spatial_representation
+    spatial_rep.import_file(file_name=GEOMETRY_FILES_FOLDER / file_name)
+    spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
+
+    # region Rotors
+    # region Lift rotor: Right 1
+    lr_r1_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropRight1']).keys())
+    lr_r1_disk = cd.Rotor(name='lr_r1_disk',
+                          spatial_representation=spatial_rep,
+                          primitive_names=lr_r1_disk_prim_names)
+    if debug_geom_flag:
+        lr_r1_disk.plot()
+    sys_rep.add_component(lr_r1_disk)
+    # endregion
+    # endregion
+    # endregion
+
+    # region Sizing
+    pav_wt = PavMassProperties()
+    mass, cg, I = pav_wt.evaluate()
+
+    total_mass_properties = cd.TotalMassPropertiesM3L()
+    total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass, cg, I)
+    # endregion
+
+    # region Mission
+
+    design_scenario = cd.DesignScenario(name='aircraft_trim')
+
+    # region Hover condition
+    hover_model = m3l.Model()
+    hover_condition = cd.HoverCondition(name="hover")
+    hover_condition.atmosphere_model = cd.SimpleAtmosphereModel()
+    hover_condition.set_module_input(name='altitude', val=50 * ft2m)
+    hover_condition.set_module_input(name='hover_time', val=30)  # 30 seconds
+    hover_condition.set_module_input(name='observer_location', val=np.array([0, 0, 50 * ft2m]))
+
+    hover_ac_states = hover_condition.evaluate_ac_states()
+    hover_model.register_output(hover_ac_states)
+
+    # region Propulsion Loads: Lift Rotor Right 1
+    lr_r1_bem_mesh = BEMMesh(
+        airfoil='NACA_4412',
+        num_blades=2,
+        num_cp=4,
+        num_radial=25,
+        use_airfoil_ml=False,
+        use_rotor_geometry=False,
+        mesh_units='m',
+        chord_b_spline_rep=True,
+        twist_b_spline_rep=True
+    )
+    lr_r1_bem_model = BEM(disk_prefix='lr_r1_disk', blade_prefix='lr_r1',
+                          component=lr_r1_disk,
+                          mesh=lr_r1_bem_mesh)
+    lr_r1_bem_model.set_module_input('rpm', val=2000)
+    lr_r1_bem_model.set_module_input('propeller_radius', val=5.17045 / 2 * ft2m)
+    lr_r1_bem_model.set_module_input('thrust_vector', val=np.array([0., 0., -1.]))
+    lr_r1_bem_model.set_module_input('thrust_origin', val=np.array([-1.146, 1.619, -0.162]))  # m
+    lr_r1_bem_model.set_module_input('chord_cp', val=np.array([0.24830086, 0.14683384, 0.1215227, 0.05676139]),
+                                     dv_flag=True,
+                                     upper=np.array([0.3, 0.3, 0.3, 0.3]), lower=np.array([0.05, 0.05, 0.02, 0.02]),
+                                     scaler=1
+                                     )
+    lr_r1_bem_model.set_module_input('twist_cp', val=np.array([0.43293954, 0.37960366, 0.21316869, 0.13607267]),
+                                     dv_flag=True,
+                                     lower=np.deg2rad(0), upper=np.deg2rad(85), scaler=1
+                                     )
+    lr_r1_bem_forces, lr_r1_bem_moments, _, _, _, _ = lr_r1_bem_model.evaluate(ac_states=hover_ac_states)
+    hover_model.register_output(lr_r1_bem_forces)
+    hover_model.register_output(lr_r1_bem_moments)
+    # endregion
+
+    # Total loads
+    total_forces_moments_model = cd.TotalForcesMomentsM3L()
+    total_forces, total_moments = total_forces_moments_model.evaluate(
+        lr_r1_bem_forces, lr_r1_bem_moments
+    )
+    hover_model.register_output(total_forces)
+    hover_model.register_output(total_moments)
+
+    # Add hover m3l model to hover condition
+    hover_condition.add_m3l_model('hover_model', hover_model)
+
+    # Add design condition to design scenario
+    design_scenario.add_design_condition(hover_condition)
+    # endregion
+
+    system_model.add_design_scenario(design_scenario=design_scenario)
+    # endregion
+
+    caddee_csdl_model = caddee.assemble_csdl()
+
+    expected_thrust = caddee_csdl_model.create_input(name='expected_thrust', val=expected_thrust)
+    computed_thrust = caddee_csdl_model.declare_variable(name='computed_thrust')
+    caddee_csdl_model.connect('system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.T', 'computed_thrust')
+    thrust_residual = (computed_thrust + -1*expected_thrust)**2
+    caddee_csdl_model.register_output(name='thrust_residual', var=thrust_residual)
+
+    # # region Optimization Setup
+    caddee_csdl_model.add_objective('thrust_residual', scaler=1e-4)
+    caddee_csdl_model.add_constraint(
+        name='system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.induced_velocity_model.FOM',
+        lower=0.75)
+
+    # Create and run simulator
+    sim = Simulator(caddee_csdl_model, analytics=True)
+    sim.run()
+
+    prob = CSDLProblem(problem_name='lpc', simulator=sim)
+    optimizer = SLSQP(prob, maxiter=250, ftol=1E-5)
+    optimizer.solve()
+    optimizer.print_results()
+
+    print('Total forces (N): ', sim['system_model.aircraft_trim.hover.hover.total_forces_moments_model.total_forces'])
+    print('Thrust (N): ', sim['system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.T'])
+    print('FoM: ', sim['system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.induced_velocity_model.FOM'])
+    print('Top-level model computed thrust (N):', sim['computed_thrust'])
+    print('Top-level model expected thrust (N):', sim['expected_thrust'])
+    print('Thrust residual: ', sim['thrust_residual'])
+    print('Twist cp: ', sim['system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.twist_cp'])
+    print('Chord cp: ', sim['system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.chord_cp'])
+
+    return
+
+
+def trim_at_hover(chord_cp=np.array([0.24830086, 0.14683384, 0.1215227, 0.05676139]),
+                  twist_cp=np.array([0.43293954, 0.37960366, 0.21316869, 0.13607267]),
+                  debug_geom_flag=False):
     caddee = cd.CADDEE()
     caddee.system_model = system_model = cd.SystemModel()
     caddee.system_representation = sys_rep = cd.SystemRepresentation()
@@ -1004,19 +1142,12 @@ def trim_at_hover(debug_geom_flag=False):
     lr_r1_bem_model = BEM(disk_prefix='lr_r1_disk', blade_prefix='lr_r1', 
                     component=lr_r1_disk, 
                     mesh=lr_r1_bem_mesh)
-    lr_r1_bem_model.set_module_input('rpm', val=2000, lower=500, upper=3000, scaler=1e-3, dv_flag=True)
+    lr_r1_bem_model.set_module_input('rpm', val=2000, lower=1900, upper=2100, scaler=1e-3, dv_flag=True)
     lr_r1_bem_model.set_module_input('propeller_radius', val=5.17045 / 2 * ft2m)
     lr_r1_bem_model.set_module_input('thrust_vector', val=np.array([0., 0., -1.]))
-    lr_r1_bem_model.set_module_input('thrust_origin', val=np.array([-3.000, 5.313, -0.530]))
-    lr_r1_bem_model.set_module_input('chord_cp', val=np.linspace(0.2, 0.05, 4),
-                               dv_flag=True,
-                               upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]),
-                               scaler=1
-                               )
-    lr_r1_bem_model.set_module_input('twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
-                               dv_flag=True,
-                               lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
-                               )
+    lr_r1_bem_model.set_module_input('thrust_origin', val=np.array([-1.146, 1.619, -0.162]))  # m
+    lr_r1_bem_model.set_module_input('chord_cp', val=chord_cp)
+    lr_r1_bem_model.set_module_input('twist_cp', val=twist_cp)
     lr_r1_bem_forces, lr_r1_bem_moments, _, _, _, _ = lr_r1_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_r1_bem_forces)
     hover_model.register_output(lr_r1_bem_moments)
@@ -1036,19 +1167,12 @@ def trim_at_hover(debug_geom_flag=False):
     lr_r2_bem_model = BEM(disk_prefix='lr_r2_disk', blade_prefix='lr_r2',
                           component=lr_r2_disk,
                           mesh=lr_r2_bem_mesh)
-    lr_r2_bem_model.set_module_input('rpm', val=2000, lower=500, upper=3000, scaler=1e-3, dv_flag=True)
+    lr_r2_bem_model.set_module_input('rpm', val=2000, lower=1900, upper=2100, scaler=1e-3, dv_flag=True)
     lr_r2_bem_model.set_module_input('propeller_radius', val=5.17045 / 2 * ft2m)
     lr_r2_bem_model.set_module_input('thrust_vector', val=np.array([0., 0., -1.]))
-    lr_r2_bem_model.set_module_input('thrust_origin', val=np.array([3.500, 5.313, -0.530]))
-    lr_r2_bem_model.set_module_input('chord_cp', val=np.linspace(0.2, 0.05, 4),
-                                     dv_flag=True,
-                                     upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]),
-                                     scaler=1
-                                     )
-    lr_r2_bem_model.set_module_input('twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
-                                     dv_flag=True,
-                                     lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
-                                     )
+    lr_r2_bem_model.set_module_input('thrust_origin', val=np.array([1.597, 1.619, -0.162]))  # m
+    lr_r2_bem_model.set_module_input('chord_cp', val=chord_cp)
+    lr_r2_bem_model.set_module_input('twist_cp', val=twist_cp)
     lr_r2_bem_forces, lr_r2_bem_moments, _, _, _, _ = lr_r2_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_r2_bem_forces)
     hover_model.register_output(lr_r2_bem_moments)
@@ -1068,19 +1192,12 @@ def trim_at_hover(debug_geom_flag=False):
     lr_r3_bem_model = BEM(disk_prefix='lr_r3_disk', blade_prefix='lr_r3',
                           component=lr_r3_disk,
                           mesh=lr_r3_bem_mesh)
-    lr_r3_bem_model.set_module_input('rpm', val=2000, lower=500, upper=3000, scaler=1e-3, dv_flag=True)
+    lr_r3_bem_model.set_module_input('rpm', val=2000, lower=1900, upper=2100, scaler=1e-3, dv_flag=True)
     lr_r3_bem_model.set_module_input('propeller_radius', val=5.17045 / 2 * ft2m)
     lr_r3_bem_model.set_module_input('thrust_vector', val=np.array([0., 0., -1.]))
-    lr_r3_bem_model.set_module_input('thrust_origin', val=np.array([16.000, 5.313, -0.530]))
-    lr_r3_bem_model.set_module_input('chord_cp', val=np.linspace(0.2, 0.05, 4),
-                                     dv_flag=True,
-                                     upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]),
-                                     scaler=1
-                                     )
-    lr_r3_bem_model.set_module_input('twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
-                                     dv_flag=True,
-                                     lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
-                                     )
+    lr_r3_bem_model.set_module_input('thrust_origin', val=np.array([4.877, 1.619, -0.162]))  # m
+    lr_r3_bem_model.set_module_input('chord_cp', val=chord_cp)
+    lr_r3_bem_model.set_module_input('twist_cp', val=twist_cp)
     lr_r3_bem_forces, lr_r3_bem_moments, _, _, _, _ = lr_r3_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_r3_bem_forces)
     hover_model.register_output(lr_r3_bem_moments)
@@ -1100,19 +1217,12 @@ def trim_at_hover(debug_geom_flag=False):
     lr_r4_bem_model = BEM(disk_prefix='lr_r4_disk', blade_prefix='lr_r4',
                           component=lr_r4_disk,
                           mesh=lr_r4_bem_mesh)
-    lr_r4_bem_model.set_module_input('rpm', val=2000, lower=500, upper=3000, scaler=1e-3, dv_flag=True)
+    lr_r4_bem_model.set_module_input('rpm', val=2000, lower=1900, upper=2100, scaler=1e-3, dv_flag=True)
     lr_r4_bem_model.set_module_input('propeller_radius', val=5.17045 / 2 * ft2m)
     lr_r4_bem_model.set_module_input('thrust_vector', val=np.array([0., 0., -1.]))
-    lr_r4_bem_model.set_module_input('thrust_origin', val=np.array([25.000, 5.313, -0.530]))
-    lr_r4_bem_model.set_module_input('chord_cp', val=np.linspace(0.2, 0.05, 4),
-                                     dv_flag=True,
-                                     upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]),
-                                     scaler=1
-                                     )
-    lr_r4_bem_model.set_module_input('twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
-                                     dv_flag=True,
-                                     lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
-                                     )
+    lr_r4_bem_model.set_module_input('thrust_origin', val=np.array([7.620, 1.619, -0.162]))  # m
+    lr_r4_bem_model.set_module_input('chord_cp', val=chord_cp)
+    lr_r4_bem_model.set_module_input('twist_cp', val=twist_cp)
     lr_r4_bem_forces, lr_r4_bem_moments, _, _, _, _ = lr_r4_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_r4_bem_forces)
     hover_model.register_output(lr_r4_bem_moments)
@@ -1132,19 +1242,12 @@ def trim_at_hover(debug_geom_flag=False):
     lr_l1_bem_model = BEM(disk_prefix='lr_l1_disk', blade_prefix='lr_l1',
                           component=lr_l1_disk,
                           mesh=lr_l1_bem_mesh)
-    lr_l1_bem_model.set_module_input('rpm', val=2000, lower=500, upper=3000, scaler=1e-3, dv_flag=True)
+    lr_l1_bem_model.set_module_input('rpm', val=2000, lower=1900, upper=2100, scaler=1e-3, dv_flag=True)
     lr_l1_bem_model.set_module_input('propeller_radius', val=5.17045 / 2 * ft2m)
     lr_l1_bem_model.set_module_input('thrust_vector', val=np.array([0., 0., -1.]))
-    lr_l1_bem_model.set_module_input('thrust_origin', val=np.array([-3.000, -5.313, -0.530]))
-    lr_l1_bem_model.set_module_input('chord_cp', val=np.linspace(0.2, 0.05, 4),
-                                     dv_flag=True,
-                                     upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]),
-                                     scaler=1
-                                     )
-    lr_l1_bem_model.set_module_input('twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
-                                     dv_flag=True,
-                                     lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
-                                     )
+    lr_l1_bem_model.set_module_input('thrust_origin', val=np.array([-1.146, -1.619, -0.162]))  # m
+    lr_l1_bem_model.set_module_input('chord_cp', val=chord_cp)
+    lr_l1_bem_model.set_module_input('twist_cp', val=twist_cp)
     lr_l1_bem_forces, lr_l1_bem_moments, _, _, _, _ = lr_l1_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_l1_bem_forces)
     hover_model.register_output(lr_l1_bem_moments)
@@ -1164,19 +1267,12 @@ def trim_at_hover(debug_geom_flag=False):
     lr_l2_bem_model = BEM(disk_prefix='lr_l2_disk', blade_prefix='lr_l2',
                           component=lr_l2_disk,
                           mesh=lr_l2_bem_mesh)
-    lr_l2_bem_model.set_module_input('rpm', val=2000, lower=500, upper=3000, scaler=1e-3, dv_flag=True)
+    lr_l2_bem_model.set_module_input('rpm', val=2000, lower=1900, upper=2100, scaler=1e-3, dv_flag=True)
     lr_l2_bem_model.set_module_input('propeller_radius', val=5.17045 / 2 * ft2m)
     lr_l2_bem_model.set_module_input('thrust_vector', val=np.array([0., 0., -1.]))
-    lr_l2_bem_model.set_module_input('thrust_origin', val=np.array([3.500, -5.313, -0.530]))
-    lr_l2_bem_model.set_module_input('chord_cp', val=np.linspace(0.2, 0.05, 4),
-                                     dv_flag=True,
-                                     upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]),
-                                     scaler=1
-                                     )
-    lr_l2_bem_model.set_module_input('twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
-                                     dv_flag=True,
-                                     lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
-                                     )
+    lr_l2_bem_model.set_module_input('thrust_origin', val=np.array([1.597, -1.619, -0.162]))  # m
+    lr_l2_bem_model.set_module_input('chord_cp', val=chord_cp)
+    lr_l2_bem_model.set_module_input('twist_cp', val=twist_cp)
     lr_l2_bem_forces, lr_l2_bem_moments, _, _, _, _ = lr_l2_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_l2_bem_forces)
     hover_model.register_output(lr_l2_bem_moments)
@@ -1196,19 +1292,12 @@ def trim_at_hover(debug_geom_flag=False):
     lr_l3_bem_model = BEM(disk_prefix='lr_l3_disk', blade_prefix='lr_l3',
                           component=lr_l3_disk,
                           mesh=lr_l3_bem_mesh)
-    lr_l3_bem_model.set_module_input('rpm', val=2000, lower=500, upper=3000, scaler=1e-3, dv_flag=True)
+    lr_l3_bem_model.set_module_input('rpm', val=2000, lower=1900, upper=2100, scaler=1e-3, dv_flag=True)
     lr_l3_bem_model.set_module_input('propeller_radius', val=5.17045 / 2 * ft2m)
     lr_l3_bem_model.set_module_input('thrust_vector', val=np.array([0., 0., -1.]))
-    lr_l3_bem_model.set_module_input('thrust_origin', val=np.array([16.000, -5.313, -0.530]))
-    lr_l3_bem_model.set_module_input('chord_cp', val=np.linspace(0.2, 0.05, 4),
-                                     dv_flag=True,
-                                     upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]),
-                                     scaler=1
-                                     )
-    lr_l3_bem_model.set_module_input('twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
-                                     dv_flag=True,
-                                     lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
-                                     )
+    lr_l3_bem_model.set_module_input('thrust_origin', val=np.array([4.877, -1.619, -0.162]))  # m
+    lr_l3_bem_model.set_module_input('chord_cp', val=chord_cp)
+    lr_l3_bem_model.set_module_input('twist_cp', val=twist_cp)
     lr_l3_bem_forces, lr_l3_bem_moments, _, _, _, _ = lr_l3_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_l3_bem_forces)
     hover_model.register_output(lr_l3_bem_moments)
@@ -1228,19 +1317,12 @@ def trim_at_hover(debug_geom_flag=False):
     lr_l4_bem_model = BEM(disk_prefix='lr_l4_disk', blade_prefix='lr_l4',
                           component=lr_l4_disk,
                           mesh=lr_l4_bem_mesh)
-    lr_l4_bem_model.set_module_input('rpm', val=2000, lower=500, upper=3000, scaler=1e-3, dv_flag=True)
+    lr_l4_bem_model.set_module_input('rpm', val=2000, lower=1900, upper=2100, scaler=1e-3, dv_flag=True)
     lr_l4_bem_model.set_module_input('propeller_radius', val=5.17045 / 2 * ft2m)
     lr_l4_bem_model.set_module_input('thrust_vector', val=np.array([0., 0., -1.]))
-    lr_l4_bem_model.set_module_input('thrust_origin', val=np.array([25.000, -5.313, -0.530]))
-    lr_l4_bem_model.set_module_input('chord_cp', val=np.linspace(0.2, 0.05, 4),
-                                     dv_flag=True,
-                                     upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]),
-                                     scaler=1
-                                     )
-    lr_l4_bem_model.set_module_input('twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
-                                     dv_flag=True,
-                                     lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
-                                     )
+    lr_l4_bem_model.set_module_input('thrust_origin', val=np.array([7.620, -1.619, -0.162]))  # m
+    lr_l4_bem_model.set_module_input('chord_cp', val=chord_cp)
+    lr_l4_bem_model.set_module_input('twist_cp', val=twist_cp)
     lr_l4_bem_forces, lr_l4_bem_moments, _, _, _, _ = lr_l4_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_l4_bem_forces)
     hover_model.register_output(lr_l4_bem_moments)
@@ -1249,14 +1331,14 @@ def trim_at_hover(debug_geom_flag=False):
     # Total loads
     total_forces_moments_model = cd.TotalForcesMomentsM3L()
     total_forces, total_moments = total_forces_moments_model.evaluate(
-        # lr_r1_bem_forces, lr_r1_bem_moments,
-        # lr_r2_bem_forces, lr_r2_bem_moments,
-        # lr_r3_bem_forces, lr_r3_bem_moments,
-        # lr_r4_bem_forces, lr_r4_bem_moments,
-        # lr_l1_bem_forces, lr_l1_bem_moments,
-        # lr_l2_bem_forces, lr_l2_bem_moments,
-        # lr_l3_bem_forces, lr_l3_bem_moments,
-        # lr_l4_bem_forces, lr_l4_bem_moments,
+        lr_r1_bem_forces, lr_r1_bem_moments,
+        lr_r2_bem_forces, lr_r2_bem_moments,
+        lr_r3_bem_forces, lr_r3_bem_moments,
+        lr_r4_bem_forces, lr_r4_bem_moments,
+        lr_l1_bem_forces, lr_l1_bem_moments,
+        lr_l2_bem_forces, lr_l2_bem_moments,
+        lr_l3_bem_forces, lr_l3_bem_moments,
+        lr_l4_bem_forces, lr_l4_bem_moments,
         inertial_forces, inertial_moments
     )
     hover_model.register_output(total_forces)
@@ -1287,8 +1369,8 @@ def trim_at_hover(debug_geom_flag=False):
 
     caddee_csdl_model = caddee.assemble_csdl()
 
-    # # region Optimization Setup
-    # caddee_csdl_model.add_objective('system_model.aircraft_trim.hover.hover.euler_eom_gen_ref_pt.trim_residual')
+    # region Optimization Setup
+    caddee_csdl_model.add_objective('system_model.aircraft_trim.hover.hover.euler_eom_gen_ref_pt.trim_residual')
     #
     # caddee_csdl_model.create_output(
     #     name='dss', val=9.
@@ -1340,47 +1422,47 @@ def trim_at_hover(debug_geom_flag=False):
     sim = Simulator(caddee_csdl_model, analytics=True)
     sim.run()
 
-    # prob = CSDLProblem(problem_name='lpc', simulator=sim)
-    # optimizer = SLSQP(prob, maxiter=1000, ftol=1E-10)
-    # optimizer.solve()
-    # optimizer.print_results()
+    prob = CSDLProblem(problem_name='lpc', simulator=sim)
+    optimizer = SLSQP(prob, maxiter=1000, ftol=1E-10)
+    optimizer.solve()
+    optimizer.print_results()
 
     print('Trim residual: ', sim['system_model.aircraft_trim.hover.hover.euler_eom_gen_ref_pt.trim_residual'])
 
     print('Total forces: ', sim['system_model.aircraft_trim.hover.hover.euler_eom_gen_ref_pt.total_forces'])
     print('Total moments:', sim['system_model.aircraft_trim.hover.hover.euler_eom_gen_ref_pt.total_moments'])
 
-    # print('Lift rotor right 1 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.rpm'])
-    # print('Lift rotor right 1 FoM: ',
-    #       sim['system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.induced_velocity_model.FOM'])
-    #
-    # print('Lift rotor right 2 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r2_disk_bem_model.rpm'])
-    # print('Lift rotor right 2 FoM: ',
-    #       sim['system_model.aircraft_trim.hover.hover.lr_r2_disk_bem_model.induced_velocity_model.FOM'])
-    #
-    # print('Lift rotor right 3 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r3_disk_bem_model.rpm'])
-    # print('Lift rotor right 3 FoM: ',
-    #       sim['system_model.aircraft_trim.hover.hover.lr_r3_disk_bem_model.induced_velocity_model.FOM'])
-    #
-    # print('Lift rotor right 4 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r4_disk_bem_model.rpm'])
-    # print('Lift rotor right 4 FoM: ',
-    #       sim['system_model.aircraft_trim.hover.hover.lr_r4_disk_bem_model.induced_velocity_model.FOM'])
-    #
-    # print('Lift rotor left 1 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l1_disk_bem_model.rpm'])
-    # print('Lift rotor left 1 FoM: ',
-    #       sim['system_model.aircraft_trim.hover.hover.lr_l1_disk_bem_model.induced_velocity_model.FOM'])
-    #
-    # print('Lift rotor left 2 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l2_disk_bem_model.rpm'])
-    # print('Lift rotor left 2 FoM: ',
-    #       sim['system_model.aircraft_trim.hover.hover.lr_l2_disk_bem_model.induced_velocity_model.FOM'])
-    #
-    # print('Lift rotor left 3 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l3_disk_bem_model.rpm'])
-    # print('Lift rotor left 3 FoM: ',
-    #       sim['system_model.aircraft_trim.hover.hover.lr_l3_disk_bem_model.induced_velocity_model.FOM'])
-    #
-    # print('Lift rotor left 4 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l4_disk_bem_model.rpm'])
-    # print('Lift rotor left 4 FoM: ',
-    #       sim['system_model.aircraft_trim.hover.hover.lr_l4_disk_bem_model.induced_velocity_model.FOM'])
+    print('Lift rotor right 1 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.rpm'])
+    print('Lift rotor right 1 FoM: ',
+          sim['system_model.aircraft_trim.hover.hover.lr_r1_disk_bem_model.induced_velocity_model.FOM'])
+
+    print('Lift rotor right 2 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r2_disk_bem_model.rpm'])
+    print('Lift rotor right 2 FoM: ',
+          sim['system_model.aircraft_trim.hover.hover.lr_r2_disk_bem_model.induced_velocity_model.FOM'])
+
+    print('Lift rotor right 3 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r3_disk_bem_model.rpm'])
+    print('Lift rotor right 3 FoM: ',
+          sim['system_model.aircraft_trim.hover.hover.lr_r3_disk_bem_model.induced_velocity_model.FOM'])
+
+    print('Lift rotor right 4 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_r4_disk_bem_model.rpm'])
+    print('Lift rotor right 4 FoM: ',
+          sim['system_model.aircraft_trim.hover.hover.lr_r4_disk_bem_model.induced_velocity_model.FOM'])
+
+    print('Lift rotor left 1 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l1_disk_bem_model.rpm'])
+    print('Lift rotor left 1 FoM: ',
+          sim['system_model.aircraft_trim.hover.hover.lr_l1_disk_bem_model.induced_velocity_model.FOM'])
+
+    print('Lift rotor left 2 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l2_disk_bem_model.rpm'])
+    print('Lift rotor left 2 FoM: ',
+          sim['system_model.aircraft_trim.hover.hover.lr_l2_disk_bem_model.induced_velocity_model.FOM'])
+
+    print('Lift rotor left 3 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l3_disk_bem_model.rpm'])
+    print('Lift rotor left 3 FoM: ',
+          sim['system_model.aircraft_trim.hover.hover.lr_l3_disk_bem_model.induced_velocity_model.FOM'])
+
+    print('Lift rotor left 4 RPM: ', sim['system_model.aircraft_trim.hover.hover.lr_l4_disk_bem_model.rpm'])
+    print('Lift rotor left 4 FoM: ',
+          sim['system_model.aircraft_trim.hover.hover.lr_l4_disk_bem_model.induced_velocity_model.FOM'])
 
     return
 
@@ -2001,15 +2083,16 @@ if __name__ == '__main__':
     # vlm_as_ll()
     # cl0 = tuning_cl0()
     # vlm_evaluation_wing_only_aoa_sweep()
-    # vlm_evaluation_wing_tail_aoa_sweep()
+    # vlm_evaluation_wing_tail_aoa_sweep(visualize_flag=True)
     # pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
     # trim_at_3g(
     #     pusher_prop_twist_cp=pusher_prop_twist_cp,
     #     pusher_prop_chord_cp=pusher_prop_chord_cp
     # )
-    structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.11391141), visualize_flag=False)
+    structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(-0.38129494), visualize_flag=False)
     # structural_wingbox_beam_sizing(pitch_angle=np.deg2rad(13.74084308))
 
     # structural_wingbox_shell_evaluation(pitch_angle=np.deg2rad(12.48100761), visualize_flag=False)
 
+    # optimize_lift_rotor_blade(debug_geom_flag=False)
     # trim_at_hover()
