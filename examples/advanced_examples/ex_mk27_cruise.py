@@ -1,6 +1,7 @@
 # region Imports
 import caddee.api as cd
 import m3l
+import csdl
 from python_csdl_backend import Simulator
 from modopt.scipy_library import SLSQP
 from modopt.csdl_library import CSDLProblem
@@ -42,48 +43,40 @@ spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
 # region Lifting surfaces
 
 # Main Wing
-wing_primitive_names = list(spatial_rep.get_primitives(search_names=['Horizontal Wing']).keys())
+wing_primitive_names = list(spatial_rep.get_primitives(search_names=['HorizontalWing']).keys())
 main_wing = LiftingSurface(name='HorizontalWing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)
 if debug_geom_flag:
     main_wing.plot()
 sys_rep.add_component(main_wing)
 
-# # Lower Frame Wing
-# wing_primitive_names = list(spatial_rep.get_primitives(search_names=['LowerFrame']).keys())
-# low_wing = LiftingSurface(name='LowerFrame', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)
-# if debug_geom_flag:
-#     low_wing.plot()
-# sys_rep.add_component(low_wing)
+# Lower Frame Wing
+wing_primitive_names = list(spatial_rep.get_primitives(search_names=['LowFrame']).keys())
+low_wing = LiftingSurface(name='LowerWing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)
+if debug_geom_flag:
+    low_wing.plot()
+sys_rep.add_component(low_wing)
 
-# # Horizontal tail
-# tail_primitive_names = list(spatial_rep.get_primitives(search_names=['Stabilizer']).keys())
-# htail = cd.LiftingSurface(name='HTail', spatial_representation=spatial_rep, primitive_names=tail_primitive_names)
-# if debug_geom_flag:
-#     htail.plot()
-# sys_rep.add_component(htail)
-
-# # Canard
-# canard_primitive_names = list(spatial_rep.get_primitives(search_names=['FrontSuport']).keys())
-# canard = cd.LiftingSurface(name='Canard', spatial_representation=spatial_rep, primitive_names=canard_primitive_names)
-# if debug_geom_flag:
-#     canard.plot()
-# sys_rep.add_component(canard)
+# Upper Frame Wing
+wing_primitive_names = list(spatial_rep.get_primitives(search_names=['TopFrame']).keys())
+top_wing = LiftingSurface(name='UpperWing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)
+if debug_geom_flag:
+    top_wing.plot()
+sys_rep.add_component(top_wing)
 
 # endregion
 
-# # region Rotors
-# # Pusher prop
-# pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropPusher']).keys())
-# pp_disk = cd.Rotor(name='pp_disk', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
-# if debug_geom_flag:
-#     pp_disk.plot()
-# sys_rep.add_component(pp_disk)
-# # endregion
+# region Rotors
+# Pusher prop
+pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropPusher']).keys())
+pp_disk = cd.Rotor(name='pp_disk', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
+if debug_geom_flag:
+    pp_disk.plot()
+sys_rep.add_component(pp_disk)
+# endregion
 
 # endregion
 
-# # region Actuations
-# # Tail FFD
+# # region FFD
 # htail_geometry_primitives = htail.get_geometry_primitives()
 # htail_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
 #     htail_geometry_primitives,
@@ -157,55 +150,6 @@ wing_oml_mesh_name = 'wing_oml_mesh'
 sys_rep.add_output(wing_oml_mesh_name, wing_oml_mesh)
 if debug_geom_flag:
     spatial_rep.plot_meshes([wing_oml_mesh])
-# endregion
-
-# # region Tail
-
-# num_htail_vlm = 13
-# num_chordwise_vlm = 5
-# point00 = np.array([20.713-4., 8.474+1.5, 0.825+1.5]) # * ft2m # Right tip leading edge
-# point01 = np.array([22.916, 8.474, 0.825]) # * ft2m # Right tip trailing edge
-# point10 = np.array([18.085, 0.000, 0.825]) # * ft2m # Center Leading Edge
-# point11 = np.array([23.232, 0.000, 0.825]) # * ft2m # Center Trailing edge
-# point20 = np.array([20.713-4., -8.474-1.5, 0.825+1.5]) # * ft2m # Left tip leading edge
-# point21 = np.array([22.916, -8.474, 0.825]) # * ft2m # Left tip trailing edge
-
-# leading_edge_points = np.linspace(point00, point20, num_htail_vlm)
-# trailing_edge_points = np.linspace(point01, point21, num_htail_vlm)
-
-# leading_edge = htail.project(leading_edge_points, direction=np.array([0., 0., -1.]), plot=debug_geom_flag)
-# trailing_edge = htail.project(trailing_edge_points, direction=np.array([1., 0., 0.]), plot=debug_geom_flag)
-
-# # Chord Surface
-# htail_chord_surface = am.linspace(leading_edge, trailing_edge, num_chordwise_vlm)
-# if debug_geom_flag:
-#     spatial_rep.plot_meshes([htail_chord_surface])
-
-# # Upper and lower surface
-# htail_upper_surface_wireframe = htail.project(htail_chord_surface.value + np.array([0., 0., 0.5]),
-#                                               direction=np.array([0., 0., -1.]), grid_search_n=25,
-#                                               plot=debug_geom_flag, max_iterations=200)
-# htail_lower_surface_wireframe = htail.project(htail_chord_surface.value - np.array([0., 0., 0.5]),
-#                                               direction=np.array([0., 0., 1.]), grid_search_n=25,
-#                                               plot=debug_geom_flag, max_iterations=200)
-
-# # Chamber surface
-# htail_camber_surface = am.linspace(htail_upper_surface_wireframe, htail_lower_surface_wireframe, 1)
-# htail_vlm_mesh_name = 'htail_vlm_mesh'
-# sys_rep.add_output(htail_vlm_mesh_name, htail_camber_surface)
-# if debug_geom_flag:
-#     spatial_rep.plot_meshes([htail_camber_surface])
-
-# # OML mesh
-# htail_oml_mesh = am.vstack((htail_upper_surface_wireframe, htail_lower_surface_wireframe))
-# htail_oml_mesh_name = 'htail_oml_mesh'
-# sys_rep.add_output(htail_oml_mesh_name, htail_oml_mesh)
-# if debug_geom_flag:
-#     spatial_rep.plot_meshes([htail_oml_mesh])
-# # endregion
-
-# region Canard
-
 # endregion
 
 # if visualize_flag:
@@ -359,6 +303,27 @@ caddee_csdl_model.add_constraint(
     scaler=1e-1
 )
 # endregion
+
+objective_model = csdl.Model()
+# Whoops, this is for hover.
+# upper_fom = objective_model.declare_variable('upper_fom')
+# mid_fom = objective_model.declare_variable('mid_fom')
+# lower_fom = objective_model.declare_variable('lower_fom')
+
+upper_prop_efficiency = objective_model.declare_variable('upper_prop_efficiency')
+mid_prop_efficiency = objective_model.declare_variable('mid_prop_efficiency')
+lower_prop_efficiency = objective_model.declare_variable('lower_prop_efficiency')
+
+prop_efficiencies = objective_model.create_output(name='prop_efficiencies', shape=(3,))
+prop_efficiencies[0] = upper_prop_efficiency
+prop_efficiencies[1] = mid_prop_efficiency
+prop_efficiencies[2] = lower_prop_efficiency
+cruise_objective = csdl.pnorm(prop_efficiencies)
+objective_model.register_output('cruise_objective', cruise_objective)
+
+mk27_model = csdl.Model()
+mk27_model.add(caddee_csdl_model, 'caddee_model')
+mk27_model.add(objective_model, 'objective_model')
 
 # Create and run simulator
 sim = Simulator(caddee_csdl_model, analytics=True)
