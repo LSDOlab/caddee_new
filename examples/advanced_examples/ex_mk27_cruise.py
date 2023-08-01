@@ -183,6 +183,10 @@ ppl_right_ffd_block.add_scale_w(name='ppl_right_scale_w', order=1, num_dof=1)
 
 # region Meshes
 
+vlm_main_wing_mesh_name = 'vlm_main_wing_mesh'
+vlm_top_wing_mesh_name = 'vlm_top_wing_mesh'
+vlm_low_wing_mesh_name = 'vlm_bot_wing_mesh'
+
 # region Main Wing
 num_wing_vlm = 21
 num_chordwise_vlm = 5
@@ -220,7 +224,7 @@ main_wing_lower_surface_wireframe = main_wing.project(main_wing_chord_surface.va
 
 # Chamber surface
 main_wing_camber_surface = am.linspace(main_wing_upper_surface_wireframe, main_wing_lower_surface_wireframe, 1)
-main_wing_vlm_mesh_name = 'wing_vlm_mesh'
+main_wing_vlm_mesh_name = vlm_main_wing_mesh_name
 sys_rep.add_output(main_wing_vlm_mesh_name, main_wing_camber_surface)
 if debug_geom_flag:
     spatial_rep.plot_meshes([main_wing_camber_surface])
@@ -271,7 +275,7 @@ lower_wing_lower_surface_wireframe = low_wing.project(lower_wing_chord_surface.v
 
 # Chamber surface
 lower_wing_camber_surface = am.linspace(lower_wing_upper_surface_wireframe, lower_wing_lower_surface_wireframe, 1)
-lower_wing_vlm_mesh_name = 'wing_vlm_mesh'
+lower_wing_vlm_mesh_name = vlm_low_wing_mesh_name
 sys_rep.add_output(lower_wing_vlm_mesh_name, lower_wing_camber_surface)
 if debug_geom_flag:
     spatial_rep.plot_meshes([lower_wing_camber_surface])
@@ -322,7 +326,7 @@ upper_wing_lower_surface_wireframe = top_wing.project(upper_wing_chord_surface.v
 
 # Chamber surface
 upper_wing_camber_surface = am.linspace(upper_wing_upper_surface_wireframe, upper_wing_lower_surface_wireframe, 1)
-upper_wing_vlm_mesh_name = 'wing_vlm_mesh'
+upper_wing_vlm_mesh_name = vlm_top_wing_mesh
 sys_rep.add_output(upper_wing_vlm_mesh_name, upper_wing_camber_surface)
 if debug_geom_flag:
     spatial_rep.plot_meshes([upper_wing_camber_surface])
@@ -484,7 +488,7 @@ ppm_left_bem_mesh = BEMMesh(
     chord_b_spline_rep=True,
     twist_b_spline_rep=True
 )
-ppm_left_bem_model = BEM(disk_prefix='ppm_left', blade_prefix='pp', component=ppm_left, mesh=ppm_left_bem_mesh)
+ppm_left_bem_model = BEM(disk_prefix='ppm_left', blade_prefix='pp_left', component=ppm_left, mesh=ppm_left_bem_mesh)
 ppm_left_bem_model.set_module_input('ppm_left_rpm', val=4000)
 ppm_left_bem_model.set_module_input('ppm_left_propeller_radius', val=3.97727/2*ft2m)
 ppm_left_bem_model.set_module_input('ppm_left_thrust_vector', val=np.array([1., 0., 0.]))
@@ -500,6 +504,141 @@ ppm_left_bem_model.set_module_input('ppm_left_twist_cp', val=np.deg2rad(np.linsp
 ppm_left_bem_forces, ppm_left_bem_moments, _, _, _ = ppm_left_bem_model.evaluate(ac_states=cruise_ac_states)
 cruise_model.register_output(ppm_left_bem_forces)
 cruise_model.register_output(ppm_left_bem_moments)
+
+ppm_right_bem_mesh = BEMMesh(
+    airfoil='NACA_4412',
+    num_blades=5,
+    num_radial=25,
+    use_airfoil_ml=False,
+    use_rotor_geometry=False,
+    mesh_units='ft',
+    chord_b_spline_rep=True,
+    twist_b_spline_rep=True
+)
+ppm_right_bem_model = BEM(disk_prefix='ppm_right', blade_prefix='pp_right', component=ppm_right, mesh=ppm_right_bem_mesh)
+ppm_right_bem_model.set_module_input('ppm_right_rpm', val=4000)
+ppm_right_bem_model.set_module_input('ppm_right_propeller_radius', val=3.97727/2*ft2m)
+ppm_right_bem_model.set_module_input('ppm_right_thrust_vector', val=np.array([1., 0., 0.]))
+ppm_right_bem_model.set_module_input('ppm_right_thrust_origin', val=np.array([19.700, 0., 2.625]))
+ppm_right_bem_model.set_module_input('ppm_right_chord_cp', val=np.linspace(0.2, 0.05, 4),
+                           dv_flag=True,
+                           upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]), scaler=1
+                           )
+ppm_right_bem_model.set_module_input('ppm_right_twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
+                           dv_flag=True,
+                           lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
+                           )
+ppm_right_bem_forces, ppm_right_bem_moments, _, _, _ = ppm_right_bem_model.evaluate(ac_states=cruise_ac_states)
+cruise_model.register_output(ppm_right_bem_forces)
+cruise_model.register_output(ppm_right_bem_moments)
+
+ppu_left_bem_mesh = BEMMesh(
+    airfoil='NACA_4412',
+    num_blades=5,
+    num_radial=25,
+    use_airfoil_ml=False,
+    use_rotor_geometry=False,
+    mesh_units='ft',
+    chord_b_spline_rep=True,
+    twist_b_spline_rep=True
+)
+ppu_left_bem_model = BEM(disk_prefix='ppu_left', blade_prefix='pp', component=ppu_left, mesh=ppu_left_bem_mesh)
+ppu_left_bem_model.set_module_input('ppu_left_rpm', val=4000)
+ppu_left_bem_model.set_module_input('ppu_left_propeller_radius', val=3.97727/2*ft2m)
+ppu_left_bem_model.set_module_input('ppu_left_thrust_vector', val=np.array([1., 0., 0.]))
+ppu_left_bem_model.set_module_input('ppu_left_thrust_origin', val=np.array([19.700, 0., 2.625]))
+ppu_left_bem_model.set_module_input('ppu_left_chord_cp', val=np.linspace(0.2, 0.05, 4),
+                           dv_flag=True,
+                           upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]), scaler=1
+                           )
+ppu_left_bem_model.set_module_input('ppu_left_twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
+                           dv_flag=True,
+                           lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
+                           )
+ppu_left_bem_forces, ppu_left_bem_moments, _, _, _ = ppu_left_bem_model.evaluate(ac_states=cruise_ac_states)
+cruise_model.register_output(ppu_left_bem_forces)
+cruise_model.register_output(ppu_left_bem_moments)
+
+ppu_right_bem_mesh = BEMMesh(
+    airfoil='NACA_4412',
+    num_blades=5,
+    num_radial=25,
+    use_airfoil_ml=False,
+    use_rotor_geometry=False,
+    mesh_units='ft',
+    chord_b_spline_rep=True,
+    twist_b_spline_rep=True
+)
+ppu_right_bem_model = BEM(disk_prefix='ppu_right', blade_prefix='pp', component=ppu_right, mesh=ppu_right_bem_mesh)
+ppu_right_bem_model.set_module_input('ppu_right_rpm', val=4000)
+ppu_right_bem_model.set_module_input('ppu_right_propeller_radius', val=3.97727/2*ft2m)
+ppu_right_bem_model.set_module_input('ppu_right_thrust_vector', val=np.array([1., 0., 0.]))
+ppu_right_bem_model.set_module_input('ppu_right_thrust_origin', val=np.array([19.700, 0., 2.625]))
+ppu_right_bem_model.set_module_input('ppu_right_chord_cp', val=np.linspace(0.2, 0.05, 4),
+                           dv_flag=True,
+                           upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]), scaler=1
+                           )
+ppu_right_bem_model.set_module_input('ppu_right_twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
+                           dv_flag=True,
+                           lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
+                           )
+ppu_right_bem_forces, ppu_right_bem_moments, _, _, _ = ppu_right_bem_model.evaluate(ac_states=cruise_ac_states)
+cruise_model.register_output(ppu_right_bem_forces)
+cruise_model.register_output(ppu_right_bem_moments)
+
+ppl_left_bem_mesh = BEMMesh(
+    airfoil='NACA_4412',
+    num_blades=5,
+    num_radial=25,
+    use_airfoil_ml=False,
+    use_rotor_geometry=False,
+    mesh_units='ft',
+    chord_b_spline_rep=True,
+    twist_b_spline_rep=True
+)
+ppl_left_bem_model = BEM(disk_prefix='ppl_left', blade_prefix='pp', component=ppl_left, mesh=ppl_left_bem_mesh)
+ppl_left_bem_model.set_module_input('ppl_left_rpm', val=4000)
+ppl_left_bem_model.set_module_input('ppl_left_propeller_radius', val=3.97727/2*ft2m)
+ppl_left_bem_model.set_module_input('ppl_left_thrust_vector', val=np.array([1., 0., 0.]))
+ppl_left_bem_model.set_module_input('ppl_left_thrust_origin', val=np.array([19.700, 0., 2.625]))
+ppl_left_bem_model.set_module_input('ppl_left_chord_cp', val=np.linspace(0.2, 0.05, 4),
+                           dv_flag=True,
+                           upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]), scaler=1
+                           )
+ppl_left_bem_model.set_module_input('ppl_left_twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
+                           dv_flag=True,
+                           lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
+                           )
+ppl_left_bem_forces, ppl_left_bem_moments, _, _, _ = ppl_left_bem_model.evaluate(ac_states=cruise_ac_states)
+cruise_model.register_output(ppl_left_bem_forces)
+cruise_model.register_output(ppl_left_bem_moments)
+
+ppl_right_bem_mesh = BEMMesh(
+    airfoil='NACA_4412',
+    num_blades=5,
+    num_radial=25,
+    use_airfoil_ml=False,
+    use_rotor_geometry=False,
+    mesh_units='ft',
+    chord_b_spline_rep=True,
+    twist_b_spline_rep=True
+)
+ppl_right_bem_model = BEM(disk_prefix='ppl_right', blade_prefix='pp', component=ppl_right, mesh=ppl_right_bem_mesh)
+ppl_right_bem_model.set_module_input('ppl_right_rpm', val=4000)
+ppl_right_bem_model.set_module_input('ppl_right_propeller_radius', val=3.97727/2*ft2m)
+ppl_right_bem_model.set_module_input('ppl_right_thrust_vector', val=np.array([1., 0., 0.]))
+ppl_right_bem_model.set_module_input('ppl_right_thrust_origin', val=np.array([19.700, 0., 2.625]))
+ppl_right_bem_model.set_module_input('ppl_right_chord_cp', val=np.linspace(0.2, 0.05, 4),
+                           dv_flag=True,
+                           upper=np.array([0.25, 0.25, 0.25, 0.25]), lower=np.array([0.05, 0.05, 0.05, 0.05]), scaler=1
+                           )
+ppl_right_bem_model.set_module_input('ppl_right_twist_cp', val=np.deg2rad(np.linspace(65, 15, 4)),
+                           dv_flag=True,
+                           lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
+                           )
+ppl_right_bem_forces, ppl_right_bem_moments, _, _, _ = ppl_right_bem_model.evaluate(ac_states=cruise_ac_states)
+cruise_model.register_output(ppl_right_bem_forces)
+cruise_model.register_output(ppl_right_bem_moments)
 # endregion
 
 # region Inertial loads
@@ -512,12 +651,14 @@ cruise_model.register_output(inertial_moments)
 # region Aerodynamics
 vlm_model = VASTFluidSover(
     surface_names=[
-        wing_vlm_mesh_name,
-        htail_vlm_mesh_name,
+        vlm_main_wing_mesh_name,
+        vlm_top_wing_mesh_name,
+        vlm_low_wing_mesh_name
     ],
     surface_shapes=[
-        (1, ) + wing_camber_surface.evaluate().shape[1:],
-        (1, ) + htail_camber_surface.evaluate().shape[1:],
+        (1, ) + main_wing_camber_surface.evaluate().shape[1:],
+        (1, ) + upper_wing_camber_surface.evaluate().shape[1:],
+        (1, ) + lower_wing_camber_surface.evaluate().shape[1:],
         ],
     fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
     mesh_unit='ft',
@@ -533,7 +674,12 @@ total_forces_moments_model = cd.TotalForcesMomentsM3L()
 total_forces, total_moments = total_forces_moments_model.evaluate(
     inertial_forces, inertial_moments,
     vlm_forces, vlm_moments,
-    bem_forces, bem_moments
+    ppm_left_bem_forces, ppm_left_bem_moments,
+    ppm_right_bem_forces, ppm_right_bem_moments,
+    ppu_left_bem_forces, ppu_left_bem_moments,
+    ppu_right_bem_forces, ppu_right_bem_moments,
+    ppl_left_bem_forces, ppl_left_bem_moments,
+    ppl_right_bem_forces, ppl_right_bem_moments,
 )
 cruise_model.register_output(total_forces)
 cruise_model.register_output(total_moments)
