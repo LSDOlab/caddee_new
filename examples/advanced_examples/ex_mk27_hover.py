@@ -59,16 +59,39 @@ VertStab = LiftingSurface(name='VertStab', spatial_representation=spatial_rep, p
 #VertStab.plot()
 
 
-# Rotor: pusher - mid, upper, lower propellors (these are mirrored over mid plane for OEI need to remodel VSP to isolate 1 engine?)
-pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['MidProps']).keys())
-ppm = cd.Rotor(name='ppm_disk', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
+# region Rotors
+# Pusher prop
+pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['MidProps, 0']).keys())
+ppm_left = cd.Rotor(name='ppm_disk_left', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
+sys_rep.add_component(ppm_left)
+ppm_left.plot()
 
-pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['UpperProps']).keys())
-ppu = cd.Rotor(name='ppu_disk', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
+pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['MidProps, 1']).keys())
+ppm_right = cd.Rotor(name='ppm_disk_right', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
+sys_rep.add_component(ppm_right)
+ppm_right.plot()
 
-pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['LowerProps']).keys())
-ppl = cd.Rotor(name='ppl_disk', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
+pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['UpperProps, 1']).keys())
+ppu_left = cd.Rotor(name='ppu_disk_left', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
+sys_rep.add_component(ppu_left)
+ppu_left.plot()
 
+pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['UpperProps, 0']).keys())
+ppu_right = cd.Rotor(name='ppu_disk_right', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
+sys_rep.add_component(ppu_right)
+ppu_right.plot()
+
+pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['LowerProps, 1']).keys())
+ppl_left = cd.Rotor(name='ppl_disk_left', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
+sys_rep.add_component(ppl_left)
+ppl_left.plot()
+
+pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['LowerProps, 0']).keys())
+ppl_right = cd.Rotor(name='ppl_disk_right', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
+sys_rep.add_component(ppl_right)
+ppl_right.plot()
+
+# endregion
 # Rotor plots - check progress
 #ppm.plot()
 #ppu.plot()
@@ -100,7 +123,7 @@ y21 = ppm_left.project(np.array([2.5,-1.75,0.82]), direction=np.array([-1., 0., 
 y22 = ppm_left.project(np.array([2.5,-1.75,-0.82]), direction=np.array([-1., 0., 0.]), plot=False)
 ppm_left_plane_y = am.subtract(y11, y12)
 ppm_left_plane_x = am.subtract(y21, y22)
-ppm_left_origin = ppm.project(np.array([2.5,-1.75,0]), direction=np.array([-1., 0., 0.]))
+ppm_left_origin = ppm_left.project(np.array([2.5,-1.75,0]), direction=np.array([-1., 0., 0.]))
 sys_rep.add_output(f"{ppm_left.parameters['name']}_in_plane_1", ppm_left_plane_y)
 sys_rep.add_output(f"{ppm_left.parameters['name']}_in_plane_2", ppm_left_plane_x)
 sys_rep.add_output(f"{ppm_left.parameters['name']}_origin", ppm_left_origin)
@@ -111,7 +134,7 @@ y21 = ppm_right.project(np.array([2.5,1.75,0.82]), direction=np.array([-1., 0., 
 y22 = ppm_right.project(np.array([2.5,1.75,-0.82]), direction=np.array([-1., 0., 0.]), plot=False)
 ppm_right_plane_y = am.subtract(y11, y12)
 ppm_right_plane_x = am.subtract(y21, y22)
-ppm_right_origin = ppm.project(np.array([2.5,1.75,0]), direction=np.array([-1., 0., 0.]))
+ppm_right_origin = ppm_right.project(np.array([2.5,1.75,0]), direction=np.array([-1., 0., 0.]))
 sys_rep.add_output(f"{ppm_right.parameters['name']}_in_plane_1", ppm_right_plane_y)
 sys_rep.add_output(f"{ppm_right.parameters['name']}_in_plane_2", ppm_right_plane_x)
 sys_rep.add_output(f"{ppm_right.parameters['name']}_origin", ppm_right_origin)
@@ -124,7 +147,7 @@ y21 = ppu_left.project(np.array([3.136,-1.88,1.513]), direction=np.array([-.683,
 y22 = ppu_left.project(np.array([3.846,-0.42,1.687]), direction=np.array([-.683,0.259,0.683]), plot=False)
 ppu_left_plane_y = am.subtract(y11, y12)
 ppu_left_plane_x = am.subtract(y21, y22)
-ppu_left_origin = ppm.project(np.array([3.5,-1.15,1.6]), direction=np.array([-.683,0.259,0.683]))
+ppu_left_origin = ppu_left.project(np.array([3.5,-1.15,1.6]), direction=np.array([-.683,0.259,0.683]))
 sys_rep.add_output(f"{ppu_left.parameters['name']}_in_plane_1", ppu_left_plane_y)
 sys_rep.add_output(f"{ppu_left.parameters['name']}_in_plane_2", ppu_left_plane_x)
 sys_rep.add_output(f"{ppu_left.parameters['name']}_origin", ppu_left_origin)
@@ -136,7 +159,7 @@ y21 = ppu_right.project(np.array([3.136,1.88,1.513]), direction=np.array([-.683,
 y22 = ppu_right.project(np.array([3.846,0.42,1.687]), direction=np.array([-.683,-0.259,0.683]), plot=False)
 ppu_right_plane_y = am.subtract(y11, y12)
 ppu_right_plane_x = am.subtract(y21, y22)
-ppu_right_origin = ppm.project(np.array([3.5,1.15,1.6]), direction=np.array([-.683,-0.259,0.683]))
+ppu_right_origin = ppu_right.project(np.array([3.5,1.15,1.6]), direction=np.array([-.683,-0.259,0.683]))
 sys_rep.add_output(f"{ppu_right.parameters['name']}_in_plane_1", ppu_right_plane_y)
 sys_rep.add_output(f"{ppu_right.parameters['name']}_in_plane_2", ppu_right_plane_x)
 sys_rep.add_output(f"{ppu_right.parameters['name']}_origin", ppu_right_origin)
@@ -150,9 +173,9 @@ y22 = ppl_left.project(np.array([1.605,-1.485,-1.945]), direction=np.array([-0.7
 ppl_left_plane_y = am.subtract(y11, y12)
 ppl_left_plane_x = am.subtract(y21, y22)
 ppl_left_origin = ppl_left.project(np.array([1.25,0.775,-1.74]), direction=np.array([-0.75,0.5,0.433]))
-sys_rep.add_output(f"{ppm.parameters['name']}_in_plane_1", ppl_left_plane_y)
-sys_rep.add_output(f"{ppm.parameters['name']}_in_plane_2", ppl_left_plane_x)
-sys_rep.add_output(f"{ppm.parameters['name']}_origin", ppl_left_origin)
+sys_rep.add_output(f"{ppl_left.parameters['name']}_in_plane_1", ppl_left_plane_y)
+sys_rep.add_output(f"{ppl_left.parameters['name']}_in_plane_2", ppl_left_plane_x)
+sys_rep.add_output(f"{ppl_left.parameters['name']}_origin", ppl_left_origin)
 
 #right
 y11 = ppl_right.project(np.array([1.66,0.775,-1.03]), direction=np.array([-0.75,-0.5,0.433]), plot=False)
@@ -162,9 +185,9 @@ y22 = ppl_right.project(np.array([1.605,1.485,-1.945]), direction=np.array([-0.7
 ppl_right_plane_y = am.subtract(y11, y12)
 ppl_right_plane_x = am.subtract(y21, y22)
 ppl_right_origin = ppl_right.project(np.array([1.25,-0.775,-1.74]), direction=np.array([-0.75,-0.5,0.433]))
-sys_rep.add_output(f"{ppl_right.parameters['name']}_in_plane_1", pplr_plane_y)
-sys_rep.add_output(f"{ppl_right.parameters['name']}_in_plane_2", pplr_plane_x)
-sys_rep.add_output(f"{ppl_right.parameters['name']}_origin", pplr_origin)
+sys_rep.add_output(f"{ppl_right.parameters['name']}_in_plane_1", ppl_right_plane_y)
+sys_rep.add_output(f"{ppl_right.parameters['name']}_in_plane_2", ppl_right_plane_x)
+sys_rep.add_output(f"{ppl_right.parameters['name']}_origin", ppl_right_origin)
 
 # endregion
 
