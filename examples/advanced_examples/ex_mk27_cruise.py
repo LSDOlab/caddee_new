@@ -92,7 +92,7 @@ ppl_left = cd.Rotor(name='ppl_disk_left', spatial_representation=spatial_rep, pr
 sys_rep.add_component(ppl_left)
 # ppl_left.plot()
 
-pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['LowerProps, 10']).keys())
+pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['LowerProps, 0']).keys())
 ppl_right = cd.Rotor(name='ppl_disk_right', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppl_right)
 # ppl_right.plot()
@@ -111,8 +111,9 @@ ppm_left_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
 ppm_left_ffd_block = cd.SRBGFFDBlock(name='ppm_left_ffd_block',
                                   primitive=ppm_left_ffd_bspline_volume,
                                   embedded_entities=ppm_left_geometry_primitives)
-ppm_left_ffd_block.add_scale_v(name='ppm_left_scale_v',order=2, num_dof=3, cost_factor=1.)
-ppm_left_ffd_block.add_scale_w(name='ppm_left_scale_w', order=2, num_dof=2)
+ppm_left_ffd_block.add_scale_v(name='ppm_left_scale_v',order=1, num_dof=1, cost_factor=1.)
+ppm_left_ffd_block.add_scale_w(name='ppm_left_scale_w', order=1, num_dof=1)
+# ppm_left_ffd_block.plot()
 
 ppm_right_geometry_primitives = ppm_right.get_geometry_primitives()
 ppm_right_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
@@ -123,8 +124,8 @@ ppm_right_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
 ppm_right_ffd_block = cd.SRBGFFDBlock(name='ppm_right_ffd_block',
                                   primitive=ppm_right_ffd_bspline_volume,
                                   embedded_entities=ppm_right_geometry_primitives)
-ppm_right_ffd_block.add_scale_v(name='ppm_right_scale_v',order=2, num_dof=3, cost_factor=1.)
-ppm_right_ffd_block.add_scale_w(name='ppm_right_scale_w', order=2, num_dof=2)
+ppm_right_ffd_block.add_scale_v(name='ppm_right_scale_v',order=1, num_dof=1, cost_factor=1.)
+ppm_right_ffd_block.add_scale_w(name='ppm_right_scale_w', order=1, num_dof=1)
 
 ppu_left_geometry_primitives = ppu_left.get_geometry_primitives()
 ppu_left_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
@@ -135,9 +136,9 @@ ppu_left_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
 ppu_left_ffd_block = cd.SRBGFFDBlock(name='ppu_left_ffd_block',
                                   primitive=ppu_left_ffd_bspline_volume,
                                   embedded_entities=ppu_left_geometry_primitives)
-ppu_left_ffd_block.add_scale_v(name='ppu_left_scale_v',order=2, num_dof=3, cost_factor=1.)
-ppu_left_ffd_block.add_scale_w(name='ppu_left_scale_w', order=2, num_dof=2)
-
+ppu_left_ffd_block.add_scale_v(name='ppu_left_scale_v',order=1, num_dof=1, cost_factor=1.)
+ppu_left_ffd_block.add_scale_w(name='ppu_left_scale_w', order=1, num_dof=1)
+ppu_left_ffd_block.plot()
 
 ppu_right_geometry_primitives = ppu_right.get_geometry_primitives()
 ppu_right_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
@@ -148,8 +149,8 @@ ppu_right_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
 ppu_right_ffd_block = cd.SRBGFFDBlock(name='ppu_right_ffd_block',
                                   primitive=ppu_right_ffd_bspline_volume,
                                   embedded_entities=ppu_right_geometry_primitives)
-ppu_right_ffd_block.add_scale_v(name='ppu_right_scale_v',order=2, num_dof=3, cost_factor=1.)
-ppu_right_ffd_block.add_scale_w(name='ppu_right_scale_w', order=2, num_dof=2)
+ppu_right_ffd_block.add_scale_v(name='ppu_right_scale_v',order=1, num_dof=1, cost_factor=1.)
+ppu_right_ffd_block.add_scale_w(name='ppu_right_scale_w', order=1, num_dof=1)
 
 
 ppl_left_geometry_primitives = ppl_left.get_geometry_primitives()
@@ -161,8 +162,8 @@ ppl_left_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
 ppl_left_ffd_block = cd.SRBGFFDBlock(name='ppl_left_ffd_block',
                                   primitive=ppl_left_ffd_bspline_volume,
                                   embedded_entities=ppl_left_geometry_primitives)
-ppl_left_ffd_block.add_scale_v(name='ppl_left_scale_v',order=2, num_dof=3, cost_factor=1.)
-ppl_left_ffd_block.add_scale_w(name='ppl_left_scale_w', order=2, num_dof=2)
+ppl_left_ffd_block.add_scale_v(name='ppl_left_scale_v',order=1, num_dof=1, cost_factor=1.)
+ppl_left_ffd_block.add_scale_w(name='ppl_left_scale_w', order=1, num_dof=1)
 
 
 ppl_right_geometry_primitives = ppl_right.get_geometry_primitives()
@@ -174,8 +175,8 @@ ppl_right_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
 ppl_right_ffd_block = cd.SRBGFFDBlock(name='ppl_right_ffd_block',
                                   primitive=ppl_right_ffd_bspline_volume,
                                   embedded_entities=ppl_right_geometry_primitives)
-ppl_right_ffd_block.add_scale_v(name='ppl_right_scale_v',order=2, num_dof=3, cost_factor=1.)
-ppl_right_ffd_block.add_scale_w(name='ppl_right_scale_w', order=2, num_dof=2)
+ppl_right_ffd_block.add_scale_v(name='ppl_right_scale_v',order=1, num_dof=1, cost_factor=1.)
+ppl_right_ffd_block.add_scale_w(name='ppl_right_scale_w', order=1, num_dof=1)
 
 ffd_set = cd.SRBGFFDSet(
     name='ffd_set',
@@ -352,41 +353,80 @@ if visualize_flag:
 
 # region pusher prop (pp) meshes
 
-# disk: middle
-y11 = ppm.project(np.array([2.5,-.93,0]), direction=np.array([-1., 0., 0.]), plot=True)
-y12 = ppm.project(np.array([2.5,-2.57,0]), direction=np.array([-1., 0., 0.]), plot=True)
-y21 = ppm.project(np.array([2.5,-1.75,0.82]), direction=np.array([-1., 0., 0.]), plot=True)
-y22 = ppm.project(np.array([2.5,-1.75,-0.82]), direction=np.array([-1., 0., 0.]), plot=True)
-ppm_plane_y = am.subtract(y11, y12)
-ppm_plane_x = am.subtract(y21, y22)
-ppm_origin = ppm.project(np.array([2.5,-1.75,0]), direction=np.array([-1., 0., 0.]))
-sys_rep.add_output(f"{ppm.parameters['name']}_in_plane_1", ppm_plane_y)
-sys_rep.add_output(f"{ppm.parameters['name']}_in_plane_2", ppm_plane_x)
-sys_rep.add_output(f"{ppm.parameters['name']}_origin", ppm_origin)
+# disk: middle 
+#left
+y11 = ppm_left.project(np.array([2.5,-.93,0]), direction=np.array([-1., 0., 0.]), plot=False)
+y12 = ppm_left.project(np.array([2.5,-2.57,0]), direction=np.array([-1., 0., 0.]), plot=False)
+y21 = ppm_left.project(np.array([2.5,-1.75,0.82]), direction=np.array([-1., 0., 0.]), plot=False)
+y22 = ppm_left.project(np.array([2.5,-1.75,-0.82]), direction=np.array([-1., 0., 0.]), plot=False)
+ppm_left_plane_y = am.subtract(y11, y12)
+ppm_left_plane_x = am.subtract(y21, y22)
+ppm_left_origin = ppm_left.project(np.array([2.5,-1.75,0]), direction=np.array([-1., 0., 0.]))
+sys_rep.add_output(f"{ppm_left.parameters['name']}_in_plane_1", ppm_left_plane_y)
+sys_rep.add_output(f"{ppm_left.parameters['name']}_in_plane_2", ppm_left_plane_x)
+sys_rep.add_output(f"{ppm_left.parameters['name']}_origin", ppm_left_origin)
+
+#right
+y11 = ppm_right.project(np.array([2.5,2.57,0]), direction=np.array([-1., 0., 0.]), plot=False)
+y21 = ppm_right.project(np.array([2.5,1.75,0.82]), direction=np.array([-1., 0., 0.]), plot=False)
+y22 = ppm_right.project(np.array([2.5,1.75,-0.82]), direction=np.array([-1., 0., 0.]), plot=False)
+ppm_right_plane_y = am.subtract(y11, y12)
+ppm_right_plane_x = am.subtract(y21, y22)
+ppm_right_origin = ppm_right.project(np.array([2.5,1.75,0]), direction=np.array([-1., 0., 0.]))
+sys_rep.add_output(f"{ppm_right.parameters['name']}_in_plane_1", ppm_right_plane_y)
+sys_rep.add_output(f"{ppm_right.parameters['name']}_in_plane_2", ppm_right_plane_x)
+sys_rep.add_output(f"{ppm_right.parameters['name']}_origin", ppm_right_origin)
 
 # disk: uppers
-y11 = ppu.project(np.array([3.976,1.458,2.193]), direction=np.array([-.683,-0.259,0.683]), plot=True)
-y12 = ppu.project(np.array([3.024,0.842,1.007]), direction=np.array([-.683,-0.259,0.683]), plot=True)
-y21 = ppu.project(np.array([3.136,1.88,1.513]), direction=np.array([-.683,-0.259,0.683]), plot=True)
-y22 = ppu.project(np.array([3.846,0.42,1.687]), direction=np.array([-.683,-0.259,0.683]), plot=True)
-ppu_plane_y = am.subtract(y11, y12)
-ppu_plane_x = am.subtract(y21, y22)
-ppu_origin = ppm.project(np.array([3.5,1.15,1.6]), direction=np.array([-.683,-0.259,0.683]))
-sys_rep.add_output(f"{ppu.parameters['name']}_in_plane_1", ppu_plane_y)
-sys_rep.add_output(f"{ppu.parameters['name']}_in_plane_2", ppu_plane_x)
-sys_rep.add_output(f"{ppu.parameters['name']}_origin", ppu_origin)
+#left
+y11 = ppu_left.project(np.array([3.976,-1.458,2.193]), direction=np.array([-.683,0.259,0.683]), plot=False)
+y12 = ppu_left.project(np.array([3.024,-0.842,1.007]), direction=np.array([-.683,0.259,0.683]), plot=False)
+y21 = ppu_left.project(np.array([3.136,-1.88,1.513]), direction=np.array([-.683,0.259,0.683]), plot=False)
+y22 = ppu_left.project(np.array([3.846,-0.42,1.687]), direction=np.array([-.683,0.259,0.683]), plot=False)
+ppu_left_plane_y = am.subtract(y11, y12)
+ppu_left_plane_x = am.subtract(y21, y22)
+ppu_left_origin = ppu_left.project(np.array([3.5,-1.15,1.6]), direction=np.array([-.683,0.259,0.683]))
+sys_rep.add_output(f"{ppu_left.parameters['name']}_in_plane_1", ppu_left_plane_y)
+sys_rep.add_output(f"{ppu_left.parameters['name']}_in_plane_2", ppu_left_plane_x)
+sys_rep.add_output(f"{ppu_left.parameters['name']}_origin", ppu_left_origin)
+
+#right
+y11 = ppu_right.project(np.array([3.976,1.458,2.193]), direction=np.array([-.683,-0.259,0.683]), plot=False)
+y12 = ppu_right.project(np.array([3.024,0.842,1.007]), direction=np.array([-.683,-0.259,0.683]), plot=False)
+y21 = ppu_right.project(np.array([3.136,1.88,1.513]), direction=np.array([-.683,-0.259,0.683]), plot=False)
+y22 = ppu_right.project(np.array([3.846,0.42,1.687]), direction=np.array([-.683,-0.259,0.683]), plot=False)
+ppu_right_plane_y = am.subtract(y11, y12)
+ppu_right_plane_x = am.subtract(y21, y22)
+ppu_right_origin = ppu_right.project(np.array([3.5,1.15,1.6]), direction=np.array([-.683,-0.259,0.683]))
+sys_rep.add_output(f"{ppu_right.parameters['name']}_in_plane_1", ppu_right_plane_y)
+sys_rep.add_output(f"{ppu_right.parameters['name']}_in_plane_2", ppu_right_plane_x)
+sys_rep.add_output(f"{ppu_right.parameters['name']}_origin", ppu_right_origin)
 
 # disk: lowers
-y11 = ppl.project(np.array([1.66,0.775,-1.03]), direction=np.array([-0.75,0.5,0.433]), plot=True)
-y12 = ppl.project(np.array([0.84,0.775,-2.45]), direction=np.array([-0.75,0.5,0.433]), plot=True)
-y21 = ppl.project(np.array([0.895,0.065,-1.535]), direction=np.array([-0.75,0.5,0.433]), plot=True)
-y22 = ppl.project(np.array([1.605,1.485,-1.945]), direction=np.array([-0.75,0.5,0.433]), plot=True)
-ppl_plane_y = am.subtract(y11, y12)
-ppl_plane_x = am.subtract(y21, y22)
-ppl_origin = ppl.project(np.array([1.25,0.775,-1.74]), direction=np.array([-0.75,0.5,0.433]))
-sys_rep.add_output(f"{ppm.parameters['name']}_in_plane_1", ppl_plane_y)
-sys_rep.add_output(f"{ppm.parameters['name']}_in_plane_2", ppl_plane_x)
-sys_rep.add_output(f"{ppm.parameters['name']}_origin", ppl_origin)
+#left
+y11 = ppl_left.project(np.array([1.66,-0.775,-1.03]), direction=np.array([-0.75,0.5,0.433]), plot=False)
+y12 = ppl_left.project(np.array([0.84,-0.775,-2.45]), direction=np.array([-0.75,0.5,0.433]), plot=False)
+y21 = ppl_left.project(np.array([0.895,-0.065,-1.535]), direction=np.array([-0.75,0.5,0.433]), plot=False)
+y22 = ppl_left.project(np.array([1.605,-1.485,-1.945]), direction=np.array([-0.75,0.5,0.433]), plot=False)
+ppl_left_plane_y = am.subtract(y11, y12)
+ppl_left_plane_x = am.subtract(y21, y22)
+ppl_left_origin = ppl_left.project(np.array([1.25,0.775,-1.74]), direction=np.array([-0.75,0.5,0.433]))
+sys_rep.add_output(f"{ppl_left.parameters['name']}_in_plane_1", ppl_left_plane_y)
+sys_rep.add_output(f"{ppl_left.parameters['name']}_in_plane_2", ppl_left_plane_x)
+sys_rep.add_output(f"{ppl_left.parameters['name']}_origin", ppl_left_origin)
+
+#right
+y11 = ppl_right.project(np.array([1.66,0.775,-1.03]), direction=np.array([-0.75,-0.5,0.433]), plot=False)
+y12 = ppl_right.project(np.array([0.84,0.775,-2.45]), direction=np.array([-0.75,-0.5,0.433]), plot=False)
+y21 = ppl_right.project(np.array([0.895,0.065,-1.535]), direction=np.array([-0.75,-0.5,0.433]), plot=False)
+y22 = ppl_right.project(np.array([1.605,1.485,-1.945]), direction=np.array([-0.75,-0.5,0.433]), plot=False)
+ppl_right_plane_y = am.subtract(y11, y12)
+ppl_right_plane_x = am.subtract(y21, y22)
+ppl_right_origin = ppl_right.project(np.array([1.25,-0.775,-1.74]), direction=np.array([-0.75,-0.5,0.433]))
+sys_rep.add_output(f"{ppl_right.parameters['name']}_in_plane_1", ppl_right_plane_y)
+sys_rep.add_output(f"{ppl_right.parameters['name']}_in_plane_2", ppl_right_plane_x)
+sys_rep.add_output(f"{ppl_right.parameters['name']}_origin", ppl_right_origin)
+
 # endregion
 
 # endregion
