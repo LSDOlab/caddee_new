@@ -53,7 +53,7 @@ class AffineSectionPropertiesCSDL(csdl.Model):
                         dof = self.create_input(parameter_name, val=parameter.value)
                         # dof = self.create_input(f'{ffd_block.name}_order_{parameter.order}_{parameter.property_type}', val=parameter.value)
                     else:   # no connection name and no value means it's not prescribed (it's free)
-                        dof = self.create_input(parameter_name, shape=(parameter.num_dof,))
+                        continue    # SKIP THIS PARAMETER BEAUSE ITS FREE, NOT PRESCRIBED
 
                 
                 parameter_ending_index = parameter_starting_index + parameter.num_dof
