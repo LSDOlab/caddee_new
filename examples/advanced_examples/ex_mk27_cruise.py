@@ -70,59 +70,125 @@ sys_rep.add_component(top_wing)
 pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['MidProps, 0']).keys())
 ppm_left = cd.Rotor(name='ppm_disk_left', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppm_left)
-ppm_left.plot()
+# ppm_left.plot()
 
 pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['MidProps, 1']).keys())
 ppm_right = cd.Rotor(name='ppm_disk_right', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppm_right)
-ppm_right.plot()
+# ppm_right.plot()
 
 pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['UpperProps, 1']).keys())
 ppu_left = cd.Rotor(name='ppu_disk_left', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppu_left)
-ppu_left.plot()
+# ppu_left.plot()
 
 pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['UpperProps, 0']).keys())
 ppu_right = cd.Rotor(name='ppu_disk_right', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppu_right)
-ppu_right.plot()
+# ppu_right.plot()
 
 pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['LowerProps, 1']).keys())
 ppl_left = cd.Rotor(name='ppl_disk_left', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppl_left)
-ppl_left.plot()
+# ppl_left.plot()
 
 pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['LowerProps, 10']).keys())
 ppl_right = cd.Rotor(name='ppl_disk_right', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppl_right)
-ppl_right.plot()
+# ppl_right.plot()
 
 # endregion
 
 # endregion
 
 # region FFD
-# htail_geometry_primitives = htail.get_geometry_primitives()
-# htail_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
-#     htail_geometry_primitives,
-#     num_control_points=(11, 2, 2), order=(4,2,2),
-#     xyz_to_uvw_indices=(1,0,2)
-# )
-# htail_ffd_block = cd.SRBGFFDBlock(name='htail_ffd_block',
-#                                   primitive=htail_ffd_bspline_volume,
-#                                   embedded_entities=htail_geometry_primitives)
-# htail_ffd_block.add_scale_v(name='htail_linear_taper',
-#                             order=2, num_dof=3, value=np.array([0., 0., 0.]),
-#                             cost_factor=1.)
-# htail_ffd_block.add_rotation_u(name='htail_twist_distribution',
-#                                connection_name='h_tail_act', order=1,
-#                                num_dof=1, value=np.array([np.deg2rad(1.75)]))
-# ffd_set = cd.SRBGFFDSet(
-#     name='ffd_set',
-#     ffd_blocks={htail_ffd_block.name : htail_ffd_block}
-# )
-# sys_param.add_geometry_parameterization(ffd_set)
-# sys_param.setup()
+ppm_left_geometry_primitives = ppm_left.get_geometry_primitives()
+ppm_left_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
+    ppm_left_geometry_primitives,
+    num_control_points=(2, 2, 2), order=(2,2,2),
+    xyz_to_uvw_indices=(0,1,2)
+)
+ppm_left_ffd_block = cd.SRBGFFDBlock(name='ppm_left_ffd_block',
+                                  primitive=ppm_left_ffd_bspline_volume,
+                                  embedded_entities=ppm_left_geometry_primitives)
+ppm_left_ffd_block.add_scale_v(name='ppm_left_scale_v',order=2, num_dof=3, cost_factor=1.)
+ppm_left_ffd_block.add_scale_w(name='ppm_left_scale_w', order=2, num_dof=2)
+
+ppm_right_geometry_primitives = ppm_right.get_geometry_primitives()
+ppm_right_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
+    ppm_right_geometry_primitives,
+    num_control_points=(2, 2, 2), order=(2,2,2),
+    xyz_to_uvw_indices=(0,1,2)
+)
+ppm_right_ffd_block = cd.SRBGFFDBlock(name='ppm_right_ffd_block',
+                                  primitive=ppm_right_ffd_bspline_volume,
+                                  embedded_entities=ppm_right_geometry_primitives)
+ppm_right_ffd_block.add_scale_v(name='ppm_right_scale_v',order=2, num_dof=3, cost_factor=1.)
+ppm_right_ffd_block.add_scale_w(name='ppm_right_scale_w', order=2, num_dof=2)
+
+ppu_left_geometry_primitives = ppu_left.get_geometry_primitives()
+ppu_left_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
+    ppu_left_geometry_primitives,
+    num_control_points=(2, 2, 2), order=(2,2,2),
+    xyz_to_uvw_indices=(0,1,2)
+)
+ppu_left_ffd_block = cd.SRBGFFDBlock(name='ppu_left_ffd_block',
+                                  primitive=ppu_left_ffd_bspline_volume,
+                                  embedded_entities=ppu_left_geometry_primitives)
+ppu_left_ffd_block.add_scale_v(name='ppu_left_scale_v',order=2, num_dof=3, cost_factor=1.)
+ppu_left_ffd_block.add_scale_w(name='ppu_left_scale_w', order=2, num_dof=2)
+
+
+ppu_right_geometry_primitives = ppu_right.get_geometry_primitives()
+ppu_right_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
+    ppu_right_geometry_primitives,
+    num_control_points=(2, 2, 2), order=(2,2,2),
+    xyz_to_uvw_indices=(0,1,2)
+)
+ppu_right_ffd_block = cd.SRBGFFDBlock(name='ppu_right_ffd_block',
+                                  primitive=ppu_right_ffd_bspline_volume,
+                                  embedded_entities=ppu_right_geometry_primitives)
+ppu_right_ffd_block.add_scale_v(name='ppu_right_scale_v',order=2, num_dof=3, cost_factor=1.)
+ppu_right_ffd_block.add_scale_w(name='ppu_right_scale_w', order=2, num_dof=2)
+
+
+ppl_left_geometry_primitives = ppl_left.get_geometry_primitives()
+ppl_left_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
+    ppl_left_geometry_primitives,
+    num_control_points=(2, 2, 2), order=(2,2,2),
+    xyz_to_uvw_indices=(0,1,2)
+)
+ppl_left_ffd_block = cd.SRBGFFDBlock(name='ppl_left_ffd_block',
+                                  primitive=ppl_left_ffd_bspline_volume,
+                                  embedded_entities=ppl_left_geometry_primitives)
+ppl_left_ffd_block.add_scale_v(name='ppl_left_scale_v',order=2, num_dof=3, cost_factor=1.)
+ppl_left_ffd_block.add_scale_w(name='ppl_left_scale_w', order=2, num_dof=2)
+
+
+ppl_right_geometry_primitives = ppl_right.get_geometry_primitives()
+ppl_right_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
+    ppl_right_geometry_primitives,
+    num_control_points=(2, 2, 2), order=(2,2,2),
+    xyz_to_uvw_indices=(0,1,2)
+)
+ppl_right_ffd_block = cd.SRBGFFDBlock(name='ppl_right_ffd_block',
+                                  primitive=ppl_right_ffd_bspline_volume,
+                                  embedded_entities=ppl_right_geometry_primitives)
+ppl_right_ffd_block.add_scale_v(name='ppl_right_scale_v',order=2, num_dof=3, cost_factor=1.)
+ppl_right_ffd_block.add_scale_w(name='ppl_right_scale_w', order=2, num_dof=2)
+
+ffd_set = cd.SRBGFFDSet(
+    name='ffd_set',
+    ffd_blocks={ppm_left_ffd_block.name : ppm_left_ffd_block,
+                ppm_right_ffd_block.name : ppm_right_ffd_block,
+                ppu_left_ffd_block.name : ppu_left_ffd_block,
+                ppu_right_ffd_block.name : ppu_right_ffd_block,
+                ppl_left_ffd_block.name : ppl_left_ffd_block,
+                ppl_right_ffd_block.name : ppl_right_ffd_block,
+                }
+)
+sys_param.add_geometry_parameterization(ffd_set)
+sys_param.setup()
 # endregion
 
 
@@ -207,10 +273,10 @@ if debug_geom_flag:
     spatial_rep.plot_meshes([lower_wing_chord_surface])
 
 # Upper and lower surface
-lower_wing_upper_surface_wireframe = main_wing.project(lower_wing_chord_surface.value + np.array([0., 0., 0.5]),
+lower_wing_upper_surface_wireframe = low_wing.project(lower_wing_chord_surface.value + np.array([0., 0., 0.5]),
                                             direction=np.array([0., 0., -1.]), grid_search_n=25,
                                             plot=debug_geom_flag, max_iterations=200)
-lower_wing_lower_surface_wireframe = main_wing.project(lower_wing_chord_surface.value - np.array([0., 0., 0.5]),
+lower_wing_lower_surface_wireframe = low_wing.project(lower_wing_chord_surface.value - np.array([0., 0., 0.5]),
                                             direction=np.array([0., 0., 1.]), grid_search_n=25,
                                             plot=debug_geom_flag, max_iterations=200)
 
@@ -258,10 +324,10 @@ if debug_geom_flag:
     spatial_rep.plot_meshes([upper_wing_chord_surface])
 
 # Upper and lower surface
-upper_wing_upper_surface_wireframe = main_wing.project(upper_wing_chord_surface.value + np.array([0., 0., 0.5]),
+upper_wing_upper_surface_wireframe = top_wing.project(upper_wing_chord_surface.value + np.array([0., 0., 0.5]),
                                             direction=np.array([0., 0., -1.]), grid_search_n=25,
                                             plot=debug_geom_flag, max_iterations=200)
-upper_wing_lower_surface_wireframe = main_wing.project(upper_wing_chord_surface.value - np.array([0., 0., 0.5]),
+upper_wing_lower_surface_wireframe = top_wing.project(upper_wing_chord_surface.value - np.array([0., 0., 0.5]),
                                             direction=np.array([0., 0., 1.]), grid_search_n=25,
                                             plot=debug_geom_flag, max_iterations=200)
 
