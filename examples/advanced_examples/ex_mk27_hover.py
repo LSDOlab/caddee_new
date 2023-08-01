@@ -277,6 +277,37 @@ sys_rep.add_output(f"{ppl_right.parameters['name']}_origin", ppl_right_origin)
 
 # endregion
 
+ppm_left_radius_1 = am.norm(ppm_left_plane_x/2)
+ppm_left_radius_2 = am.norm(ppm_left_plane_y/2)
+sys_param.add_input(name='ppm_left_radius_1', quantity=ppm_left_radius_1, value=np.array([0.5]))
+sys_param.add_input(name='ppm_left_radius_2', quantity=ppm_left_radius_2, value=np.array([0.5]))
+
+ppm_right_radius_1 = am.norm(ppm_right_plane_x/2)
+ppm_right_radius_2 = am.norm(ppm_right_plane_y/2)
+sys_param.add_input(name='ppm_right_radius_1', quantity=ppm_right_radius_1, value=np.array([0.5]))
+sys_param.add_input(name='ppm_right_radius_2', quantity=ppm_right_radius_2, value=np.array([0.5]))
+
+ppu_left_radius_1 = am.norm(ppu_left_plane_x/2)
+ppu_left_radius_2 = am.norm(ppu_left_plane_y/2)
+sys_param.add_input(name='ppu_left_radius_1', quantity=ppu_left_radius_1, value=np.array([0.5]))
+sys_param.add_input(name='ppu_left_radius_2', quantity=ppu_left_radius_2, value=np.array([0.5]))
+
+ppu_right_radius_1 = am.norm(ppu_right_plane_x/2)
+ppu_right_radius_2 = am.norm(ppu_right_plane_y/2)
+sys_param.add_input(name='ppu_right_radius_1', quantity=ppu_right_radius_1, value=np.array([0.5]))
+sys_param.add_input(name='ppu_right_radius_2', quantity=ppu_right_radius_2, value=np.array([0.5]))
+
+ppl_left_radius_1 = am.norm(ppl_left_plane_x/2)
+ppl_left_radius_2 = am.norm(ppl_left_plane_y/2)
+sys_param.add_input(name='ppl_left_radius_1', quantity=ppl_left_radius_1, value=np.array([0.5]))
+sys_param.add_input(name='ppl_left_radius_2', quantity=ppl_left_radius_2, value=np.array([0.5]))
+
+ppl_right_radius_1 = am.norm(ppl_right_plane_x/2)
+ppl_right_radius_2 = am.norm(ppl_right_plane_y/2)
+sys_param.add_input(name='ppl_right_radius_1', quantity=ppl_right_radius_1, value=np.array([0.5]))
+sys_param.add_input(name='ppl_right_radius_2', quantity=ppl_right_radius_2, value=np.array([0.5]))
+
+
 # removed blade meshes, twist
 
 # design scenario
