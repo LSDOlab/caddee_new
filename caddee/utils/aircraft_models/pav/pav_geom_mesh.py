@@ -610,6 +610,8 @@ class PavGeomMesh:
 
     def beam_mesh(self,
                   include_wing_flag=False, num_wing_beam_nodes=21,
+                  beam_axis_location=0.35, front_spar_location=0.25, rear_spar_location=0.75,
+                  height_computation_location=0.25,
                   debug_geom_flag=False, visualize_flag=False,
                   force_reprojection=True
                   ):
@@ -639,18 +641,43 @@ class PavGeomMesh:
             wing_trailing_edge = wing_te_component.project(trailing_edge_points, direction=np.array([1., 0., 0.]),
                                                       plot=debug_geom_flag, force_reprojection=force_reprojection)
 
-
+            # Wing beam nodes is located at 35% from the leading edge
             wing_beam = am.linear_combination(wing_leading_edge, wing_trailing_edge, 1,
-                                              start_weights=np.ones((num_wing_beam_nodes,)) * 0.75,
-                                              stop_weights=np.ones((num_wing_beam_nodes,)) * 0.25)
-            width = am.norm((wing_leading_edge - wing_trailing_edge) * 0.5)
-
+                                              start_weights=np.ones((num_wing_beam_nodes,)) * (1-beam_axis_location),
+                                              stop_weights=np.ones((num_wing_beam_nodes,)) * beam_axis_location)
             if debug_geom_flag:
                 spatial_rep.plot_meshes([wing_beam])
 
+            # Get the width of the beam
+            front_spar = am.linear_combination(
+                wing_leading_edge, wing_trailing_edge, 1,
+                                              start_weights=np.ones((num_wing_beam_nodes,)) * (1-front_spar_location),
+                                              stop_weights=np.ones((num_wing_beam_nodes,)) * front_spar_location
+            )
+            if debug_geom_flag:
+                spatial_rep.plot_meshes([front_spar])
+
+            rear_spar = am.linear_combination(
+                wing_leading_edge, wing_trailing_edge, 1,
+                start_weights=np.ones((num_wing_beam_nodes,)) * (1-rear_spar_location),
+                stop_weights=np.ones((num_wing_beam_nodes,)) * rear_spar_location
+            )
+            if debug_geom_flag:
+                spatial_rep.plot_meshes([rear_spar])
+
+            width = am.norm((front_spar.reshape((-1, 3)) - rear_spar.reshape((-1, 3))) * 1)
+
+            # Get the height of the beam
             offset = np.array([0, 0, 0.5])
-            top = wing_component.project(wing_beam.value + offset, direction=np.array([0., 0., -1.]), plot=debug_geom_flag)
-            bot = wing_component.project(wing_beam.value - offset, direction=np.array([0., 0., 1.]), plot=debug_geom_flag)
+            height_location = am.linear_combination(
+                wing_leading_edge, wing_trailing_edge, 1,
+                start_weights=np.ones((num_wing_beam_nodes,)) * (1 - height_computation_location),
+                stop_weights=np.ones((num_wing_beam_nodes,)) * height_computation_location
+            )
+            if debug_geom_flag:
+                spatial_rep.plot_meshes([height_location])
+            top = wing_component.project(height_location.value + offset, direction=np.array([0., 0., -1.]), plot=debug_geom_flag)
+            bot = wing_component.project(height_location.value - offset, direction=np.array([0., 0., 1.]), plot=debug_geom_flag)
             height = am.norm((top.reshape((-1, 3)) - bot.reshape((-1, 3))) * 1)
 
             self.sys_rep.add_output(name='wing_beam_mesh', quantity=wing_beam)
@@ -674,5 +701,5 @@ class PavGeomMesh:
             self.mesh_data['beam']['mass'] = beam_mass_mesh
 
             if visualize_flag:
-                spatial_rep.plot_meshes([wing_beam])
+                spatial_rep.plot_meshes([wing_beam, front_spar, rear_spar])
         return

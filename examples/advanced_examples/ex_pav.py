@@ -31,7 +31,7 @@ import unittest
 
 
 ft2m = 0.3048
-force_reprojection = True
+force_reprojection = False
 
 # def setup_geometry(include_wing_flag=False, num_wing_spanwise_vlm = 21, num_wing_chordwise_vlm = 5,
 #                    include_tail_flag=False, num_htail_vlm = 21, num_chordwise_vlm = 5,
@@ -858,6 +858,202 @@ def trim_at_cruise(wing_cl0=0.3662):
             (rpm - 2877.73471511) ** 2 > tolerence or \
             (tail_actuation - (-0.07463752)) ** 2 > tolerence:
         raise ValueError
+    return twist_cp, chord_cp
+
+
+def trim_at_n1g(wing_cl0=0.3662,
+                pusher_prop_twist_cp=np.array([1.10595917, 0.71818285, 0.47990602, 0.35717703]),
+                pusher_prop_chord_cp=np.array([0.09891285, 0.15891845, 0.14555978, 0.06686854])):
+
+    caddee = cd.CADDEE()
+    caddee.system_model = system_model = cd.SystemModel()
+
+    # region Geometry and meshes
+
+    # region Lifting surfaces
+    pav_geom_mesh = PavGeomMesh()
+    pav_geom_mesh.setup_geometry(
+        include_wing_flag=True,
+        include_htail_flag=True,
+        force_reprojection=force_reprojection
+    )
+    pav_geom_mesh.vlm_meshes(include_wing_flag=True, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=5,
+                             include_htail_flag=True, num_htail_spanwise_vlm=21, num_htail_chordwise_vlm=5,
+                             force_reprojection=force_reprojection)
+    pav_geom_mesh.actuations(include_tail_actuation_flag=True)
+
+    caddee.system_representation = sys_rep = pav_geom_mesh.sys_rep
+    caddee.system_parameterization = sys_param = pav_geom_mesh.sys_param
+    sys_param.setup()
+    # endregion
+
+    spatial_rep = sys_rep.spatial_representation
+
+    # region Rotors
+    # Pusher prop
+    pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['PropPusher']).keys())
+    pp_disk = cd.Rotor(name='pp_disk', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
+    sys_rep.add_component(pp_disk)
+    # endregion
+    # endregion
+
+    # region Sizing
+    pav_wt = PavMassProperties()
+    mass, cg, I = pav_wt.evaluate()
+
+    total_mass_properties = cd.TotalMassPropertiesM3L()
+    total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass, cg, I)
+    # endregion
+
+    # region Mission
+
+    design_scenario = cd.DesignScenario(name='aircraft_trim')
+
+    # region Cruise condition
+    cruise_model = m3l.Model()
+    cruise_condition = cd.CruiseCondition(name="cruise_1")
+    cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
+    cruise_condition.set_module_input(name='altitude', val=600 * ft2m)
+    cruise_condition.set_module_input(name='mach_number', val=0.145972)  # 112 mph = 0.145972 Mach
+    cruise_condition.set_module_input(name='range', val=80467.2)  # 50 miles = 80467.2 m
+    cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(-0.02403531), dv_flag=True,
+                                      lower=np.deg2rad(-15), upper=np.deg2rad(10))
+    cruise_condition.set_module_input(name='flight_path_angle', val=0)
+    cruise_condition.set_module_input(name='roll_angle', val=0)
+    cruise_condition.set_module_input(name='yaw_angle', val=0)
+    cruise_condition.set_module_input(name='wind_angle', val=0)
+    cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 600 * ft2m]))
+
+    cruise_ac_states = cruise_condition.evaluate_ac_states()
+    cruise_model.register_output(cruise_ac_states)
+
+    # region Propulsion
+    pusher_bem_mesh = BEMMesh(
+        airfoil='NACA_4412',
+        num_blades=5,
+        num_radial=25,
+        use_airfoil_ml=False,
+        use_rotor_geometry=False,
+        mesh_units='m',
+        chord_b_spline_rep=True,
+        twist_b_spline_rep=True
+    )
+    bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
+    bem_model.set_module_input('rpm', val=4000., dv_flag=True, lower=1500., upper=5000., scaler=1e-3)
+    bem_model.set_module_input('propeller_radius', val=3.97727 / 2 * ft2m)
+    bem_model.set_module_input('thrust_vector', val=np.array([1., 0., 0.]))
+    bem_model.set_module_input('thrust_origin', val=np.array([19.700, 0., 2.625])* ft2m)
+    bem_model.set_module_input('chord_cp', val=pusher_prop_chord_cp)
+    bem_model.set_module_input('twist_cp', val=pusher_prop_twist_cp)
+    bem_forces, bem_moments, _, _, _, _ = bem_model.evaluate(ac_states=cruise_ac_states)
+    cruise_model.register_output(bem_forces)
+    cruise_model.register_output(bem_moments)
+    # endregion
+
+    # region Inertial loads
+    inertial_loads_model = cd.InertialLoadsM3L(load_factor=-1.)
+    inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=total_cg, totoal_mass=total_mass,
+                                                                      ac_states=cruise_ac_states)
+    cruise_model.register_output(inertial_forces)
+    cruise_model.register_output(inertial_moments)
+    # endregion
+
+    # region Aerodynamics
+    vlm_model = VASTFluidSover(
+        surface_names=[
+            pav_geom_mesh.mesh_data['vlm']['mesh_name']['wing'],
+            pav_geom_mesh.mesh_data['vlm']['mesh_name']['htail']
+        ],
+        surface_shapes=[
+            (1,) + pav_geom_mesh.mesh_data['vlm']['chamber_surface']['wing'].evaluate().shape[1:],
+            (1,) + pav_geom_mesh.mesh_data['vlm']['chamber_surface']['htail'].evaluate().shape[1:],
+        ],
+        fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+        mesh_unit='m',
+        cl0=[wing_cl0, 0.0]
+    )
+    vlm_panel_forces, vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=cruise_ac_states)
+    cruise_model.register_output(vlm_forces)
+    cruise_model.register_output(vlm_moments)
+    # endregion
+
+    # Total loads
+    total_forces_moments_model = cd.TotalForcesMomentsM3L()
+    total_forces, total_moments = total_forces_moments_model.evaluate(
+        inertial_forces, inertial_moments,
+        vlm_forces, vlm_moments,
+        bem_forces, bem_moments
+    )
+    cruise_model.register_output(total_forces)
+    cruise_model.register_output(total_moments)
+
+    # Equations of motions
+    eom_m3l_model = cd.EoMM3LEuler6DOF()
+    trim_residual = eom_m3l_model.evaluate(
+        total_mass=total_mass,
+        total_cg_vector=total_cg,
+        total_inertia_tensor=total_inertia,
+        total_forces=total_forces,
+        total_moments=total_moments,
+        ac_states=cruise_ac_states
+    )
+
+    cruise_model.register_output(trim_residual)
+
+    # Add cruise m3l model to cruise condition
+    cruise_condition.add_m3l_model('cruise_model', cruise_model)
+
+    # Add design condition to design scenario
+    design_scenario.add_design_condition(cruise_condition)
+    # endregion
+
+    system_model.add_design_scenario(design_scenario=design_scenario)
+    # endregion
+
+    caddee_csdl_model = caddee.assemble_csdl()
+
+    caddee_csdl_model.create_input(name='h_tail_act', val=np.deg2rad(0.))
+    caddee_csdl_model.add_design_variable(dv_name='h_tail_act', lower=np.deg2rad(-15), upper=np.deg2rad(15), scaler=1.)
+
+    # region Optimization Setup
+    caddee_csdl_model.add_objective('system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual')
+    # endregion
+
+    # Create and run simulator
+    sim = Simulator(caddee_csdl_model, analytics=True)
+    sim.run()
+    # sim.compute_total_derivatives()
+    # sim.check_totals()
+
+    print('Total forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_forces'])
+    print('Total moments:', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_moments'])
+
+    prob = CSDLProblem(problem_name='lpc', simulator=sim)
+    optimizer = SLSQP(prob, maxiter=500, ftol=1E-10)
+    optimizer.solve()
+    optimizer.print_results()
+
+    pitch_angle = np.rad2deg(sim['system_model.aircraft_trim.cruise_1.cruise_1.cruise_1_ac_states_operation.cruise_1_pitch_angle'])
+    rpm = sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.rpm']
+    tail_actuation = np.rad2deg(sim['system_parameterization.ffd_set.rotational_section_properties_model.h_tail_act'])
+
+    print('Trim residual: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual'])
+    print('Trim forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_forces'])
+    print('Trim moments:', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_moments'])
+    print('Pitch: ', pitch_angle)
+    print('RPM: ', rpm)
+    print('Horizontal tail actuation: ', tail_actuation)
+
+    print('Cruise propeller efficiency: ',
+          sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.induced_velocity_model.eta'])
+    print('Cruise L/D',
+          sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.L_over_D'])
+    print('Cruise prop torque', sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.induced_velocity_model.total_torque'])
+
+    twist_cp = sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.twist_cp']
+    print('Cruise prop twist cp: ', twist_cp)
+    chord_cp = sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.chord_cp']
+    print('Cruise prop chord cp: ', chord_cp)
     return twist_cp, chord_cp
 
 
@@ -2083,16 +2279,19 @@ if __name__ == '__main__':
     # vlm_as_ll()
     # cl0 = tuning_cl0()
     # vlm_evaluation_wing_only_aoa_sweep()
-    # vlm_evaluation_wing_tail_aoa_sweep(visualize_flag=True)
+    # vlm_evaluation_wing_tail_aoa_sweep(visualize_flag=False)
     # pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
+    # trim_at_n1g(
+    #     pusher_prop_twist_cp=pusher_prop_twist_cp,
+    #     pusher_prop_chord_cp=pusher_prop_chord_cp
+    # )
     # trim_at_3g(
     #     pusher_prop_twist_cp=pusher_prop_twist_cp,
     #     pusher_prop_chord_cp=pusher_prop_chord_cp
     # )
-    structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(-0.38129494), visualize_flag=False)
-    # structural_wingbox_beam_sizing(pitch_angle=np.deg2rad(13.74084308))
-
-    # structural_wingbox_shell_evaluation(pitch_angle=np.deg2rad(12.48100761), visualize_flag=False)
-
     # optimize_lift_rotor_blade(debug_geom_flag=False)
     # trim_at_hover()
+
+    structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.11391141), visualize_flag=False)
+    # structural_wingbox_beam_sizing(pitch_angle=np.deg2rad(13.74084308))
+    # structural_wingbox_shell_evaluation(pitch_angle=np.deg2rad(12.48100761), visualize_flag=False)
