@@ -736,11 +736,11 @@ total_forces, total_moments = total_forces_moments_model.evaluate(
     inertial_forces, inertial_moments,
     vlm_forces, vlm_moments,
     ppm_left_bem_forces, ppm_left_bem_moments,
-    # ppm_right_bem_forces, ppm_right_bem_moments,
-    # ppu_left_bem_forces, ppu_left_bem_moments,
-    # ppu_right_bem_forces, ppu_right_bem_moments,
-    # ppl_left_bem_forces, ppl_left_bem_moments,
-    # ppl_right_bem_forces, ppl_right_bem_moments,
+    ppm_right_bem_forces, ppm_right_bem_moments,
+    ppu_left_bem_forces, ppu_left_bem_moments,
+    ppu_right_bem_forces, ppu_right_bem_moments,
+    ppl_left_bem_forces, ppl_left_bem_moments,
+    ppl_right_bem_forces, ppl_right_bem_moments,
 )
 cruise_model.register_output(total_forces)
 cruise_model.register_output(total_moments)
@@ -812,17 +812,17 @@ print('Total moments:', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_
 
 # system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.induced_velocity_model.FOM
 
-prob = CSDLProblem(problem_name='lpc', simulator=sim)
-optimizer = SLSQP(prob, maxiter=1000, ftol=1E-10)
-optimizer.solve()
-optimizer.print_results()
+# prob = CSDLProblem(problem_name='lpc', simulator=sim)
+# optimizer = SLSQP(prob, maxiter=1000, ftol=1E-10)
+# optimizer.solve()
+# optimizer.print_results()
 
-print('Trim residual: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual'])
-print('Trim forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_forces'])
-print('Trim moments:', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_moments'])
-print('Pitch: ', np.rad2deg(sim['system_model.aircraft_trim.cruise_1.cruise_1.cruise_1_ac_states_operation.cruise_1_pitch_angle']))
-print('RPM: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.rpm'])
-print('Horizontal tail actuation: ', np.rad2deg(sim['system_parameterization.ffd_set.rotational_section_properties_model.h_tail_act']))
+# print('Trim residual: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual'])
+# print('Trim forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_forces'])
+# print('Trim moments:', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_moments'])
+# print('Pitch: ', np.rad2deg(sim['system_model.aircraft_trim.cruise_1.cruise_1.cruise_1_ac_states_operation.cruise_1_pitch_angle']))
+# print('RPM: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.rpm'])
+# print('Horizontal tail actuation: ', np.rad2deg(sim['system_parameterization.ffd_set.rotational_section_properties_model.h_tail_act']))
 
-print(sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.induced_velocity_model.eta'])
-print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.L_over_D'])
+# print(sim['system_model.aircraft_trim.cruise_1.cruise_1.pp_disk_bem_model.induced_velocity_model.eta'])
+# print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.L_over_D'])
