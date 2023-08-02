@@ -79,7 +79,7 @@ system_m3l_model = m3l.Model()
 # battery
 battery_component = cd.Component(name='battery')
 simple_battery_sizing = cd.SimpleBatterySizingM3L(component=battery_component)
-simple_battery_sizing.set_module_input('battery_mass', val=900, dv_flag=True, lower=600, scaler=1e-3)
+simple_battery_sizing.set_module_input('battery_mass', val=900, dv_flag=True, lower=650, scaler=1e-3)
 simple_battery_sizing.set_module_input('battery_position', val=np.array([3.1, 0, 0.5]), dv_flag=False, lower=np.array([3.0, -1e-4, 0.5 - 1e-4]), upper=np.array([4, +1e-4, 0.5 + 1e-4]), scaler=1e-1)
 simple_battery_sizing.set_module_input('battery_energy_density', val=400)
 battery_mass, cg_battery, I_battery = simple_battery_sizing.evaluate()
@@ -5012,26 +5012,26 @@ caddee_csdl_model.add_design_variable('rro_twist_cp', lower=0, upper=np.deg2rad(
 # endregion
 
 # region system level constraints and objective
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.minus_1g_sizing_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.hover_1_oei_flo_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.hover_1_oei_fli_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.minus_1g_sizing_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.hover_1_oei_flo_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.hover_1_oei_fli_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
 
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_1_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_2_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_4_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_5_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_6_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_7_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_8_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_9_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_10_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_1_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_2_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_4_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_5_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_6_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_7_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_8_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_9_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_10_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
 
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.hover_1_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.climb_1_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.cruise_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.descent_1_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=5)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.hover_1_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.climb_1_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.cruise_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.descent_1_euler_eom_gen_ref_pt.trim_residual', equals=0, scaler=10)
 
 # caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress',upper=427E6/1.,scaler=1E-8)
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress', upper=600E6/1.5, scaler=1E-8) # Quasi isotropic 
@@ -5046,7 +5046,7 @@ caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_3_total_nois
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_4_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_5_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
 
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.SOC_model.finalSoC', lower=0.2, scaler=10)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.SOC_model.finalSoC', lower=0.2, scaler=20)
 
 caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_mass_properties.total_constant_mass', scaler=1e-3)
 
@@ -5243,7 +5243,7 @@ optimizer = SNOPT(
     Major_feasibility=1e-4,
     append2file=True,
     Iteration_limit=500000,
-    Major_step_limit= 1.0,
+    Major_step_limit= 2.0,
     Linesearch_tolerance=0.5,
 )
 
