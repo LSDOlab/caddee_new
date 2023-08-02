@@ -60,7 +60,7 @@ VertStab = LiftingSurface(name='VertStab', spatial_representation=spatial_rep, p
 
 
 
-region Rotors
+# region Rotors
 # Pusher prop
 pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Middle Props, 0']).keys())
 ppm_left = cd.Rotor(name='ppm_disk_left', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
