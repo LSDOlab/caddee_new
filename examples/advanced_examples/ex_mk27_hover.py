@@ -29,7 +29,7 @@ file_name = 'AmazonPrime.stp'
 spatial_rep = sys_rep.spatial_representation
 spatial_rep.import_file(file_name=GEOMETRY_FILES_FOLDER / file_name)
 spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
-# spatial_rep.plot()
+spatial_rep.plot()
 
 
 # Wing definintions - Mid, Upper, Lower Wings, then Top, Bottom of frame, finally vertical stabilizer
@@ -206,9 +206,9 @@ y21 = ppm_left.project(np.array([2.5,-1.75,0.82]), direction=np.array([-1., 0., 
 y22 = ppm_left.project(np.array([2.5,-1.75,-0.82]), direction=np.array([-1., 0., 0.]), plot=False)
 ppm_left_plane_y = am.subtract(y11, y12)
 ppm_left_plane_x = am.subtract(y21, y22)
-ppm_left_origin = ppm_left.project(np.array([2.5,-1.75,0]), direction=np.array([-1., 0., 0.]))
-sys_rep.add_output(f"{ppm_left.parameters['name']}_in_plane_1", ppm_left_plane_y)
-sys_rep.add_output(f"{ppm_left.parameters['name']}_in_plane_2", ppm_left_plane_x)
+ppm_left_origin = ppm_left.project(np.array([2.5,-1.75,0]), direction=np.array([-1., 0., 0.]), plot=False)
+# sys_rep.add_output(f"{ppm_left.parameters['name']}_in_plane_1", ppm_left_plane_y)
+# sys_rep.add_output(f"{ppm_left.parameters['name']}_in_plane_2", ppm_left_plane_x)
 sys_rep.add_output(f"{ppm_left.parameters['name']}_origin", ppm_left_origin)
 
 #right
@@ -218,10 +218,10 @@ y21 = ppm_right.project(np.array([2.5,1.75,0.82]), direction=np.array([-1., 0., 
 y22 = ppm_right.project(np.array([2.5,1.75,-0.82]), direction=np.array([-1., 0., 0.]), plot=False)
 ppm_right_plane_y = am.subtract(y11, y12)
 ppm_right_plane_x = am.subtract(y21, y22)
-ppm_right_origin = ppm_right.project(np.array([2.5,1.75,0]), direction=np.array([-1., 0., 0.]))
-sys_rep.add_output(f"{ppm_right.parameters['name']}_in_plane_1", ppm_right_plane_y)
-sys_rep.add_output(f"{ppm_right.parameters['name']}_in_plane_2", ppm_right_plane_x)
-sys_rep.add_output(f"{ppm_right.parameters['name']}_origin", ppm_right_origin)
+ppm_right_origin = ppm_right.project(np.array([2.5,1.75,0]), direction=np.array([-1., 0., 0.]),  plot=False)
+# sys_rep.add_output(f"{ppm_right.parameters['name']}_in_plane_1", ppm_right_plane_y)
+# sys_rep.add_output(f"{ppm_right.parameters['name']}_in_plane_2", ppm_right_plane_x)
+# sys_rep.add_output(f"{ppm_right.parameters['name']}_origin", ppm_right_origin)
 
 # disk: uppers
 #left
@@ -231,10 +231,10 @@ y21 = ppu_left.project(np.array([3.136,-1.88,1.513]), direction=np.array([-.683,
 y22 = ppu_left.project(np.array([3.846,-0.42,1.687]), direction=np.array([-.683,0.259,0.683]), plot=False)
 ppu_left_plane_y = am.subtract(y11, y12)
 ppu_left_plane_x = am.subtract(y21, y22)
-ppu_left_origin = ppu_left.project(np.array([3.5,-1.15,1.6]), direction=np.array([-.683,0.259,0.683]))
-sys_rep.add_output(f"{ppu_left.parameters['name']}_in_plane_1", ppu_left_plane_y)
-sys_rep.add_output(f"{ppu_left.parameters['name']}_in_plane_2", ppu_left_plane_x)
-sys_rep.add_output(f"{ppu_left.parameters['name']}_origin", ppu_left_origin)
+ppu_left_origin = ppu_left.project(np.array([3.5,-1.15,1.6]), direction=np.array([-.683,0.259,0.683]),  plot=False)
+# sys_rep.add_output(f"{ppu_left.parameters['name']}_in_plane_1", ppu_left_plane_y)
+# sys_rep.add_output(f"{ppu_left.parameters['name']}_in_plane_2", ppu_left_plane_x)
+# sys_rep.add_output(f"{ppu_left.parameters['name']}_origin", ppu_left_origin)
 
 #right
 y11 = ppu_right.project(np.array([3.976,1.458,2.193]), direction=np.array([-.683,-0.259,0.683]), plot=False)
@@ -243,10 +243,10 @@ y21 = ppu_right.project(np.array([3.136,1.88,1.513]), direction=np.array([-.683,
 y22 = ppu_right.project(np.array([3.846,0.42,1.687]), direction=np.array([-.683,-0.259,0.683]), plot=False)
 ppu_right_plane_y = am.subtract(y11, y12)
 ppu_right_plane_x = am.subtract(y21, y22)
-ppu_right_origin = ppu_right.project(np.array([3.5,1.15,1.6]), direction=np.array([-.683,-0.259,0.683]))
-sys_rep.add_output(f"{ppu_right.parameters['name']}_in_plane_1", ppu_right_plane_y)
-sys_rep.add_output(f"{ppu_right.parameters['name']}_in_plane_2", ppu_right_plane_x)
-sys_rep.add_output(f"{ppu_right.parameters['name']}_origin", ppu_right_origin)
+ppu_right_origin = ppu_right.project(np.array([3.5,1.15,1.6]), direction=np.array([-.683,-0.259,0.683]), plot=False)
+# sys_rep.add_output(f"{ppu_right.parameters['name']}_in_plane_1", ppu_right_plane_y)
+# sys_rep.add_output(f"{ppu_right.parameters['name']}_in_plane_2", ppu_right_plane_x)
+# sys_rep.add_output(f"{ppu_right.parameters['name']}_origin", ppu_right_origin)
 
 # disk: lowers
 #left
@@ -256,10 +256,10 @@ y21 = ppl_left.project(np.array([0.895,-0.065,-1.535]), direction=np.array([-0.7
 y22 = ppl_left.project(np.array([1.605,-1.485,-1.945]), direction=np.array([-0.75,0.5,0.433]), plot=False)
 ppl_left_plane_y = am.subtract(y11, y12)
 ppl_left_plane_x = am.subtract(y21, y22)
-ppl_left_origin = ppl_left.project(np.array([1.25,0.775,-1.74]), direction=np.array([-0.75,0.5,0.433]))
-sys_rep.add_output(f"{ppl_left.parameters['name']}_in_plane_1", ppl_left_plane_y)
-sys_rep.add_output(f"{ppl_left.parameters['name']}_in_plane_2", ppl_left_plane_x)
-sys_rep.add_output(f"{ppl_left.parameters['name']}_origin", ppl_left_origin)
+ppl_left_origin = ppl_left.project(np.array([1.25,-0.775,-1.74]), direction=np.array([-0.75,0.5,0.433]), plot=False)
+# sys_rep.add_output(f"{ppl_left.parameters['name']}_in_plane_1", ppl_left_plane_y)
+# sys_rep.add_output(f"{ppl_left.parameters['name']}_in_plane_2", ppl_left_plane_x)
+# sys_rep.add_output(f"{ppl_left.parameters['name']}_origin", ppl_left_origin)
 
 #right
 y11 = ppl_right.project(np.array([1.66,0.775,-1.03]), direction=np.array([-0.75,-0.5,0.433]), plot=False)
@@ -268,42 +268,42 @@ y21 = ppl_right.project(np.array([0.895,0.065,-1.535]), direction=np.array([-0.7
 y22 = ppl_right.project(np.array([1.605,1.485,-1.945]), direction=np.array([-0.75,-0.5,0.433]), plot=False)
 ppl_right_plane_y = am.subtract(y11, y12)
 ppl_right_plane_x = am.subtract(y21, y22)
-ppl_right_origin = ppl_right.project(np.array([1.25,-0.775,-1.74]), direction=np.array([-0.75,-0.5,0.433]))
-sys_rep.add_output(f"{ppl_right.parameters['name']}_in_plane_1", ppl_right_plane_y)
-sys_rep.add_output(f"{ppl_right.parameters['name']}_in_plane_2", ppl_right_plane_x)
-sys_rep.add_output(f"{ppl_right.parameters['name']}_origin", ppl_right_origin)
+ppl_right_origin = ppl_right.project(np.array([1.25,0.775,-1.74]), direction=np.array([-0.75,-0.5,0.433]), plot=False)
+# sys_rep.add_output(f"{ppl_right.parameters['name']}_in_plane_1", ppl_right_plane_y)
+# sys_rep.add_output(f"{ppl_right.parameters['name']}_in_plane_2", ppl_right_plane_x)
+# sys_rep.add_output(f"{ppl_right.parameters['name']}_origin", ppl_right_origin)
 
 # endregion
 
 ppm_left_radius_1 = am.norm(ppm_left_plane_x/2)
 ppm_left_radius_2 = am.norm(ppm_left_plane_y/2)
-sys_param.add_input(name='ppm_left_radius_1', quantity=ppm_left_radius_1, value=np.array([0.5]))
-sys_param.add_input(name='ppm_left_radius_2', quantity=ppm_left_radius_2, value=np.array([0.5]))
+sys_param.add_input(name='ppm_left_radius_1', quantity=ppm_left_radius_1)
+sys_param.add_input(name='ppm_left_radius_2', quantity=ppm_left_radius_2)
 
 ppm_right_radius_1 = am.norm(ppm_right_plane_x/2)
 ppm_right_radius_2 = am.norm(ppm_right_plane_y/2)
-sys_param.add_input(name='ppm_right_radius_1', quantity=ppm_right_radius_1, value=np.array([0.5]))
-sys_param.add_input(name='ppm_right_radius_2', quantity=ppm_right_radius_2, value=np.array([0.5]))
+sys_param.add_input(name='ppm_right_radius_1', quantity=ppm_right_radius_1)
+sys_param.add_input(name='ppm_right_radius_2', quantity=ppm_right_radius_2)
 
 ppu_left_radius_1 = am.norm(ppu_left_plane_x/2)
 ppu_left_radius_2 = am.norm(ppu_left_plane_y/2)
-sys_param.add_input(name='ppu_left_radius_1', quantity=ppu_left_radius_1, value=np.array([0.5]))
-sys_param.add_input(name='ppu_left_radius_2', quantity=ppu_left_radius_2, value=np.array([0.5]))
+sys_param.add_input(name='ppu_left_radius_1', quantity=ppu_left_radius_1)
+sys_param.add_input(name='ppu_left_radius_2', quantity=ppu_left_radius_2)
 
 ppu_right_radius_1 = am.norm(ppu_right_plane_x/2)
 ppu_right_radius_2 = am.norm(ppu_right_plane_y/2)
-sys_param.add_input(name='ppu_right_radius_1', quantity=ppu_right_radius_1, value=np.array([0.5]))
-sys_param.add_input(name='ppu_right_radius_2', quantity=ppu_right_radius_2, value=np.array([0.5]))
+sys_param.add_input(name='ppu_right_radius_1', quantity=ppu_right_radius_1)
+sys_param.add_input(name='ppu_right_radius_2', quantity=ppu_right_radius_2)
 
 ppl_left_radius_1 = am.norm(ppl_left_plane_x/2)
 ppl_left_radius_2 = am.norm(ppl_left_plane_y/2)
-sys_param.add_input(name='ppl_left_radius_1', quantity=ppl_left_radius_1, value=np.array([0.5]))
-sys_param.add_input(name='ppl_left_radius_2', quantity=ppl_left_radius_2, value=np.array([0.5]))
+sys_param.add_input(name='ppl_left_radius_1', quantity=ppl_left_radius_1)
+sys_param.add_input(name='ppl_left_radius_2', quantity=ppl_left_radius_2)
 
 ppl_right_radius_1 = am.norm(ppl_right_plane_x/2)
 ppl_right_radius_2 = am.norm(ppl_right_plane_y/2)
-sys_param.add_input(name='ppl_right_radius_1', quantity=ppl_right_radius_1, value=np.array([0.5]))
-sys_param.add_input(name='ppl_right_radius_2', quantity=ppl_right_radius_2, value=np.array([0.5]))
+sys_param.add_input(name='ppl_right_radius_1', quantity=ppl_right_radius_1, value=np.array([0.8]))
+sys_param.add_input(name='ppl_right_radius_2', quantity=ppl_right_radius_2, value=np.array([0.8]))
 
 ffd_set = cd.SRBGFFDSet(
     name='ffd_set',
@@ -333,20 +333,52 @@ hover_actuation_profile = np.pi/3
 hover_actuator_solver.set_rotation(name='hover_actuation', value=hover_actuation_profile, units='radians')
 hover_configuration.actuate(transformation=hover_actuator_solver)
 
-# TEMPORARY
-system_representation_model = sys_rep.assemble_csdl()
-system_parameterization_model = sys_param.assemble_csdl()
+hover_configuration.add_output(f"{hover_configuration.name}_{ppm_left.parameters['name']}_in_plane_1", ppm_left_plane_y)
+hover_configuration.add_output(f"{hover_configuration.name}_{ppm_left.parameters['name']}_in_plane_2", ppm_left_plane_x)
+hover_configuration.add_output(f"{hover_configuration.name}_{ppm_left.parameters['name']}_origin", ppm_left_origin)
 
-my_model = csdl.Model()
-my_model.add(system_parameterization_model, 'system_parameterization')
-my_model.add(system_representation_model, 'system_representation')
+hover_configuration.add_output(f"{hover_configuration.name}_{ppm_right.parameters['name']}_in_plane_2", ppm_right_plane_y)
+hover_configuration.add_output(f"{hover_configuration.name}_{ppm_right.parameters['name']}_in_plane_1", ppm_right_plane_x)
+hover_configuration.add_output(f"{hover_configuration.name}_{ppm_right.parameters['name']}_origin", ppm_right_origin)
 
-sim = Simulator(my_model, analytics=True, display_scripts=True)
-sim.run()
+# disk: uppers
+#left
+hover_configuration.add_output(f"{hover_configuration.name}_{ppu_left.parameters['name']}_in_plane_1", ppu_left_plane_y)
+hover_configuration.add_output(f"{hover_configuration.name}_{ppu_left.parameters['name']}_in_plane_2", ppu_left_plane_x)
+hover_configuration.add_output(f"{hover_configuration.name}_{ppu_left.parameters['name']}_origin", ppu_left_origin)
 
-hover_geo = sim['hover_configuration_geometry']
-spatial_rep.update(hover_geo)
-spatial_rep.plot()
+#right
+hover_configuration.add_output(f"{hover_configuration.name}_{ppu_right.parameters['name']}_in_plane_2", ppu_right_plane_y)
+hover_configuration.add_output(f"{hover_configuration.name}_{ppu_right.parameters['name']}_in_plane_1", ppu_right_plane_x)
+hover_configuration.add_output(f"{hover_configuration.name}_{ppu_right.parameters['name']}_origin", ppu_right_origin)
+
+# disk: lowers
+#left
+hover_configuration.add_output(f"{hover_configuration.name}_{ppl_left.parameters['name']}_in_plane_2", ppl_left_plane_y)
+hover_configuration.add_output(f"{hover_configuration.name}_{ppl_left.parameters['name']}_in_plane_1", ppl_left_plane_x)
+hover_configuration.add_output(f"{hover_configuration.name}_{ppl_left.parameters['name']}_origin", ppl_left_origin)
+
+#right
+hover_configuration.add_output(f"{hover_configuration.name}_{ppl_right.parameters['name']}_in_plane_1", ppl_right_plane_y)
+hover_configuration.add_output(f"{hover_configuration.name}_{ppl_right.parameters['name']}_in_plane_2", ppl_right_plane_x)
+hover_configuration.add_output(f"{hover_configuration.name}_{ppl_right.parameters['name']}_origin", ppl_right_origin)
+
+
+# # region TEMPORARY
+# system_representation_model = sys_rep.assemble_csdl()
+# system_parameterization_model = sys_param.assemble_csdl()
+
+# my_model = csdl.Model()
+# my_model.add(system_parameterization_model, 'system_parameterization')
+# my_model.add(system_representation_model, 'system_representation')
+
+# sim = Simulator(my_model, analytics=True, display_scripts=True)
+# sim.run()
+# # endregion
+
+# hover_geo = sim['hover_configuration_geometry']
+# spatial_rep.update(hover_geo)
+# spatial_rep.plot()
 # removed blade meshes, twist
 
 # design scenario
@@ -354,16 +386,10 @@ design_scenario = cd.DesignScenario(name='mk27')
 
 # region hover condition
 hover_model = m3l.Model()
-hover_condition = cd.CruiseCondition(name="hover_1")
+hover_condition = cd.HoverCondition(name='hover_1')
 hover_condition.atmosphere_model = cd.SimpleAtmosphereModel()
-hover_condition.set_module_input(name='altitude', val=0)
-hover_condition.set_module_input(name='mach_number', val=0, dv_flag=True, lower=0, upper=0)
-hover_condition.set_module_input(name='range', val=0)
-hover_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=0., upper=np.deg2rad(0))
-hover_condition.set_module_input(name='flight_path_angle', val=0)
-hover_condition.set_module_input(name='roll_angle', val=0)
-hover_condition.set_module_input(name='yaw_angle', val=0)
-hover_condition.set_module_input(name='wind_angle', val=0)
+hover_condition.set_module_input('altitude', val=300)
+hover_condition.set_module_input(name='hover_time', val=90)
 hover_condition.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
 
 hover_ac_states = hover_condition.evaluate_ac_states()
@@ -384,9 +410,9 @@ ppm_left_bem_mesh = BEMMesh(
     chord_b_spline_rep=True,
     twist_b_spline_rep=True
 )
-disk_prefix = 'ppm_left'
+disk_prefix = f'{hover_configuration.name}_{ppm_left.parameters["name"]}'
 ppm_left_bem_model = BEM(disk_prefix=disk_prefix, blade_prefix=disk_prefix, component=ppm_left, mesh=ppm_left_bem_mesh)
-ppm_left_bem_model.set_module_input('rpm', val=4000, dv_flag=True)
+ppm_left_bem_model.set_module_input('rpm', val=5000, dv_flag=True, scaler=1e-3, lower=1.)
 ppm_left_bem_model.set_module_input(f'{disk_prefix}_in_plane_1', val=ppm_left_plane_y.value)
 ppm_left_bem_model.set_module_input(f'{disk_prefix}_in_plane_2', val=ppm_left_plane_x.value)
 ppm_left_bem_model.set_module_input(f'{disk_prefix}_origin', val=ppm_left_origin.value)
@@ -412,9 +438,9 @@ ppm_right_bem_mesh = BEMMesh(
     chord_b_spline_rep=True,
     twist_b_spline_rep=True
 )
-disk_prefix = 'ppm_right'
+disk_prefix = f'{hover_configuration.name}_{ppm_right.parameters["name"]}'
 ppm_right_bem_model = BEM(disk_prefix=disk_prefix, blade_prefix=disk_prefix, component=ppm_right, mesh=ppm_right_bem_mesh)
-ppm_right_bem_model.set_module_input('rpm', val=4000, dv_flag=True)
+ppm_right_bem_model.set_module_input('rpm', val=5000, dv_flag=True, scaler=1e-3, lower=1.)
 ppm_right_bem_model.set_module_input(f'{disk_prefix}_in_plane_1', val=ppm_left_plane_y.value)
 ppm_right_bem_model.set_module_input(f'{disk_prefix}_in_plane_2', val=ppm_left_plane_x.value)
 ppm_right_bem_model.set_module_input(f'{disk_prefix}_origin', val=ppm_left_origin.value)
@@ -440,9 +466,9 @@ ppu_left_bem_mesh = BEMMesh(
     chord_b_spline_rep=True,
     twist_b_spline_rep=True
 )
-disk_prefix = 'ppu_left'
+disk_prefix = f'{hover_configuration.name}_{ppu_left.parameters["name"]}'
 ppu_left_bem_model = BEM(disk_prefix=disk_prefix, blade_prefix=disk_prefix, component=ppu_left, mesh=ppu_left_bem_mesh)
-ppu_left_bem_model.set_module_input('rpm', val=4000, dv_flag=True)
+ppu_left_bem_model.set_module_input('rpm', val=5000, dv_flag=True, scaler=1e-3, lower=1.)
 ppu_left_bem_model.set_module_input(f'{disk_prefix}_in_plane_1', val=ppm_left_plane_y.value)
 ppu_left_bem_model.set_module_input(f'{disk_prefix}_in_plane_2', val=ppm_left_plane_x.value)
 ppu_left_bem_model.set_module_input(f'{disk_prefix}_origin', val=ppm_left_origin.value)
@@ -468,9 +494,9 @@ ppu_right_bem_mesh = BEMMesh(
     chord_b_spline_rep=True,
     twist_b_spline_rep=True
 )
-disk_prefix = 'ppu_right'
+disk_prefix = f"{hover_configuration.name}_{ppu_right.parameters['name']}"
 ppu_right_bem_model = BEM(disk_prefix=disk_prefix, blade_prefix=disk_prefix, component=ppu_right, mesh=ppu_right_bem_mesh)
-ppu_right_bem_model.set_module_input('rpm', val=4000, dv_flag=True)
+ppu_right_bem_model.set_module_input('rpm', val=5000, dv_flag=True, scaler=1e-3, lower=1.)
 ppu_right_bem_model.set_module_input(f'{disk_prefix}_in_plane_1', val=ppm_left_plane_y.value)
 ppu_right_bem_model.set_module_input(f'{disk_prefix}_in_plane_2', val=ppm_left_plane_x.value)
 ppu_right_bem_model.set_module_input(f'{disk_prefix}_origin', val=ppm_left_origin.value)
@@ -496,9 +522,9 @@ ppl_left_bem_mesh = BEMMesh(
     chord_b_spline_rep=True,
     twist_b_spline_rep=True
 )
-disk_prefix = 'ppl_left'
+disk_prefix = f"{hover_configuration.name}_{ppl_left.parameters['name']}"
 ppl_left_bem_model = BEM(disk_prefix=disk_prefix, blade_prefix=disk_prefix, component=ppl_left, mesh=ppl_left_bem_mesh)
-ppl_left_bem_model.set_module_input('rpm', val=4000, dv_flag=True)
+ppl_left_bem_model.set_module_input('rpm', val=5000, dv_flag=True, scaler=1e-3, lower=1.)
 ppl_left_bem_model.set_module_input(f'{disk_prefix}_in_plane_1', val=ppm_left_plane_y.value)
 ppl_left_bem_model.set_module_input(f'{disk_prefix}_in_plane_2', val=ppm_left_plane_x.value)
 ppl_left_bem_model.set_module_input(f'{disk_prefix}_origin', val=ppm_left_origin.value)
@@ -524,9 +550,9 @@ ppl_right_bem_mesh = BEMMesh(
     chord_b_spline_rep=True,
     twist_b_spline_rep=True
 )
-disk_prefix = 'ppl_right'
+disk_prefix = f"{hover_configuration.name}_{ppl_right.parameters['name']}"
 ppl_right_bem_model = BEM(disk_prefix=disk_prefix, blade_prefix=disk_prefix, component=ppl_right, mesh=ppl_right_bem_mesh)
-ppl_right_bem_model.set_module_input('rpm', val=4000, dv_flag=True)
+ppl_right_bem_model.set_module_input('rpm', val=5000, dv_flag=True, scaler=1e-3, lower=1.)
 ppl_right_bem_model.set_module_input(f'{disk_prefix}_in_plane_1', val=ppm_left_plane_y.value)
 ppl_right_bem_model.set_module_input(f'{disk_prefix}_in_plane_2', val=ppm_left_plane_x.value)
 ppl_right_bem_model.set_module_input(f'{disk_prefix}_origin', val=ppm_left_origin.value)
@@ -595,12 +621,56 @@ system_model.add_design_scenario(design_scenario=design_scenario)
 
 caddee_csdl_model = caddee.assemble_csdl()
 
-caddee_csdl_model.add_objective('system_model.mk27.hover_1.hover_1.euler_eom_gen_ref_pt.trim_residual')
+mk27_model = csdl.Model()
+objective_model = csdl.Model()
+ppm_left_fom = objective_model.declare_variable('ppm_left_fom')
+ppm_right_fom = objective_model.declare_variable('ppm_right_fom')
+ppu_left_fom = objective_model.declare_variable('ppu_left_fom')
+ppu_right_fom = objective_model.declare_variable('ppu_right_fom')
+ppl_left_fom = objective_model.declare_variable('ppl_left_fom')
+ppl_right_fom = objective_model.declare_variable('ppl_right_fom')
+objective = -(ppm_left_fom + ppm_right_fom + ppu_left_fom + ppu_right_fom + ppl_left_fom + ppl_right_fom)/6
+objective_model.register_output('objective', objective)
 
-# caddee_csdl_model.add_objective('system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual')
+mk27_model.add(submodel=caddee_csdl_model, name='caddee_csdl_model')
+mk27_model.add(submodel=objective_model, name='objective_model')
+
+# upper_radius = mk27_model.create_input('upper_rotor_radius', val=0.8)
+# mid_radius = mk27_model.create_input('mid_rotor_radius', val=0.8)
+# lower_radius = mk27_model.create_input('lower_rotor_radius', val=0.8)
+
+# mk27_model.connect('upper_rotor_radius', 'ppu_left_radius_1')
+# mk27_model.connect('upper_rotor_radius', 'ppu_left_radius_2')
+# mk27_model.connect('upper_rotor_radius', 'ppu_right_radius_1')
+# mk27_model.connect('upper_rotor_radius', 'ppu_right_radius_2')
+# mk27_model.connect('mid_rotor_radius', 'ppm_left_radius_1')
+# mk27_model.connect('mid_rotor_radius', 'ppm_left_radius_2')
+# mk27_model.connect('mid_rotor_radius', 'ppm_right_radius_1')
+# mk27_model.connect('mid_rotor_radius', 'ppm_right_radius_2')
+# mk27_model.connect('lower_rotor_radius', 'ppl_left_radius_1')
+# mk27_model.connect('lower_rotor_radius', 'ppl_left_radius_2')
+# mk27_model.connect('lower_rotor_radius', 'ppl_right_radius_1')
+# mk27_model.connect('lower_rotor_radius', 'ppl_right_radius_2')
+
+mk27_model.connect('caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_left_bem_model.induced_velocity_model.FOM', 'ppm_left_fom')
+mk27_model.connect('caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_right_bem_model.induced_velocity_model.FOM', 'ppm_right_fom')
+mk27_model.connect('caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_left_bem_model.induced_velocity_model.FOM', 'ppu_left_fom')
+mk27_model.connect('caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_right_bem_model.induced_velocity_model.FOM', 'ppu_right_fom')
+mk27_model.connect('caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_left_bem_model.induced_velocity_model.FOM', 'ppl_left_fom')
+mk27_model.connect('caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_right_bem_model.induced_velocity_model.FOM', 'ppl_right_fom')
+
+
+# mk27_model.add_design_variable('upper_rotor_radius', lower=0.5, upper=1.5)
+# mk27_model.add_design_variable('mid_rotor_radius', lower=0.5, upper=1.5)
+# mk27_model.add_design_variable('lower_rotor_radius', lower=0.5, upper=1.)
+
+mk27_model.add_objective('objective')
+mk27_model.add_constraint('caddee_csdl_model.system_model.mk27.hover_1.hover_1.euler_eom_gen_ref_pt.trim_residual', equals=0.)
+
+# mk27_model.add_objective('caddee_csdl_model.system_model.mk27.hover_1.hover_1.euler_eom_gen_ref_pt.trim_residual')
 
 # create and run simulator
-sim = Simulator(caddee_csdl_model, analytics=True)
+sim = Simulator(mk27_model, analytics=True)
 sim.run()
 
 
@@ -614,9 +684,59 @@ optimizer.solve()
 optimizer.print_results()
 
 print("I'm done.")
-print('trim: ', sim['system_model.mk27.hover_1.hover_1.euler_eom_gen_ref_pt.trim_residual'])
-print('forces: ', sim['system_model.mk27.hover_1.hover_1.euler_eom_gen_ref_pt.total_forces'])
-print('moments:', sim['system_model.mk27.hover_1.hover_1.euler_eom_gen_ref_pt.total_moments'])
-print('pitch: ', sim['system_model.mk27.hover_1.hover_1.hover_1_ac_states_operation.hover_1_pitch_angle'])
-print('rpm: ', sim['system_model.mk27.hover_1.hover_1.ppm_disk_left_bem_model.rpm'])
-print('bem ppm_left force: ', sim['system_model.mk27.hover_1.hover_1.ppm_disk_left_bem_model.F'])
+print('trim: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.euler_eom_gen_ref_pt.trim_residual'])
+print('forces: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.euler_eom_gen_ref_pt.total_forces'])
+print('moments:', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.euler_eom_gen_ref_pt.total_moments'])
+print('bem ppm_left force: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_left_bem_model.F'])
+print('bem ppm_right force: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_right_bem_model.F'])
+print('bem ppu_left force: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_left_bem_model.F'])
+print('bem ppu_right force: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_right_bem_model.F'])
+print('bem ppl_left force: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_left_bem_model.F'])
+print('bem ppl_right force: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_right_bem_model.F'])
+print('bem ppm_left thrust origin: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_left_bem_model.thrust_origin'])
+print('bem ppm_right thrust origin: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_right_bem_model.thrust_origin'])
+print('bem ppu_left thrust origin: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_left_bem_model.thrust_origin'])
+print('bem ppu_right thrust origin: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_right_bem_model.thrust_origin'])
+print('bem ppl_left thrust origin: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_left_bem_model.thrust_origin'])
+print('bem ppl_right thrust origin: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_right_bem_model.thrust_origin'])
+print('bem ppm_left thrust vector: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_left_bem_model.thrust_vector'])
+print('bem ppm_right thrust vector: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_right_bem_model.thrust_vector'])
+print('bem ppu_left thrust vector: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_left_bem_model.thrust_vector'])
+print('bem ppu_right thrust vector: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_right_bem_model.thrust_vector'])
+print('bem ppl_left thrust vector: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_left_bem_model.thrust_vector'])
+print('bem ppl_right thrust vector: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_right_bem_model.thrust_vector'])
+print('rpm ppm_left: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_left_bem_model.rpm'])
+print('rpm ppm_right: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_right_bem_model.rpm'])
+print('rpm ppu_left: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_left_bem_model.rpm'])
+print('rpm ppu_right: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_right_bem_model.rpm'])
+print('rpm ppl_left: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_left_bem_model.rpm'])
+print('rpm ppl_right: ', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_right_bem_model.rpm'])
+
+hover_geo = sim['hover_configuration_geometry']
+spatial_rep.update(hover_geo)
+spatial_rep.plot()
+
+print()
+print('ppm_left chord cp', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_left_bem_model.chord_cp'])
+print('ppm_right chord cp', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_right_bem_model.chord_cp'])
+print('ppu_left chord cp', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_left_bem_model.chord_cp'])
+print('ppu_right chord cp', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_right_bem_model.chord_cp'])
+print('ppl_left chord cp', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_left_bem_model.chord_cp'])
+print('ppl_right chord cp', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_right_bem_model.chord_cp'])
+
+print()
+print('ppm_left twist cp', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_left_bem_model.twist_cp'])
+print('ppm_right twist cp', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_right_bem_model.twist_cp'])
+print('ppu_left twist cp', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_left_bem_model.twist_cp'])
+print('ppu_right twist cp', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_right_bem_model.twist_cp'])
+print('ppl_left twist cp', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_left_bem_model.twist_cp'])
+print('ppl_right twist cp', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_right_bem_model.twist_cp'])
+
+print()
+print('ppm_left fom', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_left_bem_model.induced_velocity_model.FOM'])
+print('ppm_right fom', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppm_disk_right_bem_model.induced_velocity_model.FOM'])
+print('ppu_left fom', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_left_bem_model.induced_velocity_model.FOM'])
+print('ppu_right fom', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppu_disk_right_bem_model.induced_velocity_model.FOM'])
+print('ppl_left fom', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_left_bem_model.induced_velocity_model.FOM'])
+print('ppl_right fom', sim['caddee_csdl_model.system_model.mk27.hover_1.hover_1.ppl_disk_right_bem_model.induced_velocity_model.FOM'])
+print('average FOM: ', sim['objective'])

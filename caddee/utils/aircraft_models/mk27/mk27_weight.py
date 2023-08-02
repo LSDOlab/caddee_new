@@ -41,6 +41,6 @@ class MK27MassPropertiesCSDL(ModuleCSDL):
         inertia_tensor = self.register_module_input('inertia_tensor_input', shape=(3,3))
         self.register_module_output('inertia_tensor', inertia_tensor*1)
 
-        cg = self.register_module_input('cg_vector_input', val=np.array([3., 0., 0.]))
+        cg = self.register_module_input('cg_vector_input', val=np.array([3., 0., 0.])*ft2m)
         self.register_module_output('cg_vector', cg*1)
         return
