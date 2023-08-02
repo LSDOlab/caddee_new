@@ -79,32 +79,32 @@ sys_rep.add_component(top_wing)
 # endregion
 
 # region Rotors
-pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Middle Props, 0']).keys())
+pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Middle Props, 0', 'Middle Props, 1', 'Middle Props, 2', 'Middle Props, 3']).keys())
 ppm_left = cd.Rotor(name='ppm_disk_left', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppm_left)
 #ppm_left.plot()
 
-pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Middle Props, 1']).keys())
+pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Middle Props, 4', 'Middle Props, 5', 'Middle Props, 6', 'Middle Props, 7']).keys())
 ppm_right = cd.Rotor(name='ppm_disk_right', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppm_right)
 #ppm_right.plot()
 
-pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Upper Props, 1']).keys())
+pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Upper Props, 4', 'Upper Props, 5', 'Upper Props, 6', 'Upper Props, 7']).keys())
 ppu_left = cd.Rotor(name='ppu_disk_left', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppu_left)
 #ppu_left.plot()
 
-pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Upper Props, 0']).keys())
+pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Upper Props, 0', 'Upper Props, 1', 'Upper Props, 2', 'Upper Props, 3']).keys())
 ppu_right = cd.Rotor(name='ppu_disk_right', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppu_right)
 #ppu_right.plot()
 
-pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Lower Props, 1']).keys())
+pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Lower Props, 4', 'Lower Props, 5', 'Lower Props, 6', 'Lower Props, 7']).keys())
 ppl_left = cd.Rotor(name='ppl_disk_left', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppl_left)
 #ppl_left.plot()
 
-pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Lower Props, 0']).keys())
+pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Lower Props, 0', 'Lower Props, 1', 'Lower Props, 2', 'Lower Props, 3']).keys())
 ppl_right = cd.Rotor(name='ppl_disk_right', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppl_right)
 
