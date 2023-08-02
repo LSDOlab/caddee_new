@@ -30,7 +30,6 @@ spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
 #spatial_rep.plot()
 
 
-
 # Wing definintions - Mid, Upper, Lower Wings, then Top, Bottom of frame, finally vertical stabilizer
 wing_primitive_names = list(spatial_rep.get_primitives(search_names=['HorizontalWing']).keys())
 MidWing = LiftingSurface(name='MidWing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names) 
@@ -145,7 +144,8 @@ ppu_left_ffd_block = cd.SRBGFFDBlock(name='ppu_left_ffd_block',
                                   embedded_entities=ppu_left_geometry_primitives)
 ppu_left_ffd_block.add_scale_v(name='ppu_left_scale_v',order=1, num_dof=1, cost_factor=1.)
 ppu_left_ffd_block.add_scale_w(name='ppu_left_scale_w', order=1, num_dof=1)
-ppu_left_ffd_block.plot()
+ppu_left_ffd_block.add_translation_u(name='ppu_left_translation_u', order=2, num_dof=2, cost_factor=1.5)
+# ppu_left_ffd_block.plot()
 
 ppu_right_geometry_primitives = ppu_right.get_geometry_primitives()
 ppu_right_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
@@ -158,7 +158,7 @@ ppu_right_ffd_block = cd.SRBGFFDBlock(name='ppu_right_ffd_block',
                                   embedded_entities=ppu_right_geometry_primitives)
 ppu_right_ffd_block.add_scale_v(name='ppu_right_scale_v',order=1, num_dof=1, cost_factor=1.)
 ppu_right_ffd_block.add_scale_w(name='ppu_right_scale_w', order=1, num_dof=1)
-
+ppu_right_ffd_block.add_translation_u(name='ppu_right_translation_u', order=2, num_dof=2, cost_factor=1.5)
 
 ppl_left_geometry_primitives = ppl_left.get_geometry_primitives()
 ppl_left_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
@@ -171,6 +171,7 @@ ppl_left_ffd_block = cd.SRBGFFDBlock(name='ppl_left_ffd_block',
                                   embedded_entities=ppl_left_geometry_primitives)
 ppl_left_ffd_block.add_scale_v(name='ppl_left_scale_v',order=1, num_dof=1, cost_factor=1.)
 ppl_left_ffd_block.add_scale_w(name='ppl_left_scale_w', order=1, num_dof=1)
+ppl_left_ffd_block.add_translation_u(name='ppl_left_translation_u', order=2, num_dof=2, cost_factor=1.5)
 
 
 ppl_right_geometry_primitives = ppl_right.get_geometry_primitives()
@@ -184,6 +185,7 @@ ppl_right_ffd_block = cd.SRBGFFDBlock(name='ppl_right_ffd_block',
                                   embedded_entities=ppl_right_geometry_primitives)
 ppl_right_ffd_block.add_scale_v(name='ppl_right_scale_v',order=1, num_dof=1, cost_factor=1.)
 ppl_right_ffd_block.add_scale_w(name='ppl_right_scale_w', order=1, num_dof=1)
+ppl_right_ffd_block.add_translation_u(name='ppl_right_translation_u', order=2, num_dof=2, cost_factor=1.5)
 
 # endregion
 

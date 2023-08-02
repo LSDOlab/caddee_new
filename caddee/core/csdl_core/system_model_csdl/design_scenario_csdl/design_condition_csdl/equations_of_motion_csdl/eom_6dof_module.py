@@ -28,9 +28,11 @@ class EoMM3LEuler6DOF(m3l.ExplicitOperation):
             'total_moments' : total_moments,
         }
 
-        ac_states_copy = copy.deepcopy(ac_states)
-        del ac_states_copy['gamma']
-        self.arguments = {**mps_forces, **ac_states_copy}
+        # ac_states_copy = copy.deepcopy(ac_states)
+        # del ac_states_copy['gamma']
+        # self.arguments = {**mps_forces, **ac_states_copy}
+        self.arguments = {**mps_forces, **ac_states}
+        del self.arguments['gamma']
 
 
         
