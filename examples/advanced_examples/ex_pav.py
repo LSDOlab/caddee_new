@@ -2085,16 +2085,26 @@ def structural_wingbox_beam_sizing(wing_cl0=0.3662,
                                    num_wing_beam_nodes=21,
                                    youngs_modulus=73.1E9, poissons_ratio=0.33, density=2780, yield_strength=324E6, FoS=1.5,  # SI
                                    ):
+    caddee = cd.CADDEE()
+    caddee.system_model = system_model = cd.SystemModel()
+
     # region Geometry and meshes
-    caddee, system_model, sys_rep, sys_param, \
-        wing_vlm_mesh_name, wing_camber_surface, \
-        wing_oml_mesh, wing_component, \
-        beam_mesh, beam_mass_mesh = setup_geometry(
+    pav_geom_mesh = PavGeomMesh()
+    pav_geom_mesh.setup_geometry(
         include_wing_flag=True,
-        include_tail_flag=False,
-        include_wing_beam_flag=True,
-        num_wing_beam_nodes=num_wing_beam_nodes
+        include_htail_flag=False,
     )
+    pav_geom_mesh.sys_rep.spatial_representation.assemble()
+    pav_geom_mesh.oml_mesh(include_wing_flag=True,
+                           debug_geom_flag=False, force_reprojection=force_reprojection)
+    pav_geom_mesh.vlm_meshes(include_wing_flag=True, num_wing_spanwise_vlm=21, num_wing_chordwise_vlm=5,
+                             force_reprojection=force_reprojection)
+    pav_geom_mesh.beam_mesh(include_wing_flag=True, num_wing_beam_nodes=21,
+                            force_reprojection=force_reprojection)
+    pav_geom_mesh.setup_index_functions(left_wing_shell_flag=False)
+    caddee.system_representation = sys_rep = pav_geom_mesh.sys_rep
+    caddee.system_parameterization = sys_param = pav_geom_mesh.sys_param
+    sys_param.setup()
     # endregion
 
     # region Mission
@@ -2121,38 +2131,44 @@ def structural_wingbox_beam_sizing(wing_cl0=0.3662,
     # region VLM Solver
     vlm_model = VASTFluidSover(
         surface_names=[
-            wing_vlm_mesh_name,
+            pav_geom_mesh.mesh_data['vlm']['mesh_name']['wing'],
         ],
         surface_shapes=[
-            (1,) + wing_camber_surface.evaluate().shape[1:],
+            (1,) + pav_geom_mesh.mesh_data['vlm']['chamber_surface']['wing'].evaluate().shape[1:],
         ],
         fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
         mesh_unit='m',
         cl0=[wing_cl0, ]
     )
-    vlm_panel_forces, vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=cruise_ac_states)
+    wing_vlm_panel_forces, vlm_forces, vlm_moments = vlm_model.evaluate(ac_states=cruise_ac_states)
     cruise_model.register_output(vlm_forces)
     cruise_model.register_output(vlm_moments)
 
     vlm_force_mapping_model = VASTNodalForces(
         surface_names=[
-            wing_vlm_mesh_name,
+            pav_geom_mesh.mesh_data['vlm']['mesh_name']['wing'],
         ],
         surface_shapes=[
-            (1,) + wing_camber_surface.evaluate().shape[1:],
+            (1,) + pav_geom_mesh.mesh_data['vlm']['chamber_surface']['wing'].evaluate().shape[1:],
         ],
         initial_meshes=[
-            wing_camber_surface,
+            pav_geom_mesh.mesh_data['vlm']['chamber_surface']['wing'],
         ]
     )
 
-    oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces,
+    wing_oml_mesh = pav_geom_mesh.mesh_data['oml']['oml_geo_nodes']['wing']
+    oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=wing_vlm_panel_forces,
                                                   nodal_force_meshes=[wing_oml_mesh, ])
     wing_forces = oml_forces[0]
 
     # endregion
 
     # region Beam Solver
+
+    # create the aframe dictionaries:
+    wing_component = pav_geom_mesh.geom_data['components']['wing']
+    beam_mass_mesh = pav_geom_mesh.mesh_data['beam']['mass']
+    beam_mesh = pav_geom_mesh.mesh_data['beam']['ebbeam']
 
     # create the aframe dictionaries:
     joints, bounds, beams = {}, {}, {}
@@ -2240,8 +2256,9 @@ def structural_wingbox_beam_sizing(wing_cl0=0.3662,
     print("Beam displacement (m): ", displ)
     print('Tip displacement (m): ', displ[-1, 2])
 
-    print('Wingbox mass (kg): ', sim[
-        'system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.MassProp.struct_mass'])
+    print('Wingbox mass (kg): ', sim['system_model.aircraft_trim.cruise_1.cruise_1.mass_model.mass'])
+    print('Mass prop mass: ',
+          sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.MassProp.mass'])
 
     # Stress
     vmstress = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.new_stress']
@@ -2250,27 +2267,34 @@ def structural_wingbox_beam_sizing(wing_cl0=0.3662,
 
     # Thicknesses
     web_t = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_tweb']
-    print('Web thickness (m)', web_t)
     cap_t = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_tcap']
-    print('Cap thickness (m)', cap_t)
 
     # endregion
 
     # region Output Dataframe
-    spanwise_node_y_loc = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_mesh'].reshape(num_wing_beam_nodes, 3)[:, 1]
+    spanwise_node_y_loc = sim[
+                              'system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_mesh'].reshape(
+        num_wing_beam_nodes, 3)[:, 1]
     spanwise_max_stress = np.max(vmstress, axis=1)
     spanwise_z_disp = displ[:, 2]
-    spanwise_z_force = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.wing_beam_forces'].reshape(num_wing_beam_nodes, 3)[:, 2]
+    spanwise_z_force = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.wing_beam_forces'].reshape(
+        num_wing_beam_nodes, 3)[:, 2]
+    spanwise_width = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_width']
+    spanwise_height = sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_height']
     sol_dict = {'Spanwise loc (m)': spanwise_node_y_loc,
+                'Width (m)': spanwise_width,
+                'Height (m)': spanwise_height,
                 'Node z force (N)': spanwise_z_force,
-               'Displacement (m)': spanwise_z_disp}
+                'Displacement (m)': spanwise_z_disp}
     sizing_dict = {'Max stress (N/m^2)': spanwise_max_stress,
-               'Web thickness (m)': web_t,
-               'Cap thickness (m)': cap_t}
-    sol_df = pd.DataFrame(data=sol_dict)
-    sol_df.to_excel('BeamWingboxSizing_3g_Solution.xlsx')
-    sizing_df = pd.DataFrame(data=sizing_dict)
-    sizing_df.to_excel('BeamWingboxSizing_3g_Sizing.xlsx')
+                   'Web thickness (m)': web_t,
+                   'Cap thickness (m)': cap_t}
+    nodal_sol_df = pd.DataFrame(data=sol_dict)
+    nodal_sol_df.to_excel(f'BeamWingboxSizing_{np.rad2deg(pitch_angle)}deg_NodalSolution.xlsx')
+    print(nodal_sol_df)
+    elem_sol_df = pd.DataFrame(data=sizing_dict)
+    elem_sol_df.to_excel(f'BeamWingboxSizing_{np.rad2deg(pitch_angle)}deg_ElementSolution.xlsx')
+    print(elem_sol_df)
     # endregion
     return
 
@@ -2370,7 +2394,7 @@ if __name__ == '__main__':
 
 
     # structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.11391141), visualize_flag=False)
-    # structural_wingbox_beam_sizing(pitch_angle=np.deg2rad(13.74084308))
+    structural_wingbox_beam_sizing(pitch_angle=np.deg2rad(12.11391141))
     # structural_wingbox_shell_evaluation(pitch_angle=np.deg2rad(12.48100761), visualize_flag=False)
 
-    pav_visualization()
+    # pav_visualization()
