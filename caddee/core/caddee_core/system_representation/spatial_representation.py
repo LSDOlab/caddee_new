@@ -34,6 +34,9 @@ class SpatialRepresentation:
         '''
         Returns the primtiive objects that include the search name(s) in the primitive name.
         '''
+        if not search_names:
+            return self.primitives
+
         primitives = {}
         for primitive_name in self.primitives.keys():
             for search_name in search_names:
