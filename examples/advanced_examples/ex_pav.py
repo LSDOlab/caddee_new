@@ -20,10 +20,14 @@ from aframe.core.mass import Mass, MassMesh
 from VAST.core.generate_mappings_m3l import VASTNodalForces
 import aframe.core.beam_module as ebbeam
 
+from caddee.utils.aircraft_models.pav.ex_pav_visualize_function import visualize_ex_pav
+
 from caddee import GEOMETRY_FILES_FOLDER
 
 import numpy as np
 import pandas as pd
+import sys
+sys.setrecursionlimit(100000)
 import unittest
 
 
@@ -343,10 +347,13 @@ def vlm_as_ll():
     sim = Simulator(caddee_csdl_model, analytics=True)
     sim.run()
 
-    CL = sim[
+    wing_surface_name = pav_geom_mesh.mesh_data['vlm']['mesh_name']['wing']
+    CL_total = sim[
             'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.total_CL']
-    print('CL when VLM is made LL: ', CL)
-    if CL > 0.02:
+    CL_surface = sim[
+            f'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_mesh_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.{wing_surface_name}_C_L_total']
+    print('CL when VLM is made LL: ', CL_total)
+    if CL_total > 0.02 and (CL_total-CL_surface)**2 > 1e-6:
         raise ValueError
     return
 
@@ -1684,7 +1691,7 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3662,
                              visualize_flag=visualize_flag, force_reprojection=force_reprojection)
     pav_geom_mesh.beam_mesh(include_wing_flag=True, num_wing_beam_nodes=21,
                             visualize_flag=visualize_flag, force_reprojection=force_reprojection)
-
+    pav_geom_mesh.setup_index_functions(left_wing_shell_flag=False)
     caddee.system_representation = sys_rep = pav_geom_mesh.sys_rep
     caddee.system_parameterization = sys_param = pav_geom_mesh.sys_param
     sys_param.setup()
@@ -1743,6 +1750,13 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3662,
     oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=wing_vlm_panel_forces,
                                                   nodal_force_meshes=[wing_oml_mesh, ])
     wing_forces = oml_forces[0]
+
+    # Index function
+    wing_force_index_func = pav_geom_mesh.functions['wing_force']
+    wing_oml_para_coords = pav_geom_mesh.mesh_data['oml']['oml_para_nodes']['wing']
+    wing_force_index_func.inverse_evaluate(wing_oml_para_coords, wing_forces)
+    cruise_model.register_output(wing_force_index_func.coefficients)
+    # ################### Index function thing ###################
     # endregion
 
     # region Beam Solver
@@ -1862,7 +1876,22 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3662,
     print(elem_sol_df)
     # endregion
 
-    return
+    # region Plot data
+    plot_data = {}
+    plot_data['caddee'] = caddee
+    plot_data['sim'] = sim
+    plot_data['displ'] = displ
+    plot_data['web_t'] = web_t
+    plot_data['cap_t'] = cap_t
+    plot_data['beam_mesh'] = sim[
+        'system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_mesh'].reshape(
+        num_wing_beam_nodes, 3)
+    plot_data['spanwise_height'] = spanwise_height
+    plot_data['spanwise_width'] = spanwise_width
+    plot_data['forces_index_function'] = wing_force_index_func
+    # endregion
+
+    return plot_data
 
 
 def trim_at_3g(pusher_prop_twist_cp=np.array([1.10595917, 0.71818285, 0.47990602, 0.35717703]),
@@ -2275,6 +2304,53 @@ def structural_wingbox_shell_evaluation(wing_cl0=0.3366,
     return
 
 
+def pav_visualization():
+
+    m2ft = 3.28084
+
+    plots_minus1 = structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(-12.06291905), visualize_flag=False)
+    plots_plus1 = structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(-0.38129494), visualize_flag=False)
+    plots = structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.11391141), visualize_flag=False)
+
+    caddee = plots['caddee']
+    sim = plots['sim']
+    # list of displacements to add. The first one will plot thicknesses (3g) the rest will plot displacements
+    # jig is the zero displacements
+    displacements = [plots['displ'], plots_minus1['displ'], plots_plus1['displ'], np.zeros_like(plots['displ'])]
+    beam_mesh = plots['beam_mesh']
+    web_t = plots['web_t']
+    cap_t = plots['cap_t']
+    width = plots['spanwise_width']
+    height = plots['spanwise_height']
+    forces_index_function = plots['forces_index_function']  # index function of pressure
+    rotor_origins = [
+        np.array([-1.146, 1.619, -0.162]) * m2ft, # np.array([-3.000, 5.313, -0.530]),
+        np.array([1.597, 1.619, -0.162]) * m2ft,  # np.array([3.500, 5.313, -0.530]),
+        np.array([4.877, 1.619, -0.162]) * m2ft,  # np.array([16.000, 5.313, -0.530]),
+        np.array([7.620, 1.619, -0.162]) * m2ft,  # np.array([25.000, 5.313, -0.530]),
+        np.array([-1.146, -1.619, -0.162]) * m2ft, # np.array([-3.000, -5.313, -0.530]),
+        np.array([1.597, -1.619, -0.162]) * m2ft,  # np.array([3.500, -5.313, -0.530]),
+        np.array([4.877, -1.619, -0.162]) * m2ft,  # np.array([16.000, -5.313, -0.530]),
+        np.array([7.620, -1.619, -0.162]) * m2ft,  # np.array([25.000, -5.313, -0.530]),
+    ]  # origins of rotors to draw vector from
+
+    web_t = np.linspace(num=web_t.shape[0], start=0.01508, stop=0.02)
+    cap_t = np.linspace(num=web_t.shape[0], start=0.000508, stop=0.02)
+
+    visualize_ex_pav(
+        caddee,
+        sim,
+        displacements,
+        beam_mesh,
+        web_t,
+        cap_t,
+        width,
+        height,
+        rotor_origins,
+        forces_index_function)
+    return
+
+
 if __name__ == '__main__':
     # vlm_as_ll()
     # cl0 = tuning_cl0()
@@ -2292,6 +2368,9 @@ if __name__ == '__main__':
     # optimize_lift_rotor_blade(debug_geom_flag=False)
     # trim_at_hover()
 
-    structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.11391141), visualize_flag=False)
+
+    # structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.11391141), visualize_flag=False)
     # structural_wingbox_beam_sizing(pitch_angle=np.deg2rad(13.74084308))
     # structural_wingbox_shell_evaluation(pitch_angle=np.deg2rad(12.48100761), visualize_flag=False)
+
+    pav_visualization()

@@ -316,29 +316,32 @@ class PavGeomMesh:
         self.geom_data['primitive_names']['structural_left_wing_names'] = structural_left_wing_names
         return
 
-    def setup_index_functions(self):
+    def setup_index_functions(self,
+                              left_wing_shell_flag=True):
 
         left_wing_names = self.geom_data['primitive_names']['left_wing']
         right_wing_names = self.geom_data['primitive_names']['right_wing']
-        structural_left_wing_names = self.geom_data['primitive_names']['structural_left_wing_names']
 
-        # wing thickness function
-        order = 2
-        shape = 3
-        space_t = lg.BSplineSpace(name='thickness_base_space',
-                                  order=(order, order),
-                                  control_points_shape=(shape, shape))
-        wing_thickness = index_functions(structural_left_wing_names, 'wing_thickness', space_t, 1)
-        self.functions['wing_thickness'] = wing_thickness
+        if left_wing_shell_flag:
+            structural_left_wing_names = self.geom_data['primitive_names']['structural_left_wing_names']
 
-        # wing displacement function
-        order = 3
-        shape = 5
-        space_u = lg.BSplineSpace(name='displacement_base_space',
-                                  order=(order, order),
-                                  control_points_shape=(shape, shape))
-        wing_displacement = index_functions(structural_left_wing_names, 'wing_displacement', space_u, 3)
-        self.functions['wing_displacement'] = wing_displacement
+            # wing thickness function
+            order = 2
+            shape = 3
+            space_t = lg.BSplineSpace(name='thickness_base_space',
+                                      order=(order, order),
+                                      control_points_shape=(shape, shape))
+            wing_thickness = index_functions(structural_left_wing_names, 'wing_thickness', space_t, 1)
+            self.functions['wing_thickness'] = wing_thickness
+
+            # wing displacement function
+            order = 3
+            shape = 5
+            space_u = lg.BSplineSpace(name='displacement_base_space',
+                                      order=(order, order),
+                                      control_points_shape=(shape, shape))
+            wing_displacement = index_functions(structural_left_wing_names, 'wing_displacement', space_u, 3)
+            self.functions['wing_displacement'] = wing_displacement
 
         # wing force function
         num = 25
@@ -352,7 +355,6 @@ class PavGeomMesh:
         self.functions['wing_force'] = wing_force
 
         # wing cp function
-        knots = np.linspace(0, 1, shape + order)
         space_cp = lg.BSplineSpace(name='cp_base_space',
                                    order=(2, 4),
                                    control_points_shape=(2, 10))
