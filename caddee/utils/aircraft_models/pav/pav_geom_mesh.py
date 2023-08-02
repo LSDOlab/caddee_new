@@ -12,6 +12,9 @@ from caddee.core.caddee_core.system_representation.system_primitive.system_primi
 import caddee.core.primitives.bsplines.bspline_functions as bsf
 import lsdo_geo as lg
 
+from m3l.core.function_spaces import IDWFunctionSpace
+from m3l.utils.utils import index_functions
+
 
 in2m = 0.0254
 ft2m = 0.3048
@@ -81,7 +84,8 @@ class PavGeomMesh:
             self,
             include_wing_flag=False,
             include_htail_flag=False,
-            debug_geom_flag = False, force_reprojection=False
+            debug_geom_flag = False,
+            force_reprojection=False
     ):
 
         spatial_rep = self.sys_rep.spatial_representation
