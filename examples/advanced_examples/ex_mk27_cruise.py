@@ -713,13 +713,13 @@ cruise_model.register_output(inertial_moments)
 vlm_model = VASTFluidSover(
     surface_names=[
         vlm_main_wing_mesh_name,
-        vlm_top_wing_mesh_name,
-        vlm_low_wing_mesh_name
+        # vlm_top_wing_mesh_name,
+        # vlm_low_wing_mesh_name
     ],
     surface_shapes=[
         (1, ) + main_wing_camber_surface.evaluate().shape[1:],
-        (1, ) + upper_wing_camber_surface.evaluate().shape[1:],
-        (1, ) + lower_wing_camber_surface.evaluate().shape[1:],
+        # (1, ) + upper_wing_camber_surface.evaluate().shape[1:],
+        # (1, ) + lower_wing_camber_surface.evaluate().shape[1:],
         ],
     fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
     mesh_unit='ft',
