@@ -112,6 +112,8 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
         self.register_module_output('x', x * 1)
         self.register_module_output('y', y * 1)
         self.register_module_output('z', z * 1)
+
+        self.register_module_output('time', time * 1)
         return
 
 
@@ -157,6 +159,8 @@ class HoverConditionCSDL(SteadyDesignConditionCSDL):
         self.register_module_output('x', x * 1)
         self.register_module_output('y', y * 1)
         self.register_module_output('z', z * 1)
+
+        self.register_module_output('time', t * 1.)
         return
 
 
@@ -257,6 +261,8 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
         self.register_module_output('x', x * 1)
         self.register_module_output('y', y * 1)
         self.register_module_output('z', z * 1)
+
+        self.register_module_output('time', t * 1.)
         return
 
         

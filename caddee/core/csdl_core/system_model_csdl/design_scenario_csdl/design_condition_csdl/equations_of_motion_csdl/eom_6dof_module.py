@@ -33,6 +33,7 @@ class EoMM3LEuler6DOF(m3l.ExplicitOperation):
 
         ac_states_copy = copy.deepcopy(ac_states)
         del ac_states_copy['gamma']
+        del ac_states_copy['time']
         self.arguments = {**mps_forces, **ac_states_copy}
 
 

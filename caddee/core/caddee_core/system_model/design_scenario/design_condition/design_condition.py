@@ -75,6 +75,8 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
         y = m3l.Variable(name='y', shape=(self.num_nodes, ), operation=self)
         z = m3l.Variable(name='z', shape=(self.num_nodes, ), operation=self)
 
+        t = m3l.Variable(name='time', shape=(self.num_nodes, ), operation=self)
+
         ac_states = {
             'u' : u,
             'v' : v,
@@ -88,7 +90,8 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
             'theta' : theta,
             'x' : x,
             'y' : y,
-            'z' : z
+            'z' : z,
+            'time' : t,
         }
         return ac_states
     

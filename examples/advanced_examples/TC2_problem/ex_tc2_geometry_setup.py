@@ -24,6 +24,9 @@ t1 = time.time()
 fuselaga_primitive_names = list(spatial_rep.get_geometry_primitives(search_names=['Fuselage_***.main']))
 fuselage = cd.Component(name='fuselage', spatial_representation=spatial_rep, primitive_names=fuselaga_primitive_names)
 
+weird_nose_hub_primitive_names = list(spatial_rep.get_geometry_primitives(search_names=['EngineGroup_10']))
+weird_nose_hub = cd.Component(name='weird_nose_hub', spatial_representation=spatial_rep, primitive_names=weird_nose_hub_primitive_names)
+
 # Main wing
 wing_primitive_names = list(spatial_rep.get_geometry_primitives(search_names=['Wing']))
 wing = cd.LiftingSurface(name='wing', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)
@@ -191,6 +194,7 @@ lpc_rep.add_component(wing)
 lpc_rep.add_component(htail)
 lpc_rep.add_component(vtail)
 lpc_rep.add_component(fuselage)
+lpc_rep.add_component(weird_nose_hub)
 
 lpc_rep.add_component(pp_disk)
 lpc_rep.add_component(pp_blade_1)
@@ -331,9 +335,11 @@ lpc_param.add_input('tail_root_chord', tail_root_chord)
 # endregion
 
 # region fuselage + v-tail FFD + h-tail fuselage connection
+weird_nose_hub_geometry = primitives = weird_nose_hub.get_geometry_primitives()
 fuselage_geometry_primitives = fuselage.get_geometry_primitives()
-fuselage_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(fuselage_geometry_primitives, num_control_points=(2, 2, 2), order=(2,2,2), xyz_to_uvw_indices=(0,1,2))
-fuselage_ffd_block = cd.SRBGFFDBlock(name='fuselage_ffd_block', primitive=fuselage_ffd_bspline_volume, embedded_entities=fuselage_geometry_primitives)
+fuselage_weird_nose_geom_prims = {**weird_nose_hub_geometry, **fuselage_geometry_primitives}
+fuselage_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(fuselage_weird_nose_geom_prims, num_control_points=(2, 2, 2), order=(2,2,2), xyz_to_uvw_indices=(0,1,2))
+fuselage_ffd_block = cd.SRBGFFDBlock(name='fuselage_ffd_block', primitive=fuselage_ffd_bspline_volume, embedded_entities=fuselage_weird_nose_geom_prims)
 fuselage_ffd_block.add_translation_u(name='fuselage_stretch', order=2, num_dof=2, cost_factor=1) # to use inner optimization, don't specify 'connection_name' and 'val'
 fuselage_ffd_block.add_translation_v(name='fuselage_tv', order=1, num_dof=1) # to use inner optimization, don't specify 'connection_name' and 'val'
 fuselage_ffd_block.add_translation_w(name='fuselage_tw', order=1, num_dof=1) # to use inner optimization, don't specify 'connection_name' and 'val'
@@ -357,7 +363,7 @@ vtail_ffd_block.add_translation_w(name='vtail_tw', order=1, num_dof=1) # to use 
 # vtail_height_2 = am.norm(vtail_tip_1 - vtail_root_1)
 
 wing_te_fuselage_am = fuselage.project(np.array([14.332, 0.0, 8.429]))
-fuselage_vtail_le_am = fuselage.project(np.array([20.843, 0.000, 8.231]))
+fuselage_vtail_le_am = fuselage.project(np.array([30.843, 0.000, 8.231]))
 
 wing_qc = 0.75 * wing_root_chord_te_am + 0.25 * wing_root_chord_le_am
 wing_mc = 0.50 * wing_root_chord_te_am + 0.50 * wing_root_chord_le_am
@@ -368,8 +374,8 @@ wing_mc_fuselage_am = fuselage.project(wing_mc.value)
 # exit()
 lpc_param.add_input('tail_moment_arm', am.norm(wing_qc-tail_qc))
 
-vtail_le_am = vtail.project(np.array([20.843, 0.000, 8.231]))
-htail_le_am = htail.project(np.array([27.428, 0.0, 8.008]))
+vtail_le_am = vtail.project(np.array([30.843, 0.000, 8.231]))
+htail_le_am = htail.project(np.array([30.428, 0.0, 8.008]))
 htail_le_fuselage_am = fuselage.project(np.array([27.428, 0.0, 8.008]))
 
 # lpc_param.add_input('wing_te_fuselage_connection', wing_root_chord_te_am-wing_te_fuselage_am)

@@ -29,6 +29,12 @@ from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_f
 from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock
 from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_set import SRBGFFDSet
 
+from caddee.core.csdl_core.system_model_csdl.submodels.power_density_based_motor_analysis_m3l import ConstantPowerDensityMotorM3L
+
+from caddee.core.csdl_core.system_model_csdl.energy_group_csdl.design_condition_energy_m3l import EnergyModelM3L
+from caddee.core.csdl_core.system_model_csdl.energy_group_csdl.total_energy_m3l import TotalEnergyModelM3L
+from caddee.core.csdl_core.system_model_csdl.energy_group_csdl.final_SoC_m3l import SOCModelM3L
+
 # from core.system_configuration.networks.networks import PowerSystemsArchitecture
 # from core.system_configuration.component.component import Component, Rotor, MotorComp, BatteryComp, LiftingSurface
 # from core.system_model.system_model import SystemModel

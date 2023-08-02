@@ -131,7 +131,7 @@ class TotalConstantMassCSDL(BaseModelCSDL):
             # Compute total mass
             m = m + m_model #+ m_fudge
         
-        m_fudge = self.declare_variable('m_fudge', shape=(1, ), val=562)
+        m_fudge = self.declare_variable('m_fudge', shape=(1, ), val=210)
         m = m + m_model + m_fudge
 
 
@@ -261,7 +261,7 @@ class VaryingMassPropertiesCSDL(BaseModelCSDL):
             # Compute total mass
             m = m + m_model
 
-        m_fudge = self.declare_variable('m_fudge', shape=(1, ), val=562)
+        m_fudge = self.declare_variable('m_fudge', shape=(1, ), val=210)
         m = m + m_fudge
 
 

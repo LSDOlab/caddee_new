@@ -23,6 +23,7 @@ from lsdo_rotor.core.pitt_peters.pitt_peters_m3l import PittPeters, PittPetersMe
 from lsdo_airfoil.core.pressure_profile import PressureProfile, NodalPressureProfile
 from lsdo_acoustics import Acoustics
 from lsdo_acoustics.core.m3l_models import Lowson, KS, SKM, GL, TotalAircraftNoise
+from lsdo_motor import MotorSizing, MotorAnalysis
 
 
 caddee = cd.CADDEE()
@@ -78,14 +79,93 @@ system_m3l_model = m3l.Model()
 # battery
 battery_component = cd.Component(name='battery')
 simple_battery_sizing = cd.SimpleBatterySizingM3L(component=battery_component)
-simple_battery_sizing.set_module_input('battery_mass', val=800)
-simple_battery_sizing.set_module_input('battery_position', val=np.array([3.2, 0, 0.5]), dv_flag=False, lower=np.array([3.0, -1e-4, 0.5 - 1e-4]), upper=np.array([4, +1e-4, 0.5 + 1e-4]), scaler=1e-1)
+simple_battery_sizing.set_module_input('battery_mass', val=900, dv_flag=True, lower=600, scaler=1e-3)
+simple_battery_sizing.set_module_input('battery_position', val=np.array([3.1, 0, 0.5]), dv_flag=False, lower=np.array([3.0, -1e-4, 0.5 - 1e-4]), upper=np.array([4, +1e-4, 0.5 + 1e-4]), scaler=1e-1)
 simple_battery_sizing.set_module_input('battery_energy_density', val=400)
 battery_mass, cg_battery, I_battery = simple_battery_sizing.evaluate()
 
 # M4 regressions
 m4_regression = cd.M4RegressionsM3L(exclude_wing=True)
 mass_m4, cg_m4, I_m4 = m4_regression.evaluate(battery_mass=battery_mass)
+
+# Motors (9) 
+# pusher 
+pusher_motor_sizing = MotorSizing(
+    rotor_component=pp_disk, # This will provide the center of mass of the mass 
+)
+pusher_motor_sizing.set_module_input('motor_diameter', val=0.22, dv_flag=True, lower=0.08, upper=0.3, scaler=1)
+pusher_motor_sizing.set_module_input('motor_length', val=0.15, dv_flag=True, lower=0.05, upper=0.2, scaler=1)
+m_mass_pp, m_cg_pp, m_I_pp, pp_motor_parameters = pusher_motor_sizing.evaluate()
+
+# rlo
+rlo_motor_sizing = MotorSizing(
+    rotor_component=rlo_disk, # This will provide the center of mass of the mass 
+)
+rlo_motor_sizing.set_module_input('motor_diameter', val=0.17, dv_flag=True, lower=0.08, upper=0.3, scaler=1)
+rlo_motor_sizing.set_module_input('motor_length', val=0.1, dv_flag=True, lower=0.05, upper=0.12, scaler=1)
+m_mass_rlo, m_cg_rlo, m_I_rlo, rlo_motor_parameters = rlo_motor_sizing.evaluate()
+
+# rli
+rli_motor_sizing = MotorSizing(
+    rotor_component=rli_disk, # This will provide the center of mass of the mass 
+)
+rli_motor_sizing.set_module_input('motor_diameter', val=0.17, dv_flag=True, lower=0.08, upper=0.3, scaler=1)
+rli_motor_sizing.set_module_input('motor_length', val=0.1, dv_flag=True, lower=0.05, upper=0.12, scaler=1)
+m_mass_rli, m_cg_rli, m_I_rli, rli_motor_parameters = rli_motor_sizing.evaluate()
+
+
+# rri
+rri_motor_sizing = MotorSizing(
+    rotor_component=rri_disk, # This will provide the center of mass of the mass 
+)
+rri_motor_sizing.set_module_input('motor_diameter', val=0.17, dv_flag=True, lower=0.08, upper=0.3, scaler=1)
+rri_motor_sizing.set_module_input('motor_length', val=0.1, dv_flag=True, lower=0.05, upper=0.12, scaler=1)
+m_mass_rri, m_cg_rri, m_I_rri, rri_motor_parameters = rri_motor_sizing.evaluate()
+
+
+# rro
+rro_motor_sizing = MotorSizing(
+    rotor_component=rro_disk, # This will provide the center of mass of the mass 
+)
+rro_motor_sizing.set_module_input('motor_diameter', val=0.17, dv_flag=True, lower=0.08, upper=0.3, scaler=1)
+rro_motor_sizing.set_module_input('motor_length', val=0.1, dv_flag=True, lower=0.05, upper=0.12, scaler=1)
+m_mass_rro, m_cg_rro, m_I_rro, rro_motor_parameters = rro_motor_sizing.evaluate()
+
+
+# flo
+flo_motor_sizing = MotorSizing(
+    rotor_component=flo_disk, # This will provide the center of mass of the mass 
+)
+flo_motor_sizing.set_module_input('motor_diameter', val=0.17, dv_flag=True, lower=0.08, upper=0.3, scaler=1)
+flo_motor_sizing.set_module_input('motor_length', val=0.1, dv_flag=True, lower=0.05, upper=0.12, scaler=1)
+m_mass_flo, m_cg_flo, m_I_flo, flo_motor_parameters = flo_motor_sizing.evaluate()
+
+
+# fli
+fli_motor_sizing = MotorSizing(
+    rotor_component=fli_disk, # This will provide the center of mass of the mass 
+)
+fli_motor_sizing.set_module_input('motor_diameter', val=0.17, dv_flag=True, lower=0.08, upper=0.3, scaler=1)
+fli_motor_sizing.set_module_input('motor_length', val=0.1, dv_flag=True, lower=0.05, upper=0.12, scaler=1)
+m_mass_fli, m_cg_fli, m_I_fli, fli_motor_parameters = fli_motor_sizing.evaluate()
+
+
+# fri
+fri_motor_sizing = MotorSizing(
+    rotor_component=fri_disk, # This will provide the center of mass of the mass 
+)
+fri_motor_sizing.set_module_input('motor_diameter', val=0.17, dv_flag=True, lower=0.08, upper=0.3, scaler=1)
+fri_motor_sizing.set_module_input('motor_length', val=0.1, dv_flag=True, lower=0.05, upper=0.12, scaler=1)
+m_mass_fri, m_cg_fri, m_I_fri, fri_motor_parameters = fri_motor_sizing.evaluate()
+
+
+# fro
+fro_motor_sizing = MotorSizing(
+    rotor_component=fro_disk, # This will provide the center of mass of the mass 
+)
+fro_motor_sizing.set_module_input('motor_diameter', val=0.17, dv_flag=True, lower=0.08, upper=0.3, scaler=1)
+fro_motor_sizing.set_module_input('motor_length', val=0.1, dv_flag=True, lower=0.05, upper=0.12, scaler=1)
+m_mass_fro, m_cg_fro, m_I_fro, fro_motor_parameters = fro_motor_sizing.evaluate()
 
 # beam sizing
 # create the aframe dictionaries:
@@ -124,8 +204,20 @@ mass_model_wing_mass = beam_mass.evaluate()
 
 # total constant mass 
 constant_mps = cd.TotalConstantMassM3L()
-total_constant_mass = constant_mps.evaluate(mass_model_wing_mass, battery_mass, mass_m4)
-
+total_constant_mass = constant_mps.evaluate(
+    mass_model_wing_mass, 
+    battery_mass, 
+    mass_m4,
+    m_mass_pp,
+    m_mass_rlo,
+    m_mass_rli,
+    m_mass_rri,
+    m_mass_rro,
+    m_mass_flo,
+    m_mass_fli,
+    m_mass_fri,
+    m_mass_fro,
+)
 system_m3l_model.register_output(total_constant_mass)
 # endregion
 
@@ -244,8 +336,19 @@ pusher_bem_mesh = BEMMesh(
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 bem_model.set_module_input('rpm', val=1639.17444615, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
-bem_forces, bem_moments, _, _, _, _,_,_ = bem_model.evaluate(ac_states=ac_states, design_condition=plus_3g_condition)
+bem_forces, bem_moments, _, _, _, _,pp_Q, _ = bem_model.evaluate(ac_states=ac_states, design_condition=plus_3g_condition)
 
+# Motor model
+# pp_motor_model = cd.ConstantPowerDensityMotorM3L(component=pp_disk)
+# pp_input_power = pp_motor_model.evaluate(pp_Q, design_condition=plus_3g_condition)
+pp_motor_model = MotorAnalysis(component=pp_disk)
+pp_input_power, pp_efficiency = pp_motor_model.evaluate(pp_Q, pp_motor_parameters, design_condition=plus_3g_condition)
+system_m3l_model.register_output(pp_input_power, design_condition=plus_3g_condition)
+
+# Energy Consumption
+energy_model = cd.EnergyModelM3L()
+plus_3g_energy = energy_model.evaluate(pp_input_power, ac_states=ac_states, design_condition=plus_3g_condition)
+system_m3l_model.register_output(plus_3g_energy, plus_3g_condition)
 
 beam_mesh = LinearBeamMesh(
     meshes = dict(
@@ -286,7 +389,18 @@ system_m3l_model.register_output(cruise_structural_wing_mesh_displacements, plus
 
 # Total mass properties
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=plus_3g_condition)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=plus_3g_condition)
 # total_mass, total_cg, total_inertia = total_mass_properties.evaluate(battery_mass, mass_m4, cg_battery, cg_m4, I_battery, I_m4)
 
 system_m3l_model.register_output(total_mass, plus_3g_condition)
@@ -392,7 +506,20 @@ pusher_bem_mesh = BEMMesh(
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 bem_model.set_module_input('rpm', val=1498.35656739, dv_flag=True, lower=800, upper=4000, scaler=1e-3)
-bem_forces, bem_moments, _, _, _, _,_,_ = bem_model.evaluate(ac_states=ac_states, design_condition=minus_1g_condition)
+bem_forces, bem_moments, _, _, _, _,pp_Q, _ = bem_model.evaluate(ac_states=ac_states, design_condition=minus_1g_condition)
+
+# Motor model
+# pp_motor_model = cd.ConstantPowerDensityMotorM3L(component=pp_disk)
+# pp_input_power = pp_motor_model.evaluate(pp_Q, design_condition=minus_1g_condition)
+pp_motor_model = MotorAnalysis(component=pp_disk)
+pp_input_power, pp_efficiency = pp_motor_model.evaluate(pp_Q, pp_motor_parameters, design_condition=minus_1g_condition)
+system_m3l_model.register_output(pp_input_power, design_condition=minus_1g_condition)
+
+# Energy Consumption
+energy_model = cd.EnergyModelM3L()
+minus_1g_energy = energy_model.evaluate(pp_input_power, ac_states=ac_states, design_condition=minus_1g_condition)
+system_m3l_model.register_output(minus_1g_energy, minus_1g_condition)
+
 
 # create the beam model:
 beam = EBBeam(component=wing, mesh=beam_mesh, beams=beams, bounds=bounds, joints=joints, mesh_units='ft')
@@ -428,7 +555,18 @@ system_m3l_model.register_output(cruise_structural_wing_mesh_displacements, minu
 
 # Total mass properties
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=minus_1g_condition)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=minus_1g_condition)
 # total_mass, total_cg, total_inertia = total_mass_properties.evaluate(battery_mass, mass_m4, cg_battery, cg_m4, I_battery, I_m4)
 system_m3l_model.register_output(total_mass, minus_1g_condition)
 system_m3l_model.register_output(total_cg, minus_1g_condition)
@@ -502,8 +640,73 @@ fro_bem_model = BEM(disk_prefix='hover_1_oei_flo_fro_disk', blade_prefix='fro', 
 fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
 fro_bem_forces, fro_bem_moments,_ ,_ ,_,_,fro_Q, fro_ux = fro_bem_model.evaluate(ac_states=hover_1_oei_flo_ac_states, design_condition=hover_1_oei_flo)
 
+# # Hover Motor Analysis
+# hover_rlo_motor_model = cd.ConstantPowerDensityMotorM3L(component=rlo_disk)
+# hover_rlo_input_power = hover_rlo_motor_model.evaluate(rlo_Q, design_condition=hover_1_oei_flo)
+hover_rlo_motor_model = MotorAnalysis(component=rlo_disk)
+hover_rlo_input_power, hover_rlo_efficiency = hover_rlo_motor_model.evaluate(rlo_Q, rlo_motor_parameters, design_condition=hover_1_oei_flo)
+system_m3l_model.register_output(hover_rlo_input_power, hover_1_oei_flo)
+
+# hover_rli_motor_model = cd.ConstantPowerDensityMotorM3L(component=rli_disk)
+# hover_rli_input_power = hover_rli_motor_model.evaluate(rli_Q, design_condition=hover_1_oei_flo)
+hover_rli_motor_model = MotorAnalysis(component=rli_disk)
+hover_rli_input_power, hover_rli_efficiency = hover_rli_motor_model.evaluate(rli_Q, rli_motor_parameters, design_condition=hover_1_oei_flo)
+system_m3l_model.register_output(hover_rli_input_power, hover_1_oei_flo)
+
+# hover_rri_motor_model = cd.ConstantPowerDensityMotorM3L(component=rri_disk)
+# hover_rri_input_power = hover_rri_motor_model.evaluate(rri_Q, design_condition=hover_1_oei_flo)
+hover_rri_motor_model = MotorAnalysis(component=rri_disk)
+hover_rri_input_power, hover_rri_efficiency = hover_rri_motor_model.evaluate(rri_Q, rri_motor_parameters, design_condition=hover_1_oei_flo)
+system_m3l_model.register_output(hover_rri_input_power, hover_1_oei_flo)
+
+# hover_rro_motor_model = cd.ConstantPowerDensityMotorM3L(component=rro_disk)
+# hover_rro_input_power = hover_rri_motor_model.evaluate(rro_Q, design_condition=hover_1_oei_flo)
+hover_rro_motor_model = MotorAnalysis(component=rro_disk)
+hover_rro_input_power, hover_rro_efficiency = hover_rro_motor_model.evaluate(rro_Q, rro_motor_parameters, design_condition=hover_1_oei_flo)
+system_m3l_model.register_output(hover_rro_input_power, hover_1_oei_flo)
+
+# hover_fli_motor_model = cd.ConstantPowerDensityMotorM3L(component=fli_disk)
+# hover_fli_input_power = hover_fli_motor_model.evaluate(fli_Q, design_condition=hover_1_oei_flo)
+hover_fli_motor_model = MotorAnalysis(component=fli_disk)
+hover_fli_input_power, hover_fli_efficiency = hover_fli_motor_model.evaluate(fli_Q, fli_motor_parameters, design_condition=hover_1_oei_flo)
+system_m3l_model.register_output(hover_fli_input_power, hover_1_oei_flo)
+
+# hover_fro_motor_model = cd.ConstantPowerDensityMotorM3L(component=fro_disk)
+# hover_fro_input_power = hover_fli_motor_model.evaluate(fro_Q, design_condition=hover_1_oei_flo)
+hover_fro_motor_model = MotorAnalysis(component=fro_disk)
+hover_fro_input_power, hover_fro_efficiency = hover_fro_motor_model.evaluate(fro_Q, fro_motor_parameters, design_condition=hover_1_oei_flo)
+system_m3l_model.register_output(hover_fro_input_power, hover_1_oei_flo)
+
+# hover_fri_motor_model = cd.ConstantPowerDensityMotorM3L(component=fri_disk)
+# hover_fri_input_power = hover_fli_motor_model.evaluate(fri_Q, design_condition=hover_1_oei_flo)
+hover_fri_motor_model = MotorAnalysis(component=fri_disk)
+hover_fri_input_power, hover_fri_efficiency = hover_fri_motor_model.evaluate(fri_Q, fri_motor_parameters, design_condition=hover_1_oei_flo)
+system_m3l_model.register_output(hover_fri_input_power, hover_1_oei_flo)
+
+# Hover Energy Consumption
+hover_oei_fli_energy_model = cd.EnergyModelM3L()
+hover_oei_fli_energy = hover_oei_fli_energy_model.evaluate(
+    hover_rlo_input_power, hover_rli_input_power, hover_rri_input_power, hover_rro_input_power,
+    hover_fli_input_power, hover_fri_input_power, hover_fro_input_power,
+    ac_states=hover_1_oei_flo_ac_states, design_condition=hover_1_oei_flo
+)
+
+system_m3l_model.register_output(hover_oei_fli_energy, hover_1_oei_flo)
+
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=hover_1_oei_flo)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,    
+    design_condition=hover_1_oei_flo
+)
 
 system_m3l_model.register_output(total_mass, hover_1_oei_flo)
 system_m3l_model.register_output(total_cg, hover_1_oei_flo)
@@ -592,8 +795,73 @@ fro_bem_model = BEM(disk_prefix='hover_1_oei_fli_fro_disk', blade_prefix='fro', 
 fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
 fro_bem_forces, fro_bem_moments,_ ,_ ,_,_,fro_Q, fro_ux = fro_bem_model.evaluate(ac_states=hover_1_oei_fli_ac_states, design_condition=hover_1_oei_fli)
 
+# Hover Motor Analysis
+# hover_rlo_motor_model = cd.ConstantPowerDensityMotorM3L(component=rlo_disk)
+# hover_rlo_input_power = hover_rlo_motor_model.evaluate(rlo_Q, design_condition=hover_1_oei_fli)
+hover_rlo_motor_model = MotorAnalysis(component=rlo_disk)
+hover_rlo_input_power, hover_rlo_efficiency = hover_rlo_motor_model.evaluate(rlo_Q, rlo_motor_parameters, design_condition=hover_1_oei_fli)
+system_m3l_model.register_output(hover_rlo_input_power, hover_1_oei_fli)
+
+# hover_rli_motor_model = cd.ConstantPowerDensityMotorM3L(component=rli_disk)
+# hover_rli_input_power = hover_rli_motor_model.evaluate(rli_Q, design_condition=hover_1_oei_fli)
+hover_rli_motor_model = MotorAnalysis(component=rli_disk)
+hover_rli_input_power, hover_rli_efficiency = hover_rli_motor_model.evaluate(rli_Q, rli_motor_parameters, design_condition=hover_1_oei_fli)
+system_m3l_model.register_output(hover_rli_input_power, hover_1_oei_fli)
+
+# hover_rri_motor_model = cd.ConstantPowerDensityMotorM3L(component=rri_disk)
+# hover_rri_input_power = hover_rri_motor_model.evaluate(rri_Q, design_condition=hover_1_oei_fli)
+hover_rri_motor_model = MotorAnalysis(component=rri_disk)
+hover_rri_input_power, hover_rri_efficiency = hover_rri_motor_model.evaluate(rri_Q, rri_motor_parameters, design_condition=hover_1_oei_fli)
+system_m3l_model.register_output(hover_rri_input_power, hover_1_oei_fli)
+
+# hover_rro_motor_model = cd.ConstantPowerDensityMotorM3L(component=rro_disk)
+# hover_rro_input_power = hover_rro_motor_model.evaluate(rro_Q, design_condition=hover_1_oei_fli)
+hover_rro_motor_model = MotorAnalysis(component=rro_disk)
+hover_rro_input_power, hover_rro_efficiency = hover_rro_motor_model.evaluate(rro_Q, rro_motor_parameters, design_condition=hover_1_oei_fli)
+system_m3l_model.register_output(hover_rro_input_power, hover_1_oei_fli)
+
+# hover_flo_motor_model = cd.ConstantPowerDensityMotorM3L(component=flo_disk)
+# hover_flo_input_power = hover_flo_motor_model.evaluate(flo_Q, design_condition=hover_1_oei_fli)
+hover_flo_motor_model = MotorAnalysis(component=flo_disk)
+hover_flo_input_power, hover_flo_efficiency = hover_flo_motor_model.evaluate(flo_Q, flo_motor_parameters, design_condition=hover_1_oei_fli)
+system_m3l_model.register_output(hover_flo_input_power, hover_1_oei_fli)
+
+# hover_fro_motor_model = cd.ConstantPowerDensityMotorM3L(component=fro_disk)
+# hover_fro_input_power = hover_fro_motor_model.evaluate(fro_Q, design_condition=hover_1_oei_fli)
+hover_fro_motor_model = MotorAnalysis(component=fro_disk)
+hover_fro_input_power, hover_fro_efficiency = hover_fro_motor_model.evaluate(fro_Q, fro_motor_parameters, design_condition=hover_1_oei_fli)
+system_m3l_model.register_output(hover_fro_input_power, hover_1_oei_fli)
+
+# hover_fri_motor_model = cd.ConstantPowerDensityMotorM3L(component=fri_disk)
+# hover_fri_input_power = hover_fri_motor_model.evaluate(fri_Q, design_condition=hover_1_oei_fli)
+hover_fri_motor_model = MotorAnalysis(component=fri_disk)
+hover_fri_input_power, hover_fri_efficiency = hover_fri_motor_model.evaluate(fri_Q, fri_motor_parameters, design_condition=hover_1_oei_fli)
+system_m3l_model.register_output(hover_fri_input_power, hover_1_oei_fli)
+
+# Hover Energy Consumption
+hover_oei_fli_energy_model = cd.EnergyModelM3L()
+hover_oei_fli_energy = hover_oei_fli_energy_model.evaluate(
+    hover_rlo_input_power, hover_rli_input_power, hover_rri_input_power, hover_rro_input_power,
+    hover_flo_input_power, hover_fri_input_power, hover_fro_input_power,
+    ac_states=hover_1_oei_fli_ac_states, design_condition=hover_1_oei_fli
+)
+
+system_m3l_model.register_output(hover_oei_fli_energy, hover_1_oei_fli)
+
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=hover_1_oei_fli)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,    
+    design_condition=hover_1_oei_fli
+)
 
 system_m3l_model.register_output(total_mass, hover_1_oei_fli)
 system_m3l_model.register_output(total_cg, hover_1_oei_fli)
@@ -787,6 +1055,65 @@ fro_bem_model = BEM(disk_prefix='hover_1_fro_disk', blade_prefix='fro', componen
 fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
 fro_bem_forces, fro_bem_moments, fro_dT ,fro_dQ ,fro_dD, fro_Ct,fro_Q, fro_ux = fro_bem_model.evaluate(ac_states=hover_1_ac_states, design_condition=hover_1)
 
+# # Hover Motor Analysis
+# hover_rlo_motor_model = cd.ConstantPowerDensityMotorM3L(component=rlo_disk)
+# hover_rlo_input_power = hover_rlo_motor_model.evaluate(rlo_Q, design_condition=hover_1)
+hover_rlo_motor_model = MotorAnalysis(component=rlo_disk)
+hover_rlo_input_power, hover_rlo_efficiency = hover_rlo_motor_model.evaluate(rlo_Q, rlo_motor_parameters, design_condition=hover_1)
+system_m3l_model.register_output(hover_rlo_input_power, hover_1)
+
+# hover_rli_motor_model = cd.ConstantPowerDensityMotorM3L(component=rli_disk)
+# hover_rli_input_power = hover_rli_motor_model.evaluate(rli_Q, design_condition=hover_1)
+hover_rli_motor_model = MotorAnalysis(component=rli_disk)
+hover_rli_input_power, hover_rli_efficiency = hover_rli_motor_model.evaluate(rli_Q, rli_motor_parameters, design_condition=hover_1)
+system_m3l_model.register_output(hover_rli_input_power, hover_1)
+
+# hover_rri_motor_model = cd.ConstantPowerDensityMotorM3L(component=rri_disk)
+# hover_rri_input_power = hover_rri_motor_model.evaluate(rri_Q, design_condition=hover_1)
+hover_rri_motor_model = MotorAnalysis(component=rri_disk)
+hover_rri_input_power, hover_rri_efficiency = hover_rri_motor_model.evaluate(rri_Q, rri_motor_parameters, design_condition=hover_1)
+system_m3l_model.register_output(hover_rri_input_power, hover_1)
+
+# hover_rro_motor_model = cd.ConstantPowerDensityMotorM3L(component=rro_disk)
+# hover_rro_input_power = hover_rro_motor_model.evaluate(rro_Q, design_condition=hover_1)
+hover_rro_motor_model = MotorAnalysis(component=rro_disk)
+hover_rro_input_power, hover_rro_efficiency = hover_rro_motor_model.evaluate(rro_Q, rro_motor_parameters, design_condition=hover_1)
+system_m3l_model.register_output(hover_rro_input_power, hover_1)
+
+# hover_flo_motor_model = cd.ConstantPowerDensityMotorM3L(component=flo_disk)
+# hover_flo_input_power = hover_flo_motor_model.evaluate(flo_Q, design_condition=hover_1)
+hover_flo_motor_model = MotorAnalysis(component=flo_disk)
+hover_flo_input_power, hover_flo_efficiency = hover_flo_motor_model.evaluate(flo_Q, flo_motor_parameters, design_condition=hover_1)
+system_m3l_model.register_output(hover_flo_input_power, hover_1)
+
+# hover_fli_motor_model = cd.ConstantPowerDensityMotorM3L(component=fli_disk)
+# hover_fli_input_power = hover_fli_motor_model.evaluate(fli_Q, design_condition=hover_1)
+hover_fli_motor_model = MotorAnalysis(component=fli_disk)
+hover_fli_input_power, hover_fli_efficiency = hover_fli_motor_model.evaluate(fli_Q, fli_motor_parameters, design_condition=hover_1)
+system_m3l_model.register_output(hover_fli_input_power, hover_1)
+
+# hover_fro_motor_model = cd.ConstantPowerDensityMotorM3L(component=fro_disk)
+# hover_fro_input_power = hover_fro_motor_model.evaluate(fro_Q, design_condition=hover_1)
+hover_fro_motor_model = MotorAnalysis(component=fro_disk)
+hover_fro_input_power, hover_fro_efficiency = hover_fro_motor_model.evaluate(fro_Q, fro_motor_parameters, design_condition=hover_1)
+system_m3l_model.register_output(hover_fro_input_power, hover_1)
+
+# hover_fri_motor_model = cd.ConstantPowerDensityMotorM3L(component=fri_disk)
+# hover_fri_input_power = hover_fri_motor_model.evaluate(fri_Q, design_condition=hover_1)
+hover_fri_motor_model = MotorAnalysis(component=fri_disk)
+hover_fri_input_power, hover_fri_efficiency = hover_fri_motor_model.evaluate(fri_Q, fri_motor_parameters, design_condition=hover_1)
+system_m3l_model.register_output(hover_fri_input_power, hover_1)
+
+# Hover Energy Consumption
+hover_energy_model = cd.EnergyModelM3L()
+hover_energy = hover_energy_model.evaluate(
+    hover_rlo_input_power, hover_rli_input_power, hover_rri_input_power, hover_rro_input_power,
+    hover_flo_input_power, hover_fli_input_power, hover_fri_input_power, hover_fro_input_power,
+    ac_states=hover_1_ac_states, design_condition=hover_1
+)
+
+system_m3l_model.register_output(hover_energy, hover_1)
+
 
 # acoustics
 hover_acoustics = Acoustics(
@@ -920,7 +1247,19 @@ system_m3l_model.register_output(hover_total_SPL, hover_1)
 system_m3l_model.register_output(hover_total_SPL_A_weighted, hover_1)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=hover_1)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=hover_1
+)
 
 system_m3l_model.register_output(total_mass, hover_1)
 system_m3l_model.register_output(total_cg, hover_1)
@@ -980,7 +1319,7 @@ qst_1.atmosphere_model = cd.SimpleAtmosphereModel()
 qst_1.set_module_input('pitch_angle', val=-0.0134037)
 qst_1.set_module_input('mach_number', val=0.00029412)
 qst_1.set_module_input('altitude', val=300)
-qst_1.set_module_input(name='range', val=20)
+qst_1.set_module_input(name='range', val=0.72)
 qst_1.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
 
 qst_1_ac_states = qst_1.evaluate_ac_states()
@@ -1039,6 +1378,65 @@ fri_bem_forces, fri_bem_moments, fri_dT ,fri_dQ ,fri_dD, fri_Ct,fri_Q, fri_ux = 
 fro_bem_model = BEM(disk_prefix='qst_1_fro_disk', blade_prefix='fro', component=fro_disk, mesh=bem_mesh_lift)
 fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
 fro_bem_forces, fro_bem_moments, fro_dT ,fro_dQ ,fro_dD, fro_Ct,fro_Q, fro_ux = fro_bem_model.evaluate(ac_states=qst_1_ac_states, design_condition=qst_1)
+
+# # Hover Motor Analysis
+# qst_1_rlo_motor_model = cd.ConstantPowerDensityMotorM3L(component=rlo_disk)
+# qst_1_rlo_input_power = hover_rlo_motor_model.evaluate(rlo_Q, design_condition=qst_1)
+qst_1_rlo_motor_model = MotorAnalysis(component=rlo_disk)
+qst_1_rlo_input_power, qst_1_rlo_efficiency = qst_1_rlo_motor_model.evaluate(rlo_Q, rlo_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_rlo_input_power, qst_1)
+
+# qst_1_rli_motor_model = cd.ConstantPowerDensityMotorM3L(component=rli_disk)
+# qst_1_rli_input_power = hover_rli_motor_model.evaluate(rli_Q, design_condition=qst_1)
+qst_1_rli_motor_model = MotorAnalysis(component=rli_disk)
+qst_1_rli_input_power, qst_1_rli_efficiency = qst_1_rli_motor_model.evaluate(rli_Q, rli_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_rli_input_power, qst_1)
+
+# qst_1_rri_motor_model = cd.ConstantPowerDensityMotorM3L(component=rri_disk)
+# qst_1_rri_input_power = hover_rri_motor_model.evaluate(rri_Q, design_condition=qst_1)
+qst_1_rri_motor_model = MotorAnalysis(component=rri_disk)
+qst_1_rri_input_power, qst_1_rri_efficiency = qst_1_rri_motor_model.evaluate(rri_Q, rri_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_rri_input_power, qst_1)
+
+# qst_1_rro_motor_model = cd.ConstantPowerDensityMotorM3L(component=rro_disk)
+# qst_1_rro_input_power = hover_rro_motor_model.evaluate(rro_Q, design_condition=qst_1)
+qst_1_rro_motor_model = MotorAnalysis(component=rro_disk)
+qst_1_rro_input_power, qst_1_rro_efficiency = qst_1_rro_motor_model.evaluate(rro_Q, rro_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_rro_input_power, qst_1)
+
+# qst_1_flo_motor_model = cd.ConstantPowerDensityMotorM3L(component=flo_disk)
+# qst_1_flo_input_power = hover_flo_motor_model.evaluate(flo_Q, design_condition=qst_1)
+qst_1_flo_motor_model = MotorAnalysis(component=flo_disk)
+qst_1_flo_input_power, qst_1_flo_efficiency = qst_1_flo_motor_model.evaluate(flo_Q, flo_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_flo_input_power, qst_1)
+
+# qst_1_fli_motor_model = cd.ConstantPowerDensityMotorM3L(component=fli_disk)
+# qst_1_fli_input_power = hover_fli_motor_model.evaluate(fli_Q, design_condition=qst_1)
+qst_1_fli_motor_model = MotorAnalysis(component=fli_disk)
+qst_1_fli_input_power, qst_1_fli_efficiency = qst_1_fli_motor_model.evaluate(fli_Q, fli_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_fli_input_power, qst_1)
+
+# qst_1_fro_motor_model = cd.ConstantPowerDensityMotorM3L(component=fro_disk)
+# qst_1_fro_input_power = hover_fro_motor_model.evaluate(fro_Q, design_condition=qst_1)
+qst_1_fro_motor_model = MotorAnalysis(component=fro_disk)
+qst_1_fro_input_power, qst_1_fro_efficiency = qst_1_fro_motor_model.evaluate(fro_Q, fro_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_fro_input_power, qst_1)
+
+# qst_1_fri_motor_model = cd.ConstantPowerDensityMotorM3L(component=fri_disk)
+# qst_1_fri_input_power = hover_fri_motor_model.evaluate(fri_Q, design_condition=qst_1)
+qst_1_fri_motor_model = MotorAnalysis(component=fri_disk)
+qst_1_fri_input_power, qst_1_fri_efficiency = qst_1_fri_motor_model.evaluate(fri_Q, fri_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_fri_input_power, qst_1)
+
+# Hover Energy Consumption
+qst_1_energy_model = cd.EnergyModelM3L()
+qst_1_energy = qst_1_energy_model.evaluate(
+    qst_1_rlo_input_power, qst_1_rli_input_power, qst_1_rri_input_power, qst_1_rro_input_power,
+    qst_1_flo_input_power, qst_1_fli_input_power, qst_1_fri_input_power, qst_1_fro_input_power,
+    ac_states=qst_1_ac_states, design_condition=qst_1
+)
+
+system_m3l_model.register_output(qst_1_energy, qst_1)
 
 # acoustics
 qst_1_acoustics = Acoustics(
@@ -1173,7 +1571,19 @@ system_m3l_model.register_output(qst_1_total_SPL_A_weighted, qst_1)
 
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=qst_1)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=qst_1,
+)
 
 system_m3l_model.register_output(total_mass, qst_1)
 system_m3l_model.register_output(total_cg, qst_1)
@@ -1237,7 +1647,7 @@ qst_2.atmosphere_model = cd.SimpleAtmosphereModel()
 qst_2.set_module_input('pitch_angle', val=-0.04973228)
 qst_2.set_module_input('mach_number', val=0.06489461)
 qst_2.set_module_input('altitude', val=300)
-qst_2.set_module_input(name='range', val=20)
+qst_2.set_module_input(name='range', val=158)
 qst_2.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
 
 
@@ -1297,6 +1707,65 @@ fro_bem_model = PittPeters(disk_prefix='qst_2_fro_disk', blade_prefix='fro', com
 fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
 fro_bem_forces, fro_bem_moments, fro_dT ,fro_dQ ,fro_dD, fro_Ct, fro_Q, fro_ux = fro_bem_model.evaluate(ac_states=qst_2_ac_states, design_condition=qst_2)
 
+
+# # qst 2 Motor Analysis
+# qst_2_rlo_motor_model = cd.ConstantPowerDensityMotorM3L(component=rlo_disk)
+# qst_2_rlo_input_power = hover_rlo_motor_model.evaluate(rlo_Q, design_condition=qst_2)
+qst_2_rlo_motor_model = MotorAnalysis(component=rlo_disk)
+qst_2_rlo_input_power, qst_2_rlo_efficiency = qst_2_rlo_motor_model.evaluate(rlo_Q, rlo_motor_parameters, design_condition=qst_2)
+system_m3l_model.register_output(qst_2_rlo_input_power, qst_2)
+
+# qst_2_rli_motor_model = cd.ConstantPowerDensityMotorM3L(component=rli_disk)
+# qst_2_rli_input_power = hover_rli_motor_model.evaluate(rli_Q, design_condition=qst_2)
+qst_2_rli_motor_model = MotorAnalysis(component=rli_disk)
+qst_2_rli_input_power, qst_2_rli_efficiency = qst_2_rli_motor_model.evaluate(rli_Q, rli_motor_parameters, design_condition=qst_2)
+system_m3l_model.register_output(qst_2_rli_input_power, qst_2)
+
+# qst_2_rri_motor_model = cd.ConstantPowerDensityMotorM3L(component=rri_disk)
+# qst_2_rri_input_power = hover_rri_motor_model.evaluate(rri_Q, design_condition=qst_2)
+qst_2_rri_motor_model = MotorAnalysis(component=rri_disk)
+qst_2_rri_input_power, qst_2_rri_efficiency = qst_2_rri_motor_model.evaluate(rri_Q, rri_motor_parameters, design_condition=qst_2)
+system_m3l_model.register_output(qst_2_rri_input_power, qst_2)
+
+# qst_2_rro_motor_model = cd.ConstantPowerDensityMotorM3L(component=rro_disk)
+# qst_2_rro_input_power = hover_rro_motor_model.evaluate(rro_Q, design_condition=qst_2)
+qst_2_rro_motor_model = MotorAnalysis(component=rro_disk)
+qst_2_rro_input_power, qst_2_rro_efficiency = qst_2_rro_motor_model.evaluate(rro_Q, rro_motor_parameters, design_condition=qst_2)
+system_m3l_model.register_output(qst_2_rro_input_power, qst_2)
+
+# qst_2_flo_motor_model = cd.ConstantPowerDensityMotorM3L(component=flo_disk)
+# qst_2_flo_input_power = hover_flo_motor_model.evaluate(flo_Q, design_condition=qst_2)
+qst_2_flo_motor_model = MotorAnalysis(component=flo_disk)
+qst_2_flo_input_power, qst_2_flo_efficiency = qst_2_flo_motor_model.evaluate(flo_Q, flo_motor_parameters, design_condition=qst_2)
+system_m3l_model.register_output(qst_2_flo_input_power, qst_2)
+
+# qst_2_fli_motor_model = cd.ConstantPowerDensityMotorM3L(component=fli_disk)
+# qst_2_fli_input_power = hover_fli_motor_model.evaluate(fli_Q, design_condition=qst_2)
+qst_2_fli_motor_model = MotorAnalysis(component=fli_disk)
+qst_2_fli_input_power, qst_2_fli_efficiency = qst_2_fli_motor_model.evaluate(fli_Q, fli_motor_parameters, design_condition=qst_2)
+system_m3l_model.register_output(qst_2_fli_input_power, qst_2)
+
+# qst_2_fro_motor_model = cd.ConstantPowerDensityMotorM3L(component=fro_disk)
+# qst_2_fro_input_power = hover_fro_motor_model.evaluate(fro_Q, design_condition=qst_2)
+qst_2_fro_motor_model = MotorAnalysis(component=fro_disk)
+qst_2_fro_input_power, qst_2_fro_efficiency = qst_2_fro_motor_model.evaluate(fro_Q, fro_motor_parameters, design_condition=qst_2)
+system_m3l_model.register_output(qst_2_fro_input_power, qst_2)
+
+# qst_2_fri_motor_model = cd.ConstantPowerDensityMotorM3L(component=fri_disk)
+# qst_2_fri_input_power = hover_fri_motor_model.evaluate(fri_Q, design_condition=qst_2)
+qst_2_fri_motor_model = MotorAnalysis(component=fri_disk)
+qst_2_fri_input_power, qst_2_fri_efficiency = qst_2_fri_motor_model.evaluate(fri_Q, fri_motor_parameters, design_condition=qst_2)
+system_m3l_model.register_output(qst_2_fri_input_power, qst_2)
+
+# Hover Energy Consumption
+qst_2_energy_model = cd.EnergyModelM3L()
+qst_2_energy = qst_2_energy_model.evaluate(
+    qst_2_rlo_input_power, qst_2_rli_input_power, qst_2_rri_input_power, qst_2_rro_input_power,
+    qst_2_flo_input_power, qst_2_fli_input_power, qst_2_fri_input_power, qst_2_fro_input_power,
+    ac_states=qst_2_ac_states, design_condition=qst_2
+)
+
+system_m3l_model.register_output(qst_2_energy, qst_2)
 
 # acoustics
 qst_2_acoustics = Acoustics(
@@ -1444,7 +1913,19 @@ system_m3l_model.register_output(qst_2_total_SPL, qst_2)
 system_m3l_model.register_output(qst_2_total_SPL_A_weighted, qst_2)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=qst_2)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=qst_2
+)
 
 system_m3l_model.register_output(total_mass, qst_2)
 system_m3l_model.register_output(total_cg, qst_2)
@@ -1508,7 +1989,7 @@ qst_3.atmosphere_model = cd.SimpleAtmosphereModel()
 qst_3.set_module_input('pitch_angle', val=0.16195989)
 qst_3.set_module_input('mach_number', val=0.11471427)
 qst_3.set_module_input('altitude', val=300)
-qst_3.set_module_input(name='range', val=20)
+qst_3.set_module_input(name='range', val=280)
 qst_3.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
 
 qst_3_ac_states = qst_3.evaluate_ac_states()
@@ -1566,6 +2047,65 @@ fri_bem_forces, fri_bem_moments, fri_dT ,fri_dQ ,fri_dD, fri_Ct,fri_Q, fri_ux = 
 fro_bem_model = PittPeters(disk_prefix='qst_3_fro_disk', blade_prefix='fro', component=fro_disk, mesh=pitt_peters_mesh_lift)
 fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=20, upper=4000, scaler=1e-3)
 fro_bem_forces, fro_bem_moments, fro_dT ,fro_dQ ,fro_dD, fro_Ct,fro_Q, fro_ux = fro_bem_model.evaluate(ac_states=qst_3_ac_states, design_condition=qst_3)
+
+# # qst 3 Motor Analysis
+# qst_3_rlo_motor_model = cd.ConstantPowerDensityMotorM3L(component=rlo_disk)
+# qst_3_rlo_input_power = hover_rlo_motor_model.evaluate(rlo_Q, design_condition=qst_3)
+# # qst_3_rlo_motor_model = MotorAnalysis(component=rlo_disk)
+# # qst_3_rlo_input_power, qst_3_rlo_efficiency = qst_3_rlo_motor_model.evaluate(rlo_Q, rlo_motor_parameters, design_condition=qst_3)
+# system_m3l_model.register_output(qst_3_rlo_input_power, qst_3)
+
+# qst_3_rli_motor_model = cd.ConstantPowerDensityMotorM3L(component=rli_disk)
+# qst_3_rli_input_power = hover_rli_motor_model.evaluate(rli_Q, design_condition=qst_3)
+# # qst_3_rli_motor_model = MotorAnalysis(component=rli_disk)
+# # qst_3_rli_input_power, qst_3_rli_efficiency = qst_3_rli_motor_model.evaluate(rli_Q, rli_motor_parameters, design_condition=qst_3)
+# system_m3l_model.register_output(qst_3_rli_input_power, qst_3)
+
+# qst_3_rri_motor_model = cd.ConstantPowerDensityMotorM3L(component=rri_disk)
+# qst_3_rri_input_power = hover_rri_motor_model.evaluate(rri_Q, design_condition=qst_3)
+# # qst_3_rri_motor_model = MotorAnalysis(component=rri_disk)
+# # qst_3_rri_input_power, qst_3_rri_efficiency = qst_3_rri_motor_model.evaluate(rri_Q, rri_motor_parameters, design_condition=qst_3)
+# system_m3l_model.register_output(qst_3_rri_input_power, qst_3)
+
+# qst_3_rro_motor_model = cd.ConstantPowerDensityMotorM3L(component=rro_disk)
+# qst_3_rro_input_power = hover_rro_motor_model.evaluate(rro_Q, design_condition=qst_3)
+# # qst_3_rro_motor_model = MotorAnalysis(component=rro_disk)
+# # qst_3_rro_input_power, qst_3_rro_efficiency = qst_3_rro_motor_model.evaluate(rro_Q, rro_motor_parameters, design_condition=qst_3)
+# system_m3l_model.register_output(qst_3_rro_input_power, qst_3)
+
+# qst_3_flo_motor_model = cd.ConstantPowerDensityMotorM3L(component=flo_disk)
+# qst_3_flo_input_power = hover_flo_motor_model.evaluate(flo_Q, design_condition=qst_3)
+# # qst_3_flo_motor_model = MotorAnalysis(component=flo_disk)
+# # qst_3_flo_input_power, qst_3_flo_efficiency = qst_3_flo_motor_model.evaluate(flo_Q, flo_motor_parameters, design_condition=qst_3)
+# system_m3l_model.register_output(qst_3_flo_input_power, qst_3)
+
+# qst_3_fli_motor_model = cd.ConstantPowerDensityMotorM3L(component=fli_disk)
+# qst_3_fli_input_power = hover_fli_motor_model.evaluate(fli_Q, design_condition=qst_3)
+# # qst_3_fli_motor_model = MotorAnalysis(component=fli_disk)
+# # qst_3_fli_input_power, qst_3_fli_efficiency = qst_3_fli_motor_model.evaluate(fli_Q, fli_motor_parameters, design_condition=qst_3)
+# system_m3l_model.register_output(qst_3_fli_input_power, qst_3)
+
+# qst_3_fro_motor_model = cd.ConstantPowerDensityMotorM3L(component=fro_disk)
+# qst_3_fro_input_power = hover_fro_motor_model.evaluate(fro_Q, design_condition=qst_3)
+# # qst_3_fro_motor_model = MotorAnalysis(component=fro_disk)
+# # qst_3_fro_input_power, qst_3_fro_efficiency = qst_3_fro_motor_model.evaluate(fro_Q, fro_motor_parameters, design_condition=qst_3)
+# system_m3l_model.register_output(qst_3_fro_input_power, qst_3)
+
+# qst_3_fri_motor_model = cd.ConstantPowerDensityMotorM3L(component=fri_disk)
+# qst_3_fri_input_power = hover_fri_motor_model.evaluate(fri_Q, design_condition=qst_3)
+# # qst_3_fri_motor_model = MotorAnalysis(component=fri_disk)
+# # qst_3_fri_input_power, qst_3_fri_efficiency = qst_3_fri_motor_model.evaluate(fri_Q, fri_motor_parameters, design_condition=qst_3)
+# system_m3l_model.register_output(qst_3_fri_input_power, qst_3)
+
+# # Hover Energy Consumption
+# qst_3_energy_model = cd.EnergyModelM3L()
+# qst_3_energy = qst_3_energy_model.evaluate(
+#     qst_3_rlo_input_power, qst_3_rli_input_power, qst_3_rri_input_power, qst_3_rro_input_power,
+#     qst_3_flo_input_power, qst_3_fli_input_power, qst_3_fri_input_power, qst_3_fro_input_power,
+#     ac_states=qst_3_ac_states, design_condition=qst_3
+# )
+
+# system_m3l_model.register_output(qst_3_energy, qst_3)
 
 # acoustics
 qst_3_acoustics = Acoustics(
@@ -1712,7 +2252,19 @@ system_m3l_model.register_output(qst_3_total_SPL, qst_3)
 system_m3l_model.register_output(qst_3_total_SPL_A_weighted, qst_3)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=qst_3)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=qst_3
+)
 
 system_m3l_model.register_output(total_mass, qst_3)
 system_m3l_model.register_output(total_cg, qst_3)
@@ -1776,7 +2328,7 @@ qst_4.atmosphere_model = cd.SimpleAtmosphereModel()
 qst_4.set_module_input('pitch_angle', val=0.10779469, dv_flag=True, lower=0.10779469 - np.deg2rad(2))
 qst_4.set_module_input('mach_number', val=0.13740796)
 qst_4.set_module_input('altitude', val=300)
-qst_4.set_module_input(name='range', val=20)
+qst_4.set_module_input(name='range', val=336)
 qst_4.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
 
 
@@ -1802,7 +2354,7 @@ system_m3l_model.register_output(vlm_moments, design_condition=qst_4)
 
 pp_bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 pp_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=2000, scaler=1e-3)
-pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,_,_ = pp_bem_model.evaluate(ac_states=qst_4_ac_states, design_condition=qst_4)
+pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct, qst_4_pp_Q,_ = pp_bem_model.evaluate(ac_states=qst_4_ac_states, design_condition=qst_4)
 
 rlo_bem_model = PittPeters(disk_prefix='qst_4_rlo_disk', blade_prefix='rlo', component=rlo_disk, mesh=pitt_peters_mesh_lift)
 rlo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
@@ -1835,6 +2387,71 @@ fri_bem_forces, fri_bem_moments,fri_dT ,fri_dQ ,fri_dD, fri_Ct,fri_Q, fri_ux = f
 fro_bem_model = PittPeters(disk_prefix='qst_4_fro_disk', blade_prefix='fro', component=fro_disk, mesh=pitt_peters_mesh_lift)
 fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
 fro_bem_forces, fro_bem_moments,fro_dT ,fro_dQ ,fro_dD, fro_Ct,fro_Q, fro_ux = fro_bem_model.evaluate(ac_states=qst_4_ac_states, design_condition=qst_4)
+
+# # qst 4 Motor Analysis
+
+qst_4_pp_motor_model = MotorAnalysis(component=pp_disk)
+qst_4_pp_input_power, qst_4_pp_efficiency = qst_4_pp_motor_model.evaluate(qst_4_pp_Q, pp_motor_parameters, design_condition=qst_4)
+system_m3l_model.register_output(qst_4_pp_input_power, qst_4)
+
+# qst_4_rlo_motor_model = cd.ConstantPowerDensityMotorM3L(component=rlo_disk)
+# qst_4_rlo_input_power = hover_rlo_motor_model.evaluate(rlo_Q, design_condition=qst_4)
+# # qst_4_rlo_motor_model = MotorAnalysis(component=rlo_disk)
+# # qst_4_rlo_input_power, qst_4_rlo_efficiency = qst_4_rlo_motor_model.evaluate(rlo_Q, rlo_motor_parameters, design_condition=qst_4)
+# system_m3l_model.register_output(qst_4_rlo_input_power, qst_4)
+
+# qst_4_rli_motor_model = cd.ConstantPowerDensityMotorM3L(component=rli_disk)
+# qst_4_rli_input_power = hover_rli_motor_model.evaluate(rli_Q, design_condition=qst_4)
+# # qst_4_rli_motor_model = MotorAnalysis(component=rli_disk)
+# # qst_4_rli_input_power, qst_4_rli_efficiency = qst_4_rli_motor_model.evaluate(rli_Q, rli_motor_parameters, design_condition=qst_4)
+# system_m3l_model.register_output(qst_4_rli_input_power, qst_4)
+
+# qst_4_rri_motor_model = cd.ConstantPowerDensityMotorM3L(component=rri_disk)
+# qst_4_rri_input_power = hover_rri_motor_model.evaluate(rri_Q, design_condition=qst_4)
+# # qst_4_rri_motor_model = MotorAnalysis(component=rri_disk)
+# # qst_4_rri_input_power, qst_4_rri_efficiency = qst_4_rri_motor_model.evaluate(rri_Q, rri_motor_parameters, design_condition=qst_4)
+# system_m3l_model.register_output(qst_4_rri_input_power, qst_4)
+
+# qst_4_rro_motor_model = cd.ConstantPowerDensityMotorM3L(component=rro_disk)
+# qst_4_rro_input_power = hover_rro_motor_model.evaluate(rro_Q, design_condition=qst_4)
+# # qst_4_rro_motor_model = MotorAnalysis(component=rro_disk)
+# # qst_4_rro_input_power, qst_4_rro_efficiency = qst_4_rro_motor_model.evaluate(rro_Q, rro_motor_parameters, design_condition=qst_4)
+# system_m3l_model.register_output(qst_4_rro_input_power, qst_4)
+
+# qst_4_flo_motor_model = cd.ConstantPowerDensityMotorM3L(component=flo_disk)
+# qst_4_flo_input_power = hover_flo_motor_model.evaluate(flo_Q, design_condition=qst_4)
+# # qst_4_flo_motor_model = MotorAnalysis(component=flo_disk)
+# # qst_4_flo_input_power, qst_4_flo_efficiency = qst_4_flo_motor_model.evaluate(flo_Q, flo_motor_parameters, design_condition=qst_4)
+# system_m3l_model.register_output(qst_4_flo_input_power, qst_4)
+
+# qst_4_fli_motor_model = cd.ConstantPowerDensityMotorM3L(component=fli_disk)
+# qst_4_fli_input_power = hover_fli_motor_model.evaluate(fli_Q, design_condition=qst_4)
+# # qst_4_fli_motor_model = MotorAnalysis(component=fli_disk)
+# # qst_4_fli_input_power, qst_4_fli_efficiency = qst_4_fli_motor_model.evaluate(fli_Q, fli_motor_parameters, design_condition=qst_4)
+# system_m3l_model.register_output(qst_4_fli_input_power, qst_4)
+
+# qst_4_fro_motor_model = cd.ConstantPowerDensityMotorM3L(component=fro_disk)
+# qst_4_fro_input_power = hover_fro_motor_model.evaluate(fro_Q, design_condition=qst_4)
+# # qst_4_fro_motor_model = MotorAnalysis(component=fro_disk)
+# # qst_4_fro_input_power, qst_4_fro_efficiency = qst_4_fro_motor_model.evaluate(fro_Q, fro_motor_parameters, design_condition=qst_4)
+# system_m3l_model.register_output(qst_4_fro_input_power, qst_4)
+
+# qst_4_fri_motor_model = cd.ConstantPowerDensityMotorM3L(component=fri_disk)
+# qst_4_fri_input_power = hover_fri_motor_model.evaluate(fri_Q, design_condition=qst_4)
+# # qst_4_fri_motor_model = MotorAnalysis(component=fri_disk)
+# # qst_4_fri_input_power, qst_4_fri_efficiency = qst_4_fri_motor_model.evaluate(fri_Q, fri_motor_parameters, design_condition=qst_4)
+# system_m3l_model.register_output(qst_4_fri_input_power, qst_4)
+
+# qst 4 Energy Consumption
+qst_4_energy_model = cd.EnergyModelM3L()
+qst_4_energy = qst_4_energy_model.evaluate(
+    qst_4_pp_input_power,
+    # qst_4_rlo_input_power, qst_4_rli_input_power, qst_4_rri_input_power, qst_4_rro_input_power,
+    # qst_4_flo_input_power, qst_4_fli_input_power, qst_4_fri_input_power, qst_4_fro_input_power,
+    ac_states=qst_4_ac_states, design_condition=qst_4
+)
+
+system_m3l_model.register_output(qst_4_energy, qst_4)
 
 # acoustics
 qst_4_acoustics = Acoustics(
@@ -1981,7 +2598,19 @@ system_m3l_model.register_output(qst_4_total_SPL, qst_4)
 system_m3l_model.register_output(qst_4_total_SPL_A_weighted, qst_4)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=qst_4)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=qst_4
+)
 
 system_m3l_model.register_output(total_mass, qst_4)
 system_m3l_model.register_output(total_cg, qst_4)
@@ -2045,7 +2674,7 @@ qst_5.atmosphere_model = cd.SimpleAtmosphereModel()
 qst_5.set_module_input('pitch_angle', val=0.08224058, dv_flag=True, lower=0.08224058 - np.deg2rad(2.5))
 qst_5.set_module_input('mach_number', val=0.14708026)
 qst_5.set_module_input('altitude', val=300)
-qst_5.set_module_input(name='range', val=20)
+qst_5.set_module_input(name='range', val=360)
 qst_5.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
 
 
@@ -2071,7 +2700,7 @@ system_m3l_model.register_output(vlm_moments, design_condition=qst_5)
 
 pp_bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 pp_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=2000, scaler=1e-3)
-pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,_,_ = pp_bem_model.evaluate(ac_states=qst_5_ac_states, design_condition=qst_5)
+pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,qst_5_pp_Q,_ = pp_bem_model.evaluate(ac_states=qst_5_ac_states, design_condition=qst_5)
 
 rlo_bem_model = PittPeters(disk_prefix='qst_5_rlo_disk', blade_prefix='rlo', component=rlo_disk, mesh=pitt_peters_mesh_lift)
 rlo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
@@ -2104,6 +2733,54 @@ fri_bem_forces, fri_bem_moments,fri_dT ,fri_dQ ,fri_dD, fri_Ct,fri_Q, fri_ux = f
 fro_bem_model = PittPeters(disk_prefix='qst_5_fro_disk', blade_prefix='fro', component=fro_disk, mesh=pitt_peters_mesh_lift)
 fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
 fro_bem_forces, fro_bem_moments, fro_dT ,fro_dQ ,fro_dD, fro_Ct,fro_Q, fro_ux = fro_bem_model.evaluate(ac_states=qst_5_ac_states, design_condition=qst_5)
+
+# # qst 5 Motor Analysis
+qst_5_pp_motor_model = MotorAnalysis(component=pp_disk)
+qst_5_pp_input_power, qst_5_pp_efficiency = qst_5_pp_motor_model.evaluate(qst_5_pp_Q, pp_motor_parameters, design_condition=qst_5)
+system_m3l_model.register_output(qst_5_pp_input_power, qst_5)
+
+# qst_5_rlo_motor_model = MotorAnalysis(component=rlo_disk)
+# qst_5_rlo_input_power, qst_5_rlo_efficiency = qst_5_rlo_motor_model.evaluate(rlo_Q, rlo_motor_parameters, design_condition=qst_5)
+# system_m3l_model.register_output(qst_5_rlo_input_power, qst_5)
+
+# qst_5_rli_motor_model = MotorAnalysis(component=rli_disk)
+# qst_5_rli_input_power, qst_5_rli_efficiency = qst_5_rli_motor_model.evaluate(rli_Q, rli_motor_parameters, design_condition=qst_5)
+# system_m3l_model.register_output(qst_5_rli_input_power, qst_5)
+
+# qst_5_rri_motor_model = MotorAnalysis(component=rri_disk)
+# qst_5_rri_input_power, qst_5_rri_efficiency = qst_5_rri_motor_model.evaluate(rri_Q, rri_motor_parameters, design_condition=qst_5)
+# system_m3l_model.register_output(qst_5_rri_input_power, qst_5)
+
+# qst_5_rro_motor_model = MotorAnalysis(component=rro_disk)
+# qst_5_rro_input_power, qst_5_rro_efficiency = qst_5_rro_motor_model.evaluate(rro_Q, rro_motor_parameters, design_condition=qst_5)
+# system_m3l_model.register_output(qst_5_rro_input_power, qst_5)
+
+# qst_5_flo_motor_model = MotorAnalysis(component=flo_disk)
+# qst_5_flo_input_power, qst_5_flo_efficiency = qst_5_flo_motor_model.evaluate(flo_Q, flo_motor_parameters, design_condition=qst_5)
+# system_m3l_model.register_output(qst_5_flo_input_power, qst_5)
+
+# qst_5_fli_motor_model = MotorAnalysis(component=fli_disk)
+# qst_5_fli_input_power, qst_5_fli_efficiency = qst_5_fli_motor_model.evaluate(fli_Q, fli_motor_parameters, design_condition=qst_5)
+# system_m3l_model.register_output(qst_5_fli_input_power, qst_5)
+
+# qst_5_fro_motor_model = MotorAnalysis(component=fro_disk)
+# qst_5_fro_input_power, qst_5_fro_efficiency = qst_5_fro_motor_model.evaluate(fro_Q, fro_motor_parameters, design_condition=qst_5)
+# system_m3l_model.register_output(qst_5_fro_input_power, qst_5)
+
+# qst_5_fri_motor_model = MotorAnalysis(component=fri_disk)
+# qst_5_fri_input_power, qst_5_fri_efficiency = qst_5_fri_motor_model.evaluate(fri_Q, fri_motor_parameters, design_condition=qst_5)
+# system_m3l_model.register_output(qst_5_fri_input_power, qst_5)
+
+# qst 4 Energy Consumption
+qst_5_energy_model = cd.EnergyModelM3L()
+qst_5_energy = qst_5_energy_model.evaluate(
+    qst_5_pp_input_power,
+    # qst_5_rlo_input_power, qst_5_rli_input_power, qst_5_rri_input_power, qst_5_rro_input_power,
+    # qst_5_flo_input_power, qst_5_fli_input_power, qst_5_fri_input_power, qst_5_fro_input_power,
+    ac_states=qst_5_ac_states, design_condition=qst_5
+)
+
+system_m3l_model.register_output(qst_5_energy, qst_5)
 
 # acoustics
 qst_5_acoustics = Acoustics(
@@ -2251,7 +2928,19 @@ system_m3l_model.register_output(qst_5_total_SPL, qst_5)
 system_m3l_model.register_output(qst_5_total_SPL_A_weighted, qst_5)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=qst_5)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=qst_5
+)
 
 system_m3l_model.register_output(total_mass, qst_5)
 system_m3l_model.register_output(total_cg, qst_5)
@@ -2315,7 +3004,7 @@ qst_6.atmosphere_model = cd.SimpleAtmosphereModel()
 qst_6.set_module_input('pitch_angle', val=0.06704556, dv_flag=True, lower=0.06704556 - np.deg2rad(1.5))
 qst_6.set_module_input('mach_number', val=0.15408429)
 qst_6.set_module_input('altitude', val=300)
-qst_6.set_module_input(name='range', val=20)
+qst_6.set_module_input(name='range', val=377)
 qst_6.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
 
 qst_6_ac_states = qst_6.evaluate_ac_states()
@@ -2340,7 +3029,21 @@ system_m3l_model.register_output(vlm_moments, design_condition=qst_6)
 
 pp_bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 pp_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=2000, scaler=1e-3)
-pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,_, _ = pp_bem_model.evaluate(ac_states=qst_6_ac_states, design_condition=qst_6)
+pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct, qst_6_pp_Q, _ = pp_bem_model.evaluate(ac_states=qst_6_ac_states, design_condition=qst_6)
+
+ # qst 6 Motor Analysis
+qst_6_pp_motor_model = MotorAnalysis(component=pp_disk)
+qst_6_pp_input_power, qst_6_pp_efficiency = qst_6_pp_motor_model.evaluate(qst_6_pp_Q, pp_motor_parameters, design_condition=qst_6)
+system_m3l_model.register_output(qst_6_pp_input_power, qst_6)
+
+# qst 4 Energy Consumption
+qst_6_energy_model = cd.EnergyModelM3L()
+qst_6_energy = qst_6_energy_model.evaluate(
+    qst_6_pp_input_power,
+    ac_states=qst_6_ac_states, design_condition=qst_6
+)
+
+system_m3l_model.register_output(qst_6_energy, qst_6)
 
 # # acoustics
 # qst_6_acoustics = Acoustics(
@@ -2380,7 +3083,19 @@ pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,_, _ = pp_bem_model.ev
 # system_m3l_model.register_output(qst_6_total_SPL_A_weighted, qst_6)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=qst_6)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=qst_6
+)
 
 system_m3l_model.register_output(total_mass, qst_6)
 system_m3l_model.register_output(total_cg, qst_6)
@@ -2428,7 +3143,7 @@ qst_7.atmosphere_model = cd.SimpleAtmosphereModel()
 qst_7.set_module_input('pitch_angle', val=0.05598293, dv_flag=True, lower=0.05598293-np.deg2rad(2))
 qst_7.set_module_input('mach_number', val=0.15983874)
 qst_7.set_module_input('altitude', val=300)
-qst_7.set_module_input(name='range', val=20)
+qst_7.set_module_input(name='range', val=391)
 qst_7.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
 
 qst_7_ac_states = qst_7.evaluate_ac_states()
@@ -2453,7 +3168,21 @@ system_m3l_model.register_output(vlm_moments, design_condition=qst_7)
 
 pp_bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 pp_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=2000, scaler=1e-3)
-pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,_,_ = pp_bem_model.evaluate(ac_states=qst_7_ac_states, design_condition=qst_7)
+pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct, qst_7_pp_Q,_ = pp_bem_model.evaluate(ac_states=qst_7_ac_states, design_condition=qst_7)
+
+# qst 7 Motor Analysis
+qst_7_pp_motor_model = MotorAnalysis(component=pp_disk)
+qst_7_pp_input_power, qst_7_pp_efficiency = qst_7_pp_motor_model.evaluate(qst_7_pp_Q, pp_motor_parameters, design_condition=qst_7)
+system_m3l_model.register_output(qst_7_pp_input_power, qst_7)
+
+# qst 7 Energy Consumption
+qst_7_energy_model = cd.EnergyModelM3L()
+qst_7_energy = qst_7_energy_model.evaluate(
+    qst_7_pp_input_power,
+    ac_states=qst_7_ac_states, design_condition=qst_7
+)
+
+system_m3l_model.register_output(qst_7_energy, qst_7)
 
 # # acoustics
 # qst_7_acoustics = Acoustics(
@@ -2493,7 +3222,19 @@ pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,_,_ = pp_bem_model.eva
 # system_m3l_model.register_output(qst_7_total_SPL_A_weighted, qst_7)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=qst_7)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=qst_7
+)
 
 system_m3l_model.register_output(total_mass, qst_7)
 system_m3l_model.register_output(total_cg, qst_7)
@@ -2541,7 +3282,7 @@ qst_8.atmosphere_model = cd.SimpleAtmosphereModel()
 qst_8.set_module_input('pitch_angle', val=0.04712265, dv_flag=True, lower=0.04712265-np.deg2rad(3))
 qst_8.set_module_input('mach_number', val=0.16485417)
 qst_8.set_module_input('altitude', val=300)
-qst_8.set_module_input(name='range', val=20)
+qst_8.set_module_input(name='range', val=403)
 qst_8.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
 
 qst_8_ac_states = qst_8.evaluate_ac_states()
@@ -2566,7 +3307,21 @@ system_m3l_model.register_output(vlm_moments, design_condition=qst_8)
 
 pp_bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 pp_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=3000, scaler=1e-3)
-pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,_,_ = pp_bem_model.evaluate(ac_states=qst_8_ac_states, design_condition=qst_8)
+pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,qst_8_pp_Q,_ = pp_bem_model.evaluate(ac_states=qst_8_ac_states, design_condition=qst_8)
+
+# qst 8 Motor Analysis
+qst_8_pp_motor_model = MotorAnalysis(component=pp_disk)
+qst_8_pp_input_power, qst_8_pp_efficiency = qst_8_pp_motor_model.evaluate(qst_8_pp_Q, pp_motor_parameters, design_condition=qst_8)
+system_m3l_model.register_output(qst_8_pp_input_power, qst_8)
+
+# qst 8 Energy Consumption
+qst_8_energy_model = cd.EnergyModelM3L()
+qst_8_energy = qst_8_energy_model.evaluate(
+    qst_8_pp_input_power,
+    ac_states=qst_8_ac_states, design_condition=qst_8
+)
+
+system_m3l_model.register_output(qst_8_energy, qst_8)
 
 # # acoustics
 # qst_8_acoustics = Acoustics(
@@ -2606,7 +3361,19 @@ pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,_,_ = pp_bem_model.eva
 # system_m3l_model.register_output(qst_8_total_SPL_A_weighted, qst_8)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=qst_8)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=qst_8
+)
 
 system_m3l_model.register_output(total_mass, qst_8)
 system_m3l_model.register_output(total_cg, qst_8)
@@ -2670,7 +3437,7 @@ qst_9.atmosphere_model = cd.SimpleAtmosphereModel()
 qst_9.set_module_input('pitch_angle', val=0.03981101, dv_flag=True, lower=0.03981101-np.deg2rad(4))
 qst_9.set_module_input('mach_number', val=0.16937793)
 qst_9.set_module_input('altitude', val=300)
-qst_9.set_module_input(name='range', val=20)
+qst_9.set_module_input(name='range', val=414)
 qst_9.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
 
 qst_9_ac_states = qst_9.evaluate_ac_states()
@@ -2695,7 +3462,22 @@ system_m3l_model.register_output(vlm_moments, design_condition=qst_9)
 
 pp_bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 pp_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=2000, scaler=1e-3)
-pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,_,_ = pp_bem_model.evaluate(ac_states=qst_9_ac_states, design_condition=qst_9)
+pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct, qst_9_pp_Q,_ = pp_bem_model.evaluate(ac_states=qst_9_ac_states, design_condition=qst_9)
+
+# qst 9 Motor Analysis
+qst_9_pp_motor_model = MotorAnalysis(component=pp_disk)
+qst_9_pp_input_power, qst_9_pp_efficiency = qst_9_pp_motor_model.evaluate(qst_9_pp_Q, pp_motor_parameters, design_condition=qst_9)
+system_m3l_model.register_output(qst_9_pp_input_power, qst_9)
+
+# qst 8 Energy Consumption
+qst_9_energy_model = cd.EnergyModelM3L()
+qst_9_energy = qst_9_energy_model.evaluate(
+    qst_9_pp_input_power,
+    ac_states=qst_9_ac_states, design_condition=qst_9
+)
+
+system_m3l_model.register_output(qst_9_energy, qst_9)
+
 
 # # acoustics
 # qst_9_acoustics = Acoustics(
@@ -2735,7 +3517,19 @@ pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,_,_ = pp_bem_model.eva
 # system_m3l_model.register_output(qst_9_total_SPL_A_weighted, qst_9)
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=qst_9)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=qst_9
+)
 
 system_m3l_model.register_output(total_mass, qst_9)
 system_m3l_model.register_output(total_cg, qst_9)
@@ -2783,7 +3577,7 @@ qst_10.atmosphere_model = cd.SimpleAtmosphereModel()
 qst_10.set_module_input('pitch_angle', val=0.03369678, dv_flag=True, lower=np.deg2rad(-5), upper=np.deg2rad(5))
 qst_10.set_module_input('mach_number', val=0.17354959)
 qst_10.set_module_input('altitude', val=300)
-qst_10.set_module_input(name='range', val=20)
+qst_10.set_module_input(name='range', val=424)
 qst_10.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
 
 qst_10_ac_states = qst_10.evaluate_ac_states()
@@ -2808,7 +3602,22 @@ system_m3l_model.register_output(vlm_moments, design_condition=qst_10)
 
 pp_bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 pp_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=800, upper=2000, scaler=1e-3)
-pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,_ ,_ = pp_bem_model.evaluate(ac_states=qst_10_ac_states, design_condition=qst_10)
+pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,qst_10_pp_Q ,_ = pp_bem_model.evaluate(ac_states=qst_10_ac_states, design_condition=qst_10)
+
+# qst 10 Motor Analysis
+qst_10_pp_motor_model = MotorAnalysis(component=pp_disk)
+qst_10_pp_input_power, qst_10_pp_efficiency = qst_10_pp_motor_model.evaluate(qst_10_pp_Q, pp_motor_parameters, design_condition=qst_10)
+system_m3l_model.register_output(qst_10_pp_input_power, qst_10)
+
+# qst 10 Energy Consumption
+qst_10_energy_model = cd.EnergyModelM3L()
+qst_10_energy = qst_10_energy_model.evaluate(
+    qst_10_pp_input_power,
+    ac_states=qst_10_ac_states, design_condition=qst_10
+)
+
+system_m3l_model.register_output(qst_10_energy, qst_10)
+
 
 # # acoustics
 # qst_10_acoustics = Acoustics(
@@ -2849,7 +3658,18 @@ pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,_ ,_ = pp_bem_model.ev
 
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=qst_10)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=qst_10)
 
 system_m3l_model.register_output(total_mass, qst_10)
 system_m3l_model.register_output(total_cg, qst_10)
@@ -2996,13 +3816,40 @@ system_m3l_model.register_output(vlm_moment, design_condition=climb_1)
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=2000, scaler=1e-3)
-bem_forces, bem_moments,_ ,_ ,_, _,_,_ = bem_model.evaluate(ac_states=ac_states, design_condition=climb_1)
+bem_forces, bem_moments,_ ,_ ,_, _,climb_1_pp_Q ,_ = bem_model.evaluate(ac_states=ac_states, design_condition=climb_1)
 
 system_m3l_model.register_output(bem_forces, design_condition=climb_1)
 system_m3l_model.register_output(bem_moments, design_condition=climb_1)
 
+# climb 1 Motor Analysis
+climb_1_pp_motor_model = MotorAnalysis(component=pp_disk)
+climb_1_pp_input_power, climb_1_pp_efficiency = climb_1_pp_motor_model.evaluate(climb_1_pp_Q, pp_motor_parameters, design_condition=climb_1)
+system_m3l_model.register_output(climb_1_pp_input_power, climb_1)
+
+# climb 1 Energy Consumption
+climb_1_energy_model = cd.EnergyModelM3L()
+climb_1_energy = climb_1_energy_model.evaluate(
+    climb_1_pp_input_power,
+    ac_states=ac_states, design_condition=climb_1
+)
+
+system_m3l_model.register_output(climb_1_energy, climb_1)
+
+
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=climb_1)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=climb_1
+)
 
 system_m3l_model.register_output(total_mass, climb_1)
 system_m3l_model.register_output(total_cg, climb_1)
@@ -3038,7 +3885,7 @@ cruise_condition = cd.CruiseCondition(name="cruise")
 cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
 cruise_condition.set_module_input(name='altitude', val=1000)
 cruise_condition.set_module_input(name='mach_number', val=0.173, dv_flag=False, lower=0.17, upper=0.19)
-cruise_condition.set_module_input(name='range', val=40000)
+cruise_condition.set_module_input(name='range', val=50000)
 cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-5), upper=np.deg2rad(5))
 cruise_condition.set_module_input(name='flight_path_angle', val=0)
 cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 500]))
@@ -3135,13 +3982,39 @@ htail_forces = oml_forces[1]
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=2000, scaler=1e-3)
-bem_forces, bem_moments,_ ,_ ,_,_,_,_ = bem_model.evaluate(ac_states=ac_states, design_condition=cruise_condition)
+bem_forces, bem_moments,_ ,_ ,_,_,cruise_pp_Q,_ = bem_model.evaluate(ac_states=ac_states, design_condition=cruise_condition)
 
 system_m3l_model.register_output(bem_forces, design_condition=cruise_condition)
 system_m3l_model.register_output(bem_moments, design_condition=cruise_condition)
 
+# cruise Motor Analysis
+cruise_pp_motor_model = MotorAnalysis(component=pp_disk)
+cruise_pp_input_power, cruise_pp_efficiency = cruise_pp_motor_model.evaluate(cruise_pp_Q, pp_motor_parameters, design_condition=cruise_condition)
+system_m3l_model.register_output(cruise_pp_input_power, cruise_condition)
+
+# cruise Energy Consumption
+cruise_energy_model = cd.EnergyModelM3L()
+cruise_energy = cruise_energy_model.evaluate(
+    cruise_pp_input_power,
+    ac_states=ac_states, design_condition=cruise_condition
+)
+
+system_m3l_model.register_output(cruise_energy, cruise_condition)
+
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=cruise_condition)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=cruise_condition
+)
 
 system_m3l_model.register_output(total_mass, cruise_condition)
 system_m3l_model.register_output(total_cg, cruise_condition)
@@ -3276,13 +4149,38 @@ system_m3l_model.register_output(vlm_moment, design_condition=descent_1)
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=2000, scaler=1e-3)
-bem_forces, bem_moments,_ ,_ ,_, _,_,_ = bem_model.evaluate(ac_states=ac_states, design_condition=descent_1)
+bem_forces, bem_moments,_ ,_ ,_, _,descent_1_pp_Q,_ = bem_model.evaluate(ac_states=ac_states, design_condition=descent_1)
 
 system_m3l_model.register_output(bem_forces, design_condition=descent_1)
 system_m3l_model.register_output(bem_moments, design_condition=descent_1)
 
+# descent 1 Motor Analysis
+descent_1_pp_motor_model = MotorAnalysis(component=pp_disk)
+descent_1_pp_input_power, descent_1_pp_efficiency = descent_1_pp_motor_model.evaluate(descent_1_pp_Q, pp_motor_parameters, design_condition=descent_1)
+system_m3l_model.register_output(descent_1_pp_input_power, descent_1)
+
+# descent_1 Energy Consumption
+descent_1_energy_model = cd.EnergyModelM3L()
+descent_1_energy = descent_1_energy_model.evaluate(
+    descent_1_pp_input_power,
+    ac_states=ac_states, design_condition=descent_1
+)
+
+system_m3l_model.register_output(descent_1_energy, descent_1)
+
 total_mass_properties = cd.TotalMassPropertiesM3L()
-total_mass, total_cg, total_inertia = total_mass_properties.evaluate(mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, design_condition=descent_1)
+total_mass, total_cg, total_inertia = total_mass_properties.evaluate(
+    mass_model_wing_mass, battery_mass, mass_m4, wing_cg, cg_m4, cg_battery, wing_inertia_tensor, I_m4, I_battery, 
+    m_mass_pp, m_cg_pp, m_I_pp, 
+    m_mass_rlo, m_cg_rlo, m_I_rlo,
+    m_mass_rli, m_cg_rli, m_I_rli,
+    m_mass_rri, m_cg_rri, m_I_rri,
+    m_mass_rro, m_cg_rro, m_I_rro,
+    m_mass_flo, m_cg_flo, m_I_flo,
+    m_mass_fli, m_cg_fli, m_I_fli,
+    m_mass_fri, m_cg_fri, m_I_fri,
+    m_mass_fro, m_cg_fro, m_I_fro,
+    design_condition=descent_1)
 
 system_m3l_model.register_output(total_mass, descent_1)
 system_m3l_model.register_output(total_cg, descent_1)
@@ -3313,7 +4211,32 @@ trim_residual = eom_m3l_model.evaluate(
 system_m3l_model.register_output(trim_residual, descent_1)
 # endregion
 
+# endregion
 
+# region total energy and soc
+total_energy_model = cd.TotalEnergyModelM3L()
+total_energy = total_energy_model.evaluate(
+    hover_energy, 
+    climb_1_energy, 
+    cruise_energy, 
+    descent_1_energy,
+    qst_1_energy,
+    qst_2_energy,
+    # qst_3_energy,
+    qst_4_energy,
+    qst_5_energy,
+    qst_6_energy,
+    qst_7_energy,
+    qst_8_energy,
+    qst_9_energy,
+    qst_10_energy,
+)
+# total_energy = total_energy_model.evaluate(climb_energy)
+system_m3l_model.register_output(total_energy)
+
+soc_model = cd.SOCModelM3L(battery_energy_density=400) # Note, either turn this parameter into csdl variable or connect it from battery sizing 
+final_SoC = soc_model.evaluate(battery_mass=battery_mass, total_energy_consumption=total_energy, mission_multiplier=2.2)
+system_m3l_model.register_output(final_SoC)
 # endregion
 
 # region add design conditions to design scenario
@@ -3424,6 +4347,82 @@ for i in range(5):
 
 # caddee_csdl_model.connect('system_model.system_m3l_model.qst_10_pp_disk_bem_model.rpm', 'system_model.system_m3l_model.qst_10_pp_disk_GL_broadband_model.rpm')
 # caddee_csdl_model.connect('system_model.system_m3l_model.qst_10_pp_disk_bem_model.rpm', 'system_model.system_m3l_model.qst_10_pp_disk_Lowson_tonal_model.rpm')
+
+# # Motor analysis connections
+lrps = ['rlo', 'rli', 'rri', 'rro', 'flo', 'fli', 'fri', 'fro']
+
+# # Hover + OEIs
+for pref in lrps:
+    # hover
+    caddee_csdl_model.connect(f'system_model.system_m3l_model.{pref}_disk_motor_sizing_model.motor_diameter', f'system_model.system_m3l_model.hover_1_{pref}_disk_motor_analysis_model.motor_diameter')
+    caddee_csdl_model.connect(f'system_model.system_m3l_model.hover_1_{pref}_disk_bem_model.rpm', f'system_model.system_m3l_model.hover_1_{pref}_disk_motor_analysis_model.rpm')
+
+    # oei flo
+    if pref == 'flo':
+        pass
+    else:
+        caddee_csdl_model.connect(f'system_model.system_m3l_model.{pref}_disk_motor_sizing_model.motor_diameter', f'system_model.system_m3l_model.hover_1_oei_flo_{pref}_disk_motor_analysis_model.motor_diameter')
+        caddee_csdl_model.connect(f'system_model.system_m3l_model.hover_1_oei_flo_{pref}_disk_bem_model.rpm', f'system_model.system_m3l_model.hover_1_oei_flo_{pref}_disk_motor_analysis_model.rpm')
+        caddee_csdl_model.add_constraint(f'system_model.system_m3l_model.hover_1_oei_flo_{pref}_disk_motor_analysis_model.torque_delta', lower=0.1)
+
+    # oei fli
+    if pref == 'fli':
+        pass
+    else:
+        caddee_csdl_model.connect(f'system_model.system_m3l_model.{pref}_disk_motor_sizing_model.motor_diameter', f'system_model.system_m3l_model.hover_1_oei_fli_{pref}_disk_motor_analysis_model.motor_diameter')
+        caddee_csdl_model.connect(f'system_model.system_m3l_model.hover_1_oei_fli_{pref}_disk_bem_model.rpm', f'system_model.system_m3l_model.hover_1_oei_fli_{pref}_disk_motor_analysis_model.rpm')
+        caddee_csdl_model.add_constraint(f'system_model.system_m3l_model.hover_1_oei_fli_{pref}_disk_motor_analysis_model.torque_delta', lower=0.1)
+
+    # qst 1
+    caddee_csdl_model.connect(f'system_model.system_m3l_model.{pref}_disk_motor_sizing_model.motor_diameter', f'system_model.system_m3l_model.qst_1_{pref}_disk_motor_analysis_model.motor_diameter')
+    caddee_csdl_model.connect(f'system_model.system_m3l_model.qst_1_{pref}_disk_bem_model.rpm', f'system_model.system_m3l_model.qst_1_{pref}_disk_motor_analysis_model.rpm')
+
+    # qst 2
+    caddee_csdl_model.connect(f'system_model.system_m3l_model.{pref}_disk_motor_sizing_model.motor_diameter', f'system_model.system_m3l_model.qst_2_{pref}_disk_motor_analysis_model.motor_diameter')
+    caddee_csdl_model.connect(f'system_model.system_m3l_model.qst_2_{pref}_disk_pitt_peters_model.rpm', f'system_model.system_m3l_model.qst_2_{pref}_disk_motor_analysis_model.rpm')
+
+    # # qst 3
+    # caddee_csdl_model.connect(f'system_model.system_m3l_model.{pref}_disk_motor_sizing_model.motor_diameter', f'system_model.system_m3l_model.qst_3_{pref}_disk_motor_analysis_model.motor_diameter')
+    # caddee_csdl_model.connect(f'system_model.system_m3l_model.qst_3_{pref}_disk_pitt_peters_model.rpm', f'system_model.system_m3l_model.qst_3_{pref}_disk_motor_analysis_model.rpm')
+
+    # # qst 4
+    # caddee_csdl_model.connect(f'system_model.system_m3l_model.{pref}_disk_motor_sizing_model.motor_diameter', f'system_model.system_m3l_model.qst_4_{pref}_disk_motor_analysis_model.motor_diameter')
+    # caddee_csdl_model.connect(f'system_model.system_m3l_model.qst_4_{pref}_disk_pitt_peters_model.rpm', f'system_model.system_m3l_model.qst_4_{pref}_disk_motor_analysis_model.rpm')
+
+    # # qst 5
+    # caddee_csdl_model.connect(f'system_model.system_m3l_model.{pref}_disk_motor_sizing_model.motor_diameter', f'system_model.system_m3l_model.qst_5_{pref}_disk_motor_analysis_model.motor_diameter')
+    # caddee_csdl_model.connect(f'system_model.system_m3l_model.qst_5_{pref}_disk_pitt_peters_model.rpm', f'system_model.system_m3l_model.qst_5_{pref}_disk_motor_analysis_model.rpm')
+
+prfxs = ['qst_4', 'qst_5', 'qst_6', 'qst_7', 'qst_8', 'qst_9', 'qst_10']
+
+for prfx in prfxs:
+    caddee_csdl_model.connect(f'system_model.system_m3l_model.pp_disk_motor_sizing_model.motor_diameter', f'system_model.system_m3l_model.{prfx}_pp_disk_motor_analysis_model.motor_diameter')
+    caddee_csdl_model.connect(f'system_model.system_m3l_model.{prfx}_pp_disk_bem_model.rpm', f'system_model.system_m3l_model.{prfx}_pp_disk_motor_analysis_model.rpm')
+
+
+# +3g
+caddee_csdl_model.connect('system_model.system_m3l_model.pp_disk_motor_sizing_model.motor_diameter', 'system_model.system_m3l_model.plus_3g_sizing_pp_disk_motor_analysis_model.motor_diameter')
+caddee_csdl_model.connect('system_model.system_m3l_model.plus_3g_sizing_pp_disk_bem_model.rpm', 'system_model.system_m3l_model.plus_3g_sizing_pp_disk_motor_analysis_model.rpm')
+caddee_csdl_model.add_constraint(f'system_model.system_m3l_model.plus_3g_sizing_pp_disk_motor_analysis_model.torque_delta', lower=0.1)
+
+# -1g
+caddee_csdl_model.connect('system_model.system_m3l_model.pp_disk_motor_sizing_model.motor_diameter', 'system_model.system_m3l_model.minus_1g_sizing_pp_disk_motor_analysis_model.motor_diameter')
+caddee_csdl_model.connect('system_model.system_m3l_model.minus_1g_sizing_pp_disk_bem_model.rpm', 'system_model.system_m3l_model.minus_1g_sizing_pp_disk_motor_analysis_model.rpm')
+caddee_csdl_model.add_constraint(f'system_model.system_m3l_model.minus_1g_sizing_pp_disk_motor_analysis_model.torque_delta', lower=0.1)
+
+# climb
+caddee_csdl_model.connect('system_model.system_m3l_model.pp_disk_motor_sizing_model.motor_diameter', 'system_model.system_m3l_model.climb_1_pp_disk_motor_analysis_model.motor_diameter')
+caddee_csdl_model.connect('system_model.system_m3l_model.climb_1_pp_disk_bem_model.rpm', 'system_model.system_m3l_model.climb_1_pp_disk_motor_analysis_model.rpm')
+caddee_csdl_model.add_constraint(f'system_model.system_m3l_model.climb_1_pp_disk_motor_analysis_model.torque_delta', lower=0.1)
+
+# cruise
+caddee_csdl_model.connect('system_model.system_m3l_model.pp_disk_motor_sizing_model.motor_diameter', 'system_model.system_m3l_model.cruise_pp_disk_motor_analysis_model.motor_diameter')
+caddee_csdl_model.connect('system_model.system_m3l_model.cruise_pp_disk_bem_model.rpm', 'system_model.system_m3l_model.cruise_pp_disk_motor_analysis_model.rpm')
+
+# descent
+caddee_csdl_model.connect('system_model.system_m3l_model.pp_disk_motor_sizing_model.motor_diameter', 'system_model.system_m3l_model.descent_1_pp_disk_motor_analysis_model.motor_diameter')
+caddee_csdl_model.connect('system_model.system_m3l_model.descent_1_pp_disk_bem_model.rpm', 'system_model.system_m3l_model.descent_1_pp_disk_motor_analysis_model.rpm')
+
 # endregion
 
 
@@ -3816,26 +4815,26 @@ caddee_csdl_model.add_design_variable('hover_1_oei_fli_fro_disk_actuation_2', lo
 
 # region geometric constraints/dvs
 wing_twist = caddee_csdl_model.create_input('wing_twist_distribution', val=np.zeros((10, )))
-caddee_csdl_model.add_design_variable('wing_twist_distribution', lower=np.deg2rad(-3), upper=np.deg2rad(3))
+caddee_csdl_model.add_design_variable('wing_twist_distribution', lower=np.deg2rad(-2), upper=np.deg2rad(2))
 
 
-# pp_radius = caddee_csdl_model.create_input('pp_radius', val=4.6)
+pp_radius = caddee_csdl_model.create_input('pp_radius', val=4.6)
 # pp_blade_twist = caddee_csdl_model.create_input('pp_blade_twist', np.array([0., 0., 0., 0., 0.]))
-# pp_blade_chord = caddee_csdl_model.create_input('pp_blade_chord', np.array([0., 0., 0., 0.]))
-# caddee_csdl_model.add_design_variable('pp_radius', lower=3.5, upper=6., scaler=1e-1)
+pp_blade_chord = caddee_csdl_model.create_input('pp_blade_chord', np.array([0., 0., 0., 0.]))
+caddee_csdl_model.add_design_variable('pp_radius', lower=3.5, upper=6., scaler=1e-1)
 # caddee_csdl_model.add_design_variable('pp_blade_twist', lower=np.deg2rad(-10), upper=np.deg2rad(10))
-# caddee_csdl_model.add_design_variable('pp_blade_chord', lower=-0.5, upper=0.5)
+caddee_csdl_model.add_design_variable('pp_blade_chord', lower=-0.5, upper=0.5)
 
-# caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r1')
-# caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r2')
-# caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r3')
-# caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r4')
-# caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r5')
-# caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r6')
-# caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_1_chord')
-# caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_2_chord')
-# caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_3_chord')
-# caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_4_chord')
+caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r1')
+caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r2')
+caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r3')
+caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r4')
+caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r5')
+caddee_csdl_model.connect('pp_radius', 'pp_in_plane_r6')
+caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_1_chord')
+caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_2_chord')
+caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_3_chord')
+caddee_csdl_model.connect('pp_blade_chord', 'pp_blade_4_chord')
 # caddee_csdl_model.connect('pp_blade_twist', 'pp_blade_1_twist')
 # caddee_csdl_model.connect('pp_blade_twist', 'pp_blade_2_twist')
 # caddee_csdl_model.connect('pp_blade_twist', 'pp_blade_3_twist')
@@ -3968,7 +4967,7 @@ caddee_csdl_model.create_input('rli_twist_cp', val=np.deg2rad(np.array([30, 20, 
 caddee_csdl_model.create_input('rri_twist_cp', val=np.deg2rad(np.array([30, 20, 10, 5])))
 caddee_csdl_model.create_input('rro_twist_cp', val=np.deg2rad(np.array([30, 20, 10, 5])))
 
-# caddee_csdl_model.add_design_variable('pp_twist_cp', lower=0, upper=np.deg2rad(85))
+caddee_csdl_model.add_design_variable('pp_twist_cp', lower=0, upper=np.deg2rad(85))
 caddee_csdl_model.add_design_variable('flo_twist_cp', lower=0, upper=np.deg2rad(85))
 caddee_csdl_model.add_design_variable('fli_twist_cp', lower=0, upper=np.deg2rad(85))
 caddee_csdl_model.add_design_variable('fri_twist_cp', lower=0, upper=np.deg2rad(85))
@@ -4047,6 +5046,8 @@ caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_3_total_nois
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_4_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_5_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
 
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.SOC_model.finalSoC', lower=0.2)
+
 caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_mass_properties.total_constant_mass', scaler=1e-3)
 
 # t1 = caddee_csdl_model.declare_variable('system_model.system_m3l_model.plus_3g_sizing_euler_eom_gen_ref_pt.trim_residual', shape=(1, ))
@@ -4098,7 +5099,6 @@ wing_root_chord = 2 * wing_area/((1 + wing_taper_ratio) * wing_span)
 wing_tip_chord = wing_root_chord * wing_taper_ratio
 
 tm = upstream_model.create_input('tail_moment_arm_input', val=17.23)
-# tm = upstream_model.create_input('tail_moment_arm_input', val=14)
 
 tail_area = upstream_model.create_input('tail_area', val=30)
 tail_taper_ratio = upstream_model.create_input('tail_taper_ratio', val=0.6)
@@ -4108,7 +5108,7 @@ upstream_model.add_design_variable('wing_area', upper=250, lower=150, scaler=5e-
 upstream_model.add_design_variable('wing_aspect_ratio', upper=15, lower=9, scaler=1e-1)
 upstream_model.add_design_variable('tail_area', upper=40, lower=20, scaler=5e-2)
 upstream_model.add_design_variable('tail_aspect_ratio', upper=7, lower=3.5, scaler=1e-1)
-upstream_model.add_design_variable('tail_moment_arm_input', upper=20, lower=15, scaler=5e-2)
+upstream_model.add_design_variable('tail_moment_arm_input', upper=20, lower=15.5, scaler=5e-2)
 
 
 
@@ -4194,43 +5194,43 @@ sim = Simulator(
     comm=comm,
 )
 
-# import pickle
-# with open('quasi_isotropic_full_MDO_dvs_2.pickle', 'rb') as handle:
-#     trim_dvs = pickle.load(handle)
+import pickle
+with open('quasi_isotropic_full_MDO_dvs_3.pickle', 'rb') as handle:
+    trim_dvs = pickle.load(handle)
 
-# for key, val in trim_dvs.items():
-#     # if 'cruise' in key:
-#     #     pass
-#     # elif 'climb' in key:
-#     #     pass
-#     # elif 'descent' in key:
-#     #     pass
-#     # elif 'qst_6' in key:
-#     #     pass
-#     # elif 'qst_7' in key:
-#     #     pass
-#     # elif 'qst_8' in key:
-#     #     pass
-#     # elif 'qst_9' in key:
-#     #     pass
-#     # elif 'qst_10' in key: 
-#     #     pass
-#     # elif 'oei' in key:
-#     #     pass
-#     # else:
-#     sim[key] = val
+for key, val in trim_dvs.items():
+    # if 'cruise' in key:
+    #     pass
+    # elif 'climb' in key:
+    #     pass
+    # elif 'descent' in key:
+    #     pass
+    # elif 'qst_6' in key:
+    #     pass
+    # elif 'qst_7' in key:
+    #     pass
+    # elif 'qst_8' in key:
+    #     pass
+    # elif 'qst_9' in key:
+    #     pass
+    # elif 'qst_10' in key: 
+    #     pass
+    # elif 'oei' in key:
+    #     pass
+    # else:
+    sim[key] = val
 
 # # sim = Simulator(tc2_model, analytics=True)
-sim.run()
-cruise_geometry = sim['caddee_csdl_model.design_geometry']    
-updated_primitives_names = list(lpc_rep.spatial_representation.primitives.keys()).copy()
-# cruise_geometry = sim['design_geometry']
-lpc_rep.spatial_representation.update(cruise_geometry, updated_primitives_names)
-lpc_rep.spatial_representation.plot()
-exit()
+# sim.run()
+# cruise_geometry = sim['caddee_csdl_model.design_geometry']    
+# updated_primitives_names = list(lpc_rep.spatial_representation.primitives.keys()).copy()
+# # cruise_geometry = sim['design_geometry']
+# lpc_rep.spatial_representation.update(cruise_geometry, updated_primitives_names)
+# lpc_rep.spatial_representation.plot()
 # print('\n')
 # sim.check_totals(of='system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', wrt='system_model.system_m3l_model.qst_3_pp_disk_bem_model.rpm')
 # sim.check_totals()
+# exit()
 
 
 
@@ -4238,12 +5238,12 @@ prob = CSDLProblem(problem_name='TC_2_problem_full_mdo', simulator=sim)
 
 optimizer = SNOPT(
     prob, 
-    Major_iterations=200, 
-    Major_optimality=1e-5, 
-    Major_feasibility=1e-5,
+    Major_iterations=1000, 
+    Major_optimality=5e-5, 
+    Major_feasibility=1e-4,
     append2file=True,
     Iteration_limit=500000,
-    Major_step_limit= 2.0,
+    Major_step_limit= 1.0,
     Linesearch_tolerance=0.5,
 )
 
@@ -4262,7 +5262,7 @@ for dv_name, dv_dict in sim.dvs.items():
 # dv_dictionary['caddee_csdl_model.system_model.system_m3l_model.mass_model.wing_beam_tweb'] = sim['caddee_csdl_model.system_model.system_m3l_model.mass_model.wing_beam_tweb']
 print('\n')
 print('\n')
-with open('quasi_isotropic_full_MDO_dvs_3.pickle', 'wb') as handle:
+with open('full_MDO_with_motor_dvs_0.pickle', 'wb') as handle:
     pickle.dump(dv_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 c_dictionary = {}
@@ -4270,7 +5270,7 @@ for c_name, c_dict in sim.cvs.items():
     print(c_name, c_dict['index_lower'], c_dict['index_upper'])
     print(sim[c_name])
     c_dict[c_name] = sim[c_name]
-with open('quasi_isotropic_full_MDO_constraints_3.pickle', 'wb') as handle:
+with open('full_MDO_with_motor_constraints_0.pickle', 'wb') as handle:
     pickle.dump(c_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 cruise_geometry = sim['caddee_csdl_model.design_geometry']    
