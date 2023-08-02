@@ -50,12 +50,12 @@ wing_primitive_names = list(spatial_rep.get_primitives(search_names=['Vertical S
 VertStab = LiftingSurface(name='VertStab', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)
 
 # wing plots - check progress
-MidWing.plot()
-TopWing.plot()
-BotWing.plot()
-TopFrame.plot()
-BotFrame.plot()
-VertStab.plot()
+# MidWing.plot()
+# TopWing.plot()
+# BotWing.plot()
+# TopFrame.plot()
+# BotFrame.plot()
+# VertStab.plot()
 
 
 
@@ -321,13 +321,13 @@ system_configurations = sys_rep.declare_configurations(names=configuration_names
 hover_configuration = system_configurations['hover_configuration']
 cruise_configuration = system_configurations['cruise_configuration']
 
-actuation_axis_port = whole_geometry_component.project(np.array([3., -1., 0.]), plot=True)
-actuation_axis_starboard = whole_geometry_component.project(np.array([3., 1., 0.]), plot=True)
+actuation_axis_port = whole_geometry_component.project(np.array([3., -1., 0.]), plot=False)
+actuation_axis_starboard = whole_geometry_component.project(np.array([3., 1., 0.]), plot=False)
 horizontal_stabilizer_actuation_axis = actuation_axis_starboard - actuation_axis_port
 from caddee.core.caddee_core.system_representation.prescribed_actuations import PrescribedRotation
 hover_actuator_solver = PrescribedRotation(component=whole_geometry_component, axis_origin=actuation_axis_port,
                                                            axis_vector=horizontal_stabilizer_actuation_axis)
-hover_actuation_profile = np.linspace(np.array([np.pi/2]))
+hover_actuation_profile = np.pi/3
 hover_actuator_solver.set_rotation(name='hover_actuation', value=hover_actuation_profile, units='radians')
 hover_configuration.actuate(transformation=hover_actuator_solver)
 
