@@ -14,7 +14,7 @@ import array_mapper as am
 from lsdo_rotor.core.BEM_caddee.BEM_caddee import BEM, BEMMesh
 from VAST.core.vast_solver import VASTFluidSover
 from VAST.core.fluid_problem import FluidProblem
-from caddee.utils.aircraft_models.pav.pav_weight import PavMassProperties
+from caddee.utils.aircraft_models.mk27.mk27_weight import MK27MassProperties
 
 from caddee import GEOMETRY_FILES_FOLDER
 
@@ -38,7 +38,7 @@ file_name = 'AmazonPrime.stp'
 spatial_rep = sys_rep.spatial_representation
 spatial_rep.import_file(file_name=GEOMETRY_FILES_FOLDER / file_name)
 spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
-spatial_rep.plot()
+# spatial_rep.plot()
 
 # region Lifting surfaces
 
@@ -494,7 +494,7 @@ sys_param.setup()
 # endregion
 
 # region Sizing
-mk27_wt = PavMassProperties() # mk27 mass properties??
+mk27_wt = MK27MassProperties()
 mass, cg, I = mk27_wt.evaluate()
 
 total_mass_properties = cd.TotalMassPropertiesM3L()
