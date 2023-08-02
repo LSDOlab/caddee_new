@@ -29,7 +29,7 @@ file_name = 'AmazonPrime.stp'
 spatial_rep = sys_rep.spatial_representation
 spatial_rep.import_file(file_name=GEOMETRY_FILES_FOLDER / file_name)
 spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
-#spatial_rep.plot()
+# spatial_rep.plot()
 
 
 # Wing definintions - Mid, Upper, Lower Wings, then Top, Bottom of frame, finally vertical stabilizer
