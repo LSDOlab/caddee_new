@@ -124,6 +124,7 @@ ppm_left_ffd_block = cd.SRBGFFDBlock(name='ppm_left_ffd_block',
                                   embedded_entities=ppm_left_geometry_primitives)
 ppm_left_ffd_block.add_scale_v(name='ppm_left_scale_v',order=1, num_dof=1, cost_factor=1.)
 ppm_left_ffd_block.add_scale_w(name='ppm_left_scale_w', order=1, num_dof=1)
+ppm_left_ffd_block.add_translation_u(name='ppm_left_translation_u', order=2, num_dof=2, cost_factor=1.5)
 # ppm_left_ffd_block.plot()
 
 ppm_right_geometry_primitives = ppm_right.get_geometry_primitives()
@@ -137,6 +138,7 @@ ppm_right_ffd_block = cd.SRBGFFDBlock(name='ppm_right_ffd_block',
                                   embedded_entities=ppm_right_geometry_primitives)
 ppm_right_ffd_block.add_scale_v(name='ppm_right_scale_v',order=1, num_dof=1, cost_factor=1.)
 ppm_right_ffd_block.add_scale_w(name='ppm_right_scale_w', order=1, num_dof=1)
+ppm_right_ffd_block.add_translation_u(name='ppm_right_translation_u', order=2, num_dof=2, cost_factor=1.5)
 
 ppu_left_geometry_primitives = ppu_left.get_geometry_primitives()
 ppu_left_ffd_bspline_volume = cd.create_cartesian_enclosure_volume(
@@ -149,6 +151,7 @@ ppu_left_ffd_block = cd.SRBGFFDBlock(name='ppu_left_ffd_block',
                                   embedded_entities=ppu_left_geometry_primitives)
 ppu_left_ffd_block.add_scale_v(name='ppu_left_scale_v',order=1, num_dof=1, cost_factor=1.)
 ppu_left_ffd_block.add_scale_w(name='ppu_left_scale_w', order=1, num_dof=1)
+ppu_left_ffd_block.add_translation_u(name='ppu_left_translation_u', order=2, num_dof=2, cost_factor=1.5)
 # ppu_left_ffd_block.plot()
 
 ppu_right_geometry_primitives = ppu_right.get_geometry_primitives()
@@ -162,6 +165,7 @@ ppu_right_ffd_block = cd.SRBGFFDBlock(name='ppu_right_ffd_block',
                                   embedded_entities=ppu_right_geometry_primitives)
 ppu_right_ffd_block.add_scale_v(name='ppu_right_scale_v',order=1, num_dof=1, cost_factor=1.)
 ppu_right_ffd_block.add_scale_w(name='ppu_right_scale_w', order=1, num_dof=1)
+ppu_right_ffd_block.add_translation_u(name='ppu_right_translation_u', order=2, num_dof=2, cost_factor=1.5)
 
 
 ppl_left_geometry_primitives = ppl_left.get_geometry_primitives()
@@ -175,6 +179,7 @@ ppl_left_ffd_block = cd.SRBGFFDBlock(name='ppl_left_ffd_block',
                                   embedded_entities=ppl_left_geometry_primitives)
 ppl_left_ffd_block.add_scale_v(name='ppl_left_scale_v',order=1, num_dof=1, cost_factor=1.)
 ppl_left_ffd_block.add_scale_w(name='ppl_left_scale_w', order=1, num_dof=1)
+ppl_left_ffd_block.add_translation_u(name='ppl_left_translation_u', order=2, num_dof=2, cost_factor=1.5)
 
 
 ppl_right_geometry_primitives = ppl_right.get_geometry_primitives()
@@ -188,6 +193,7 @@ ppl_right_ffd_block = cd.SRBGFFDBlock(name='ppl_right_ffd_block',
                                   embedded_entities=ppl_right_geometry_primitives)
 ppl_right_ffd_block.add_scale_v(name='ppl_right_scale_v',order=1, num_dof=1, cost_factor=1.)
 ppl_right_ffd_block.add_scale_w(name='ppl_right_scale_w', order=1, num_dof=1)
+ppl_right_ffd_block.add_translation_u(name='ppl_right_translation_u', order=2, num_dof=2, cost_factor=1.5)
 
 # endregion
 
@@ -246,8 +252,6 @@ if debug_geom_flag:
 # sys_rep.add_output(main_wing_oml_mesh_name, main_wing_oml_mesh)
 # if debug_geom_flag:
 #     spatial_rep.plot_meshes([main_wing_oml_mesh])
-
-main_wing_area = am.wireframe_area(main_wing_chord_surface)
 
 # endregion
 
@@ -438,33 +442,33 @@ sys_rep.add_output(f"{ppl_right.parameters['name']}_origin", ppl_right_origin)
 # endregion
 ppm_left_radius_1 = am.norm(ppm_left_plane_x/2)
 ppm_left_radius_2 = am.norm(ppm_left_plane_y/2)
-sys_param.add_input(name='ppm_left_radius_1', quantity=ppm_left_radius_1, value=np.array([0.5]))
-sys_param.add_input(name='ppm_left_radius_2', quantity=ppm_left_radius_2, value=np.array([0.5]))
+# sys_param.add_input(name='ppm_left_radius_1', quantity=ppm_left_radius_1, value=np.array([0.5]))
+# sys_param.add_input(name='ppm_left_radius_2', quantity=ppm_left_radius_2, value=np.array([0.5]))
 
 ppm_right_radius_1 = am.norm(ppm_right_plane_x/2)
 ppm_right_radius_2 = am.norm(ppm_right_plane_y/2)
-sys_param.add_input(name='ppm_right_radius_1', quantity=ppm_right_radius_1, value=np.array([0.5]))
-sys_param.add_input(name='ppm_right_radius_2', quantity=ppm_right_radius_2, value=np.array([0.5]))
+# sys_param.add_input(name='ppm_right_radius_1', quantity=ppm_right_radius_1, value=np.array([0.5]))
+# sys_param.add_input(name='ppm_right_radius_2', quantity=ppm_right_radius_2, value=np.array([0.5]))
 
 ppu_left_radius_1 = am.norm(ppu_left_plane_x/2)
 ppu_left_radius_2 = am.norm(ppu_left_plane_y/2)
-sys_param.add_input(name='ppu_left_radius_1', quantity=ppu_left_radius_1, value=np.array([0.5]))
-sys_param.add_input(name='ppu_left_radius_2', quantity=ppu_left_radius_2, value=np.array([0.5]))
+# sys_param.add_input(name='ppu_left_radius_1', quantity=ppu_left_radius_1, value=np.array([0.5]))
+# sys_param.add_input(name='ppu_left_radius_2', quantity=ppu_left_radius_2, value=np.array([0.5]))
 
 ppu_right_radius_1 = am.norm(ppu_right_plane_x/2)
 ppu_right_radius_2 = am.norm(ppu_right_plane_y/2)
-sys_param.add_input(name='ppu_right_radius_1', quantity=ppu_right_radius_1, value=np.array([0.5]))
-sys_param.add_input(name='ppu_right_radius_2', quantity=ppu_right_radius_2, value=np.array([0.5]))
+# sys_param.add_input(name='ppu_right_radius_1', quantity=ppu_right_radius_1, value=np.array([0.5]))
+# sys_param.add_input(name='ppu_right_radius_2', quantity=ppu_right_radius_2, value=np.array([0.5]))
 
 ppl_left_radius_1 = am.norm(ppl_left_plane_x/2)
 ppl_left_radius_2 = am.norm(ppl_left_plane_y/2)
-sys_param.add_input(name='ppl_left_radius_1', quantity=ppl_left_radius_1, value=np.array([0.5]))
-sys_param.add_input(name='ppl_left_radius_2', quantity=ppl_left_radius_2, value=np.array([0.5]))
+# sys_param.add_input(name='ppl_left_radius_1', quantity=ppl_left_radius_1, value=np.array([0.5]))
+# sys_param.add_input(name='ppl_left_radius_2', quantity=ppl_left_radius_2, value=np.array([0.5]))
 
 ppl_right_radius_1 = am.norm(ppl_right_plane_x/2)
 ppl_right_radius_2 = am.norm(ppl_right_plane_y/2)
-sys_param.add_input(name='ppl_right_radius_1', quantity=ppl_right_radius_1, value=np.array([0.5]))
-sys_param.add_input(name='ppl_right_radius_2', quantity=ppl_right_radius_2, value=np.array([0.5]))
+# sys_param.add_input(name='ppl_right_radius_1', quantity=ppl_right_radius_1, value=np.array([0.5]))
+# sys_param.add_input(name='ppl_right_radius_2', quantity=ppl_right_radius_2, value=np.array([0.5]))
 
 # region setup parameterization
 ffd_set = cd.SRBGFFDSet(
@@ -541,7 +545,7 @@ ppm_left_bem_mesh = BEMMesh(
 )
 disk_prefix = 'ppm_left'
 ppm_left_bem_model = BEM(disk_prefix=disk_prefix, blade_prefix=disk_prefix, component=ppm_left, mesh=ppm_left_bem_mesh)
-ppm_left_bem_model.set_module_input('rpm', val=4000)
+ppm_left_bem_model.set_module_input('rpm', val=4000, dv_flag=True)
 ppm_left_bem_model.set_module_input(f'{disk_prefix}_in_plane_1', val=ppm_left_plane_y.value)
 ppm_left_bem_model.set_module_input(f'{disk_prefix}_in_plane_2', val=ppm_left_plane_x.value)
 ppm_left_bem_model.set_module_input(f'{disk_prefix}_origin', val=ppm_left_origin.value)
@@ -569,7 +573,7 @@ ppm_right_bem_mesh = BEMMesh(
 )
 disk_prefix = 'ppm_right'
 ppm_right_bem_model = BEM(disk_prefix=disk_prefix, blade_prefix=disk_prefix, component=ppm_right, mesh=ppm_right_bem_mesh)
-ppm_right_bem_model.set_module_input('rpm', val=4000)
+ppm_right_bem_model.set_module_input('rpm', val=4000, dv_flag=True)
 ppm_right_bem_model.set_module_input(f'{disk_prefix}_in_plane_1', val=ppm_left_plane_y.value)
 ppm_right_bem_model.set_module_input(f'{disk_prefix}_in_plane_2', val=ppm_left_plane_x.value)
 ppm_right_bem_model.set_module_input(f'{disk_prefix}_origin', val=ppm_left_origin.value)
@@ -597,7 +601,7 @@ ppu_left_bem_mesh = BEMMesh(
 )
 disk_prefix = 'ppu_left'
 ppu_left_bem_model = BEM(disk_prefix=disk_prefix, blade_prefix=disk_prefix, component=ppu_left, mesh=ppu_left_bem_mesh)
-ppu_left_bem_model.set_module_input('rpm', val=4000)
+ppu_left_bem_model.set_module_input('rpm', val=4000, dv_flag=True)
 ppu_left_bem_model.set_module_input(f'{disk_prefix}_in_plane_1', val=ppm_left_plane_y.value)
 ppu_left_bem_model.set_module_input(f'{disk_prefix}_in_plane_2', val=ppm_left_plane_x.value)
 ppu_left_bem_model.set_module_input(f'{disk_prefix}_origin', val=ppm_left_origin.value)
@@ -625,7 +629,7 @@ ppu_right_bem_mesh = BEMMesh(
 )
 disk_prefix = 'ppu_right'
 ppu_right_bem_model = BEM(disk_prefix=disk_prefix, blade_prefix=disk_prefix, component=ppu_right, mesh=ppu_right_bem_mesh)
-ppu_right_bem_model.set_module_input('rpm', val=4000)
+ppu_right_bem_model.set_module_input('rpm', val=4000, dv_flag=True)
 ppu_right_bem_model.set_module_input(f'{disk_prefix}_in_plane_1', val=ppm_left_plane_y.value)
 ppu_right_bem_model.set_module_input(f'{disk_prefix}_in_plane_2', val=ppm_left_plane_x.value)
 ppu_right_bem_model.set_module_input(f'{disk_prefix}_origin', val=ppm_left_origin.value)
@@ -653,7 +657,7 @@ ppl_left_bem_mesh = BEMMesh(
 )
 disk_prefix = 'ppl_left'
 ppl_left_bem_model = BEM(disk_prefix=disk_prefix, blade_prefix=disk_prefix, component=ppl_left, mesh=ppl_left_bem_mesh)
-ppl_left_bem_model.set_module_input('rpm', val=4000)
+ppl_left_bem_model.set_module_input('rpm', val=4000, dv_flag=True)
 ppl_left_bem_model.set_module_input(f'{disk_prefix}_in_plane_1', val=ppm_left_plane_y.value)
 ppl_left_bem_model.set_module_input(f'{disk_prefix}_in_plane_2', val=ppm_left_plane_x.value)
 ppl_left_bem_model.set_module_input(f'{disk_prefix}_origin', val=ppm_left_origin.value)
@@ -681,7 +685,7 @@ ppl_right_bem_mesh = BEMMesh(
 )
 disk_prefix = 'ppl_right'
 ppl_right_bem_model = BEM(disk_prefix=disk_prefix, blade_prefix=disk_prefix, component=ppl_right, mesh=ppl_right_bem_mesh)
-ppl_right_bem_model.set_module_input('rpm', val=4000)
+ppl_right_bem_model.set_module_input('rpm', val=4000, dv_flag=True)
 ppl_right_bem_model.set_module_input(f'{disk_prefix}_in_plane_1', val=ppm_left_plane_y.value)
 ppl_right_bem_model.set_module_input(f'{disk_prefix}_in_plane_2', val=ppm_left_plane_x.value)
 ppl_right_bem_model.set_module_input(f'{disk_prefix}_origin', val=ppm_left_origin.value)

@@ -35,7 +35,7 @@ class MK27MassPropertiesCSDL(ModuleCSDL):
         ft2m = 0.3048
         lbs2kg = 0.453592
 
-        total_mass = self.register_module_input('total_mass_input', val=92.)
+        total_mass = self.register_module_input('total_mass_input', val=92.*lbs2kg)
         self.register_module_output(name='mass', var=total_mass*1)
 
         inertia_tensor = self.register_module_input('inertia_tensor_input', shape=(3,3))
