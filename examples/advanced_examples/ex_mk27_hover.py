@@ -27,7 +27,7 @@ file_name = 'AmazonPrime.stp'
 spatial_rep = sys_rep.spatial_representation
 spatial_rep.import_file(file_name=GEOMETRY_FILES_FOLDER / file_name)
 spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
-#spatial_rep.plot()
+# spatial_rep.plot()
 
 
 # Wing definintions - Mid, Upper, Lower Wings, then Top, Bottom of frame, finally vertical stabilizer
@@ -50,7 +50,7 @@ wing_primitive_names = list(spatial_rep.get_primitives(search_names=['Vertical S
 VertStab = LiftingSurface(name='VertStab', spatial_representation=spatial_rep, primitive_names=wing_primitive_names)
 
 # wing plots - check progress
-MidWing.plot()
+# MidWing.plot()
 # TopWing.plot()
 # BotWing.plot()
 # TopFrame.plot()
@@ -64,32 +64,32 @@ MidWing.plot()
 pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Middle Props, 0', 'Middle Props, 1', 'Middle Props, 2', 'Middle Props, 3']).keys())
 ppm_left = cd.Rotor(name='ppm_disk_left', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppm_left)
-ppm_left.plot()
+# ppm_left.plot()
 
 pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Middle Props, 4', 'Middle Props, 5', 'Middle Props, 6', 'Middle Props, 7']).keys())
 ppm_right = cd.Rotor(name='ppm_disk_right', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppm_right)
-ppm_right.plot()
+# ppm_right.plot()
 
 pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Upper Props, 4', 'Upper Props, 5', 'Upper Props, 6', 'Upper Props, 7']).keys())
 ppu_left = cd.Rotor(name='ppu_disk_left', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppu_left)
-ppu_left.plot()
+# ppu_left.plot()
 
 pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Upper Props, 0', 'Upper Props, 1', 'Upper Props, 2', 'Upper Props, 3']).keys())
 ppu_right = cd.Rotor(name='ppu_disk_right', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppu_right)
-ppu_right.plot()
+# ppu_right.plot()
 
 pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Lower Props, 4', 'Lower Props, 5', 'Lower Props, 6', 'Lower Props, 7']).keys())
 ppl_left = cd.Rotor(name='ppl_disk_left', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppl_left)
-ppl_left.plot()
+# ppl_left.plot()
 
 pp_disk_prim_names = list(spatial_rep.get_primitives(search_names=['Lower Props, 0', 'Lower Props, 1', 'Lower Props, 2', 'Lower Props, 3']).keys())
 ppl_right = cd.Rotor(name='ppl_disk_right', spatial_representation=spatial_rep, primitive_names=pp_disk_prim_names)
 sys_rep.add_component(ppl_right)
-ppl_right.plot()
+# ppl_right.plot()
 
 whole_geometry_component_primitive_names = list(spatial_rep.get_primitives().keys())
 whole_geometry_component = cd.Component(name='whole_geometry', spatial_representation=spatial_rep, 
