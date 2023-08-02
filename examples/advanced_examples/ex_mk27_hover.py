@@ -91,6 +91,10 @@ ppl_right = cd.Rotor(name='ppl_disk_right', spatial_representation=spatial_rep, 
 sys_rep.add_component(ppl_right)
 # ppl_right.plot()
 
+whole_geometry_component_primitive_names = list(spatial_rep.get_primitives().keys())
+whole_geometry_component = cd.Component(name='whole_geometry', spatial_representation=spatial_rep, 
+                                        primitive_names=whole_geometry_component_primitive_names)
+
 # endregion
 # Rotor plots - check progress
 #ppm.plot()
@@ -312,6 +316,21 @@ ffd_set = cd.SRBGFFDSet(
 sys_param.add_geometry_parameterization(ffd_set)
 sys_param.setup()
 
+configuration_names = ["hover_configuration", "cruise_configuration"]
+system_configurations = sys_rep.declare_configurations(names=configuration_names)
+hover_configuration = system_configurations['hover_configuration']
+cruise_configuration = system_configurations['cruise_configuration']
+
+actuation_axis_port = whole_geometry_component.project(np.array([3., -1., 0.]), plot=True)
+actuation_axis_starboard = whole_geometry_component.project(np.array([3., 1., 0.]), plot=True)
+horizontal_stabilizer_actuation_axis = actuation_axis_starboard - actuation_axis_port
+from caddee.core.caddee_core.system_representation.prescribed_actuations import PrescribedRotation
+hover_actuator_solver = PrescribedRotation(component=whole_geometry_component, axis_origin=actuation_axis_port,
+                                                           axis_vector=horizontal_stabilizer_actuation_axis)
+hover_actuation_profile = np.linspace(np.array([np.pi/2]))
+hover_actuator_solver.set_rotation(name='hover_actuation', value=hover_actuation_profile, units='radians')
+hover_configuration.actuate(transformation=hover_actuator_solver)
+
 # TEMPORARY
 system_representation_model = sys_rep.assemble_csdl()
 system_parameterization_model = sys_param.assemble_csdl()
@@ -322,6 +341,11 @@ my_model.add(system_representation_model, 'system_representation')
 
 sim = Simulator(my_model, analytics=True, display_scripts=True)
 sim.run()
+
+hover_geo = sim['hover_configuration_geometry']
+spatial_rep.update(hover_geo)
+spatial_rep.plot()
+
 exit()
 # removed blade meshes, twist
 

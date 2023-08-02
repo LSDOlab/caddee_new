@@ -41,12 +41,12 @@ def create_cartesian_enclosure_volume(enclosed_entities:list, num_control_points
     mins = np.min(embedded_points, axis=0)
     maxs = np.max(embedded_points, axis=0)
 
-    if abs(maxs[0]-mins[0]) < 1e-6:
-        maxs[0] += 1e-6
-    if abs(maxs[1]-mins[1]) < 1e-6:
-        maxs[1] += 1e-6
-    if abs(maxs[2]-mins[2]) < 1e-6:
-        maxs[2] += 1e-6
+    # if abs(maxs[0]-mins[0]) < 1e-6:
+    #     maxs[0] += 1e-6
+    # if abs(maxs[1]-mins[1]) < 1e-6:
+    #     maxs[1] += 1e-6
+    # if abs(maxs[2]-mins[2]) < 1e-6:
+    #     maxs[2] += 1e-6
 
 
     # Can probably automate this to nd using a for loop

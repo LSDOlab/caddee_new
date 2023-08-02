@@ -38,7 +38,7 @@ file_name = 'AmazonPrime.stp'
 spatial_rep = sys_rep.spatial_representation
 spatial_rep.import_file(file_name=GEOMETRY_FILES_FOLDER / file_name)
 spatial_rep.refit_geometry(file_name=GEOMETRY_FILES_FOLDER / file_name)
-# spatial_rep.plot()
+spatial_rep.plot()
 
 # region Lifting surfaces
 
@@ -531,7 +531,7 @@ cruise_ac_states = cruise_condition.evaluate_ac_states()
 # region Propulsion
 ppm_left_bem_mesh = BEMMesh(
     airfoil='NACA_4412',
-    num_blades=5,
+    num_blades=3,
     num_radial=25,
     use_airfoil_ml=False,
     use_rotor_geometry=True,
@@ -559,7 +559,7 @@ cruise_model.register_output(ppm_left_bem_moments)
 
 ppm_right_bem_mesh = BEMMesh(
     airfoil='NACA_4412',
-    num_blades=5,
+    num_blades=3,
     num_radial=25,
     use_airfoil_ml=False,
     use_rotor_geometry=True,
@@ -587,7 +587,7 @@ ppm_right_bem_forces, ppm_right_bem_moments, _, _, _, _, _, _ = ppm_right_bem_mo
 
 ppu_left_bem_mesh = BEMMesh(
     airfoil='NACA_4412',
-    num_blades=5,
+    num_blades=3,
     num_radial=25,
     use_airfoil_ml=False,
     use_rotor_geometry=True,
@@ -615,7 +615,7 @@ ppu_left_bem_forces, ppu_left_bem_moments, _, _, _, _, _, _ = ppu_left_bem_model
 
 ppu_right_bem_mesh = BEMMesh(
     airfoil='NACA_4412',
-    num_blades=5,
+    num_blades=3,
     num_radial=25,
     use_airfoil_ml=False,
     use_rotor_geometry=True,
@@ -643,7 +643,7 @@ ppu_right_bem_forces, ppu_right_bem_moments, _, _, _, _, _, _ = ppu_right_bem_mo
 
 ppl_left_bem_mesh = BEMMesh(
     airfoil='NACA_4412',
-    num_blades=5,
+    num_blades=3,
     num_radial=25,
     use_airfoil_ml=False,
     use_rotor_geometry=True,
@@ -671,7 +671,7 @@ ppl_left_bem_forces, ppl_left_bem_moments, _, _, _, _, _, _ = ppl_left_bem_model
 
 ppl_right_bem_mesh = BEMMesh(
     airfoil='NACA_4412',
-    num_blades=5,
+    num_blades=3,
     num_radial=25,
     use_airfoil_ml=False,
     use_rotor_geometry=True,
