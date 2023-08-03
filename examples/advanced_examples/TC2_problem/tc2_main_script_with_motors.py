@@ -1382,61 +1382,61 @@ fro_bem_forces, fro_bem_moments, fro_dT ,fro_dQ ,fro_dD, fro_Ct,fro_Q, fro_ux = 
 # # Hover Motor Analysis
 # qst_1_rlo_motor_model = cd.ConstantPowerDensityMotorM3L(component=rlo_disk)
 # qst_1_rlo_input_power = hover_rlo_motor_model.evaluate(rlo_Q, design_condition=qst_1)
-# qst_1_rlo_motor_model = MotorAnalysis(component=rlo_disk)
-# qst_1_rlo_input_power, qst_1_rlo_efficiency = qst_1_rlo_motor_model.evaluate(rlo_Q, rlo_motor_parameters, design_condition=qst_1)
-# system_m3l_model.register_output(qst_1_rlo_input_power, qst_1)
+qst_1_rlo_motor_model = MotorAnalysis(component=rlo_disk)
+qst_1_rlo_input_power, qst_1_rlo_efficiency = qst_1_rlo_motor_model.evaluate(rlo_Q, rlo_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_rlo_input_power, qst_1)
 
 # qst_1_rli_motor_model = cd.ConstantPowerDensityMotorM3L(component=rli_disk)
 # qst_1_rli_input_power = hover_rli_motor_model.evaluate(rli_Q, design_condition=qst_1)
-# qst_1_rli_motor_model = MotorAnalysis(component=rli_disk)
-# qst_1_rli_input_power, qst_1_rli_efficiency = qst_1_rli_motor_model.evaluate(rli_Q, rli_motor_parameters, design_condition=qst_1)
-# system_m3l_model.register_output(qst_1_rli_input_power, qst_1)
+qst_1_rli_motor_model = MotorAnalysis(component=rli_disk)
+qst_1_rli_input_power, qst_1_rli_efficiency = qst_1_rli_motor_model.evaluate(rli_Q, rli_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_rli_input_power, qst_1)
 
 # qst_1_rri_motor_model = cd.ConstantPowerDensityMotorM3L(component=rri_disk)
 # qst_1_rri_input_power = hover_rri_motor_model.evaluate(rri_Q, design_condition=qst_1)
-# qst_1_rri_motor_model = MotorAnalysis(component=rri_disk)
-# qst_1_rri_input_power, qst_1_rri_efficiency = qst_1_rri_motor_model.evaluate(rri_Q, rri_motor_parameters, design_condition=qst_1)
-# system_m3l_model.register_output(qst_1_rri_input_power, qst_1)
+qst_1_rri_motor_model = MotorAnalysis(component=rri_disk)
+qst_1_rri_input_power, qst_1_rri_efficiency = qst_1_rri_motor_model.evaluate(rri_Q, rri_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_rri_input_power, qst_1)
 
 # qst_1_rro_motor_model = cd.ConstantPowerDensityMotorM3L(component=rro_disk)
 # qst_1_rro_input_power = hover_rro_motor_model.evaluate(rro_Q, design_condition=qst_1)
-# qst_1_rro_motor_model = MotorAnalysis(component=rro_disk)
-# qst_1_rro_input_power, qst_1_rro_efficiency = qst_1_rro_motor_model.evaluate(rro_Q, rro_motor_parameters, design_condition=qst_1)
-# system_m3l_model.register_output(qst_1_rro_input_power, qst_1)
+qst_1_rro_motor_model = MotorAnalysis(component=rro_disk)
+qst_1_rro_input_power, qst_1_rro_efficiency = qst_1_rro_motor_model.evaluate(rro_Q, rro_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_rro_input_power, qst_1)
 
 # qst_1_flo_motor_model = cd.ConstantPowerDensityMotorM3L(component=flo_disk)
 # qst_1_flo_input_power = hover_flo_motor_model.evaluate(flo_Q, design_condition=qst_1)
-# qst_1_flo_motor_model = MotorAnalysis(component=flo_disk)
-# qst_1_flo_input_power, qst_1_flo_efficiency = qst_1_flo_motor_model.evaluate(flo_Q, flo_motor_parameters, design_condition=qst_1)
-# system_m3l_model.register_output(qst_1_flo_input_power, qst_1)
+qst_1_flo_motor_model = MotorAnalysis(component=flo_disk)
+qst_1_flo_input_power, qst_1_flo_efficiency = qst_1_flo_motor_model.evaluate(flo_Q, flo_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_flo_input_power, qst_1)
 
 # qst_1_fli_motor_model = cd.ConstantPowerDensityMotorM3L(component=fli_disk)
 # qst_1_fli_input_power = hover_fli_motor_model.evaluate(fli_Q, design_condition=qst_1)
-# qst_1_fli_motor_model = MotorAnalysis(component=fli_disk)
-# qst_1_fli_input_power, qst_1_fli_efficiency = qst_1_fli_motor_model.evaluate(fli_Q, fli_motor_parameters, design_condition=qst_1)
-# system_m3l_model.register_output(qst_1_fli_input_power, qst_1)
+qst_1_fli_motor_model = MotorAnalysis(component=fli_disk)
+qst_1_fli_input_power, qst_1_fli_efficiency = qst_1_fli_motor_model.evaluate(fli_Q, fli_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_fli_input_power, qst_1)
 
 # qst_1_fro_motor_model = cd.ConstantPowerDensityMotorM3L(component=fro_disk)
 # qst_1_fro_input_power = hover_fro_motor_model.evaluate(fro_Q, design_condition=qst_1)
-# qst_1_fro_motor_model = MotorAnalysis(component=fro_disk)
-# qst_1_fro_input_power, qst_1_fro_efficiency = qst_1_fro_motor_model.evaluate(fro_Q, fro_motor_parameters, design_condition=qst_1)
-# system_m3l_model.register_output(qst_1_fro_input_power, qst_1)
+qst_1_fro_motor_model = MotorAnalysis(component=fro_disk)
+qst_1_fro_input_power, qst_1_fro_efficiency = qst_1_fro_motor_model.evaluate(fro_Q, fro_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_fro_input_power, qst_1)
 
 # qst_1_fri_motor_model = cd.ConstantPowerDensityMotorM3L(component=fri_disk)
 # qst_1_fri_input_power = hover_fri_motor_model.evaluate(fri_Q, design_condition=qst_1)
-# qst_1_fri_motor_model = MotorAnalysis(component=fri_disk)
-# qst_1_fri_input_power, qst_1_fri_efficiency = qst_1_fri_motor_model.evaluate(fri_Q, fri_motor_parameters, design_condition=qst_1)
-# system_m3l_model.register_output(qst_1_fri_input_power, qst_1)
+qst_1_fri_motor_model = MotorAnalysis(component=fri_disk)
+qst_1_fri_input_power, qst_1_fri_efficiency = qst_1_fri_motor_model.evaluate(fri_Q, fri_motor_parameters, design_condition=qst_1)
+system_m3l_model.register_output(qst_1_fri_input_power, qst_1)
 
 # Hover Energy Consumption
-# qst_1_energy_model = cd.EnergyModelM3L()
-# qst_1_energy = qst_1_energy_model.evaluate(
-#     qst_1_rlo_input_power, qst_1_rli_input_power, qst_1_rri_input_power, qst_1_rro_input_power,
-#     qst_1_flo_input_power, qst_1_fli_input_power, qst_1_fri_input_power, qst_1_fro_input_power,
-#     ac_states=qst_1_ac_states, design_condition=qst_1
-# )
+qst_1_energy_model = cd.EnergyModelM3L()
+qst_1_energy = qst_1_energy_model.evaluate(
+    qst_1_rlo_input_power, qst_1_rli_input_power, qst_1_rri_input_power, qst_1_rro_input_power,
+    qst_1_flo_input_power, qst_1_fli_input_power, qst_1_fri_input_power, qst_1_fro_input_power,
+    ac_states=qst_1_ac_states, design_condition=qst_1
+)
 
-# system_m3l_model.register_output(qst_1_energy, qst_1)
+system_m3l_model.register_output(qst_1_energy, qst_1)
 
 # acoustics
 qst_1_acoustics = Acoustics(
@@ -5182,6 +5182,15 @@ tc2_model.register_output('tweb_symmetry', right_tweb-left_tweb)
 
 tc2_model.add_constraint('tcap_symmetry', equals=0, scaler=1e-3)
 tc2_model.add_constraint('tweb_symmetry', equals=0, scaler=1e-3)
+
+tc2_model.add_constraint('caddee_csdl_model.system_model.system_m3l_model.qst_4_pp_disk_bem_model.T', lower=10, scaler=1e-1)
+tc2_model.add_constraint('caddee_csdl_model.system_model.system_m3l_model.qst_5_pp_disk_bem_model.T', lower=10, scaler=1e-1)
+tc2_model.add_constraint('caddee_csdl_model.system_model.system_m3l_model.qst_6_pp_disk_bem_model.T', lower=10, scaler=1e-1)
+tc2_model.add_constraint('caddee_csdl_model.system_model.system_m3l_model.qst_7_pp_disk_bem_model.T', lower=10, scaler=1e-1)
+tc2_model.add_constraint('caddee_csdl_model.system_model.system_m3l_model.qst_8_pp_disk_bem_model.T', lower=10, scaler=1e-1)
+tc2_model.add_constraint('caddee_csdl_model.system_model.system_m3l_model.qst_9_pp_disk_bem_model.T', lower=10, scaler=1e-1)
+tc2_model.add_constraint('caddee_csdl_model.system_model.system_m3l_model.qst_10_pp_disk_bem_model.T', lower=10, scaler=1e-1)
+
 # endregion
 
 # run commond: mpirun -n 2 python tc2_main_script
@@ -5195,7 +5204,7 @@ sim = Simulator(
 )
 
 import pickle
-with open('quasi_isotropic_full_MDO_dvs_3.pickle', 'rb') as handle:
+with open('full_MDO_with_motor_dvs_0.pickle', 'rb') as handle:
     trim_dvs = pickle.load(handle)
 
 for key, val in trim_dvs.items():
@@ -5220,8 +5229,8 @@ for key, val in trim_dvs.items():
     # else:
     sim[key] = val
 
-# # sim = Simulator(tc2_model, analytics=True)
-# sim.run()
+# sim = Simulator(tc2_model, analytics=True)
+sim.run()
 # cruise_geometry = sim['caddee_csdl_model.design_geometry']    
 # updated_primitives_names = list(lpc_rep.spatial_representation.primitives.keys()).copy()
 # # cruise_geometry = sim['design_geometry']
@@ -5230,7 +5239,7 @@ for key, val in trim_dvs.items():
 # print('\n')
 # sim.check_totals(of='system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', wrt='system_model.system_m3l_model.qst_3_pp_disk_bem_model.rpm')
 # sim.check_totals()
-# exit()
+exit()
 
 
 
@@ -5262,7 +5271,7 @@ for dv_name, dv_dict in sim.dvs.items():
 # dv_dictionary['caddee_csdl_model.system_model.system_m3l_model.mass_model.wing_beam_tweb'] = sim['caddee_csdl_model.system_model.system_m3l_model.mass_model.wing_beam_tweb']
 print('\n')
 print('\n')
-with open('full_MDO_with_motor_dvs_0.pickle', 'wb') as handle:
+with open('full_MDO_with_motor_dvs_1.pickle', 'wb') as handle:
     pickle.dump(dv_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 c_dictionary = {}
@@ -5270,7 +5279,7 @@ for c_name, c_dict in sim.cvs.items():
     print(c_name, c_dict['index_lower'], c_dict['index_upper'])
     print(sim[c_name])
     c_dict[c_name] = sim[c_name]
-with open('full_MDO_with_motor_constraints_0.pickle', 'wb') as handle:
+with open('full_MDO_with_motor_constraints_1.pickle', 'wb') as handle:
     pickle.dump(c_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 cruise_geometry = sim['caddee_csdl_model.design_geometry']    
