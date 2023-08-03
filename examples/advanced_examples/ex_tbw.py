@@ -278,6 +278,21 @@ def trim_at_1g():
 
     # endregion
 
+    # region Geometric outputs
+    # Mid chord
+    point20 = np.array([57.575, 49.280, 5.647])  # * ft2m # Leading Edge
+    point21 = np.array([67.088, -49.280, 5.517])  # * ft2m # Trailing edge
+    right_wing_mid_leading_edge = wing.project(point20)
+    right_wing_mid_trailing_edge = wing.project(point21)
+    right_mid_chord = am.norm(right_wing_mid_leading_edge - right_wing_mid_trailing_edge)
+    sys_rep.add_output(name='right_wing_mid_chord', quantity=right_mid_chord)
+
+    # Area
+    wing_area = am.wireframe_area(wireframe=chord_surface)
+    sys_rep.add_output(name='wing_chord_surface_area', quantity=wing_area)
+
+    # endregion
+
     ft2m = 0.3048
     # region Sizing
     tbw_wt = TBWMassProperties()
@@ -335,10 +350,10 @@ def trim_at_1g():
     # endregion
 
     # region Viscous drag
-    wing_ref_area = 1477.109999845  # 1477.109999845 ft^2 = 137.2280094 m^2
+    # wing_ref_area = 1477.109999845  # 1477.109999845 ft^2 = 137.2280094 m^2
     wing_ref_chord = 110.286  # MAC: 110.286 ft = 33.6151728 m
     tbw_viscous_drag_model = TbwViscousDragModel(geometry_units='ft')
-    tbw_viscous_drag_model.set_module_input('area', val=wing_ref_area)
+    # tbw_viscous_drag_model.set_module_input('area', val=wing_ref_area)
     tbw_viscous_drag_model.set_module_input('chord', val=wing_ref_chord)
     tbw_viscous_drag_forces, tbw_viscous_drag_moments = tbw_viscous_drag_model.evaluate(ac_states=ac_states)
     cruise_model.register_output(tbw_viscous_drag_forces)
@@ -443,21 +458,8 @@ def trim_at_1g():
     caddee_csdl_model.register_output(name='wing_total_CD', var=wing_total_CD)
     # endregion
 
-    # vlm_forces = caddee_csdl_model.declare_variable(name='vlm_forces', shape=(1, 3))
-    # caddee_csdl_model.connect(
-    #     'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.F',
-    #     'vlm_forces')
-    # viscous_drag_forces = caddee_csdl_model.declare_variable(name='viscous_drag_forces', shape=(1, 3))
-    # caddee_csdl_model.connect(
-    #     'system_model.aircraft_trim.cruise_1.cruise_1.tbw_viscous_drag_model.F',
-    #     'viscous_drag_forces')
-    # total_aero_forces = vlm_forces + viscous_drag_forces
-    # caddee_csdl_model.register_output(name='total_aero_forces', var=total_aero_forces)
-    # total_aero_Fx = total_aero_forces[:, 0]
-    # total_aero_Fz = total_aero_forces[:, 2]
-    # LoverD = total_aero_Fz/total_aero_Fx
-    # caddee_csdl_model.register_output(name='LoverD', var=LoverD)
-
+    caddee_csdl_model.connect('wing_chord_surface_area',
+                              'system_model.aircraft_trim.cruise_1.cruise_1.tbw_viscous_drag_model.area')
 
     # region Optimization Setup
     caddee_csdl_model.add_objective('system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual')
@@ -483,6 +485,10 @@ def trim_at_1g():
     optimizer = SLSQP(prob, maxiter=1000, ftol=1E-10)
     optimizer.solve()
     optimizer.print_results()
+
+    # region Geometric outputs
+    print('Wing chord surface area (ft^2): ', sim['wing_chord_surface_area'])
+    # endregion
 
     # region Outputs of CL, CD, L/D
 

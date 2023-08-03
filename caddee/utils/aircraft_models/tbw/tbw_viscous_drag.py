@@ -48,7 +48,7 @@ class TbwViscousDragModelCSDL(ModuleCSDL):
 
         area = self.register_module_input('area',
                                           shape=(num_nodes, 1),
-                                          computed_upstream=False)
+                                          computed_upstream=True)
         chord = self.register_module_input('chord',
                                           shape=(num_nodes, 1),
                                           computed_upstream=False)
