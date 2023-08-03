@@ -193,9 +193,9 @@ class PavGeomMesh:
             self.geom_data['primitive_names']['right_wing'] = right_wing_names
 
             self.geom_data['components']['wing_te'] = wing_te
-            self.geom_data['componenets']['wing_oml'] = wing_oml
-            self.geom_data['componenets']['wing_top'] = wing_top
-            self.geom_data['componenets']['wing_bottom'] = wing_bottom
+            self.geom_data['components']['wing_oml'] = wing_oml
+            self.geom_data['components']['wing_top'] = wing_top
+            self.geom_data['components']['wing_bottom'] = wing_bottom
 
         # endregion
 
