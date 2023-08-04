@@ -1669,7 +1669,15 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3662,
     plot_data['forces_index_function'] = wing_force_index_func
     # endregion
 
+    print('Tip Iy: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_element_0_Iy'])
+    print('Root Iy: ',
+          sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_element_10_Iy'])
 
+    print(f'Root bending moment: ', sim[
+              'system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_element_10StressBox.wing_beam_element_10local_loads'][10])
+
+    print('Spanwise external load resultant: ',
+          np.linalg.norm(sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.wing_beam_forces'].reshape(num_wing_beam_nodes, 3), axis=1)*0.224809)
 
     return plot_data
 
@@ -2169,11 +2177,11 @@ if __name__ == '__main__':
     #     pusher_prop_twist_cp=pusher_prop_twist_cp,
     #     pusher_prop_chord_cp=pusher_prop_chord_cp
     # )
-    optimize_lift_rotor_blade(debug_geom_flag=False)
-    trim_at_hover()
+    # optimize_lift_rotor_blade(debug_geom_flag=False)
+    # trim_at_hover()
 
-
-    # structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.11391141), visualize_flag=False)
+    structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.11391141),
+                                       visualize_flag=False)
     # structural_wingbox_beam_sizing(pitch_angle=np.deg2rad(12.11391141))
     # structural_wingbox_shell_evaluation(pitch_angle=np.deg2rad(12.48100761), visualize_flag=False)
 
