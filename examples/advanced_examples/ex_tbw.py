@@ -19,6 +19,7 @@ from VAST.core.fluid_problem import FluidProblem
 from VAST.core.generate_mappings_m3l import VASTNodalForces
 from caddee.utils.aircraft_models.tbw.tbw_weights import TBWMassProperties
 from caddee.utils.aircraft_models.tbw.tbw_propulsion import tbwPropulsionModel
+from caddee.utils.aircraft_models.tbw.tbw_viscous_drag import TbwViscousDragModel
 
 
 from caddee import GEOMETRY_FILES_FOLDER
@@ -308,7 +309,7 @@ def trim_at_1g():
     cruise_model.register_output(ac_states)
 
     # region Aerodynamics
-
+    # region VLM
     vlm_model = VASTFluidSover(
         surface_names=[
             wing_vlm_mesh_name,
@@ -331,6 +332,18 @@ def trim_at_1g():
     vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states)
     cruise_model.register_output(vlm_force)
     cruise_model.register_output(vlm_moment)
+    # endregion
+
+    # region Viscous drag
+    wing_ref_area = 1477.109999845  # 1477.109999845 ft^2 = 137.2280094 m^2
+    wing_ref_chord = 110.286  # MAC: 110.286 ft = 33.6151728 m
+    tbw_viscous_drag_model = TbwViscousDragModel(geometry_units='ft')
+    tbw_viscous_drag_model.set_module_input('area', val=wing_ref_area)
+    tbw_viscous_drag_model.set_module_input('chord', val=wing_ref_chord)
+    tbw_viscous_drag_forces, tbw_viscous_drag_moments = tbw_viscous_drag_model.evaluate(ac_states=ac_states)
+    cruise_model.register_output(tbw_viscous_drag_forces)
+    cruise_model.register_output(tbw_viscous_drag_moments)
+    # endregion
     # endregion
 
     # region Propulsion loads
@@ -381,7 +394,8 @@ def trim_at_1g():
         inertial_forces, inertial_moments,
         vlm_force, vlm_moment,
         tbw_left_prop_forces, tbw_left_prop_moments,
-        #tbw_right_prop_forces, tbw_right_prop_moments
+        #tbw_right_prop_forces, tbw_right_prop_moments,
+        tbw_viscous_drag_forces, tbw_viscous_drag_moments
     )
     cruise_model.register_output(total_forces)
     cruise_model.register_output(total_moments)
@@ -414,6 +428,36 @@ def trim_at_1g():
     caddee_csdl_model.create_input(name='h_tail_act', val=np.deg2rad(0.))
     caddee_csdl_model.add_design_variable(dv_name='h_tail_act', lower=np.deg2rad(-10), upper=np.deg2rad(10), scaler=1.)
 
+    # region Compute total wing CD
+    wing_vlm_CD = caddee_csdl_model.declare_variable(name='wing_vlm_CD')
+    caddee_csdl_model.connect(
+        f'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.{wing_vlm_mesh_name}_C_D_total',
+        'wing_vlm_CD'
+    )
+    wing_Cf = caddee_csdl_model.declare_variable(name='wing_Cf')
+    caddee_csdl_model.connect(
+        'system_model.aircraft_trim.cruise_1.cruise_1.tbw_viscous_drag_model.Cf',
+        'wing_Cf'
+    )
+    wing_total_CD = wing_vlm_CD + wing_Cf
+    caddee_csdl_model.register_output(name='wing_total_CD', var=wing_total_CD)
+    # endregion
+
+    # vlm_forces = caddee_csdl_model.declare_variable(name='vlm_forces', shape=(1, 3))
+    # caddee_csdl_model.connect(
+    #     'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.F',
+    #     'vlm_forces')
+    # viscous_drag_forces = caddee_csdl_model.declare_variable(name='viscous_drag_forces', shape=(1, 3))
+    # caddee_csdl_model.connect(
+    #     'system_model.aircraft_trim.cruise_1.cruise_1.tbw_viscous_drag_model.F',
+    #     'viscous_drag_forces')
+    # total_aero_forces = vlm_forces + viscous_drag_forces
+    # caddee_csdl_model.register_output(name='total_aero_forces', var=total_aero_forces)
+    # total_aero_Fx = total_aero_forces[:, 0]
+    # total_aero_Fz = total_aero_forces[:, 2]
+    # LoverD = total_aero_Fz/total_aero_Fx
+    # caddee_csdl_model.register_output(name='LoverD', var=LoverD)
+
 
     # region Optimization Setup
     caddee_csdl_model.add_objective('system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual')
@@ -430,27 +474,69 @@ def trim_at_1g():
     sim = Simulator(caddee_csdl_model, analytics=True)
     # VLM - reference point 
     sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.evaluation_pt'] = np.array([0., 0., 2.8])
+
     sim.run()
     #sim.compute_total_derivatives()
     #sim.check_totals()
-
-    print('Total forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_forces'])
-    print('Total moments:', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_moments'])
-    print('Total_cl',sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.total_CL'])
 
     prob = CSDLProblem(problem_name='lpc', simulator=sim)
     optimizer = SLSQP(prob, maxiter=1000, ftol=1E-10)
     optimizer.solve()
     optimizer.print_results()
 
+    # region Outputs of CL, CD, L/D
+
+    # region CL
+    CL_total = sim[
+        'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.total_CL']
+    CL_wing = sim[
+        f'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.{wing_vlm_mesh_name}_C_L_total']
+    print('Total CL: ', CL_total)
+    print('Wing CL: ', CL_wing)
+    # endregion
+
+    # region VLM CD
+    CD_vlm_total = sim[
+        'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.total_CD']
+    CD_vlm_wing = sim[
+        f'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.{wing_vlm_mesh_name}_C_D_total']
+    print('Total VLM CD: ', CD_vlm_total)
+    print('Wing VLM CD: ', CD_vlm_wing)
+    # endregion
+
+    # region Wing Viscous Drag Coefficient
+    Cf = sim['system_model.aircraft_trim.cruise_1.cruise_1.tbw_viscous_drag_model.Cf']
+    print('Cf: ', Cf)
+    # endregion
+
+    # region VLM L/D
+    LoverD_vlm_total = sim[
+        'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.L_over_D']
+    LoverD_vlm_wing = sim[
+        f'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.{wing_vlm_mesh_name}_L_over_D']
+    print('Total VLM L/D: ', LoverD_vlm_total)
+    print('Wing VLM L/D: ', LoverD_vlm_wing)
+    # endregion
+
+    print('Total wing CD: ', sim['wing_total_CD'])
+    print('Total wing L/D: ' , CL_wing/sim['wing_total_CD'])
+    # endregion
+
+    # region Outputs of forces and moments
+
+    print('VLM forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.F'])
+    print('Viscous drag forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.tbw_viscous_drag_model.F'])
+
+    print('Total forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_forces'])
+    print('Total moments:', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_moments'])
+    # endregion
+
     print('Trim residual: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual'])
-    print('Trim forces: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_forces'])
-    print('Trim moments:', sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.total_moments'])
     print('Horizontal tail actuation: ', np.rad2deg(sim['system_parameterization.ffd_set.rotational_section_properties_model.h_tail_act']))
     print('pitch: ', np.rad2deg(sim['system_model.aircraft_trim.cruise_1.cruise_1.cruise_1_ac_states_operation.cruise_1_pitch_angle']))
-    print('Total_cl',sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.total_CL'])
     print('throttle', sim['system_model.aircraft_trim.cruise_1.cruise_1.tbw_prop_model.throttle'])
-    print('L_over_D',sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.L_over_D'])
+
+    return
 
 def trim_at_2_point_5g():
     caddee = cd.CADDEE()
@@ -1269,6 +1355,6 @@ def structural_wingbox_beam_evaluation():
 
 
 if __name__ == '__main__':
-    #trim_at_1g()
-    trim_at_2_point_5g()
+    trim_at_1g()
+    # trim_at_2_point_5g()
     #structural_wingbox_beam_evaluation()
