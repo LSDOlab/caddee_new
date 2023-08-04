@@ -32,6 +32,9 @@ class SystemConfigurationsCSDL(csdl.Model):
 
         for configuration_name, configuration in system_representation.configurations.items():
             counter = 1
+            if not configuration.transformations:
+                self.register_output(configuration_name + '_geometry', design_geometry*1)
+
             for transformation_name, transformation in configuration.transformations.items():
                 precribed_rotation_model = PrescribedRotationCSDL(configuration=configuration, prescribed_rotation=transformation)
                 # self.add(submodel=precribed_rotation_model, name=transformation_name,
