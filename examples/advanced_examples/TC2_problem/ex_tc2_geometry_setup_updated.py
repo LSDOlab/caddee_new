@@ -7,6 +7,7 @@ from caddee.core.caddee_core.system_representation.prescribed_actuations import 
 from caddee import IMPORTS_FILES_FOLDER
 import array_mapper as am
 import time
+from caddee import PROJECTIONS_FOLDER
 
 
 lpc_rep = cd.SystemRepresentation()
@@ -1355,6 +1356,16 @@ new_chord_surface_2[:, :, 2] = x_interp_z_2.T
 wing_upper_surface_ml = wing.project(new_chord_surface + np.array([0., 0., 0.5]), direction=np.array([0., 0., -1.]), grid_search_n=75, plot=False, max_iterations=200)
 wing_lower_surface_ml = wing.project(new_chord_surface - np.array([0., 0., 0.5]), direction=np.array([0., 0., 1.]), grid_search_n=100, plot=False, max_iterations=200)
 
+# wing_primitive_names = list(spatial_rep.get_primitives(search_names=['Wing']).keys())
+# import copy
+# # Manual surface identification
+# if True:
+#     for key in wing_primitive_names:
+#         surfaces = copy.deepcopy(wing_primitive_names)
+#         surfaces.remove(key)
+#         print(key)
+#         spatial_rep.plot(primitives=surfaces)
+# exit()
 wing_upper_surface_ml_2 = wing.project(new_chord_surface_2 + np.array([0., 0., 0.5]), direction=np.array([0., 0., -1.]), grid_search_n=75, plot=False, max_iterations=200)
 wing_lower_surface_ml_2 = wing.project(new_chord_surface_2 - np.array([0., 0., 0.5]), direction=np.array([0., 0., 1.]), grid_search_n=100, plot=False, max_iterations=200)
 
@@ -1374,6 +1385,18 @@ wing_oml_mesh_ml = am.vstack((wing_upper_surface_ml, wing_lower_surface_ml))
 # spatial_rep.plot_meshes([wing_camber_surface])
 # endregion
 
+# ml_nodes = wing_oml_mesh_ml.value.reshape((num_ml_points*2*num_spanwise_ml, 3), order='F')
+# ml_nodes_correct = np.zeros(ml_nodes.shape)
+# for i in range(num_spanwise_ml):
+#     ml_nodes_correct[i*100:i*100+100] = ml_nodes[i*200:i*200+100]
+#     ml_nodes_correct[i*100+100*num_spanwise_ml:i*100+100*num_spanwise_ml+100] = ml_nodes[i*200+100:i*200+200]
+# ml_nodes = ml_nodes_correct
+# ml_nodes_parametric = wing.project(ml_nodes, properties=['parametric_coordinates'], force_reprojection=False)
+# import pickle
+
+# with open(PROJECTIONS_FOLDER /  'wing_cp_projections.pcikle', 'wb+') as handle:
+#     pickle.dump(ml_nodes_parametric, handle, protocol=pickle.HIGHEST_PROTOCOL)
+# exit()
 # region wing beam mesh
 point00 = np.array([12.356, 25.250, 7.618 + 0.1]) 
 point01 = np.array([13.400, 25.250, 7.617 + 0.1]) 

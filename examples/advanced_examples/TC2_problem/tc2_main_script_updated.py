@@ -3371,33 +3371,33 @@ system_m3l_model.register_output(htail_oml_pressure_lower, design_condition=clim
 
 # ASK_MW: idk what to do here, something wrong with parametric grid
 build_cp_index_function(wing, 10, climb_1, system_m3l_model, wing_cp_index_functions, wing_oml_pressure_upper, wing_oml_pressure_lower)
-# vstack = m3l.VStack()
-# wing_oml_pressure = vstack.evaluate(wing_oml_pressure_upper, wing_oml_pressure_lower)
-# import pickle
-# from caddee import PROJECTIONS_FOLDER
-# with open(PROJECTIONS_FOLDER /  'wing_cp_projections.pcikle', 'rb') as f:
-#         nodes_parametric = pickle.load(f)
-# counter = 0
-# for item in nodes_parametric:
-#     new_tuple = (item[0], item[1].reshape(1, 2)) 
-#     nodes_parametric[counter] = new_tuple
-#     counter += 1
+vstack = m3l.VStack()
+wing_oml_pressure = vstack.evaluate(wing_oml_pressure_upper, wing_oml_pressure_lower)
+import pickle
+from caddee import PROJECTIONS_FOLDER
+with open(PROJECTIONS_FOLDER /  'wing_cp_projections.pcikle', 'rb') as f:
+        nodes_parametric = pickle.load(f)
+counter = 0
+for item in nodes_parametric:
+    new_tuple = (item[0], item[1].reshape(1, 2)) 
+    nodes_parametric[counter] = new_tuple
+    counter += 1
 # =--==-=-=-=-=-=-=-=-=- index function for visualiztion climb_1 =--==-=-=-=-=-=-=-=-=-
-# from m3l.utils.utils import index_functions
-# surface_names = list(wing.get_primitives().keys())
-# grid_num = 10
-# para_grid = []
-# for name in surface_names:
-#     for u in np.linspace(0,1,grid_num):
-#         for v in np.linspace(0,1,grid_num):
-#             para_grid.append((name, np.array([u,v]).reshape((1,2))))
-# # evaluated_parametric = lpc_rep.spatial_representation.evaluate_parametric(para_grid)
-# blinespace = lg.BSplineSpace(name='cp_climb_1_spline_space', order=(2, 3), control_points_shape=(5, 5))
-# # blinespace = lg.BSplineSpace(name='displacements_spline_space_qst_3_rli_disk', order=(3), control_points_shape=(5))
-# cp_descent_1_index = index_functions(surface_names, 'cp_climb_1', blinespace, 1)
-# cp_descent_1_index.inverse_evaluate(nodes_parametric, wing_oml_pressure, regularization_coeff = 1e-2)
-# system_m3l_model.register_output(cp_descent_1_index.coefficients, design_condition=climb_1)
-# wing_cp_index_functions['Climb'] = cp_descent_1_index
+from m3l.utils.utils import index_functions
+surface_names = list(wing.get_primitives().keys())
+grid_num = 10
+para_grid = []
+for name in surface_names:
+    for u in np.linspace(0,1,grid_num):
+        for v in np.linspace(0,1,grid_num):
+            para_grid.append((name, np.array([u,v]).reshape((1,2))))
+# evaluated_parametric = lpc_rep.spatial_representation.evaluate_parametric(para_grid)
+blinespace = lg.BSplineSpace(name='cp_climb_1_spline_space', order=(2, 3), control_points_shape=(5, 5))
+# blinespace = lg.BSplineSpace(name='displacements_spline_space_qst_3_rli_disk', order=(3), control_points_shape=(5))
+cp_descent_1_index = index_functions(surface_names, 'cp_climb_1', blinespace, 1)
+cp_descent_1_index.inverse_evaluate(nodes_parametric, wing_oml_pressure, regularization_coeff = 1e-2)
+system_m3l_model.register_output(cp_descent_1_index.coefficients, design_condition=climb_1)
+wing_cp_index_functions['Climb'] = cp_descent_1_index
 # =--==-=-=-=-=-=-=-=-=- index function for visualiztion =--==-=-=-=-=-=-=-=-=-
 
 vlm_force_mapping_model = VASTNodalForces(
