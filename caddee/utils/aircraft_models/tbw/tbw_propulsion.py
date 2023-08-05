@@ -90,7 +90,7 @@ class tbwPropulsionModelCSDL(ModuleCSDL):
         z = self.declare_variable(name='z',
                                   shape=(num_nodes, 1), units='rad', val=0)
 
-        T = 2*19467 * throttle + x*y*z*gamma*psi*theta*u*v*w*p*q*r*phi*0
+        T = 15*19467 * throttle + x*y*z*gamma*psi*theta*u*v*w*p*q*r*phi*0
         self.register_output(name='T', var=T)
 
 

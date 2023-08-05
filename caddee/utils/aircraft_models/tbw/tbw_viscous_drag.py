@@ -33,12 +33,16 @@ class TbwViscousDragModelCSDL(ModuleCSDL):
         self.parameters.declare(name='name', default='viscous_drag')
         self.parameters.declare('num_nodes', default=1)
         self.parameters.declare('geometry_units', default='m')
+        self.parameters.declare(name='reference_area', default=137.3107)  # 1478 ft^2 = 137.3107 m^2
+        # self.parameters.declare(name='wing_viscous_cf', default=0.00185)
+        self.parameters.declare(name='wing_viscous_cf', default=0.02)
         return
 
     def define(self):
         name = self.parameters['name']
         num_nodes = self.parameters['num_nodes']
         geometry_units = self.parameters['geometry_units']
+        reference_area_m2 = self.parameters['reference_area']
 
         rho = 1.225  # kg/m^3
         kinematic_viscosity = 1.4207E-5  # m^2/s
@@ -52,9 +56,15 @@ class TbwViscousDragModelCSDL(ModuleCSDL):
         chord = self.register_module_input('chord',
                                           shape=(num_nodes, 1),
                                           computed_upstream=False)
+
         if geometry_units == 'ft':
-            area = area * ft2_2_m2
-            chord = chord * ft2m
+            area_m2 = area * ft2_2_m2
+            chord_m = chord * ft2m
+        elif geometry_units == 'm':
+            area_m2 = area * 1.
+            chord_m = chord * 1.
+        else:
+            raise IOError
 
         u = self.declare_variable(name='u',
                                   shape=(num_nodes, 1), units='rad', val=1)
@@ -90,11 +100,16 @@ class TbwViscousDragModelCSDL(ModuleCSDL):
         VTAS = (u**2 + v**2 + w**2)**0.5 + (p+q+r+phi+theta+psi+gamma+x+y+z) * 0
         qBar = 0.5 * rho * VTAS**2
 
-        Re = VTAS*chord/kinematic_viscosity
-        Cf = ( 0.664 / (Re)**0.5 ) * 0 + 0.00185
+        Re = VTAS*chord_m/kinematic_viscosity
+
+        area_fraction = area_m2 / reference_area_m2
+        self.register_output('area_fraction', var=area_fraction)
+        self.print_var(var=area_fraction)
+
+        Cf = ( 0.664 / (Re)**0.5 ) * 0 + self.parameters['wing_viscous_cf']*area_fraction
         self.register_output(name='Cf', var=Cf)
 
-        D = qBar * Cf * area
+        D = qBar * Cf * area_m2
         self.register_output(name='D', var=D)
 
         F = self.create_output(name='F', shape=(num_nodes, 3), val=0)
