@@ -215,7 +215,8 @@ class PavGeomMesh:
 
     def setup_internal_wingbox_geometry(self,
                                         debug_geom_flag=False,
-                                        force_reprojection=False):
+                                        force_reprojection=False,
+                                        fewer_ribs=False):
 
         spatial_rep = self.sys_rep.spatial_representation
 
@@ -246,22 +247,26 @@ class PavGeomMesh:
 
         avg_spar_spacing = (np.linalg.norm(root_25 - root_75) + np.linalg.norm(tip_25 - tip_75)) / 2
         half_span = root_le[1] - tip_le[1]
-        num_ribs = int(spar_rib_spacing_ratio * half_span / avg_spar_spacing) + 1
-
-        f_spar_projection_points = np.linspace(root_25, tip_25, num_ribs)
-        r_spar_projection_points = np.linspace(root_75, tip_75, num_ribs)
+        if fewer_ribs:
+            num_ribs = 6
+            f_spar_projection_points = np.array([root_25,root_25+0.1143*(tip_25-root_25),root_25+0.2115*(tip_25-root_25),root_25+0.4944*(tip_25-root_25),root_25+0.7772*(tip_25-root_25),tip_25])
+            r_spar_projection_points = np.array([root_75,root_75+0.1143*(tip_75-root_75),root_75+0.2115*(tip_75-root_75),root_75+0.4944*(tip_75-root_75),root_75+0.7772*(tip_75-root_75),tip_75])
+        else:
+            num_ribs = int(spar_rib_spacing_ratio * half_span / avg_spar_spacing) + 1
+            f_spar_projection_points = np.linspace(root_25, tip_25, num_ribs)
+            r_spar_projection_points = np.linspace(root_75, tip_75, num_ribs)
 
         rib_projection_points = np.linspace(f_spar_projection_points, r_spar_projection_points, num_rib_pts)
 
-        f_spar_top = wing_left_top.project(f_spar_projection_points, plot=debug_geom_flag,
-                                           force_reprojection=force_reprojection)
-        f_spar_bottom = wing_left_bottom.project(f_spar_projection_points, plot=debug_geom_flag,
-                                                 force_reprojection=force_reprojection)
+        # f_spar_top = wing_left_top.project(f_spar_projection_points, plot=debug_geom_flag,
+        #                                    force_reprojection=force_reprojection)
+        # f_spar_bottom = wing_left_bottom.project(f_spar_projection_points, plot=debug_geom_flag,
+        #                                          force_reprojection=force_reprojection)
 
-        r_spar_top = wing_left_top.project(r_spar_projection_points, plot=debug_geom_flag,
-                                           force_reprojection=force_reprojection)
-        r_spar_bottom = wing_left_bottom.project(r_spar_projection_points, plot=debug_geom_flag,
-                                                 force_reprojection=force_reprojection)
+        # r_spar_top = wing_left_top.project(r_spar_projection_points, plot=debug_geom_flag,
+        #                                    force_reprojection=force_reprojection)
+        # r_spar_bottom = wing_left_bottom.project(r_spar_projection_points, plot=debug_geom_flag,
+        #                                          force_reprojection=force_reprojection)
 
         ribs_top = wing_left_top.project(rib_projection_points, direction=[0., 0., 1.], plot=debug_geom_flag,
                                          grid_search_n=100, force_reprojection=force_reprojection)
@@ -736,7 +741,6 @@ class PavGeomMesh:
                 ffd_blocks={htail_ffd_block.name: htail_ffd_block}
             )
             self.sys_param.add_geometry_parameterization(ffd_set)
-        # endregion
         return
 
     def beam_mesh(self,
