@@ -4,6 +4,7 @@ import m3l
 from python_csdl_backend import Simulator
 # from modopt.snopt_library import SNOPT
 from modopt.scipy_library import SLSQP
+from modopt.optimization_algorithms import SQP
 from modopt.csdl_library import CSDLProblem
 import csdl
 import lsdo_geo as lg
@@ -548,7 +549,8 @@ debug_geom_flag = False
 def trim_at_1g_with_geom_dvs(wing_span_input=170.,  # ft
                              wing_tip_linear_translation_input=0., # ft
                              visualize_flag=False,
-                             trim_flag=True
+                             trim_flag=True,
+                             shape_opt_flag=False,
                              ):
     caddee = cd.CADDEE()
     caddee.system_model = system_model = cd.SystemModel()
@@ -1070,14 +1072,14 @@ def trim_at_1g_with_geom_dvs(wing_span_input=170.,  # ft
     # Wing span
     # caddee_csdl_model.create_input(name='wing_span', val=160.08993301)
     caddee_csdl_model.create_input(name='wing_span', val=wing_span_input)
-    if not trim_flag:
+    if trim_flag and shape_opt_flag:
         caddee_csdl_model.add_design_variable(dv_name='wing_span', lower=140., upper=200., scaler=1e-2)
 
     # Wing sweep
     wing_tip_translation = caddee_csdl_model.create_input(name='wing_tip_linear_translation',
                                                           val=wing_tip_linear_translation_input)
-    if not trim_flag:
-        caddee_csdl_model.add_design_variable(dv_name='wing_tip_linear_translation', lower=-10., upper=10., scaler=1e-1)
+    if trim_flag and shape_opt_flag:
+        caddee_csdl_model.add_design_variable(dv_name='wing_tip_linear_translation', lower=-20., upper=10., scaler=1e-1)
 
     ffd_block_translations_for_sweep = caddee_csdl_model.create_output(name='wing_strut_jury_translation',
                                                                        shape=(3,), val=0.)
@@ -1111,6 +1113,8 @@ def trim_at_1g_with_geom_dvs(wing_span_input=170.,  # ft
         f'system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.{wing_vlm_mesh_name}_C_D_total',
         'wing_cd_vlm'
     )
+    wing_cd_vlm = wing_cd_vlm + vlm_cd_additive_correction
+
     wing_cf_viscous = caddee_csdl_model.declare_variable(name='wing_cf_viscous')
     caddee_csdl_model.connect(
         'system_model.aircraft_trim.cruise_1.cruise_1.tbw_viscous_drag_model.Cf',
@@ -1125,8 +1129,15 @@ def trim_at_1g_with_geom_dvs(wing_span_input=170.,  # ft
                               'system_model.aircraft_trim.cruise_1.cruise_1.tbw_viscous_drag_model.area')
 
     # region Optimization Setup
-    caddee_csdl_model.add_objective(
-        'system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual')
+    if trim_flag and not shape_opt_flag:
+        caddee_csdl_model.add_objective(
+            'system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual')
+    elif trim_flag and shape_opt_flag:
+        caddee_csdl_model.add_objective(name='wing_cd_total', scaler=1e2)
+        caddee_csdl_model.add_constraint(
+            'system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual', equals=0.)
+    else:
+        raise IOError
     # caddee_csdl_model.add_constraint(
     #     name='system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.total_CL',
     #     equals=0.766)
@@ -1144,30 +1155,30 @@ def trim_at_1g_with_geom_dvs(wing_span_input=170.,  # ft
         [0., 0., 2.8])
 
     sim.run()
-    # sim.compute_total_derivatives()
-    # sim.check_totals()
+    sim.compute_total_derivatives()
+    sim.check_totals(step=1e-2)
+    # exit()
 
-    if visualize_flag:
-        geom = sim['design_geometry']
-        spatial_rep.update(geom)
-        strut_right_camber_surface.evaluate(input=geom)
-        strut_left_camber_surface.evaluate(input=geom)
-        wing_camber_surface.evaluate(input=geom)
-        htail_camber_surface.evaluate(input=geom)
-        spatial_rep.plot_meshes(
-            [strut_right_camber_surface, strut_left_camber_surface, wing_camber_surface, htail_camber_surface])
-
-    if trim_flag:
-        prob = CSDLProblem(problem_name='tbw_shape_opt', simulator=sim)
+    if trim_flag and not shape_opt_flag:
+        prob = CSDLProblem(problem_name='tbw_1g_trim', simulator=sim)
         optimizer = SLSQP(prob, maxiter=1000, ftol=1E-10)
         optimizer.solve()
         optimizer.print_results()
         assert optimizer.scipy_output.success
         assert sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual'] < 1e-2
+    elif trim_flag and shape_opt_flag:
+        prob = CSDLProblem(problem_name='tbw_shape_opt', simulator=sim)
+        # optimizer = SLSQP(prob, maxiter=1000, ftol=1E-10)
+        optimizer = SQP(prob, max_itr=500, opt_tol=1E-6, feas_tol=1e-6)
+        optimizer.solve()
+        optimizer.print_results()
+        # assert optimizer.scipy_output.success
+        assert sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual'] < 1e-2
 
     # region Geometric outputs
     print('Wing chord surface area (ft^2): ', sim['wing_chord_surface_area'])
     print('Wing span (ft): ', sim['wing_span'])
+    print('Tip translation (ft): ', sim['wing_tip_linear_translation'])
     # endregion
 
     # region Outputs of CL, CD, L/D
@@ -1248,6 +1259,16 @@ def trim_at_1g_with_geom_dvs(wing_span_input=170.,  # ft
     }
     # endregion
 
+    if visualize_flag:
+        geom = sim['design_geometry']
+        spatial_rep.update(geom)
+        strut_right_camber_surface.evaluate(input=geom)
+        strut_left_camber_surface.evaluate(input=geom)
+        wing_camber_surface.evaluate(input=geom)
+        htail_camber_surface.evaluate(input=geom)
+        spatial_rep.plot_meshes(
+            [strut_right_camber_surface, strut_left_camber_surface, wing_camber_surface, htail_camber_surface])
+
     return output_dict
 
 
@@ -1303,55 +1324,55 @@ def shape_vars_sweeps_at_1g():
     print(span_sweep_df)
     # endregion
 
-    # # region Sweep over wing sweep
-    # # tip_translation_list = np.linspace(-30, 30, num=7)
-    # tip_translation_list = [0., ]
-    #
-    # sweep_sweep_span_output = np.empty(len(tip_translation_list))
-    # sweep_sweep_tip_translation_output = np.empty(len(tip_translation_list))
-    # sweep_sweep_area_output = np.empty(len(tip_translation_list))
-    # sweep_sweep_vlm_cl_output = np.empty(len(tip_translation_list))
-    # sweep_sweep_vlm_cd_output = np.empty(len(tip_translation_list))
-    # sweep_sweep_cf_output = np.empty(len(tip_translation_list))
-    # sweep_sweep_total_cd_output = np.empty(len(tip_translation_list))
-    # sweep_sweep_vlm_drag_output = np.empty(len(tip_translation_list))
-    # sweep_sweep_viscous_drag_output = np.empty(len(tip_translation_list))
-    # sweep_sweep_total_drag_output = np.empty(len(tip_translation_list))
-    #
-    # for idx, tip_translation in enumerate(tip_translation_list):
-    #     output_dict = trim_at_1g_with_geom_dvs(wing_tip_linear_translation_input=tip_translation,
-    #                                            trim_flag=True,
-    #                                            visualize_flag=True)
-    #     print(output_dict)
-    #     sweep_sweep_span_output[idx] = output_dict['wing_span']
-    #     sweep_sweep_tip_translation_output[idx] = output_dict['wing_tip_translation']
-    #     sweep_sweep_area_output[idx] = output_dict['wing_area']
-    #     sweep_sweep_vlm_cl_output[idx] = output_dict['wing_vlm_CL']
-    #     sweep_sweep_vlm_cd_output[idx] = output_dict['wing_vlm_CD']
-    #     sweep_sweep_cf_output[idx] = output_dict['wing_Cf']
-    #     sweep_sweep_total_cd_output[idx] = output_dict['wing_CD_total']
-    #     sweep_sweep_vlm_drag_output[idx] = output_dict['wing_vlm_drag']
-    #     sweep_sweep_viscous_drag_output[idx] = output_dict['wing_viscous_drag']
-    #     sweep_sweep_total_drag_output[idx] = output_dict['wing_total_drag']
-    #     input("Press Enter to continue...")
-    #
-    # sweep_sweep_df = pd.DataFrame(
-    #     data={
-    #         'Span (ft)': span_sweep_span_output,
-    #         'Tip translation (ft)': sweep_sweep_tip_translation_output,
-    #         'Area (ft^2)': sweep_sweep_area_output,
-    #         'VLM CL': sweep_sweep_vlm_cl_output,
-    #         'VLM CD': sweep_sweep_vlm_cd_output,
-    #         'Cf': sweep_sweep_cf_output,
-    #         'Total CD': sweep_sweep_total_cd_output,
-    #         'VLM drag (N)': sweep_sweep_vlm_drag_output,
-    #         'Viscous drag (N)': sweep_sweep_viscous_drag_output,
-    #         'Total drag (N)': sweep_sweep_total_drag_output,
-    #     }
-    # )
-    # sweep_sweep_df.to_excel(f'TbwGeomDvSweeps_Sweep.xlsx')
-    # print(sweep_sweep_df)
-    # # endregion
+    # region Sweep over wing sweep
+    # tip_translation_list = np.linspace(-20, 10, num=5)
+    tip_translation_list = [0., ]
+
+    sweep_sweep_span_output = np.empty(len(tip_translation_list))
+    sweep_sweep_tip_translation_output = np.empty(len(tip_translation_list))
+    sweep_sweep_area_output = np.empty(len(tip_translation_list))
+    sweep_sweep_vlm_cl_output = np.empty(len(tip_translation_list))
+    sweep_sweep_vlm_cd_output = np.empty(len(tip_translation_list))
+    sweep_sweep_cf_output = np.empty(len(tip_translation_list))
+    sweep_sweep_total_cd_output = np.empty(len(tip_translation_list))
+    sweep_sweep_vlm_drag_output = np.empty(len(tip_translation_list))
+    sweep_sweep_viscous_drag_output = np.empty(len(tip_translation_list))
+    sweep_sweep_total_drag_output = np.empty(len(tip_translation_list))
+
+    for idx, tip_translation in enumerate(tip_translation_list):
+        output_dict = trim_at_1g_with_geom_dvs(wing_tip_linear_translation_input=tip_translation,
+                                               trim_flag=True,
+                                               visualize_flag=False)
+        print(output_dict)
+        sweep_sweep_span_output[idx] = output_dict['wing_span']
+        sweep_sweep_tip_translation_output[idx] = output_dict['wing_tip_translation']
+        sweep_sweep_area_output[idx] = output_dict['wing_area']
+        sweep_sweep_vlm_cl_output[idx] = output_dict['wing_vlm_CL']
+        sweep_sweep_vlm_cd_output[idx] = output_dict['wing_vlm_CD']
+        sweep_sweep_cf_output[idx] = output_dict['wing_Cf']
+        sweep_sweep_total_cd_output[idx] = output_dict['wing_CD_total']
+        sweep_sweep_vlm_drag_output[idx] = output_dict['wing_vlm_drag']
+        sweep_sweep_viscous_drag_output[idx] = output_dict['wing_viscous_drag']
+        sweep_sweep_total_drag_output[idx] = output_dict['wing_total_drag']
+        # input("Press Enter to continue...")
+
+    sweep_sweep_df = pd.DataFrame(
+        data={
+            'Span (ft)': sweep_sweep_span_output,
+            'Tip translation (ft)': sweep_sweep_tip_translation_output,
+            'Area (ft^2)': sweep_sweep_area_output,
+            'VLM CL': sweep_sweep_vlm_cl_output,
+            'VLM CD': sweep_sweep_vlm_cd_output,
+            'Cf': sweep_sweep_cf_output,
+            'Total CD': sweep_sweep_total_cd_output,
+            'VLM drag (N)': sweep_sweep_vlm_drag_output,
+            'Viscous drag (N)': sweep_sweep_viscous_drag_output,
+            'Total drag (N)': sweep_sweep_total_drag_output,
+        }
+    )
+    sweep_sweep_df.to_excel(f'TbwGeomDvSweeps_Sweep.xlsx')
+    print(sweep_sweep_df)
+    # endregion
 
     return
 
@@ -2173,7 +2194,11 @@ def structural_wingbox_beam_evaluation():
 
 
 if __name__ == '__main__':
+    vlm_cd_additive_correction = 0.01
     # trim_at_1g()
-    shape_vars_sweeps_at_1g()
+    # shape_vars_sweeps_at_1g()
+    trim_at_1g_with_geom_dvs(trim_flag=True,
+                             shape_opt_flag=True,
+                             visualize_flag=True)
     # trim_at_2_point_5g()
     #structural_wingbox_beam_evaluation()
