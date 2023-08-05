@@ -774,8 +774,8 @@ class SpatialRepresentation:
         if show:
             
 
-            plotter = vedo.Plotter(size=(3200,2000))
-            # plotter = vedo.Plotter()
+            # plotter = vedo.Plotter(size=(3200,2000))
+            plotter = vedo.Plotter()
             plotter.show(plotting_elements, 'Meshes', axes=1, viewup="z", interactive=True, camera=camera)
             return plotting_elements
         else:
