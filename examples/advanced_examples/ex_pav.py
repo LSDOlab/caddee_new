@@ -123,7 +123,7 @@ def vlm_as_ll():
         raise ValueError
     return
 
-def tuning_cl0(cl0_expected=0.57965,
+def tuning_cl0(cl0_expected=0.61753,
                debug_geom_flag = False, visualize_flag = False):
     """
     Fixing the number of chordwise VLM panels
@@ -508,7 +508,7 @@ def trim_at_cruise(wing_cl0=0.3662):
                                dv_flag=True,
                                lower=np.deg2rad(5), upper=np.deg2rad(85), scaler=1
                                )
-    bem_forces, bem_moments, _, _, _, _ = bem_model.evaluate(ac_states=cruise_ac_states)
+    bem_forces, bem_moments, _, _, _, _, _, _ = bem_model.evaluate(ac_states=cruise_ac_states)
     cruise_model.register_output(bem_forces)
     cruise_model.register_output(bem_moments)
     # endregion
@@ -627,9 +627,9 @@ def trim_at_cruise(wing_cl0=0.3662):
     print('Cruise prop chord cp: ', chord_cp)
 
     tolerence = 1e-4
-    if (pitch_angle - (-0.38129494)) ** 2 > tolerence or \
-            (rpm - 2877.73471511) ** 2 > tolerence or \
-            (tail_actuation - (-0.07463752)) ** 2 > tolerence:
+    if (pitch_angle - (-0.8008331)) ** 2 > tolerence or \
+            (rpm - 2880.90131068) ** 2 > tolerence or \
+            (tail_actuation - (0.3148777)) ** 2 > tolerence:
         raise ValueError
     return twist_cp, chord_cp
 
@@ -718,7 +718,7 @@ def trim_at_n1g(wing_cl0=0.3662,
     bem_model.set_module_input('thrust_origin', val=np.array([19.700, 0., 2.625])* ft2m)
     bem_model.set_module_input('chord_cp', val=pusher_prop_chord_cp)
     bem_model.set_module_input('twist_cp', val=pusher_prop_twist_cp)
-    bem_forces, bem_moments, _, _, _, _ = bem_model.evaluate(ac_states=cruise_ac_states)
+    bem_forces, bem_moments, _, _, _, _, _, _ = bem_model.evaluate(ac_states=cruise_ac_states)
     cruise_model.register_output(bem_forces)
     cruise_model.register_output(bem_moments)
     # endregion
@@ -909,7 +909,7 @@ def optimize_lift_rotor_blade(expected_thrust=980.665,
                                      dv_flag=True,
                                      lower=np.deg2rad(0), upper=np.deg2rad(85), scaler=1
                                      )
-    lr_r1_bem_forces, lr_r1_bem_moments, _, _, _, _ = lr_r1_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_r1_bem_forces, lr_r1_bem_moments, _, _, _, _, _, _ = lr_r1_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_r1_bem_forces)
     hover_model.register_output(lr_r1_bem_moments)
     # endregion
@@ -1119,7 +1119,7 @@ def trim_at_hover(twist_cp=np.array([0.36388453, 0.24775229, 0.1752334,  0.10173
     lr_r1_bem_model.set_module_input('thrust_origin', val=np.array([-1.146, 1.619, -0.162]))  # m
     lr_r1_bem_model.set_module_input('chord_cp', val=chord_cp)
     lr_r1_bem_model.set_module_input('twist_cp', val=twist_cp)
-    lr_r1_bem_forces, lr_r1_bem_moments, _, _, _, _ = lr_r1_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_r1_bem_forces, lr_r1_bem_moments,_, _, _, _, _, _ = lr_r1_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_r1_bem_forces)
     hover_model.register_output(lr_r1_bem_moments)
     # endregion
@@ -1144,7 +1144,7 @@ def trim_at_hover(twist_cp=np.array([0.36388453, 0.24775229, 0.1752334,  0.10173
     lr_r2_bem_model.set_module_input('thrust_origin', val=np.array([1.597, 1.619, -0.162]))  # m
     lr_r2_bem_model.set_module_input('chord_cp', val=chord_cp)
     lr_r2_bem_model.set_module_input('twist_cp', val=twist_cp)
-    lr_r2_bem_forces, lr_r2_bem_moments, _, _, _, _ = lr_r2_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_r2_bem_forces, lr_r2_bem_moments,_, _, _, _, _, _ = lr_r2_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_r2_bem_forces)
     hover_model.register_output(lr_r2_bem_moments)
     # endregion
@@ -1169,7 +1169,7 @@ def trim_at_hover(twist_cp=np.array([0.36388453, 0.24775229, 0.1752334,  0.10173
     lr_r3_bem_model.set_module_input('thrust_origin', val=np.array([4.877, 1.619, -0.162]))  # m
     lr_r3_bem_model.set_module_input('chord_cp', val=chord_cp)
     lr_r3_bem_model.set_module_input('twist_cp', val=twist_cp)
-    lr_r3_bem_forces, lr_r3_bem_moments, _, _, _, _ = lr_r3_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_r3_bem_forces, lr_r3_bem_moments,_, _, _, _, _, _ = lr_r3_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_r3_bem_forces)
     hover_model.register_output(lr_r3_bem_moments)
     # endregion
@@ -1194,7 +1194,7 @@ def trim_at_hover(twist_cp=np.array([0.36388453, 0.24775229, 0.1752334,  0.10173
     lr_r4_bem_model.set_module_input('thrust_origin', val=np.array([7.620, 1.619, -0.162]))  # m
     lr_r4_bem_model.set_module_input('chord_cp', val=chord_cp)
     lr_r4_bem_model.set_module_input('twist_cp', val=twist_cp)
-    lr_r4_bem_forces, lr_r4_bem_moments, _, _, _, _ = lr_r4_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_r4_bem_forces, lr_r4_bem_moments, _, _, _, _, _, _ = lr_r4_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_r4_bem_forces)
     hover_model.register_output(lr_r4_bem_moments)
     # endregion
@@ -1219,7 +1219,7 @@ def trim_at_hover(twist_cp=np.array([0.36388453, 0.24775229, 0.1752334,  0.10173
     lr_l1_bem_model.set_module_input('thrust_origin', val=np.array([-1.146, -1.619, -0.162]))  # m
     lr_l1_bem_model.set_module_input('chord_cp', val=chord_cp)
     lr_l1_bem_model.set_module_input('twist_cp', val=twist_cp)
-    lr_l1_bem_forces, lr_l1_bem_moments, _, _, _, _ = lr_l1_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_l1_bem_forces, lr_l1_bem_moments,_, _, _, _, _, _ = lr_l1_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_l1_bem_forces)
     hover_model.register_output(lr_l1_bem_moments)
     # endregion
@@ -1244,7 +1244,7 @@ def trim_at_hover(twist_cp=np.array([0.36388453, 0.24775229, 0.1752334,  0.10173
     lr_l2_bem_model.set_module_input('thrust_origin', val=np.array([1.597, -1.619, -0.162]))  # m
     lr_l2_bem_model.set_module_input('chord_cp', val=chord_cp)
     lr_l2_bem_model.set_module_input('twist_cp', val=twist_cp)
-    lr_l2_bem_forces, lr_l2_bem_moments, _, _, _, _ = lr_l2_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_l2_bem_forces, lr_l2_bem_moments,_, _, _, _, _, _ = lr_l2_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_l2_bem_forces)
     hover_model.register_output(lr_l2_bem_moments)
     # endregion
@@ -1269,7 +1269,7 @@ def trim_at_hover(twist_cp=np.array([0.36388453, 0.24775229, 0.1752334,  0.10173
     lr_l3_bem_model.set_module_input('thrust_origin', val=np.array([4.877, -1.619, -0.162]))  # m
     lr_l3_bem_model.set_module_input('chord_cp', val=chord_cp)
     lr_l3_bem_model.set_module_input('twist_cp', val=twist_cp)
-    lr_l3_bem_forces, lr_l3_bem_moments, _, _, _, _ = lr_l3_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_l3_bem_forces, lr_l3_bem_moments,_, _, _, _, _, _ = lr_l3_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_l3_bem_forces)
     hover_model.register_output(lr_l3_bem_moments)
     # endregion
@@ -1294,7 +1294,7 @@ def trim_at_hover(twist_cp=np.array([0.36388453, 0.24775229, 0.1752334,  0.10173
     lr_l4_bem_model.set_module_input('thrust_origin', val=np.array([7.620, -1.619, -0.162]))  # m
     lr_l4_bem_model.set_module_input('chord_cp', val=chord_cp)
     lr_l4_bem_model.set_module_input('twist_cp', val=twist_cp)
-    lr_l4_bem_forces, lr_l4_bem_moments, _, _, _, _ = lr_l4_bem_model.evaluate(ac_states=hover_ac_states)
+    lr_l4_bem_forces, lr_l4_bem_moments,_, _, _, _, _, _ = lr_l4_bem_model.evaluate(ac_states=hover_ac_states)
     hover_model.register_output(lr_l4_bem_forces)
     hover_model.register_output(lr_l4_bem_moments)
     # endregion
@@ -1606,6 +1606,7 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3662,
         optimizer = SLSQP(prob, maxiter=1000, ftol=1E-8)
         optimizer.solve()
         optimizer.print_results()
+        assert optimizer.scipy_output.success
 
     # region Results
 
@@ -1773,7 +1774,7 @@ def trim_at_3g(pusher_prop_twist_cp=np.array([1.10595917, 0.71818285, 0.47990602
     bem_model.set_module_input('thrust_origin', val=np.array([19.700, 0., 2.625])* ft2m)
     bem_model.set_module_input('chord_cp', val=pusher_prop_chord_cp)
     bem_model.set_module_input('twist_cp', val=pusher_prop_twist_cp)
-    bem_forces, bem_moments, _, _, _, _ = bem_model.evaluate(ac_states=cruise_ac_states)
+    bem_forces, bem_moments, _, _, _, _, _, _ = bem_model.evaluate(ac_states=cruise_ac_states)
     cruise_model.register_output(bem_forces)
     cruise_model.register_output(bem_moments)
     # endregion
@@ -1912,21 +1913,22 @@ def pav_visualization():
 
     m2ft = 3.28084
 
-    plots_minus1 = structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(-12.06291905), visualize_flag=False)
-    plots_plus1 = structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(-0.38129494), visualize_flag=False)
-    plots = structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.11391141), visualize_flag=False)
+    plots_minus1 = structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(-12.06291905), sizing_flag=True, visualize_flag=False)
+    plots_plus1 = structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(-0.38129494), sizing_flag=True, visualize_flag=False)
+    plots_plus3 = structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.11391141), sizing_flag=True, visualize_flag=False)
+    # exit()
 
-    caddee = plots['caddee']
-    sim = plots['sim']
+    caddee = plots_plus3['caddee']
+    sim = plots_plus3['sim']
     # list of displacements to add. The first one will plot thicknesses (3g) the rest will plot displacements
     # jig is the zero displacements
-    displacements = [plots['displ'], plots_minus1['displ'], plots_plus1['displ'], np.zeros_like(plots['displ'])]
-    beam_mesh = plots['beam_mesh']
-    web_t = plots['web_t']
-    cap_t = plots['cap_t']
-    width = plots['spanwise_width']
-    height = plots['spanwise_height']
-    forces_index_function = plots['forces_index_function']  # index function of pressure
+    displacements = [plots_plus3['displ'], plots_minus1['displ'], plots_plus1['displ'], np.zeros_like(plots_plus3['displ'])]
+    beam_mesh = plots_plus3['beam_mesh']
+    # web_t = plots['web_t']
+    # cap_t = plots['cap_t']
+    width = plots_plus3['spanwise_width']
+    height = plots_plus3['spanwise_height']
+    forces_index_function = plots_plus1['forces_index_function']  # index function of pressure
     rotor_origins = [
         np.array([-1.146, 1.619, -0.162]) * m2ft, # np.array([-3.000, 5.313, -0.530]),
         np.array([1.597, 1.619, -0.162]) * m2ft,  # np.array([3.500, 5.313, -0.530]),
@@ -1938,8 +1940,17 @@ def pav_visualization():
         np.array([7.620, -1.619, -0.162]) * m2ft,  # np.array([25.000, -5.313, -0.530]),
     ]  # origins of rotors to draw vector from
 
-    web_t = np.linspace(num=web_t.shape[0], start=0.01508, stop=0.02)
-    cap_t = np.linspace(num=web_t.shape[0], start=0.000508, stop=0.02)
+    print('-1g loads web thickness :', plots_minus1['web_t'])
+    print('-1g loads cap thickness :', plots_minus1['cap_t'])
+
+    print('1g loads web thickness :', plots_plus1['web_t'])
+    print('1g loads cap thickness :', plots_plus1['cap_t'])
+
+    print('3g loads web thickness :', plots_plus3['web_t'])
+    print('3g loads cap thickness :', plots_plus3['cap_t'])
+
+    web_t = plots_plus3['web_t']
+    cap_t = plots_plus3['cap_t']
 
     visualize_ex_pav(
         caddee,
@@ -1960,17 +1971,17 @@ if __name__ == '__main__':
     # cl0 = tuning_cl0()
     # vlm_evaluation_wing_only_aoa_sweep()
     # vlm_evaluation_wing_tail_aoa_sweep(visualize_flag=False)
-    # pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
-    # trim_at_n1g(
-    #     pusher_prop_twist_cp=pusher_prop_twist_cp,
-    #     pusher_prop_chord_cp=pusher_prop_chord_cp
-    # )
-    # trim_at_3g(
-    #     pusher_prop_twist_cp=pusher_prop_twist_cp,
-    #     pusher_prop_chord_cp=pusher_prop_chord_cp
-    # )
-    # optimize_lift_rotor_blade(debug_geom_flag=False)
-    # trim_at_hover()
+    pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
+    trim_at_n1g(
+        pusher_prop_twist_cp=pusher_prop_twist_cp,
+        pusher_prop_chord_cp=pusher_prop_chord_cp
+    )
+    trim_at_3g(
+        pusher_prop_twist_cp=pusher_prop_twist_cp,
+        pusher_prop_chord_cp=pusher_prop_chord_cp
+    )
+    optimize_lift_rotor_blade(debug_geom_flag=False)
+    trim_at_hover()
 
     structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.11391141),
                                        visualize_flag=False,
@@ -1978,4 +1989,4 @@ if __name__ == '__main__':
     # structural_wingbox_beam_sizing(pitch_angle=np.deg2rad(12.11391141))
     # structural_wingbox_shell_evaluation(pitch_angle=np.deg2rad(12.48100761), visualize_flag=False)
 
-    # pav_visualization()
+    pav_visualization()
