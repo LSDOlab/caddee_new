@@ -2,7 +2,7 @@
 import caddee.api as cd
 import m3l
 from python_csdl_backend import Simulator
-# from modopt.snopt_library import SNOPT
+from modopt.snopt_library import SNOPT
 from modopt.scipy_library import SLSQP
 from modopt.optimization_algorithms import SQP
 from modopt.csdl_library import CSDLProblem
@@ -196,13 +196,13 @@ def trim_at_1g_with_geom_dvs(wing_span_input=170.,  # ft
     # region meshes
 
     num_spanwise_wing = 31
-    num_chordwise_wing = 5
+    num_chordwise_wing = 2
 
     num_spanwise_strut = 21
-    num_chordwise_strut = 5
+    num_chordwise_strut = 2
 
     num_spanwise_htail = 21
-    num_chordwise_htail = 5
+    num_chordwise_htail = 2
 
     # region wing mesh
     mesh_flag_wing = False
@@ -432,7 +432,7 @@ def trim_at_1g_with_geom_dvs(wing_span_input=170.,  # ft
     cruise_condition.set_module_input(name='roll_angle', val=0)
     cruise_condition.set_module_input(name='yaw_angle', val=0)
     cruise_condition.set_module_input(name='wind_angle', val=0)
-    cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 500 * ft2m]))
+    cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 42000 * ft2m]))
 
     ac_states = cruise_condition.evaluate_ac_states()
     cruise_model.register_output(ac_states)
@@ -454,7 +454,8 @@ def trim_at_1g_with_geom_dvs(wing_span_input=170.,  # ft
         ],
         fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
         mesh_unit='ft',
-        cl0=[0.01, 0., 0., 0.]
+        cl0=[0.01, 0., 0., 0.],
+        ref_area=137.3107  # 1478 ft^2 = 137.3107 m^2
     )
 
     # aero forces and moments
@@ -619,11 +620,11 @@ def trim_at_1g_with_geom_dvs(wing_span_input=170.,  # ft
     # region Optimization Setup
     if trim_flag and not shape_opt_flag:
         caddee_csdl_model.add_objective(
-            'system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual')
+            'system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual', scaler=10)
     elif trim_flag and shape_opt_flag:
-        caddee_csdl_model.add_objective(name='wing_cd_total', scaler=1e2)
+        caddee_csdl_model.add_objective(name='wing_cd_total', scaler=1e1)
         caddee_csdl_model.add_constraint(
-            'system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual', equals=0.)
+            'system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual', equals=0., scaler=10)
     else:
         raise IOError
     # caddee_csdl_model.add_constraint(
@@ -645,7 +646,6 @@ def trim_at_1g_with_geom_dvs(wing_span_input=170.,  # ft
     sim.run()
     sim.compute_total_derivatives()
     sim.check_totals(step=1e-2)
-    exit()
 
     if trim_flag and not shape_opt_flag:
         prob = CSDLProblem(problem_name='tbw_1g_trim', simulator=sim)
@@ -653,15 +653,16 @@ def trim_at_1g_with_geom_dvs(wing_span_input=170.,  # ft
         optimizer.solve()
         optimizer.print_results()
         assert optimizer.scipy_output.success
-        assert sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual'] < 1e-2
+
     elif trim_flag and shape_opt_flag:
         prob = CSDLProblem(problem_name='tbw_shape_opt', simulator=sim)
         # optimizer = SLSQP(prob, maxiter=1000, ftol=1E-10)
         optimizer = SQP(prob, max_itr=500, opt_tol=1E-6, feas_tol=1e-6)
+        # optimizer = SNOPT(prob, Major_optimality=1e-6, Major_feasibility=1e-6, Major_iterations=500, append2file=True)
         optimizer.solve()
         optimizer.print_results()
         # assert optimizer.scipy_output.success
-        assert sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual'] < 1e-2
+        # assert sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual'] < 1e-2
 
     # region Geometric outputs
     print('Wing chord surface area (ft^2): ', sim['wing_chord_surface_area'])
@@ -730,8 +731,8 @@ def trim_at_1g_with_geom_dvs(wing_span_input=170.,  # ft
         sim['system_model.aircraft_trim.cruise_1.cruise_1.cruise_1_ac_states_operation.cruise_1_pitch_angle']))
     print('throttle', sim['system_model.aircraft_trim.cruise_1.cruise_1.tbw_prop_model.throttle'])
 
-
     print('CDi: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_vlm_meshhtail_vlm_meshstrut_vlm_mesh_leftstrut_vlm_mesh_right_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.wing_vlm_mesh_C_D_i'])
+
     # region Output
     output_dict = {
         'wing_span': sim['wing_span'][0],
@@ -757,6 +758,7 @@ def trim_at_1g_with_geom_dvs(wing_span_input=170.,  # ft
         spatial_rep.plot_meshes(
             [strut_right_camber_surface, strut_left_camber_surface, wing_camber_surface, htail_camber_surface])
 
+    assert sim['system_model.aircraft_trim.cruise_1.cruise_1.euler_eom_gen_ref_pt.trim_residual'] < 1e-4
     return output_dict
 
 
@@ -813,8 +815,8 @@ def shape_vars_sweeps_at_1g():
     # endregion
 
     # region Sweep over wing sweep
-    # tip_translation_list = np.linspace(-20, 10, num=5)
-    tip_translation_list = [0., ]
+    tip_translation_list = np.linspace(-20, 20, num=5)
+    # tip_translation_list = [0., ]
 
     sweep_sweep_span_output = np.empty(len(tip_translation_list))
     sweep_sweep_tip_translation_output = np.empty(len(tip_translation_list))
@@ -866,8 +868,11 @@ def shape_vars_sweeps_at_1g():
 
 
 if __name__ == '__main__':
-    vlm_cd_additive_correction = 0.01
+    # vlm_cd_additive_correction = 0.01
+    vlm_cd_additive_correction = 0.
     # shape_vars_sweeps_at_1g()
     trim_at_1g_with_geom_dvs(trim_flag=True,
                              shape_opt_flag=True,
-                             visualize_flag=True)
+                             visualize_flag=False,
+                             wing_span_input=150.,
+                             wing_tip_linear_translation_input=-20)
