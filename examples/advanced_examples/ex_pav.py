@@ -1678,6 +1678,8 @@ def structural_wingbox_beam_evaluation(wing_cl0=0.3662,
     plot_data['spanwise_height'] = spanwise_height
     plot_data['spanwise_width'] = spanwise_width
     plot_data['forces_index_function'] = wing_force_index_func
+    plot_data['vlm_mesh'] = sim['system_representation.outputs_model.design_outputs_model.wing_vlm_mesh']
+    plot_data['vlm_force'] = vlm_panel_forces
     # endregion
 
     print('Tip Iy: ', sim['system_model.aircraft_trim.cruise_1.cruise_1.Wing_eb_beam_model.Aframe.wing_beam_element_0_Iy'])
@@ -1952,6 +1954,9 @@ def pav_visualization():
     web_t = plots_plus3['web_t']
     cap_t = plots_plus3['cap_t']
 
+    vlm_mesh = plots_plus1['vlm_mesh']
+    vlm_force = plots_plus1['vlm_force']
+
     visualize_ex_pav(
         caddee,
         sim,
@@ -1962,7 +1967,10 @@ def pav_visualization():
         width,
         height,
         rotor_origins,
-        forces_index_function)
+        forces_index_function,
+        vlm_mesh,
+        vlm_force
+    )
     return
 
 
@@ -1971,21 +1979,21 @@ if __name__ == '__main__':
     # cl0 = tuning_cl0()
     # vlm_evaluation_wing_only_aoa_sweep()
     # vlm_evaluation_wing_tail_aoa_sweep(visualize_flag=False)
-    pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
-    trim_at_n1g(
-        pusher_prop_twist_cp=pusher_prop_twist_cp,
-        pusher_prop_chord_cp=pusher_prop_chord_cp
-    )
-    trim_at_3g(
-        pusher_prop_twist_cp=pusher_prop_twist_cp,
-        pusher_prop_chord_cp=pusher_prop_chord_cp
-    )
-    optimize_lift_rotor_blade(debug_geom_flag=False)
-    trim_at_hover()
+    # pusher_prop_twist_cp, pusher_prop_chord_cp = trim_at_cruise()
+    # trim_at_n1g(
+    #     pusher_prop_twist_cp=pusher_prop_twist_cp,
+    #     pusher_prop_chord_cp=pusher_prop_chord_cp
+    # )
+    # trim_at_3g(
+    #     pusher_prop_twist_cp=pusher_prop_twist_cp,
+    #     pusher_prop_chord_cp=pusher_prop_chord_cp
+    # )
+    # optimize_lift_rotor_blade(debug_geom_flag=False)
+    # trim_at_hover()
 
-    structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.11391141),
-                                       visualize_flag=False,
-                                       sizing_flag=False)
+    # structural_wingbox_beam_evaluation(pitch_angle=np.deg2rad(12.11391141),
+    #                                    visualize_flag=False,
+    #                                    sizing_flag=False)
     # structural_wingbox_beam_sizing(pitch_angle=np.deg2rad(12.11391141))
     # structural_wingbox_shell_evaluation(pitch_angle=np.deg2rad(12.48100761), visualize_flag=False)
 

@@ -12,6 +12,8 @@ def visualize_ex_pav(
         height,
         rotor_origins,
         forces_index_function,
+        vlm_mesh,
+        vlm_force,
     ):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Plotting parameters =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-:
     # Vedo
@@ -38,6 +40,8 @@ def visualize_ex_pav(
     min_z_displacement = -0.018 # min z displacement for colormap
     max_z_displacement = 0.1 # max z displacement for colormap
     cmap_displacement = 'copper'# colormap for displacement
+
+    # vlm
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Plotting parameters =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-:
 
@@ -170,108 +174,156 @@ def visualize_ex_pav(
         plotting_elements.append(arrow)
 
     # ###############################################:wing forces###############################################:
-    surface_names  = list(forces_index_function.coefficients.keys())
-    color  = color
-    names_to_save = []
-    index = 0
-    from csdl import GraphRepresentation
-    rep = sim.system_graph.rep
-    if isinstance(rep, GraphRepresentation):
-        surface_names_temp = set(surface_names)
-        surface_names = []
-        for unpromoted_name in rep.unpromoted_to_promoted:
-            remove_surf_names = set()
-            for name in surface_names_temp:
-                if forces_index_function.coefficients[name].name  in unpromoted_name:
-                    names_to_save.append(unpromoted_name)
-                    surface_names.append(name)
-    transfer_para_mesh = []
-    surface_names_to_indices_dict = {}
-    end_index = 0
-    for name in surface_names:
-        start_index = end_index
-        for u in np.linspace(0,1,grid_num):
-            for v in np.linspace(0,1,grid_num):
-                transfer_para_mesh.append((name, np.array([u,v]).reshape((1,2))))
-                end_index = end_index + 1
-        surface_names_to_indices_dict[name] = (start_index,end_index)
-    coefficients = {}
-    for i, name in enumerate(surface_names):
-        sim_name = names_to_save[i]
-        coefficients[name] = sim[sim_name]
+    # surface_names  = list(forces_index_function.coefficients.keys())
+    # color  = color
+    # names_to_save = []
+    # index = 0
+    # from csdl import GraphRepresentation
+    # rep = sim.system_graph.rep
+    # if isinstance(rep, GraphRepresentation):
+    #     surface_names_temp = set(surface_names)
+    #     surface_names = []
+    #     for unpromoted_name in rep.unpromoted_to_promoted:
+    #         remove_surf_names = set()
+    #         for name in surface_names_temp:
+    #             if forces_index_function.coefficients[name].name  in unpromoted_name:
+    #                 names_to_save.append(unpromoted_name)
+    #                 surface_names.append(name)
+    # transfer_para_mesh = []
+    # surface_names_to_indices_dict = {}
+    # end_index = 0
+    # for name in surface_names:
+    #     start_index = end_index
+    #     for u in np.linspace(0,1,grid_num):
+    #         for v in np.linspace(0,1,grid_num):
+    #             transfer_para_mesh.append((name, np.array([u,v]).reshape((1,2))))
+    #             end_index = end_index + 1
+    #     surface_names_to_indices_dict[name] = (start_index,end_index)
+    # coefficients = {}
+    # for i, name in enumerate(surface_names):
+    #     sim_name = names_to_save[i]
+    #     coefficients[name] = sim[sim_name]
+    #
+    # evaluated_states = forces_index_function.compute(transfer_para_mesh, coefficients)
+    # num_states_per_point = evaluated_states.shape[-1]
+    #
+    # system_representation = caddee.system_representation
+    # spatial_rep = system_representation.spatial_representation
+    # locations = spatial_rep.evaluate_parametric(transfer_para_mesh).value
+    # # x = locations[:,0]
+    # # y = locations[:,1]
+    # # z = locations[:,2]
+    #
+    # # v = np.linalg.norm(evaluated_states, axis=1)
+    # v = (evaluated_states)
+    # # print(v)
+    #
+    # if num_states_per_point != 1:
+    #     print('states per locoation is not a scalar. taking norm...')
+    #     v = np.linalg.norm(evaluated_states, axis=1)
+    #
+    # # print(v.shape, index_function.name)
+    # if vmin is None:
+    #     min_v = np.min(v)
+    #     vmin = min_v
+    # else:
+    #     min_v = vmin
+    # if vmax is None:
+    #     max_v = np.max(v)
+    #     vmax = max_v
+    # else:
+    #     max_v = vmax
+    # remove_primitives = []
+    # for surf_num, (name, (start_index, end_index) )in enumerate(surface_names_to_indices_dict.items()):
+    #
+    #     if name in remove_primitives:
+    #         continue
+    #     # if surf_num > 0:
+    #     #     break
+    #     color_map = []
+    #     v_reshaped = v[start_index:end_index].reshape((grid_num,grid_num))
+    #     vertices = []
+    #     faces = []
+    #     arrows = []
+    #     reshaped_plot_points = locations[start_index:end_index].reshape((grid_num,grid_num,3))
+    #
+    #     if np.max(reshaped_plot_points[:,:,1]) > 0:
+    #         continue
+    #     for i in range(grid_num):
+    #         for ii in range(grid_num):
+    #             vertex = tuple(reshaped_plot_points[i,ii,:])
+    #             vertices.append(vertex)
+    #
+    #             if i != 0 and ii != 0:
+    #                 num_pts = grid_num
+    #                 face = tuple((
+    #                     (i-1)*num_pts+(ii-1),
+    #                     (i-1)*num_pts+(ii),
+    #                     (i)*num_pts+(ii),
+    #                     (i)*num_pts+(ii-1),
+    #                 ))
+    #
+    #                 faces.append(face)
+    #
+    #                 # print(face, vertex)
+    #     # print(len(vertices), len(faces))
+    #             color_map.append(v_reshaped[i,ii])
+    #
+    #     mesh = vedo.Mesh([vertices, faces], c = color).opacity(1.0)
+    #     mesh.cmap(cmap_index, color_map, vmin = min_v, vmax = max_v)
+    #
+    #         # mesh.cmap('coolwarm', color_map)
+    #     # mesh.point_size(3)
+    #     plotting_elements.append(mesh)
 
-    evaluated_states = forces_index_function.compute(transfer_para_mesh, coefficients)
-    num_states_per_point = evaluated_states.shape[-1]
+    # VLM FORCES +_+_+_+_+_+_++_+_+_+_+_+_
+    colormap = 'coolwarm'
+    min_v = None
+    max_v = None
 
-    system_representation = caddee.system_representation
-    spatial_rep = system_representation.spatial_representation
-    locations = spatial_rep.evaluate_parametric(transfer_para_mesh).value
-    # x = locations[:,0]
-    # y = locations[:,1]
-    # z = locations[:,2]
+    num_spanwise = vlm_mesh.shape[2]
+    num_chordwise = vlm_mesh.shape[1]
 
-    # v = np.linalg.norm(evaluated_states, axis=1)
-    v = (evaluated_states)
-    # print(v)
+    vlm_mesh = vlm_mesh.reshape(num_chordwise, num_spanwise, 3)
+    vlm_force = vlm_force.reshape(num_chordwise - 1, num_spanwise - 1, 3)
 
-    if num_states_per_point != 1:
-        print('states per locoation is not a scalar. taking norm...')
-        v = np.linalg.norm(evaluated_states, axis=1)
+    # plotting_elements = []
+    vertices = []
+    faces = []
+    color_map = []
+    alphas = []
+    for i in range(num_chordwise):
+        for ii in range(num_spanwise):
+            vertex = tuple(vlm_mesh[i, ii, :])
 
-    # print(v.shape, index_function.name)
-    if vmin is None:
-        min_v = np.min(v)
-        vmin = min_v
-    else:
-        min_v = vmin
-    if vmax is None:
-        max_v = np.max(v)
-        vmax = max_v
-    else:
-        max_v = vmax
-    remove_primitives = []
-    for surf_num, (name, (start_index, end_index) )in enumerate(surface_names_to_indices_dict.items()):
-        
-        if name in remove_primitives:
-            continue
-        # if surf_num > 0:
-        #     break
-        color_map = []
-        v_reshaped = v[start_index:end_index].reshape((grid_num,grid_num))
-        vertices = []
-        faces = []
-        arrows = []
-        reshaped_plot_points = locations[start_index:end_index].reshape((grid_num,grid_num,3))
+            vertices.append(vertex)
 
-        if np.max(reshaped_plot_points[:,:,1]) > 0:
-            continue
-        for i in range(grid_num):
-            for ii in range(grid_num):
-                vertex = tuple(reshaped_plot_points[i,ii,:])
-                vertices.append(vertex)
+            if i != 0 and ii != 0:
+                face = tuple((
+                    (i - 1) * num_spanwise + (ii - 1),
+                    (i - 1) * num_spanwise + (ii),
+                    (i) * num_spanwise + (ii),
+                    (i) * num_spanwise + (ii - 1),
+                ))
+                # if vertex[0] < 0.0:
+                #     alphas.append(0)
+                # else:
+                #     alphas.append(1)
+                faces.append(face)
 
-                if i != 0 and ii != 0:
-                    num_pts = grid_num
-                    face = tuple((
-                        (i-1)*num_pts+(ii-1),
-                        (i-1)*num_pts+(ii),
-                        (i)*num_pts+(ii),
-                        (i)*num_pts+(ii-1),
-                    ))
+                color_map.append(vlm_force[i - 1, ii - 1, 2])
 
-                    faces.append(face)
+    mesh = vedo.Mesh([vertices, faces], c=(255, 255, 255))
+    mesh.cmap(colormap, color_map, vmin=min_v, vmax=max_v, on='cells')
 
-                    # print(face, vertex)
-        # print(len(vertices), len(faces))
-                color_map.append(v_reshaped[i,ii])
+    # if 'wing' in vlm_mesh_name:
+    mesh.crop(front=0.5)
+    # mesh.cmap('coolwarm', color_map, vmin = -2, vmax = 2)
 
-        mesh = vedo.Mesh([vertices, faces], c = color).opacity(1.0)
-        mesh.cmap(cmap_index, color_map, vmin = min_v, vmax = max_v)
-
-            # mesh.cmap('coolwarm', color_map)
-        # mesh.point_size(3)
-        plotting_elements.append(mesh)
-
+    # mesh.cmap('coolwarm', color_map)
+    # mesh.point_size(3)
+    plotting_elements.append(mesh)
+    # VLM FORCES +_+_+_+_+_+_++_+_+_+_+_+_
     # exit()
     # plotter.show(plotting_elements, interactive=False, camera = camera_settings)
     plotter.show(plotting_elements,camera = camera_settings, interactive=show,  axes = show_axes)
