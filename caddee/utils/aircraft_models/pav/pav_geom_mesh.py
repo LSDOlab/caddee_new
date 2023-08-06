@@ -714,7 +714,7 @@ class PavGeomMesh:
             elif include_htail_flag and not include_wing_flag:
                 raise NotImplementedError
             elif include_wing_flag and include_htail_flag :
-                spatial_rep.plot_meshes([wing_camber_surface, htail_camber_surface])
+                spatial_rep.plot_meshes([wing_camber_surface, htail_camber_surface], primitives=self.geom_data['primitive_names']['wing'] + self.geom_data['primitive_names']['htail'])
         return
 
     def actuations(self,
@@ -836,5 +836,5 @@ class PavGeomMesh:
             self.mesh_data['beam']['mass'] = beam_mass_mesh
 
             if visualize_flag:
-                spatial_rep.plot_meshes([wing_beam, front_spar, rear_spar])
+                spatial_rep.plot_meshes([wing_beam, front_spar, rear_spar], primitives=self.geom_data['primitive_names']['wing'])
         return
