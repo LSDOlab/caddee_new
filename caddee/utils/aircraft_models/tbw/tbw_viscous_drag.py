@@ -34,9 +34,9 @@ class TbwViscousDragModelCSDL(ModuleCSDL):
         self.parameters.declare('num_nodes', default=1)
         self.parameters.declare('geometry_units', default='m')
         self.parameters.declare(name='reference_area', default=137.3107)  # 1478 ft^2 = 137.3107 m^2
-        # self.parameters.declare(name='wing_viscous_cf', default=0.00185)
-        # self.parameters.declare(name='wing_viscous_cf', default=0.02)
-        self.parameters.declare(name='wing_viscous_cf', default=0.0075)
+        self.parameters.declare(name='wing_viscous_cf', default=0.00185)
+        # self.parameters.declare(name='wing_viscous_cf', default=0.05)
+        # self.parameters.declare(name='wing_viscous_cf', default=0.0075)
         return
 
     def define(self):
