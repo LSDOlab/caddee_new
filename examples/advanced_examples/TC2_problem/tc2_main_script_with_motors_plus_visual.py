@@ -38,7 +38,7 @@ from examples.advanced_examples.TC2_problem.ex_tc2_geometry_setup_updated import
     pp_disk_in_plane_x, pp_disk_in_plane_y, pp_disk_origin, pp_disk, wing,\
     wing_beam, width, height, num_wing_beam, wing, wing_upper_surface_wireframe, wing_lower_surface_wireframe,\
     rlo_disk, rli_disk, rri_disk, rro_disk, flo_disk, fli_disk, fri_disk, fro_disk, \
-    rro_disk_mesh, flo_disk_mesh, fro_disk_mesh, rri_disk_mesh, fli_disk_mesh, fri_disk_mesh, rlo_disk_mesh, rli_disk_mesh
+    rro_disk_mesh, flo_disk_mesh, fro_disk_mesh, rri_disk_mesh, fli_disk_mesh, fri_disk_mesh, rlo_disk_mesh, rli_disk_mesh, rro_blade_1, rro_blade_2, fli_blade_1, fli_blade_2
 
 
 
@@ -325,7 +325,7 @@ plus_3g_condition.atmosphere_model = cd.SimpleAtmosphereModel()
 plus_3g_condition.set_module_input(name='altitude', val=1000)
 plus_3g_condition.set_module_input(name='mach_number', val=0.24)
 plus_3g_condition.set_module_input(name='range', val=1)
-plus_3g_condition.set_module_input(name='pitch_angle', val=np.deg2rad(12.249534565223376), dv_flag=True, lower=np.deg2rad(-20), upper=np.deg2rad(20), scaler=1e1)
+plus_3g_condition.set_module_input(name='pitch_angle', val=np.deg2rad(12.249534565223376), dv_flag=True, lower=np.deg2rad(-20), upper=np.deg2rad(20), scaler=1)
 plus_3g_condition.set_module_input(name='flight_path_angle', val=0)
 plus_3g_condition.set_module_input(name='roll_angle', val=0)
 plus_3g_condition.set_module_input(name='yaw_angle', val=0)
@@ -344,7 +344,7 @@ vlm_model = VASTFluidSover(
         (1, ) + wing_camber_surface.evaluate().shape[1:],
         (1, ) + htail_camber_surface.evaluate().shape[1:],
     ],
-    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
     mesh_unit='ft',
     cl0=[0.25, 0]
 )
@@ -532,7 +532,7 @@ minus_1g_condition.atmosphere_model = cd.SimpleAtmosphereModel()
 minus_1g_condition.set_module_input(name='altitude', val=1000)
 minus_1g_condition.set_module_input(name='mach_number', val=0.23)
 minus_1g_condition.set_module_input(name='range', val=1)
-minus_1g_condition.set_module_input(name='pitch_angle', val=np.deg2rad(-13.625869143501449), dv_flag=True, lower=np.deg2rad(-25), upper=np.deg2rad(20), scaler=1e1)
+minus_1g_condition.set_module_input(name='pitch_angle', val=np.deg2rad(-13.625869143501449), dv_flag=True, lower=np.deg2rad(-25), upper=np.deg2rad(20), scaler=1)
 minus_1g_condition.set_module_input(name='flight_path_angle', val=0)
 minus_1g_condition.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
 
@@ -772,10 +772,10 @@ for rotor_name, rotor_dict in rotor_fitting_dict.items():
     from m3l.utils.utils import index_functions
     order = 3
     shape = 5
-    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce',
+    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce_oei_flo',
                             order=(2, 2),
                             control_points_shape=(5, 5))
-    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux', space_u, 1)
+    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux_oei_flo', space_u, 1)
 
 
     projected_points_on_each_target = []
@@ -978,10 +978,10 @@ for rotor_name, rotor_dict in rotor_fitting_dict.items():
     from m3l.utils.utils import index_functions
     order = 3
     shape = 5
-    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce',
+    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce_oei_fli',
                             order=(2, 2),
                             control_points_shape=(5, 5))
-    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux', space_u, 1)
+    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux_oei_fli', space_u, 1)
 
 
     projected_points_on_each_target = []
@@ -1289,10 +1289,10 @@ for rotor_name, rotor_dict in rotor_fitting_dict.items():
     from m3l.utils.utils import index_functions
     order = 3
     shape = 5
-    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce',
+    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce_hover_1',
                             order=(2, 2),
                             control_points_shape=(5, 5))
-    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux', space_u, 1)
+    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux_hover_1', space_u, 1)
 
 
     projected_points_on_each_target = []
@@ -1693,10 +1693,10 @@ for rotor_name, rotor_dict in rotor_fitting_dict.items():
     from m3l.utils.utils import index_functions
     order = 3
     shape = 5
-    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce',
+    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce_qst_1',
                             order=(2, 2),
                             control_points_shape=(5, 5))
-    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux', space_u, 1)
+    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux_qst_1', space_u, 1)
 
 
     projected_points_on_each_target = []
@@ -2009,7 +2009,7 @@ system_m3l_model.register_output(vlm_forces, design_condition=qst_2)
 system_m3l_model.register_output(vlm_moments, design_condition=qst_2)
 
 pp_bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
-pp_bem_model.set_module_input('rpm', val=50, dv_flag=True, lower=50, upper=2000, scaler=1e-3)
+pp_bem_model.set_module_input('rpm', val=50, dv_flag=True, lower=50, upper=2000, scaler=1e-2)
 pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,_, _ = pp_bem_model.evaluate(ac_states=qst_2_ac_states, design_condition=qst_2)
 
 rlo_bem_model = PittPeters(disk_prefix='qst_2_rlo_disk',  blade_prefix='rlo', component=rlo_disk, mesh=pitt_peters_mesh_lift)
@@ -2072,10 +2072,10 @@ for rotor_name, rotor_dict in rotor_fitting_dict.items():
     from m3l.utils.utils import index_functions
     order = 3
     shape = 5
-    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce',
+    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce_qst_2',
                             order=(2, 2),
                             control_points_shape=(5, 5))
-    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux', space_u, 1)
+    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux_qst_2', space_u, 1)
 
 
     projected_points_on_each_target = []
@@ -2463,10 +2463,10 @@ for rotor_name, rotor_dict in rotor_fitting_dict.items():
     from m3l.utils.utils import index_functions
     order = 3
     shape = 5
-    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce',
+    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce_qst_3',
                             order=(2, 2),
                             control_points_shape=(5, 5))
-    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux', space_u, 1)
+    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux_qst_3', space_u, 1)
 
 
     projected_points_on_each_target = []
@@ -2768,7 +2768,7 @@ system_m3l_model.register_output(trim_residual, qst_3)
 # region qst 4
 qst_4 = cd.CruiseCondition(name='qst_4')
 qst_4.atmosphere_model = cd.SimpleAtmosphereModel()
-qst_4.set_module_input('pitch_angle', val=0.10779469, dv_flag=True, lower=0.10779469 - np.deg2rad(2), scaler=1e1)
+qst_4.set_module_input('pitch_angle', val=0.10779469, dv_flag=True, lower=0.10779469 - np.deg2rad(2), upper=np.deg2rad(10), scaler=1)
 qst_4.set_module_input('mach_number', val=0.13740796)
 qst_4.set_module_input('altitude', val=300)
 qst_4.set_module_input(name='range', val=336)
@@ -2800,35 +2800,35 @@ pp_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=20
 pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct, qst_4_pp_Q,_ = pp_bem_model.evaluate(ac_states=qst_4_ac_states, design_condition=qst_4)
 
 rlo_bem_model = PittPeters(disk_prefix='qst_4_rlo_disk', blade_prefix='rlo', component=rlo_disk, mesh=pitt_peters_mesh_lift)
-rlo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+rlo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 rlo_bem_forces, rlo_bem_moments,rlo_dT ,rlo_dQ ,rlo_dD, rlo_Ct,rlo_Q, rlo_ux = rlo_bem_model.evaluate(ac_states=qst_4_ac_states, design_condition=qst_4)
 
 rli_bem_model = PittPeters(disk_prefix='qst_4_rli_disk', blade_prefix='rli', component=rli_disk, mesh=pitt_peters_mesh_lift)
-rli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+rli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 rli_bem_forces, rli_bem_moments, rli_dT ,rli_dQ ,rli_dD, rli_Ct,rli_Q, rli_ux = rli_bem_model.evaluate(ac_states=qst_4_ac_states, design_condition=qst_4)
 
 rri_bem_model = PittPeters(disk_prefix='qst_4_rri_disk', blade_prefix='rri', component=rri_disk, mesh=pitt_peters_mesh_lift)
-rri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+rri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 rri_bem_forces, rri_bem_moments,rri_dT ,rri_dQ ,rri_dD, rri_Ct,rri_Q, rri_ux = rri_bem_model.evaluate(ac_states=qst_4_ac_states, design_condition=qst_4)
 
 rro_bem_model = PittPeters(disk_prefix='qst_4_rro_disk', blade_prefix='rro', component=rro_disk, mesh=pitt_peters_mesh_lift)
-rro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+rro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 rro_bem_forces, rro_bem_moments,rro_dT ,rro_dQ ,rro_dD, rro_Ct,rro_Q, rro_ux = rro_bem_model.evaluate(ac_states=qst_4_ac_states, design_condition=qst_4)
 
 flo_bem_model = PittPeters(disk_prefix='qst_4_flo_disk', blade_prefix='flo', component=flo_disk, mesh=pitt_peters_mesh_lift)
-flo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+flo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 flo_bem_forces, flo_bem_moments,flo_dT ,flo_dQ ,flo_dD, flo_Ct,flo_Q, flo_ux= flo_bem_model.evaluate(ac_states=qst_4_ac_states, design_condition=qst_4)
 
 fli_bem_model = PittPeters(disk_prefix='qst_4_fli_disk', blade_prefix='fli', component=fli_disk, mesh=pitt_peters_mesh_lift)
-fli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+fli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 fli_bem_forces, fli_bem_moments,fli_dT ,fli_dQ ,fli_dD, fli_Ct,fli_Q, fli_ux = fli_bem_model.evaluate(ac_states=qst_4_ac_states, design_condition=qst_4)
 
 fri_bem_model = PittPeters(disk_prefix='qst_4_fri_disk', blade_prefix='fri', component=fri_disk, mesh=pitt_peters_mesh_lift)
-fri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+fri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 fri_bem_forces, fri_bem_moments,fri_dT ,fri_dQ ,fri_dD, fri_Ct,fri_Q, fri_ux = fri_bem_model.evaluate(ac_states=qst_4_ac_states, design_condition=qst_4)
 
 fro_bem_model = PittPeters(disk_prefix='qst_4_fro_disk', blade_prefix='fro', component=fro_disk, mesh=pitt_peters_mesh_lift)
-fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 fro_bem_forces, fro_bem_moments,fro_dT ,fro_dQ ,fro_dD, fro_Ct,fro_Q, fro_ux = fro_bem_model.evaluate(ac_states=qst_4_ac_states, design_condition=qst_4)
 
 
@@ -2860,10 +2860,10 @@ for rotor_name, rotor_dict in rotor_fitting_dict.items():
     from m3l.utils.utils import index_functions
     order = 3
     shape = 5
-    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce',
+    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce_qst_4',
                             order=(2, 2),
                             control_points_shape=(5, 5))
-    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux', space_u, 1)
+    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux_qst_4', space_u, 1)
 
 
     projected_points_on_each_target = []
@@ -3166,7 +3166,7 @@ system_m3l_model.register_output(trim_residual, qst_4)
 # region qst 5
 qst_5 = cd.CruiseCondition(name='qst_5')
 qst_5.atmosphere_model = cd.SimpleAtmosphereModel()
-qst_5.set_module_input('pitch_angle', val=0.08224058, dv_flag=True, lower=0.08224058 - np.deg2rad(2.5), scaler=1e1)
+qst_5.set_module_input('pitch_angle', val=0.08224058, dv_flag=True, lower=0.08224058 - np.deg2rad(2.5), upper=np.deg2rad(10), scaler=1)
 qst_5.set_module_input('mach_number', val=0.14708026)
 qst_5.set_module_input('altitude', val=300)
 qst_5.set_module_input(name='range', val=360)
@@ -3198,35 +3198,35 @@ pp_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=500, upper=20
 pp_bem_forces, pp_bem_moments, pp_dT ,pp_dQ ,pp_dD, pp_Ct,qst_5_pp_Q,_ = pp_bem_model.evaluate(ac_states=qst_5_ac_states, design_condition=qst_5)
 
 rlo_bem_model = PittPeters(disk_prefix='qst_5_rlo_disk', blade_prefix='rlo', component=rlo_disk, mesh=pitt_peters_mesh_lift)
-rlo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+rlo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 rlo_bem_forces, rlo_bem_moments,rlo_dT ,rlo_dQ ,rlo_dD, rlo_Ct,rlo_Q, rlo_ux = rlo_bem_model.evaluate(ac_states=qst_5_ac_states, design_condition=qst_5)
 
 rli_bem_model = PittPeters(disk_prefix='qst_5_rli_disk', blade_prefix='rli', component=rli_disk, mesh=pitt_peters_mesh_lift)
-rli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+rli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 rli_bem_forces, rli_bem_moments,rli_dT ,rli_dQ ,rli_dD, rli_Ct,rli_Q, rli_ux = rli_bem_model.evaluate(ac_states=qst_5_ac_states, design_condition=qst_5)
 
 rri_bem_model = PittPeters(disk_prefix='qst_5_rri_disk', blade_prefix='rri', component=rri_disk, mesh=pitt_peters_mesh_lift)
-rri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+rri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 rri_bem_forces, rri_bem_moments,rri_dT ,rri_dQ ,rri_dD, rri_Ct,rri_Q, rri_ux = rri_bem_model.evaluate(ac_states=qst_5_ac_states, design_condition=qst_5)
 
 rro_bem_model = PittPeters(disk_prefix='qst_5_rro_disk', blade_prefix='rro', component=rro_disk, mesh=pitt_peters_mesh_lift)
-rro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+rro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 rro_bem_forces, rro_bem_moments,rro_dT ,rro_dQ ,rro_dD, rro_Ct,rro_Q, rro_ux = rro_bem_model.evaluate(ac_states=qst_5_ac_states, design_condition=qst_5)
 
 flo_bem_model = PittPeters(disk_prefix='qst_5_flo_disk', blade_prefix='flo', component=flo_disk, mesh=pitt_peters_mesh_lift)
-flo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+flo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 flo_bem_forces, flo_bem_moments,flo_dT ,flo_dQ ,flo_dD, flo_Ct,flo_Q, flo_ux = flo_bem_model.evaluate(ac_states=qst_5_ac_states, design_condition=qst_5)
 
 fli_bem_model = PittPeters(disk_prefix='qst_5_fli_disk', blade_prefix='fli', component=fli_disk, mesh=pitt_peters_mesh_lift)
-fli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+fli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 fli_bem_forces, fli_bem_moments,fli_dT ,fli_dQ ,fli_dD, fli_Ct,fli_Q, fli_ux = fli_bem_model.evaluate(ac_states=qst_5_ac_states, design_condition=qst_5)
 
 fri_bem_model = PittPeters(disk_prefix='qst_5_fri_disk', blade_prefix='fri', component=fri_disk, mesh=pitt_peters_mesh_lift)
-fri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+fri_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 fri_bem_forces, fri_bem_moments,fri_dT ,fri_dQ ,fri_dD, fri_Ct,fri_Q, fri_ux = fri_bem_model.evaluate(ac_states=qst_5_ac_states, design_condition=qst_5)
 
 fro_bem_model = PittPeters(disk_prefix='qst_5_fro_disk', blade_prefix='fro', component=fro_disk, mesh=pitt_peters_mesh_lift)
-fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-3)
+fro_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 fro_bem_forces, fro_bem_moments, fro_dT ,fro_dQ ,fro_dD, fro_Ct,fro_Q, fro_ux = fro_bem_model.evaluate(ac_states=qst_5_ac_states, design_condition=qst_5)
 
 rotor_index_functions_qst_5 = []
@@ -3257,10 +3257,10 @@ for rotor_name, rotor_dict in rotor_fitting_dict.items():
     from m3l.utils.utils import index_functions
     order = 3
     shape = 5
-    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce',
+    space_u = lg.BSplineSpace(name=f'{rotor_name}_ux_sapce_qst_5',
                             order=(2, 2),
                             control_points_shape=(5, 5))
-    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux', space_u, 1)
+    rlo_ux_function = index_functions(list(rotor_disk.get_primitives().keys()), f'{rotor_name}_ux_qst_5', space_u, 1)
 
 
     projected_points_on_each_target = []
@@ -3547,7 +3547,7 @@ system_m3l_model.register_output(trim_residual, qst_5)
 # region qst 6
 qst_6 = cd.CruiseCondition(name='qst_6')
 qst_6.atmosphere_model = cd.SimpleAtmosphereModel()
-qst_6.set_module_input('pitch_angle', val=0.06704556, dv_flag=True, lower=0.06704556 - np.deg2rad(1.5), scaler=1e1)
+qst_6.set_module_input('pitch_angle', val=0.06704556, dv_flag=True, lower=0.06704556 - np.deg2rad(1.5), upper=np.deg2rad(10),  scaler=1)
 qst_6.set_module_input('mach_number', val=0.15408429)
 qst_6.set_module_input('altitude', val=300)
 qst_6.set_module_input(name='range', val=377)
@@ -3686,7 +3686,7 @@ system_m3l_model.register_output(trim_residual, qst_6)
 # region qst 7
 qst_7 = cd.CruiseCondition(name='qst_7')
 qst_7.atmosphere_model = cd.SimpleAtmosphereModel()
-qst_7.set_module_input('pitch_angle', val=0.05598293, dv_flag=True, lower=0.05598293-np.deg2rad(2), upper=np.deg2rad(6), scaler=1e1)
+qst_7.set_module_input('pitch_angle', val=0.05598293, dv_flag=True, lower=0.05598293-np.deg2rad(2), upper=np.deg2rad(10), scaler=1)
 qst_7.set_module_input('mach_number', val=0.15983874)
 qst_7.set_module_input('altitude', val=300)
 qst_7.set_module_input(name='range', val=391)
@@ -3825,7 +3825,7 @@ system_m3l_model.register_output(trim_residual, qst_7)
 # region qst 8
 qst_8 = cd.CruiseCondition(name='qst_8')
 qst_8.atmosphere_model = cd.SimpleAtmosphereModel()
-qst_8.set_module_input('pitch_angle', val=0.04712265, dv_flag=True, lower=0.04712265-np.deg2rad(3), upper=np.deg2rad(5), scaler=1e1)
+qst_8.set_module_input('pitch_angle', val=0.04712265, dv_flag=True, lower=0.04712265-np.deg2rad(3), upper=np.deg2rad(10), scaler=1)
 qst_8.set_module_input('mach_number', val=0.16485417)
 qst_8.set_module_input('altitude', val=300)
 qst_8.set_module_input(name='range', val=403)
@@ -3980,7 +3980,7 @@ system_m3l_model.register_output(trim_residual, qst_8)
 # region qst 9
 qst_9 = cd.CruiseCondition(name='qst_9')
 qst_9.atmosphere_model = cd.SimpleAtmosphereModel()
-qst_9.set_module_input('pitch_angle', val=0.03981101, dv_flag=True, lower=0.03981101-np.deg2rad(4),upper=np.deg2rad(5), scaler=1e1)
+qst_9.set_module_input('pitch_angle', val=0.03981101, dv_flag=True, lower=0.03981101-np.deg2rad(4), upper=np.deg2rad(10), scaler=1)
 qst_9.set_module_input('mach_number', val=0.16937793)
 qst_9.set_module_input('altitude', val=300)
 qst_9.set_module_input(name='range', val=414)
@@ -4120,7 +4120,7 @@ system_m3l_model.register_output(trim_residual, qst_9)
 # region qst 10
 qst_10 = cd.CruiseCondition(name='qst_10')
 qst_10.atmosphere_model = cd.SimpleAtmosphereModel()
-qst_10.set_module_input('pitch_angle', val=0.03369678, dv_flag=True, lower=np.deg2rad(-5), upper=np.deg2rad(5), scaler=1e1)
+qst_10.set_module_input('pitch_angle', val=0.03369678, dv_flag=True, lower=np.deg2rad(-5), upper=np.deg2rad(5), scaler=1)
 qst_10.set_module_input('mach_number', val=0.17354959)
 qst_10.set_module_input('altitude', val=300)
 qst_10.set_module_input(name='range', val=424)
@@ -4264,7 +4264,7 @@ climb_1.set_module_input(name='altitude', val=1000)
 climb_1.set_module_input(name='mach_number', val=0.17)
 climb_1.set_module_input(name='initial_altitude', val=300)
 climb_1.set_module_input(name='final_altitude', val=1000)
-climb_1.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-5), upper=np.deg2rad(10), scaler=1e1)
+climb_1.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-5), upper=np.deg2rad(10), scaler=1)
 climb_1.set_module_input(name='flight_path_angle', val=np.deg2rad(4.588))
 climb_1.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
 
@@ -4291,8 +4291,8 @@ vlm_model = VASTFluidSover(
 vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states, design_condition=climb_1)
 
 
-system_m3l_model.register_output(vlm_force, design_condition=climb_1)
-system_m3l_model.register_output(vlm_moment, design_condition=climb_1)
+# system_m3l_model.register_output(vlm_force, design_condition=climb_1)
+# system_m3l_model.register_output(vlm_moment, design_condition=climb_1)
 # system_m3l_model.register_output(cl_distribution, design_condition=climb_1)
 # system_m3l_model.register_output(re_spans, design_condition=climb_1)
 
@@ -4342,23 +4342,26 @@ system_m3l_model.register_output(vlm_moment, design_condition=climb_1)
 # system_m3l_model.register_output(wing_oml_pressure_lower, design_condition=climb_1)
 # system_m3l_model.register_output(htail_oml_pressure_lower, design_condition=climb_1)
 
-# vlm_force_mapping_model = VASTNodalForces(
-#     surface_names=[
-#         f'{wing_vlm_mesh_name}_climb',
-#         f'{htail_vlm_mesh_name}_climb',
-#     ],
-#     surface_shapes=[
-#         (1, ) + wing_camber_surface.evaluate().shape[1:],
-#         (1, ) + htail_camber_surface.evaluate().shape[1:],
-#     ],
-#     initial_meshes=[
-#         wing_camber_surface,
-#         htail_camber_surface]
-# )
+# build_cp_index_function(wing, 10, climb_1, system_m3l_model, wing_cp_index_functions, wing_oml_pressure_upper, wing_oml_pressure_lower)
 
-# oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces, nodal_force_meshes=[wing_oml_mesh, wing_oml_mesh])
-# wing_forces = oml_forces[0]
-# htail_forces = oml_forces[1]
+
+vlm_force_mapping_model = VASTNodalForces(
+    surface_names=[
+        f'{wing_vlm_mesh_name}_climb',
+        f'{htail_vlm_mesh_name}_climb',
+    ],
+    surface_shapes=[
+        (1, ) + wing_camber_surface.evaluate().shape[1:],
+        (1, ) + htail_camber_surface.evaluate().shape[1:],
+    ],
+    initial_meshes=[
+        wing_camber_surface,
+        htail_camber_surface]
+)
+
+oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces, nodal_force_meshes=[wing_oml_mesh, wing_oml_mesh])
+wing_forces = oml_forces[0]
+htail_forces = oml_forces[1]
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=900, upper=2000, scaler=1e-3)
@@ -4432,7 +4435,7 @@ cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
 cruise_condition.set_module_input(name='altitude', val=1000)
 cruise_condition.set_module_input(name='mach_number', val=0.173, dv_flag=False, lower=0.17, upper=0.19)
 cruise_condition.set_module_input(name='range', val=50000)
-cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-5), upper=np.deg2rad(6), scaler=1e1)
+cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-5), upper=np.deg2rad(6), scaler=1)
 cruise_condition.set_module_input(name='flight_path_angle', val=0)
 cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 500]))
 
@@ -4601,7 +4604,7 @@ descent_1.set_module_input(name='altitude', val=1000)
 descent_1.set_module_input(name='mach_number', val=0.17)
 descent_1.set_module_input(name='initial_altitude', val=1000)
 descent_1.set_module_input(name='final_altitude', val=300)
-descent_1.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-10), upper=np.deg2rad(10), scaler=1e1)
+descent_1.set_module_input(name='pitch_angle', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-10), upper=np.deg2rad(10), scaler=1)
 descent_1.set_module_input(name='flight_path_angle', val=np.deg2rad(-4), dv_flag=False)
 descent_1.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
 
@@ -4620,81 +4623,84 @@ vlm_model = VASTFluidSover(
     fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake'),
     mesh_unit='ft',
     cl0=[0.25, 0.],
-    ML=False,
+    ML=True,
 )
 
 # aero forces and moments
-# cl_distribution, re_spans, vlm_panel_forces, panel_areas, evaluation_pt, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states, ML=True, design_condition=descent_1)
-vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states, design_condition=descent_1)
+cl_distribution, re_spans, vlm_panel_forces, panel_areas, evaluation_pt, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states, ML=True, design_condition=descent_1)
+# vlm_panel_forces, vlm_force, vlm_moment  = vlm_model.evaluate(ac_states=ac_states, design_condition=descent_1)
 system_m3l_model.register_output(vlm_force, design_condition=descent_1)
 system_m3l_model.register_output(vlm_moment, design_condition=descent_1)
 
-# system_m3l_model.register_output(cl_distribution, design_condition=descent_1)
-# system_m3l_model.register_output(re_spans, design_condition=descent_1)
+system_m3l_model.register_output(cl_distribution, design_condition=descent_1)
+system_m3l_model.register_output(re_spans, design_condition=descent_1)
 
-# ml_pressures = PressureProfile(
-#     airfoil_name='NASA_langley_ga_1',
-#     use_inverse_cl_map=True,
-# )
+ml_pressures = PressureProfile(
+    airfoil_name='NASA_langley_ga_1',
+    use_inverse_cl_map=True,
+)
 
-# cp_upper, cp_lower, Cd = ml_pressures.evaluate(cl_distribution, re_spans, design_condition=descent_1) #, mach_number, reynolds_number)
-# system_m3l_model.register_output(cp_upper, design_condition=descent_1)
-# system_m3l_model.register_output(cp_lower, design_condition=descent_1)
+cp_upper, cp_lower, Cd = ml_pressures.evaluate(cl_distribution, re_spans, design_condition=descent_1) #, mach_number, reynolds_number)
+system_m3l_model.register_output(cp_upper, design_condition=descent_1)
+system_m3l_model.register_output(cp_lower, design_condition=descent_1)
 
-# viscous_drag_correction = ViscousCorrectionModel(
-#     surface_names=[
-#         f'{wing_vlm_mesh_name}_descent',
-#         f'{htail_vlm_mesh_name}_descent',
-#     ],
-#     surface_shapes=[
-#         (1, ) + wing_camber_surface.evaluate().shape[1:],
-#         (1, ) + htail_camber_surface.evaluate().shape[1:],
-#     ],
-# )
-# moment_point = None
-# vlm_F, vlm_M = viscous_drag_correction.evaluate(ac_states=ac_states, forces=vlm_panel_forces, cd_v=Cd, panel_area=panel_areas, moment_pt=moment_point, evaluation_pt=evaluation_pt, design_condition=descent_1)
-# system_m3l_model.register_output(vlm_F, design_condition=descent_1)
-# system_m3l_model.register_output(vlm_M, design_condition=descent_1)
+viscous_drag_correction = ViscousCorrectionModel(
+    surface_names=[
+        f'{wing_vlm_mesh_name}_descent',
+        f'{htail_vlm_mesh_name}_descent',
+    ],
+    surface_shapes=[
+        (1, ) + wing_camber_surface.evaluate().shape[1:],
+        (1, ) + htail_camber_surface.evaluate().shape[1:],
+    ],
+)
+moment_point = None
+vlm_F, vlm_M = viscous_drag_correction.evaluate(ac_states=ac_states, forces=vlm_panel_forces, cd_v=Cd, panel_area=panel_areas, moment_pt=moment_point, evaluation_pt=evaluation_pt, design_condition=descent_1)
+system_m3l_model.register_output(vlm_F, design_condition=descent_1)
+system_m3l_model.register_output(vlm_M, design_condition=descent_1)
 
-# ml_pressures_oml_map = NodalPressureProfile(
-#     surface_names=[
-#         f'{wing_vlm_mesh_name}_descent',
-#         f'{htail_vlm_mesh_name}_descent',
-#     ],
-#     surface_shapes=[
-#         wing_upper_surface_ml.value.shape,
-#         htail_upper_surface_ml.value.shape,
-#     ]
-# )
+ml_pressures_oml_map = NodalPressureProfile(
+    surface_names=[
+        f'{wing_vlm_mesh_name}_descent',
+        f'{htail_vlm_mesh_name}_descent',
+    ],
+    surface_shapes=[
+        wing_upper_surface_ml.value.shape,
+        htail_upper_surface_ml.value.shape,
+    ]
+)
 
-# cp_upper_oml, cp_lower_oml = ml_pressures_oml_map.evaluate(cp_upper, cp_lower, nodal_pressure_mesh=[], design_condition=descent_1)
-# wing_oml_pressure_upper = cp_upper_oml[0]
-# htail_oml_pressure_upper = cp_upper_oml[1]
-# wing_oml_pressure_lower = cp_lower_oml[0]
-# htail_oml_pressure_lower = cp_lower_oml[1]
+cp_upper_oml, cp_lower_oml = ml_pressures_oml_map.evaluate(cp_upper, cp_lower, nodal_pressure_mesh=[], design_condition=descent_1)
+wing_oml_pressure_upper = cp_upper_oml[0]
+htail_oml_pressure_upper = cp_upper_oml[1]
+wing_oml_pressure_lower = cp_lower_oml[0]
+htail_oml_pressure_lower = cp_lower_oml[1]
 
-# system_m3l_model.register_output(wing_oml_pressure_upper, design_condition=descent_1)
-# system_m3l_model.register_output(htail_oml_pressure_upper, design_condition=descent_1)
-# system_m3l_model.register_output(wing_oml_pressure_lower, design_condition=descent_1)
-# system_m3l_model.register_output(htail_oml_pressure_lower, design_condition=descent_1)
+system_m3l_model.register_output(wing_oml_pressure_upper, design_condition=descent_1)
+system_m3l_model.register_output(htail_oml_pressure_upper, design_condition=descent_1)
+system_m3l_model.register_output(wing_oml_pressure_lower, design_condition=descent_1)
+system_m3l_model.register_output(htail_oml_pressure_lower, design_condition=descent_1)
 
-# vlm_force_mapping_model = VASTNodalForces(
-#     surface_names=[
-#         f'{wing_vlm_mesh_name}_descent',
-#         f'{htail_vlm_mesh_name}_descent',
-#     ],
-#     surface_shapes=[
-#         (1, ) + wing_camber_surface.evaluate().shape[1:],
-#         (1, ) + htail_camber_surface.evaluate().shape[1:],
-#     ],
-#     initial_meshes=[
-#         wing_camber_surface,
-#         htail_camber_surface]
-# )
+build_cp_index_function(wing, 10, descent_1, system_m3l_model, wing_cp_index_functions, wing_oml_pressure_upper, wing_oml_pressure_lower)
 
-# oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces, nodal_force_meshes=[wing_oml_mesh, wing_oml_mesh], design_condition=descent_1)
-# wing_forces = oml_forces[0]
-# htail_forces = oml_forces[1]
+
+vlm_force_mapping_model = VASTNodalForces(
+    surface_names=[
+        f'{wing_vlm_mesh_name}_descent',
+        f'{htail_vlm_mesh_name}_descent',
+    ],
+    surface_shapes=[
+        (1, ) + wing_camber_surface.evaluate().shape[1:],
+        (1, ) + htail_camber_surface.evaluate().shape[1:],
+    ],
+    initial_meshes=[
+        wing_camber_surface,
+        htail_camber_surface]
+)
+
+oml_forces = vlm_force_mapping_model.evaluate(vlm_forces=vlm_panel_forces, nodal_force_meshes=[wing_oml_mesh, wing_oml_mesh], design_condition=descent_1)
+wing_forces = oml_forces[0]
+htail_forces = oml_forces[1]
 
 bem_model = BEM(disk_prefix='pp_disk', blade_prefix='pp', component=pp_disk, mesh=pusher_bem_mesh)
 bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=600, upper=2000, scaler=1e-3)
@@ -4741,8 +4747,8 @@ system_m3l_model.register_output(inertial_forces, descent_1)
 system_m3l_model.register_output(inertial_moments, descent_1)
 
 total_forces_moments_model = cd.TotalForcesMomentsM3L()
-# total_forces, total_moments = total_forces_moments_model.evaluate(vlm_F, vlm_M, bem_forces, bem_moments, inertial_forces, inertial_moments, design_condition=descent_1)
-total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment, bem_forces, bem_moments, inertial_forces, inertial_moments, design_condition=descent_1)
+total_forces, total_moments = total_forces_moments_model.evaluate(vlm_F, vlm_M, bem_forces, bem_moments, inertial_forces, inertial_moments, design_condition=descent_1)
+# total_forces, total_moments = total_forces_moments_model.evaluate(vlm_force, vlm_moment, bem_forces, bem_moments, inertial_forces, inertial_moments, design_condition=descent_1)
 system_m3l_model.register_output(total_forces, descent_1)
 system_m3l_model.register_output(total_moments, descent_1)
 
@@ -4785,7 +4791,7 @@ total_energy = total_energy_model.evaluate(
 system_m3l_model.register_output(total_energy)
 
 soc_model = cd.SOCModelM3L(battery_energy_density=400) # Note, either turn this parameter into csdl variable or connect it from battery sizing 
-final_SoC = soc_model.evaluate(battery_mass=battery_mass, total_energy_consumption=total_energy, mission_multiplier=2.2)
+final_SoC = soc_model.evaluate(battery_mass=battery_mass, total_energy_consumption=total_energy, mission_multiplier=2.3)
 system_m3l_model.register_output(final_SoC)
 # endregion
 
@@ -5589,12 +5595,12 @@ caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_w
 # caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress', upper=350E6/1.5, scaler=1e-8) # Aluminum alloy
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.Aframe.wing_beam_displacement', lower=-0.5, upper=0.5, scaler=0.5)
 # caddee_csdl_model.add_constraint('system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.Aframe.wing_beam_displacement', upper=0.25, scaler=1)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.hover_1_total_noise_model.A_weighted_total_spl', upper=74, scaler=1e-2)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_1_total_noise_model.A_weighted_total_spl', upper=73, scaler=1e-2)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_2_total_noise_model.A_weighted_total_spl', upper=70, scaler=1e-2)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_3_total_noise_model.A_weighted_total_spl', upper=68, scaler=1e-2)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_4_total_noise_model.A_weighted_total_spl', upper=67, scaler=1e-2)
-caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_5_total_noise_model.A_weighted_total_spl', upper=67, scaler=1e-2)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.hover_1_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_1_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_2_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_3_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_4_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
+caddee_csdl_model.add_constraint('system_model.system_m3l_model.qst_5_total_noise_model.A_weighted_total_spl', upper=75, scaler=1e-2)
 
 caddee_csdl_model.add_constraint('system_model.system_m3l_model.SOC_model.finalSoC', lower=0.2, scaler=5)
 
@@ -5793,228 +5799,17 @@ print('compile time: ', compile_time)
 class TC2DB(ld.DashBuilder):
     def define(self, *args):
         # rep = self.load_cached_vars() # Uncomment when runing visualization
-
-        # opt_frame[1, 0] = ld.default_plotters.build_constraints_plotter(rep, False)
-        # opt_frame[1, 1] = ld.default_plotters.build_objective_plotter(rep)
-        # opt_frame[1, 2] = ld.default_plotters.build_design_var_plotter(rep, False)
-
-        # geo_frame = self.add_frame(
-        #     'geometry_perturb_frame',
-        #     height_in=8.,
-        #     width_in=12.,
-        #     ncols=120,
-        #     nrows = 90,
-        #     wspace=0.4,
-        #     hspace=0.4,
-        # )
-
-        # center_x = 20  # eyeballing center x coordinate of geometry
-        # center_z = 11  # eyeballing center z coordinate of geometry
-        # camera_settings = {
-        #     'pos': (-32, -22, 32),
-        #     'viewup': (0, 0, 1),
-        #     'focalPoint': (center_x+8, 0+6, center_z-10)
-        # }
-        # # geo_frame[30:60,0:30] = caddee_viz.build_geometry_plotter(show = False, camera_settings = camera_settings)
-
-        # geo_elements = []
-        # geo_elements.append(caddee_viz.build_geometry_plotter(show = 0, design_condition_name = 'qst_2'))
-        # # geo_elements.append(caddee_viz.build_state_plotter(displacements_plus_3g, rep = rep, displacements = 100))
-        # geo_frame[:,:] = caddee_viz.build_vedo_renderer(geo_elements, camera_settings = camera_settings)
-        # geo_elements = []
-        # geo_elements.append(caddee_viz.build_geometry_plotter(show = 0))
-        # geo_elements.append(caddee_viz.build_state_plotter(displacements_minus_1g, rep = rep, displacements = 100))
-        # geo_frame[:,60:120] = caddee_viz.build_vedo_renderer(geo_elements, camera_settings = camera_settings)
-        # geo_elements = []
-        # # geo_elements.append(caddee_viz.build_geometry_plotter(show = 0))
-        # geo_elements.append(caddee_viz.build_state_plotter(wing_cp_index_functions['descent_1'], rep = rep))
-        # geo_frame[:,60:120] = caddee_viz.build_vedo_renderer(geo_elements, camera_settings = camera_settings)
-
-        # center_x = 20  # eyeballing center x coordinate of geometry
-        # center_z = 11  # eyeballing center z coordinate of geometry
-        # camera_settings = {
-        #     'pos': (-46, -36, 30),
-        #     # 'pos': (-26, -26, 30),
-        #     'viewup': (0, 0, 1),
-        #     'focalPoint': (center_x+8, 0+6, center_z-15)
-        # }
-        # geo_frame[30:60,0:30] = caddee_viz.build_geometry_plotter('climb_1',show = False, camera_settings = camera_settings)
-        # geo_frame[30:60,30:60] = caddee_viz.build_geometry_plotter('cruise', camera_settings = camera_settings)
-        # geo_frame[30:60,60:90] = caddee_viz.build_geometry_plotter('hover_1', camera_settings = camera_settings)
-
-        # TC 2 full geo frame
-        geo_frame = self.add_frame(
-            'full_geometry_frame',
-            height_in=16.,
-            width_in=30.,
-            ncols=200,
-            nrows = 110,
-            wspace=0.4,
-            hspace=0.4,
-        )
-
-        center_x = 20  # eyeballing center x coordinate of geometry
-        center_z = 11  # eyeballing center z coordinate of geometry
-        position = (-49.71375366736947/ 1.6, -26.09937777096867/ 1.6, 100.3252841988041 / 1.6)
-        camera_settings = {
-            'pos' : position,
-            # 'pos': (-32, -22, 32),
-            'viewup': (0, 0, 1),
-            'focalPoint': (center_x+8, -2, center_z-12)
-        }
-        # geo_frame[30:60,0:30] = caddee_viz.build_geometry_plotter(show = False, camera_settings = camera_settings)
-
-        wing_surfaces = ld.caddee_plotters.get_index_function_surfaces(wing_cp_index_functions['cruise'])
-        rotor_surfaces = []
-        for rindex in rotor_index_functions_qst_1:
-            rotor_surfaces = rotor_surfaces + ld.caddee_plotters.get_index_function_surfaces(rindex)
-        remove_surfaces = wing_surfaces + rotor_surfaces
-
-        # :::::::::::::::::::::::::::: Cruise ::::::::::::::::::::::::::::
-        geo_elements = []
-        geo_elements.append(caddee_viz.build_geometry_plotter(show = 0, remove_primitives = remove_surfaces, opacity=0.3))
-        geo_elements.append(caddee_viz.build_state_plotter(
-            wing_cp_index_functions['cruise'],
-            rep = rep,
-            vmin = -2,
-            vmax = 1.5,
-            normal_arrows = False,
-            colormap='coolwarm',
-            grid_num=40,
-        ))
-        def add_axes(ax_subplot, data_dict, data_dict_history):
-            import matplotlib
-            import matplotlib.pyplot as plt
-            plt.rcParams.update({'font.size': 10})
-            plt.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(vmin=-2, vmax=1.5), cmap='coolwarm'), cax = ax_subplot, location="bottom")
-            ax_subplot.set_title(r'$C_p$')
-        
-        geo_frame[55:57, 20:50] = ld.BaseAxesPlotter(
-            plot_function = add_axes,
-        )
-        rotor_primitives = []
-        # for rindex in rotor_index_functions_hover_1:
-        #     geo_elements.append(caddee_viz.build_state_plotter(rindex, rep = rep))
-        #     for primitive_name in rindex.coefficients:
-        #         rotor_primitives.append(primitive_name)
-        geo_frame[0:60, 0:80] = caddee_viz.build_vedo_renderer(
-            geo_elements,
-            camera_settings = camera_settings,
-            show = 0,
-            # title = 'Cruise',
-        )
-
-        import matplotlib.pyplot as plt
-
-        def plot_2D(ax_subplot, data_dict, data_dict_history):
-            rlo = data_dict['caddee_csdl_model.system_model.system_m3l_model.rlo_disk_motor_sizing_model.mass']
-            rli = data_dict['caddee_csdl_model.system_model.system_m3l_model.rli_disk_motor_sizing_model.mass']
-            rri = data_dict['caddee_csdl_model.system_model.system_m3l_model.rri_disk_motor_sizing_model.mass']
-            rro = data_dict['caddee_csdl_model.system_model.system_m3l_model.rro_disk_motor_sizing_model.mass']
-            flo = data_dict['caddee_csdl_model.system_model.system_m3l_model.flo_disk_motor_sizing_model.mass']
-            fli = data_dict['caddee_csdl_model.system_model.system_m3l_model.fli_disk_motor_sizing_model.mass']
-            fri = data_dict['caddee_csdl_model.system_model.system_m3l_model.fri_disk_motor_sizing_model.mass']
-            fro = data_dict['caddee_csdl_model.system_model.system_m3l_model.fro_disk_motor_sizing_model.mass']
-            pp = data_dict['caddee_csdl_model.system_model.system_m3l_model.pp_disk_motor_sizing_model.mass']
-            battery = data_dict['caddee_csdl_model.system_model.system_m3l_model.battery_simple_battery_sizing.battery_mass']
-            wing_mass = data_dict['caddee_csdl_model.system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.Aframe.MassProp.mass']
-            empennage = data_dict['caddee_csdl_model.system_model.system_m3l_model.m4_regression.empennage_struct_mass']
-            fus_boom = data_dict['caddee_csdl_model.system_model.system_m3l_model.m4_regression.wing_boom_fuselage_structural_mass']
-            nsm = data_dict['caddee_csdl_model.system_model.system_m3l_model.m4_regression.nsm_mass']
-            
-            lift_rotor_mass = rlo + rli + rri + rro + flo + fli + fri + fro
-            pusher_motor_mass = pp
-            data = [lift_rotor_mass[0], pusher_motor_mass[0], battery[0], wing_mass[0], empennage[0], fus_boom[0], nsm[0]]      
-            # print(data)    
-
-            labels = ['lift motors', 'pusher motor', 'battery', 'wing mass', 'empennage', 'fuselage & booms', 'nsm']
-            ax_subplot.pie(data, labels=labels, autopct='%.0f%%')
-            # x_axis = data_dict_history['global_ind']
-            # cur_ind = x_axis[-1]
-            # sns.lineplot(x=list(range(len(y_axis))), y=np.array(y_axis).flatten(), ax=ax_subplot)
-            # sns.lineplot(x=list(range(len(y_axis))), y=b, ax=ax_subplot, linestyle='--' )
-            # ax_subplot.set_ylabel('constraint')
-            # ax_subplot.set_ylim([0.0, 8.0])
-            # ax_subplot.set_xlabel('index')
-            # ax_subplot.set_title(f'Constraint at iteration {cur_ind}')
-
-        geo_frame[65:100, 20:50] = ld.BaseAxesPlotter(
-            required_vars = [
-                'caddee_csdl_model.system_model.system_m3l_model.rlo_disk_motor_sizing_model.mass',
-                'caddee_csdl_model.system_model.system_m3l_model.rli_disk_motor_sizing_model.mass',
-                'caddee_csdl_model.system_model.system_m3l_model.rri_disk_motor_sizing_model.mass',
-                'caddee_csdl_model.system_model.system_m3l_model.rro_disk_motor_sizing_model.mass',
-                'caddee_csdl_model.system_model.system_m3l_model.flo_disk_motor_sizing_model.mass',
-                'caddee_csdl_model.system_model.system_m3l_model.fli_disk_motor_sizing_model.mass',
-                'caddee_csdl_model.system_model.system_m3l_model.fri_disk_motor_sizing_model.mass',
-                'caddee_csdl_model.system_model.system_m3l_model.fro_disk_motor_sizing_model.mass',
-                'caddee_csdl_model.system_model.system_m3l_model.pp_disk_motor_sizing_model.mass',
-                'caddee_csdl_model.system_model.system_m3l_model.battery_simple_battery_sizing.battery_mass',
-                'caddee_csdl_model.system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.Aframe.MassProp.mass',
-                'caddee_csdl_model.system_model.system_m3l_model.m4_regression.empennage_struct_mass',
-                'caddee_csdl_model.system_model.system_m3l_model.m4_regression.empennage_struct_mass',
-                'caddee_csdl_model.system_model.system_m3l_model.m4_regression.wing_boom_fuselage_structural_mass',
-                'caddee_csdl_model.system_model.system_m3l_model.m4_regression.nsm_mass',
-
-            ],
-            history = False,
-            plot_function = plot_2D,
-        )
-
-
-        # :::::::::::::::::::::::::::: + 3 ::::::::::::::::::::::::::::
-        # get geometry elements to plot:
-        # - full geometry plus
-        # - wing pressure coefficient
-        # - rotor ux
-        def z_reverser(locations, state):
-            # Reverse the z axis of the geometry because beam solver
-            state[:,2] = -state[:,2]
-            return locations, state
-        center_x = 20  # eyeballing center x coordinate of geometry
-        center_z = 11  # eyeballing center z coordinate of geometry
-        # position = (-49.71375366736947/1.65, -26.09937777096867/1.65, 100.3252841988041/1.65)
-        camera_settings = {
-            # 'pos': position,
-            'pos': (-40, -22, 37),
-            'viewup': (0, 0, 1),
-            'focalPoint': (center_x+8, -3, center_z-5)
-        }
-        geo_elements = []
-        geo_elements.append(caddee_viz.build_geometry_plotter(show = False, remove_primitives = rotor_surfaces, opacity = 0.3))
-        geo_elements.append(caddee_viz.build_state_plotter(
-            displacements_plus_3g,
-            rep = rep,
-            displacements= 20,
-            state_callback = z_reverser,
-            color='#bacdff00', #'#182B49',
-            opacity=1.,
-        ))
-
-        geo_elements.append(caddee_viz.build_state_plotter(
-            displacements_minus_1g,
-            rep = rep,
-            displacements= 20,
-            state_callback = z_reverser,
-            color='#ffefba00', #'#FFCD00', #(0.859, 0.843, 0.514),
-            opacity=1.,
-        ))
-
-        geo_frame[0:60, 60:140] = caddee_viz.build_vedo_renderer(
-            geo_elements,
-            camera_settings = camera_settings,
-            show = 0,
-            # title = '+3g',
-        )
         
         disk_prexixes = ['rlo', 'rli', 'rri', 'rro', 'flo', 'fli', 'fri', 'fro']
         bem_conditions = ['hover_1', 'qst_1']
         pitt_peters_conditions = ['qst_2', 'qst_3', 'qst_4', 'qst_5']
         oeis = ['hover_1_oei_flo', 'hover_1_oei_fli']
-        other_cond = ['plus_3g_sizing', 'minus_1g_sizing', 'hover_1', 'climb_1', 'descent_1', 'cruise']
+        other_cond = ['qst_6', 'qst_7', 'qst_8', 'qst_9', 'qst_10','plus_3g_sizing', 'minus_1g_sizing', 'hover_1', 'climb_1', 'descent_1', 'cruise']
+        # other_cond = ['plus_3g_sizing', 'minus_1g_sizing', 'hover_1', 'climb_1', 'descent_1', 'cruise']
         total_cond = bem_conditions + pitt_peters_conditions + oeis + other_cond
         
-        on_design_energy_cond = pitt_peters_conditions + bem_conditions + ['qst_6', 'qst_6', 'qst_6', 'qst_6', 'qst_6', 'hover_1', 'climb_1', 'descent_1', 'cruise']
+        on_design_energy_cond = pitt_peters_conditions + bem_conditions + ['qst_6', 'qst_7', 'qst_8', 'qst_9', 'qst_10', 'hover_1', 'climb_1', 'descent_1', 'cruise']
+        # on_design_energy_cond = pitt_peters_conditions + bem_conditions + ['qst_6', 'qst_6', 'qst_6', 'qst_6', 'qst_6', 'hover_1', 'climb_1', 'descent_1', 'cruise']
 
         for cond in on_design_energy_cond:
             if cond == 'hover_1' or cond == 'qst_1' or cond == 'qst_2':
@@ -6025,11 +5820,51 @@ class TC2DB(ld.DashBuilder):
                 self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.input_power_1', history=True)
                 self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.{cond}_energy', history=True)
 
+
+        # self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.pp_disk_motor_sizing_model.motor_length', history=True)
+        # self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.pp_disk_motor_sizing_model.motor_diameter', history=True)
+        # self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.plus_3g_sizing_pp_disk_bem_model.rpm', history=True)
+        # self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.cruise_pp_disk_bem_model.rpm', history=True)
+        # self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.climb_1_pp_disk_bem_model.rpm', history=True)
+        # self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.plus_3g_sizing_pp_disk_motor_analysis_model.implicit_em_torque_model.load_torque', history=True)
+        # self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.cruise_pp_disk_motor_analysis_model.implicit_em_torque_model.load_torque', history=True)
+        # self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.climb_1_pp_disk_motor_analysis_model.implicit_em_torque_model.load_torque', history=True)
+
+        # self.save_variables('caddee_csdl_model.system_representation.system_configurations_model.hover_1_configuration_geometry', history=False)
+        # self.save_variables('caddee_csdl_model.system_representation.system_configurations_model.hover_configuration_oei_flo_geometry', history=False)
+        # self.save_variables('caddee_csdl_model.system_representation.system_configurations_model.hover_configuration_oei_fli_geometry', history=False)
+        # self.save_variables('caddee_csdl_model.system_representation.system_configurations_model.quasi_steady_transition_3_geometry', history=False)
+        # self.save_variables('caddee_csdl_model.system_representation.system_configurations_model.quasi_steady_transition_5_geometry', history=False)
+
+        # disk_actuation_conditions = ['hover_1_oei_fli', 'hover_1_oei_fl', 'hover_1', 'qst_3', 'qst_5']
+        # for cond in disk_actuation_conditions:
+        #     if cond == 'hover_1_oei_fli':
+        #         for prf in disk_prexixes:
+        #             if prf == 'fli':
+        #                 pass
+        #             else:
+        #                 self.save_variables(f'caddee_csdl_model.system_representation.system_configurations_model.{cond}_{prf}_disk_actuation_1.{cond}_{prf}_disk_actuation_1')
+        #                 self.save_variables(f'caddee_csdl_model.system_representation.system_configurations_model.{cond}_{prf}_disk_actuation_2.{cond}_{prf}_disk_actuation_2')
+        #     elif cond == 'hover_1_oei_flo':
+        #         for prf in disk_prexixes:
+        #             if prf == 'flo':
+        #                 pass
+        #             else:
+        #                 self.save_variables(f'caddee_csdl_model.system_representation.system_configurations_model.{cond}_{prf}_disk_actuation_1.{cond}_{prf}_disk_actuation_1')
+        #                 self.save_variables(f'caddee_csdl_model.system_representation.system_configurations_model.{cond}_{prf}_disk_actuation_2.{cond}_{prf}_disk_actuation_2')
+        #     else:
+        #         for prf in disk_prexixes:
+        #             self.save_variables(f'caddee_csdl_model.system_representation.system_configurations_model.{cond}_{prf}_disk_actuation_1.{cond}_{prf}_disk_actuation_1')
+        #             self.save_variables(f'caddee_csdl_model.system_representation.system_configurations_model.{cond}_{prf}_disk_actuation_2.{cond}_{prf}_disk_actuation_2')
+
+
         for prf in disk_prexixes:
             self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.chord_profile', history=True)
             self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.twist_profile', history=True)
             self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.propeller_radius', history=True)
             self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{prf}_disk_motor_sizing_model.mass', history=True)
+            self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{prf}_disk_motor_sizing_model.motor_length', history=True)
+            self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{prf}_disk_motor_sizing_model.motor_diameter', history=True)
             for cond in bem_conditions:
                 self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.thrust_vector', history=True)
                 self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.thrust_origin', history=True)
@@ -6039,7 +5874,9 @@ class TC2DB(ld.DashBuilder):
                 self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.induced_velocity_model._ux', history=True)
                 self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.induced_velocity_model.FOM', history=True)
                 self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.induced_velocity_model._dD', history=True)
+                self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.induced_velocity_model.C_T', history=True)
                 self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.phi_bracketed_search_group.phi_distribution', history=True)
+                # self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.in_plane_ex', history=True)
         
         for cond in oeis:
             if cond == 'hover_1_oei_flo':
@@ -6086,8 +5923,9 @@ class TC2DB(ld.DashBuilder):
                 self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2.total_torque', history=True)
                 self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2._ux', history=True)
                 self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2._dD', history=True)
+                self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2.C_T', history=True)
                 self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.F', history=True)
-
+                # self.save_variables(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_external_inputs_model.in_plane_ex', history=True)
 
         for cond in total_cond:
             if 'hover' in cond:
@@ -6132,6 +5970,8 @@ class TC2DB(ld.DashBuilder):
         self.save_variables('caddee_csdl_model.system_model.system_m3l_model.plus_3g_sizing_pp_disk_motor_analysis_model.implicit_em_torque_model.load_torque', history=True)
 
 
+        self.save_variables('caddee_csdl_model.system_representation.outputs_model.design_outputs_model.wing_beam_mesh', history=True)
+
         self.save_variables('caddee_csdl_model.system_model.system_m3l_model.minus_1g_sizing_wing_eb_beam_model.wing_beam_displacement', history=True)
         self.save_variables('caddee_csdl_model.system_model.system_m3l_model.minus_1g_sizing_wing_eb_beam_model.new_stress', history=True)
      
@@ -6139,289 +5979,1587 @@ class TC2DB(ld.DashBuilder):
         self.save_variables('caddee_csdl_model.system_model.system_m3l_model.cruise_airfoil_ml_model.wing_vlm_mesh_cruise_cl_span_total_lift_coefficient', history=True)
        
 
-        # :::::::::::::::::::::::::::: OEI FLO ::::::::::::::::::::::::::::
-        # get geometry elements to plot:
-        # - full geometry plus
-        # - wing pressure coefficient
-        # - rotor ux
+
+
+
+        # def add_axes(ax_subplot, data_dict, data_dict_history):
+        #     import matplotlib
+        #     import matplotlib.pyplot as plt
+        #     plt.rcParams.update({'font.size': 10})
+        #     plt.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(vmin=-2, vmax=1.5), cmap='coolwarm'), cax = ax_subplot, location="bottom")
+        #     ax_subplot.set_title(r'$C_p$')
+        
+        # geo_frame[55:57, 20:50] = ld.BaseAxesPlotter(
+        #     plot_function = add_axes,
+        # )
+
+        # TC 2 full geo frame
         geo_elements = []
-        geo_elements.append(
-            caddee_viz.build_geometry_plotter(show = 0, remove_primitives = rotor_surfaces, design_condition_name = 'hover_1_oei_flo')
-        )
-        # geo_elements.append(caddee_viz.build_state_plotter(
-        #     wing_cp_index_functions['cruise'],
-        #     rep = rep,
-        #     vmin = -2,
-        #     vmax = 1,
-        #     normal_arrows = True,
-        # ))
-
-        rotor_primitives = []
-        for rindex in rotor_index_functions_hover_1_oei_flo:
-            geo_elements.append(caddee_viz.build_state_plotter(rindex, rep = rep))
-            for primitive_name in rindex.coefficients:
-                rotor_primitives.append(primitive_name)
-        geo_frame[40:, :] = caddee_viz.build_vedo_renderer(
-            geo_elements,
-            camera_settings = camera_settings,
-            show = 0,
-            # title = 'Transition (point 1 / 10)',
-        )
-
-        # :::::::::::::::::::::::::::: OEI FLI ::::::::::::::::::::::::::::
-        # get geometry elements to plot:
-        # - full geometry plus
-        # - wing pressure coefficient
-        # - rotor ux
-        geo_elements = []
-        geo_elements.append(
-            caddee_viz.build_geometry_plotter(show = 0, remove_primitives = rotor_surfaces, design_condition_name = 'hover_1_oei_fli')
-        )
-        # geo_elements.append(caddee_viz.build_state_plotter(
-        #     wing_cp_index_functions['cruise'],
-        #     rep = rep,
-        #     vmin = -2,
-        #     vmax = 1,
-        #     normal_arrows = True,
-        # ))
-
-        rotor_primitives = []
-        for rindex in rotor_index_functions_hover_1_oei_fli:
-            geo_elements.append(caddee_viz.build_state_plotter(rindex, rep = rep))
-            for primitive_name in rindex.coefficients:
-                rotor_primitives.append(primitive_name)
-        geo_frame[40:, :] = caddee_viz.build_vedo_renderer(
-            geo_elements,
-            camera_settings = camera_settings,
-            show = 0,
-            # title = 'Transition (point 1 / 10)',
-        )
-
-
-        # :::::::::::::::::::::::::::: QST 1 ::::::::::::::::::::::::::::
-        # get geometry elements to plot:
-        # - full geometry plus
-        # - wing pressure coefficient
-        # - rotor ux
-        geo_elements = []
-        geo_elements.append(
-            caddee_viz.build_geometry_plotter(show = 0, remove_primitives = rotor_surfaces, design_condition_name = 'qst_1')
-        )
-        # geo_elements.append(caddee_viz.build_state_plotter(
-        #     wing_cp_index_functions['cruise'],
-        #     rep = rep,
-        #     vmin = -2,
-        #     vmax = 1,
-        #     normal_arrows = True,
-        # ))
-
-        rotor_primitives = []
-        for rindex in rotor_index_functions_qst_1:
-            geo_elements.append(caddee_viz.build_state_plotter(rindex, rep = rep))
-            for primitive_name in rindex.coefficients:
-                rotor_primitives.append(primitive_name)
-        geo_frame[40:, :] = caddee_viz.build_vedo_renderer(
-            geo_elements,
-            camera_settings = camera_settings,
-            show = 0,
-            # title = 'Transition (point 1 / 10)',
-        )
-       
-        # :::::::::::::::::::::::::::: QST 2 ::::::::::::::::::::::::::::
-        # get geometry elements to plot:
-        # - full geometry plus
-        # - wing pressure coefficient
-        # - rotor ux
-        geo_elements = []
-        geo_elements.append(
-            caddee_viz.build_geometry_plotter(show = 0, remove_primitives = rotor_surfaces, design_condition_name = 'qst_2')
-        )
-        # geo_elements.append(caddee_viz.build_state_plotter(
-        #     wing_cp_index_functions['cruise'],
-        #     rep = rep,
-        #     vmin = -2,
-        #     vmax = 1,
-        #     normal_arrows = True,
-        # ))
-
-        rotor_primitives = []
-        for rindex in rotor_index_functions_qst_2:
-            geo_elements.append(caddee_viz.build_state_plotter(rindex, rep = rep))
-            for primitive_name in rindex.coefficients:
-                rotor_primitives.append(primitive_name)
-        geo_frame[40:, :] = caddee_viz.build_vedo_renderer(
-            geo_elements,
-            camera_settings = camera_settings,
-            show = 0,
-            # title = 'Transition (point 1 / 10)',
-        )
-
-        # :::::::::::::::::::::::::::: QST 3 ::::::::::::::::::::::::::::
-        # get geometry elements to plot:
-        # - full geometry plus
-        # - wing pressure coefficient
-        # - rotor ux
-        geo_elements = []
-        geo_elements.append(
-            caddee_viz.build_geometry_plotter(show = 0, remove_primitives = rotor_surfaces, design_condition_name = 'qst_3'))
-        # geo_elements.append(caddee_viz.build_state_plotter(
-        #     wing_cp_index_functions['cruise'],
-        #     rep = rep,
-        #     vmin = -2,
-        #     vmax = 1,
-        #     normal_arrows = True,
-        # ))
-
         rotor_primitives = []
         for rindex in rotor_index_functions_qst_3:
             geo_elements.append(caddee_viz.build_state_plotter(rindex, rep = rep))
             for primitive_name in rindex.coefficients:
                 rotor_primitives.append(primitive_name)
-        geo_frame[0:60,120:200] = caddee_viz.build_vedo_renderer(
-            geo_elements,
-            camera_settings = camera_settings,
-            show = 0,
-            # title = 'Transition (point 5 / 10)',
-        )
 
-        # :::::::::::::::::::::::::::: QST 4 ::::::::::::::::::::::::::::
-        # get geometry elements to plot:
-        # - full geometry plus
-        # - wing pressure coefficient
-        # - rotor ux
-        geo_elements = []
-        geo_elements.append(
-            caddee_viz.build_geometry_plotter(show = 0, remove_primitives = rotor_surfaces, design_condition_name = 'qst_4'))
-        # geo_elements.append(caddee_viz.build_state_plotter(
-        #     wing_cp_index_functions['cruise'],
-        #     rep = rep,
-        #     vmin = -2,
-        #     vmax = 1,
-        #     normal_arrows = True,
-        # ))
+        center_x = 20  # eyeballing center x coordinate of geometry
+        center_z = 11  # eyeballing center z coordinate of geometry
+        position = (-49.71375366736947/ 1.6, -26.09937777096867/ 1.6, 100.3252841988041 / 1.6)
+        position_2 = (15, 0, 70)
+        # camera_settings = {
+        #     'pos' : position_2,
+        #     # 'pos': (-32, -22, 32),
+        #     'viewup': (1, 0, 0),
+        #     'focalPoint': (15, 0, center_z-5),
+        #     # 'focalPoint': (0, 0, 0)
+        # }
+        # # geo_frame[30:60,0:30] = caddee_viz.build_geometry_plotter(show = False, camera_settings = camera_settings)
 
-        rotor_primitives = []
-        for rindex in rotor_index_functions_qst_4:
-            geo_elements.append(caddee_viz.build_state_plotter(rindex, rep = rep))
-            for primitive_name in rindex.coefficients:
-                rotor_primitives.append(primitive_name)
-        geo_frame[0:60,120:200] = caddee_viz.build_vedo_renderer(
-            geo_elements,
-            camera_settings = camera_settings,
-            show = 0,
-            # title = 'Transition (point 5 / 10)',
-        )
+        wing_surfaces = ld.caddee_plotters.get_index_function_surfaces(wing_cp_index_functions['cruise'])
+        rotor_surfaces = []
+        for rindex in rotor_index_functions_qst_1:
+            rotor_surfaces = rotor_surfaces + ld.caddee_plotters.get_index_function_surfaces(rindex)
+        remove_surfaces = wing_surfaces + rotor_surfaces
 
-        # :::::::::::::::::::::::::::: QST 5 ::::::::::::::::::::::::::::
-        # get geometry elements to plot:
-        # - full geometry plus
-        # - wing pressure coefficient
-        # - rotor ux
-        geo_elements = []
-        geo_elements.append(
-            caddee_viz.build_geometry_plotter(show = 0, remove_primitives = rotor_surfaces, design_condition_name = 'qst_5'))
-        # geo_elements.append(caddee_viz.build_state_plotter(
-        #     wing_cp_index_functions['cruise'],
-        #     rep = rep,
-        #     vmin = -2,
-        #     vmax = 1,
-        #     normal_arrows = True,
-        # ))
-        camera_settings = {
-            # 'pos': position,
-            'pos': (-40, -22, 37),
-            'viewup': (0, 0, 1),
-            'focalPoint': (center_x+8, 2, center_z-5.5)
-        }
-        rotor_primitives = []
-        for rindex in rotor_index_functions_qst_5:
-            geo_elements.append(caddee_viz.build_state_plotter(rindex, rep = rep))
-            for primitive_name in rindex.coefficients:
-                rotor_primitives.append(primitive_name)
-        geo_frame[0:60,120:200] = caddee_viz.build_vedo_renderer(
-            geo_elements,
-            camera_settings = camera_settings,
-            show = 0,
-            # title = 'Transition (point 2/10)',
-        )
+        # camera_settings = {
+        #     # 'pos': position,
+        #     'pos': (-40, -22, 37),
+        #     'viewup': (0, 0, 1),
+        #     'focalPoint': (center_x+4, -3, center_z-5)
+        # }
 
-
-       
-
-
-        # # TC 2 full geo frame
-        # dv_and_constraint_frame = self.add_frame(
-        #     'dv_and_constraints',
+        # :::::::::::::::::::::::::::::::::::::::::::::: SUB-SYSTEM FRAME::::::::::::::::::::::::::::::::::::::::::
+        # sub_system_frame = self.add_frame(
+        #     'sub_system_frame',
         #     height_in=16.,
-        #     width_in=24.,
-        #     ncols=120,
-        #     nrows = 80,
+        #     width_in=30.,
+        #     ncols=200,
+        #     nrows = 140,
         #     wspace=0.4,
         #     hspace=0.4,
         # )
 
+        
+        # # :::::::::::::::::::::::::::: Cruise ::::::::::::::::::::::::::::
+        # geo_elements = []
+        # geo_elements.append(caddee_viz.build_geometry_plotter(show = 0, remove_primitives = remove_surfaces, opacity=0.3))
+        # geo_elements.append(caddee_viz.build_state_plotter(
+        #     wing_cp_index_functions['cruise'],
+        #     rep = rep,
+        #     vmin = -2,
+        #     vmax = 1.5,
+        #     normal_arrows = False,
+        #     colormap='coolwarm',
+        #     grid_num=20,
+        # ))
 
         # center_x = 20  # eyeballing center x coordinate of geometry
         # center_z = 11  # eyeballing center z coordinate of geometry
+        # position_2 = (15, 0, 70)
         # camera_settings = {
-        #     'pos': (-32, -22, 32),
-        #     'viewup': (0, 0, 1),
-        #     'focalPoint': (center_x+8, -2, center_z-10)
+        #     'pos' : position_2,
+        #     # 'pos': (-32, -22, 32),
+        #     'viewup': (1, 0, 0),
+        #     'focalPoint': (15, 0, 0),
+        #     # 'focalPoint': (0, 0, 0)
         # }
-        # # geo_frame[30:60,0:30] = caddee_viz.build_geometry_plotter(show = False, camera_settings = camera_settings)
-        sub_system_frame = self.add_frame(
-            'sub_system_frame',
+
+        
+        # sub_system_frame[40:100, 0:75] = caddee_viz.build_vedo_renderer(
+        #     geo_elements,
+        #     camera_settings = camera_settings,
+        #     show = 0,
+        #     # title = 'Cruise',
+        # )
+      
+        
+        # import matplotlib.pyplot as plt
+        # import seaborn as sns
+
+        # def plot_trim_res(ax_subplot, data_dict, data_dict_history):
+        #     x_axis = data_dict_history['global_ind']
+            
+        #     for cond in total_cond:
+        #         res = data_dict_history[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_euler_eom_gen_ref_pt.trim_residual']
+        #         ax_subplot.semilogy(x_axis, res, label=cond)
+
+        #     ax_subplot.set_xlabel('iteration')
+        #     ax_subplot.set_ylabel('trim residual')
+        #     ax_subplot.set_title('trim residuals vs. iteration')
+        #     # ax_subplot.legend()
+
+        # sub_system_frame[0:35, 100:140] = ld.BaseAxesPlotter(
+        #     plot_function=plot_trim_res,
+        # )
+
+        # def plot_noise_constraint(ax_subplot, data_dict, data_dict_history):
+        #     noise5 = data_dict_history['caddee_csdl_model.system_model.system_m3l_model.qst_5_total_noise_model.A_weighted_total_spl']
+        #     noise4 = data_dict_history['caddee_csdl_model.system_model.system_m3l_model.qst_4_total_noise_model.A_weighted_total_spl']
+        #     noise3 = data_dict_history['caddee_csdl_model.system_model.system_m3l_model.qst_3_total_noise_model.A_weighted_total_spl']
+        #     noise2 = data_dict_history['caddee_csdl_model.system_model.system_m3l_model.qst_2_total_noise_model.A_weighted_total_spl']
+        #     noise1 = data_dict_history['caddee_csdl_model.system_model.system_m3l_model.qst_1_total_noise_model.A_weighted_total_spl']
+        #     # noise1 = data_dict_history['caddee_csdl_model.system_model.system_m3l_model.hover_1_total_noise_model.A_weighted_total_spl']
+    
+        #     x_axis = data_dict_history['global_ind']
+        #     sns.lineplot(x=x_axis, y=np.array(noise5).flatten(), ax=ax_subplot)
+        #     sns.lineplot(x=x_axis, y=np.array(noise4).flatten(), ax=ax_subplot)
+        #     sns.lineplot(x=x_axis, y=np.array(noise3).flatten(), ax=ax_subplot)
+        #     sns.lineplot(x=x_axis, y=np.array(noise2).flatten(), ax=ax_subplot)
+        #     sns.lineplot(x=x_axis, y=np.array(noise1).flatten(), ax=ax_subplot)
+            
+            
+        #     sns.lineplot(x=list(range(len(x_axis))), y=75, ax=ax_subplot, linestyle='--' )
+        #     ax_subplot.set_ylabel('SPL (dB-A)')
+        #     # ax_subplot.set_ylim([-0.4, 0.4])
+        #     ax_subplot.set_xlabel('iteration')
+        #     ax_subplot.set_title('noise constraint vs. iteration')
+
+        # sub_system_frame[0:35, 150:190] = ld.BaseAxesPlotter(
+        #     plot_function=plot_noise_constraint,
+        # )
+
+
+        # def plot_2D(ax_subplot, data_dict, data_dict_history):
+        #     # soc = data_dict_history['caddee_csdl_model.system_model.system_m3l_model.SOC_model.finalSoC']
+            
+        #     # x_axis = data_dict_history['global_ind']
+        #     # cur_ind = x_axis[-1]
+        #     # # y=np.array(soc).flatten()
+        #     # y= 0.2 * np.ones((cur_ind+1, ))
+        #     # print(len(y))
+        #     # print(len(list(range(len(soc)))))
+        #     # sns.lineplot(x=list(range(len(soc))), y=np.array(soc).flatten(), ax=ax_subplot)
+        #     # sns.lineplot(x=list(range(len(soc))), y=y, ax=ax_subplot, linestyle='--' )
+        #     # ax_subplot.set_ylabel('final SoC')
+        #     # ax_subplot.set_ylim([-0.4, 0.8])
+        #     # ax_subplot.set_xlabel('iteration')
+        #     # # ax_subplot.set_title(f'Constraint at iteration {cur_ind}')
+
+        #     time = []
+        #     total_power = []
+        #     battery_mass = data_dict['caddee_csdl_model.system_model.system_m3l_model.battery_simple_battery_sizing.battery_mass'][0]
+        #     conditions = ['hover_1', 'qst_1', 'qst_2', 'qst_3', 'qst_4', 'qst_5', 'qst_6', 'qst_7', 'qst_8', 'qst_9', 'qst_10', 'climb_1', 'cruise', 'descent_1']
+        #     # conditions = ['hover_1', 'qst_1', 'qst_2', 'qst_3', 'qst_4', 'qst_5', 'climb_1', 'cruise', 'descent_1']
+
+        #     for cond in conditions:
+        #         lift_motor_power = 0
+        #         # if cond == 'qst_6' or cond == 'qst_7' or cond == 'qst_8' or cond == 'qst_9' or cond == 'qst_10':
+        #         #     pass
+        #         if cond == 'hover_1' or cond == 'qst_1':
+        #             time.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.{cond}_time'][0])
+        #             for i in range(8):
+        #                 lift_motor_power += data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.input_power_{i+1}'][0]                  
+        #             total_power.append(lift_motor_power)
+
+        #         elif cond == 'qst_2':
+        #             time.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.{cond}_time'][0])
+        #             for i in range(8):
+        #                 lift_motor_power += data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.input_power_{i+1}'][0]                  
+        #             pusher_motor_power = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.input_power_1'][0]
+        #             total_power.append(lift_motor_power + pusher_motor_power)
+        #         else:
+        #             total_power.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.input_power_1'][0])
+        #             # f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.{cond}_energy'
+        #             time.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.{cond}_time'][0])
+            
+        #     total_time = np.sum(time)
+
+        #     energy = np.array(time) * np.array(total_power)
+        #     total_energy_vector = np.hstack((energy, energy))
+        #     total_energy_available = battery_mass * 400 *  3600
+
+        #     soc_vector = np.zeros((29, ))
+            
+        #     energy_left = total_energy_available
+        #     for i in range(len(soc_vector)):
+        #         if i == 0:
+        #             soc_vector[i] = total_energy_available / total_energy_available
+        #         else:
+        #             energy_left -= total_energy_vector[i-1]
+        #             soc_vector[i] = energy_left / total_energy_available
+
+        #     cond = []
+        #     times = np.array([
+        #         0,
+        #         90.0, 
+        #         7.1975557350759996, 
+        #         7.158558157742379, 
+        #         7.176582520884219, 
+        #         7.189595930058137, 
+        #         7.196564286738931, 
+        #         7.1938285999339175, 
+        #         7.1923664654226585, 
+        #         7.187571971426346, 
+        #         7.18655274840304, 
+        #         7.183223213250479, 
+        #         152.03679917376516,
+        #         857.5760415065057, 
+        #         174.34961871850288,
+        #     ])
+            
+        #     time_vector = np.hstack((times, times[1:])).tolist()
+        #     time_list = []
+        #     time_sum = 0
+        #     for time in time_vector:
+        #         time_sum += time
+        #         time_list.append(time_sum)
+
+
+        #     # print(time_list)
+
+
+        #     sns.lineplot(x=np.array(time_list), y=soc_vector*100, ax=ax_subplot)
+        #     sns.lineplot(x=np.array(time_list), y=20*np.ones((len(soc_vector))), ax=ax_subplot, linestyle='--' )
+        #     # sns.lineplot(x=time_vector[0:68], y=power_vector[0:68], ax=ax_subplot)
+        #     # sns.lineplot(x=time_vector, y=(soc_vector/ total_energy_available) *100, ax=ax_subplot)
+        #     # # sns.lineplot(x=time_vector_2, y=power_vector*1e-3, ax=ax_subplot)
+        #     ax_subplot.set_ylabel('state of charge (%)')
+        #     ax_subplot.set_xlabel('mission time (s)')
+        #     ax_subplot.set_title('SoC vs. time')
+        #     # print(time)
+        #     # print(total_power)
+
+        # sub_system_frame[0:35, 0:40] = ld.BaseAxesPlotter(
+        #     required_vars = [
+        #         'caddee_csdl_model.system_model.system_m3l_model.SOC_model.finalSoC',
+        #         'caddee_csdl_model.system_model.system_m3l_model.qst_5_total_noise_model.A_weighted_total_spl',
+        #         'caddee_csdl_model.system_model.system_m3l_model.qst_4_total_noise_model.A_weighted_total_spl',
+        #         'caddee_csdl_model.system_model.system_m3l_model.qst_3_total_noise_model.A_weighted_total_spl',
+        #         'caddee_csdl_model.system_model.system_m3l_model.qst_2_total_noise_model.A_weighted_total_spl',
+        #         'caddee_csdl_model.system_model.system_m3l_model.qst_1_total_noise_model.A_weighted_total_spl',
+
+
+        #     ],
+        #     history = True,
+        #     plot_function = plot_2D,
+        # )
+
+        # def plot_soc_vs_time(ax_subplot, data_dict, data_dict_history): 
+        #     lift_motor_power_per_condtion = [] 
+        #     pusher_motor_power_per_condition = []
+        #     time = []
+        #     total_power = []
+        #     battery_mass = data_dict['caddee_csdl_model.system_model.system_m3l_model.battery_simple_battery_sizing.battery_mass'][0]
+        #     conditions = ['hover_1', 'qst_1', 'qst_2', 'qst_3', 'qst_4', 'qst_5', 'qst_6', 'qst_7', 'qst_8', 'qst_9', 'qst_10', 'climb_1', 'cruise', 'descent_1']
+        #     # conditions = ['hover_1', 'qst_1', 'qst_2', 'qst_3', 'qst_4', 'qst_5', 'climb_1', 'cruise', 'descent_1']
+
+        #     for cond in conditions:
+        #         lift_motor_power = 0
+        #         # if cond == 'qst_6' or cond == 'qst_7' or cond == 'qst_8' or cond == 'qst_9' or cond == 'qst_10':
+        #         #     pass
+        #         if cond == 'hover_1' or cond == 'qst_1':
+        #             time.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.{cond}_time'][0])
+        #             for i in range(8):
+        #                 lift_motor_power += data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.input_power_{i+1}'][0]                  
+        #             total_power.append(lift_motor_power)
+
+        #         elif cond == 'qst_2':
+        #             time.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.{cond}_time'][0])
+        #             for i in range(8):
+        #                 lift_motor_power += data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.input_power_{i+1}'][0]                  
+        #             pusher_motor_power = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.input_power_1'][0]
+        #             total_power.append(lift_motor_power + pusher_motor_power)
+        #         else:
+        #             total_power.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.input_power_1'][0])
+        #             # f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.{cond}_energy'
+        #             time.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.{cond}_time'][0])
+            
+        #     total_time = np.sum(time)
+
+        #     energy = np.array(time) * np.array(total_power)
+        #     total_energy_available = battery_mass * 400 *  3600
+
+        #     time_vector = np.linspace(0, total_time * 2, 1000)
+        #     soc_vector = np.zeros((1000, ))
+            
+        #     print((time / total_time) * 1000) 
+
+        # sub_system_frame[0:35, 0:40] = ld.BaseAxesPlotter(
+        #     # history = True,
+        #     # plot_function = plot_soc_vs_time,
+        #     plot_function = plot_2D,
+        # )
+
+
+        # def plot_power_profile(ax_subplot, data_dict, data_dict_history): 
+        #     lift_motor_power_per_condtion = [] 
+        #     pusher_motor_power_per_condition = []
+        #     time = []
+        #     total_power = []
+            
+        #     conditions = ['hover_1', 'qst_1', 'qst_2', 'qst_3', 'qst_4', 'qst_5', 'qst_6', 'qst_7', 'qst_8', 'qst_9', 'qst_10', 'climb_1', 'cruise', 'descent_1']
+        #     # conditions = ['hover_1', 'qst_1', 'qst_2', 'qst_3', 'qst_4', 'qst_5', 'climb_1', 'cruise', 'descent_1']
+
+        #     for cond in conditions:
+        #         lift_motor_power = 0
+        #         # if cond == 'qst_6' or cond == 'qst_7' or cond == 'qst_8' or cond == 'qst_9' or cond == 'qst_10':
+        #         #     pass
+        #         if cond == 'hover_1' or cond == 'qst_1':
+        #             time.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.{cond}_time'][0])
+        #             for i in range(8):
+        #                 lift_motor_power += data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.input_power_{i+1}'][0]                  
+        #             total_power.append(lift_motor_power)
+
+        #         elif cond == 'qst_2':
+        #             time.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.{cond}_time'][0])
+        #             for i in range(8):
+        #                 lift_motor_power += data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.input_power_{i+1}'][0]                  
+        #             pusher_motor_power = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.input_power_1'][0]
+        #             total_power.append(lift_motor_power + pusher_motor_power)
+        #         else:
+        #             total_power.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.input_power_1'][0])
+        #             # f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.{cond}_energy'
+        #             time.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.{cond}_time'][0])
+            
+        #     total_time = np.sum(time)
+
+
+        #     time_vector = np.linspace(0, total_time, 1000)
+        #     time_vector_2 = np.linspace(0, total_time, 1000) + total_time
+        #     power_vector = np.zeros((1000, ))
+            
+        #     print((time / total_time) * 1000) 
+
+
+        #     power_vector[0:67] = total_power[0]
+        #     power_vector[67:72] = total_power[1]
+        #     power_vector[72:79] = total_power[2]
+        #     power_vector[79:84] = total_power[3]
+        #     power_vector[84:89] = total_power[4]
+        #     power_vector[89:94] = total_power[5]
+        #     power_vector[94:99] = total_power[6]
+        #     power_vector[99:104] = total_power[7]
+        #     power_vector[104:109] = total_power[8]
+        #     power_vector[104:109] = total_power[9]
+        #     power_vector[109:114] = total_power[10]
+        #     power_vector[114:226] = total_power[11]
+        #     power_vector[226:863] = total_power[12]
+        #     power_vector[863:] = total_power[13]
+
+
+
+        #     # sns.lineplot(x=time_vector[0:68], y=power_vector[0:68], ax=ax_subplot)
+        #     sns.lineplot(x=np.hstack((time_vector, time_vector_2)), y=np.hstack((power_vector*1e-3, power_vector*1e-3)), ax=ax_subplot)
+        #     # sns.lineplot(x=time_vector_2, y=power_vector*1e-3, ax=ax_subplot)
+        #     ax_subplot.set_xlabel('mission time (s)')
+        #     ax_subplot.set_ylabel('power (kW)')
+        #     ax_subplot.set_title('power profile vs. time')
+        #     # print(time)
+        #     # print(total_power)
+
+        # required_vars = []
+        # for cond in on_design_energy_cond:
+        #     if cond == 'qst_6' or cond == 'qst_7' or cond == 'qst_8' or cond == 'qst_9' or cond == 'qst_10':
+        #             pass
+        #     elif cond == 'hover_1' or cond == 'qst_1' or cond == 'qst_2':
+        #         required_vars.append(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.{cond}_time')         
+        #         for i in range(8):
+        #             required_vars.append(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.input_power_{i+1}')
+        #     else:
+        #         required_vars.append(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_energy_model.input_power_1')         
+        #         required_vars.append(f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.{cond}_time')         
+        
+        # sub_system_frame[0:35, 50:90] = ld.BaseAxesPlotter(
+        #     # required_vars=required_vars,
+        #     plot_function=plot_power_profile,
+        #     history=True,
+        # )
+
+        # def plot_beam_deflections(ax_subplot, data_dict, data_dict_history):
+        #     wing_beam_mesh = data_dict['caddee_csdl_model.system_representation.outputs_model.design_outputs_model.wing_beam_mesh']
+        #     # wing_beam_mesh_max = np.max(maxwing_beam_mesh[:, 2])
+        #     # wing_beam_mesh[:, 2] = wing_beam_mesh[:, 2] - wing_beam_mesh_max
+
+        #     wing_beam_displacement = data_dict['caddee_csdl_model.system_model.system_m3l_model.minus_1g_sizing_wing_eb_beam_model.wing_beam_displacement']
+        #     wing_beam_displacement_3g = data_dict['caddee_csdl_model.system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.wing_beam_displacement']
+        #     # wing_beam_displacement_max = np.max(wing_beam_displacement[:, 2])
+        #     # wing_beam_displacement[:, 2] = wing_beam_displacement[:, 2] - wing_beam_displacement_max
+
+        #     new_stress = data_dict['caddee_csdl_model.system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.new_stress']
+        #     wing_beam_tcap = data_dict['caddee_csdl_model.system_model.system_m3l_model.mass_model.wing_beam_tcap']
+
+        #     # wing_beam_mesh = data_dict['caddee_csdl_model.system_representation.outputs_model.design_outputs_model.wing_beam_mesh']
+        #     # print(displacements_plus_3g)
+
+        #     # fig, ax1 = plt.subplots(figsize=(8,3))
+        #     x = np.linspace(wing_beam_mesh[0,1], wing_beam_mesh[-1,1], len(wing_beam_mesh) - 1)
+
+        #     ax_subplot.set_xlabel('Span (ft)')
+        #     ax_subplot.set_ylabel('Stress (Pa)')
+        #     # ax_subplot.set_ylim(0,500E6/10)
+
+        #     allowable_stress = 600E6/1.5
+        #     ax_subplot.axhline(y=allowable_stress, color='black', linestyle='dashed', linewidth=1.5, alpha=0.5) # plot the max stress limit as a dotted line
+
+        #     # print(new_stress)
+        #     # print(new_stress.shape)
+        #     stress = np.max(new_stress, axis=1) # take the maximum stress in each element across the span
+        #     ax_subplot.plot(x, stress, color='red', linewidth=2)
+        #     ax_subplot.legend(['max allowable stress', 'Von-Mises stress'], loc='lower left')
+        #     ax_subplot.set_title('beam stresses and displacements')
+
+        #     if len(ax_subplot.get_shared_x_axes().get_siblings(ax_subplot)) == 1:
+        #         ax2 = ax_subplot.twinx()
+        #     else:
+        #         ax2 = ax_subplot.get_shared_x_axes().get_siblings(ax_subplot)[0]
+        #     ax2.clear()
+
+        #     # plot the beam nodes
+        #     # ax2 = ax_subplot.twinx()
+
+        #     # ax2.set_ylabel('Position (m)')
+        #     ax2.set_ylim(6, 9)
+        #     ax2.set_xlim([0, np.max(x) +2])
+
+
+        #     # plot the deformed mesh 
+        #     # deformed_mesh = wing_beam_displacement_3g - wing_beam_mesh 
+        #     deformed_mesh = wing_beam_mesh 
+        #     ax2.scatter(deformed_mesh[:,1], deformed_mesh[:,2], color='yellow', edgecolors='black', linewidth=1, zorder=10, s=30) # label='_nolegend_'
+        #     ax2.plot(deformed_mesh[:,1], deformed_mesh[:,2], color='k', label='_nolegend_', linewidth=2)
+
+        #     # plot the deformed mesh (3g)
+        #     deformed_mesh = wing_beam_mesh - wing_beam_displacement_3g 
+        #     # deformed_mesh = wing_beam_displacement
+        #     ax2.scatter(deformed_mesh[:,1], deformed_mesh[:,2], color='limegreen', edgecolors='black', linewidth=1, zorder=10, s=30) # label='_nolegend_'
+        #     ax2.plot(deformed_mesh[:,1], deformed_mesh[:,2], color='k', label='_nolegend_', linewidth=2)
+        #     # ax2.invert_yaxis()
+
+        #     deformed_mesh = wing_beam_mesh - wing_beam_displacement 
+        #     # deformed_mesh = wing_beam_displacement
+        #     ax2.scatter(deformed_mesh[:,1], deformed_mesh[:,2], color='firebrick', edgecolors='black', linewidth=1, zorder=10, s=30) # label='_nolegend_'
+        #     ax2.plot(deformed_mesh[:,1], deformed_mesh[:,2], color='k', label='_nolegend_', linewidth=2)
+
+        #     ax2.legend(['undeformed', '+3g', '-1g'], loc='lower right')
+
+
+        #     scale = 1E3
+        #     for i in range(len(wing_beam_mesh) - 1):
+        #         # linewidth = np.max(int(wing_beam_tcap[i]*scale), 1)
+        #         linewidth = np.max(int(wing_beam_tcap[i]*scale))
+        #         # print(linewidth)
+        #         ax2.plot([deformed_mesh[i,1], deformed_mesh[i+1,1]], [deformed_mesh[i,2], deformed_mesh[i+1,2]], color='k', label='_nolegend_', linewidth=linewidth)
+        
+        # sub_system_frame[50:90, 80:130] = ld.BaseAxesPlotter(
+        # # required_vars=required_vars,
+        #     plot_function=plot_beam_deflections,
+        #     history=True,
+        # )
+
+
+        # def plot_pressure_coeff_1(ax_subplot, data_dict, data_dict_history): 
+        #     Re = data_dict['caddee_csdl_model.system_model.system_m3l_model.cruise_airfoil_ml_model.wing_vlm_mesh_cruise_cl_span_total_reynolds_number']
+        #     Cl = data_dict['caddee_csdl_model.system_model.system_m3l_model.cruise_airfoil_ml_model.wing_vlm_mesh_cruise_cl_span_total_lift_coefficient']
+        #     print('Re', Re)
+        #     print('Cl', Cl)
+
+        #     from lsdo_airfoil.core.pressure_profile import PressureProfile
+        #     pressure_profile = PressureProfile(
+        #         airfoil_name='NASA_langley_ga_1',
+        #         num_nodes=1,
+        #         use_inverse_cl_map=True,
+        #     )
+        #     run_model = pressure_profile.compute()
+        #     run_model.create_input('mach_number', 0.17)
+        #     run_model.create_input('lift_coefficient', Cl[5])
+        #     run_model.create_input('reynolds_number', Re[5])
+        #     cp_sim = Simulator(run_model, analytics=True)
+        #     cp_sim.run()
+        #     Cp_upper = cp_sim['CpUpper']
+        #     Cp_lower = cp_sim['CpLower']
+
+        #     num_pts = 100
+        #     x_range = np.linspace(0, 1, num_pts)
+        #     i_vec = np.arange(0, len(x_range))
+        #     x_interp = 1 - np.cos(np.pi/(2 * len(x_range)) * i_vec)
+
+        #     ax_subplot.plot(x_interp, Cp_upper, color='blue')
+        #     ax_subplot.plot(x_interp, Cp_lower, color='blue')
+        #     ax_subplot.invert_yaxis()
+
+        #     # ax2 = ax_subplot.twiny()
+            
+        #     from lsdo_airfoil import AIRFOIL_COORDINATES_FOLDER
+        #     test_airfoil_coord = np.loadtxt(AIRFOIL_COORDINATES_FOLDER / 'boeing_vertol_vr_12.txt')
+        #     upper = test_airfoil_coord[0:43, 1]
+        #     lower = test_airfoil_coord[43:, 1]
+        #     x_upper = test_airfoil_coord[0:43, 0]
+        #     x_lower = test_airfoil_coord[43:, 0]
+
+        #     # plot airfoil
+        #     # plt.figure(1)
+        #     ax_subplot.plot(x_upper, upper, color='k', label='Raw coordinates')
+        #     ax_subplot.plot(x_lower, lower, color='k')
+
+        #     ax_subplot.set_title(r'Mid-span $C_p$ in cruise')
+
+        #     # plt.plot(x_interp, upper_interp, color='b', label='Interpolated coordinates')
+        #     # plt.plot(x_interp, lower_interp, color='b')
+        #     # ax_subplot.axis('equal')
+
+        # sub_system_frame[100:140, 0:40] = ld.BaseAxesPlotter(
+        # # required_vars=required_vars,
+        #     plot_function=plot_pressure_coeff_1,
+        #     history=True,
+        # )
+
+
+        # def plot_bar_rpm_oei_1(ax_subplot, data_dict, data_dict_history):
+        #     rpm_list = []
+        #     rpm_list_hover = []
+        #     names = []
+        #     names_hover = []
+        #     for prf in disk_prexixes:
+        #         if prf == 'flo':
+        #             rpm_list_hover.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.rpm'][0][0])
+        #             names_hover.append(prf)
+        #             pass
+        #         else:
+        #             rpm_list.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_oei_flo_{prf}_disk_bem_model.rpm'][0][0])
+        #             names.append(prf)
+
+        #             rpm_list_hover.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.rpm'][0][0])
+        #             names_hover.append(prf)
+
+        #     # print(rpm_list)
+        #     ax_subplot.bar(names, rpm_list)
+        #     ax_subplot.bar(names_hover, rpm_list_hover)
+        #     ax_subplot.set_title('rotor rpm in OEI (blue) and hover (orange)')
+
+
+        # sub_system_frame[100:140, 100:140] = ld.BaseAxesPlotter(
+        #     # required_vars = ['f', 'x', 'inequality_constraint'],
+        #     # history = False,
+        #     plot_function = plot_bar_rpm_oei_1,
+        # )
+
+        # def plot_bar_rpm_oei_2(ax_subplot, data_dict, data_dict_history):
+        #     rpm_list = []
+        #     rpm_list_hover = []
+        #     names = []
+        #     names_hover = []
+        #     for prf in disk_prexixes:
+        #         if prf == 'fli':
+        #             rpm_list_hover.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.rpm'][0][0])
+        #             names_hover.append(prf)
+        #             pass
+        #         else:
+        #             rpm_list.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_oei_fli_{prf}_disk_bem_model.rpm'][0][0])
+        #             names.append(prf)
+
+        #             rpm_list_hover.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.rpm'][0][0])
+        #             names_hover.append(prf)
+
+        #     # print(rpm_list)
+        #     ax_subplot.bar(names, rpm_list)
+        #     ax_subplot.bar(names_hover, rpm_list_hover)
+        #     ax_subplot.set_title('rotor rpm in OEI 2 (blue) and hover (orange)')
+
+
+        # def plot_hover_fom(ax_subplot, data_dict, data_dict_history):
+        #     fom_list = []
+        #     names = []
+        #     for prf in disk_prexixes:
+        #         fom_list.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.induced_velocity_model.FOM'][0])
+        #         names.append(prf)
+
+        #     ax_subplot.bar(names, fom_list)
+        #     ax_subplot.set_title('lift rotors figure of merit (FOM)')
+
+        # sub_system_frame[100:140, 150:190] = ld.BaseAxesPlotter(
+        #     # required_vars = ['f', 'x', 'inequality_constraint'],
+        #     # history = False,
+        #     plot_function = plot_hover_fom,
+        # )
+
+        # def plot_mass_pie_chart(ax_subplot, data_dict, data_dict_history):
+        #     rlo = data_dict['caddee_csdl_model.system_model.system_m3l_model.rlo_disk_motor_sizing_model.mass']
+        #     rli = data_dict['caddee_csdl_model.system_model.system_m3l_model.rli_disk_motor_sizing_model.mass']
+        #     rri = data_dict['caddee_csdl_model.system_model.system_m3l_model.rri_disk_motor_sizing_model.mass']
+        #     rro = data_dict['caddee_csdl_model.system_model.system_m3l_model.rro_disk_motor_sizing_model.mass']
+        #     flo = data_dict['caddee_csdl_model.system_model.system_m3l_model.flo_disk_motor_sizing_model.mass']
+        #     fli = data_dict['caddee_csdl_model.system_model.system_m3l_model.fli_disk_motor_sizing_model.mass']
+        #     fri = data_dict['caddee_csdl_model.system_model.system_m3l_model.fri_disk_motor_sizing_model.mass']
+        #     fro = data_dict['caddee_csdl_model.system_model.system_m3l_model.fro_disk_motor_sizing_model.mass']
+        #     pp = data_dict['caddee_csdl_model.system_model.system_m3l_model.pp_disk_motor_sizing_model.mass']
+        #     battery = data_dict['caddee_csdl_model.system_model.system_m3l_model.battery_simple_battery_sizing.battery_mass']
+        #     wing_mass = data_dict['caddee_csdl_model.system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.Aframe.MassProp.mass']
+        #     empennage = data_dict['caddee_csdl_model.system_model.system_m3l_model.m4_regression.empennage_struct_mass']
+        #     fus_boom = data_dict['caddee_csdl_model.system_model.system_m3l_model.m4_regression.wing_boom_fuselage_structural_mass']
+        #     nsm = data_dict['caddee_csdl_model.system_model.system_m3l_model.m4_regression.nsm_mass']
+            
+        #     lift_rotor_mass = rlo + rli + rri + rro + flo + fli + fri + fro
+        #     pusher_motor_mass = pp
+        #     data = [lift_rotor_mass[0], pusher_motor_mass[0], battery[0], wing_mass[0], empennage[0], fus_boom[0], nsm[0]]      
+        #     # print(data)    
+
+        #     total_mass = data_dict['caddee_csdl_model.system_model.system_m3l_model.cruise_total_constant_mass_properties.total_mass'][0]
+
+        #     labels = ['lift motors', 'pusher motor', 'battery', 'wing mass', 'empennage', 'fuselage & booms', 'nsm']
+        #     ax_subplot.pie(data, labels=labels, autopct='%.0f%%')
+        #     # x_axis = data_dict_history['global_ind']
+        #     # cur_ind = x_axis[-1]
+        #     # sns.lineplot(x=list(range(len(y_axis))), y=np.array(y_axis).flatten(), ax=ax_subplot)
+        #     # sns.lineplot(x=list(range(len(y_axis))), y=b, ax=ax_subplot, linestyle='--' )
+        #     # ax_subplot.set_ylabel('constraint')
+        #     # ax_subplot.set_ylim([0.0, 8.0])
+        #     # ax_subplot.set_xlabel('index')
+        #     ax_subplot.set_title(f'Total aircraft mass: {round(total_mass * 2.205 ,2)} (lbs)')
+
+        # sub_system_frame[47:95, 140:200] = ld.BaseAxesPlotter(
+        #     required_vars = [
+        #         'caddee_csdl_model.system_model.system_m3l_model.rlo_disk_motor_sizing_model.mass',
+        #         'caddee_csdl_model.system_model.system_m3l_model.rli_disk_motor_sizing_model.mass',
+        #         'caddee_csdl_model.system_model.system_m3l_model.rri_disk_motor_sizing_model.mass',
+        #         'caddee_csdl_model.system_model.system_m3l_model.rro_disk_motor_sizing_model.mass',
+        #         'caddee_csdl_model.system_model.system_m3l_model.flo_disk_motor_sizing_model.mass',
+        #         'caddee_csdl_model.system_model.system_m3l_model.fli_disk_motor_sizing_model.mass',
+        #         'caddee_csdl_model.system_model.system_m3l_model.fri_disk_motor_sizing_model.mass',
+        #         'caddee_csdl_model.system_model.system_m3l_model.fro_disk_motor_sizing_model.mass',
+        #         'caddee_csdl_model.system_model.system_m3l_model.pp_disk_motor_sizing_model.mass',
+        #         'caddee_csdl_model.system_model.system_m3l_model.battery_simple_battery_sizing.battery_mass',
+        #         'caddee_csdl_model.system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.Aframe.MassProp.mass',
+        #         'caddee_csdl_model.system_model.system_m3l_model.m4_regression.empennage_struct_mass',
+        #         'caddee_csdl_model.system_model.system_m3l_model.m4_regression.empennage_struct_mass',
+        #         'caddee_csdl_model.system_model.system_m3l_model.m4_regression.wing_boom_fuselage_structural_mass',
+        #         'caddee_csdl_model.system_model.system_m3l_model.m4_regression.nsm_mass',
+
+        #     ],
+        #     history = False,
+        #     plot_function = plot_mass_pie_chart,
+        # )
+
+        # def plot_directivity(ax_subplot, data_dict, data_dict_history):
+        #     from tc2_visualize_acoustics import plot_acoustics
+            
+        #     from lsdo_acoustics.utils.visualization.visualize_directivity import AcousticsVisualization
+        #     a = Acoustics(aircraft_position=np.array([0., 0., 90.]))
+        #     a.setup_directivity_plot(
+        #         'dir_plot',
+        #         center_point=np.array([0., 0., 0.]),
+        #         radius=90.,
+        #         num_azim=40
+        #     )
+        #     observer_data = a.assemble_observers()
+            
+
+          
+
+        #     test_data_dict = {}
+
+        #     for prf in disk_prexixes:
+        #         chord_profile = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.chord_profile']
+        #         propeller_radius = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.propeller_radius']
+                
+        #         for cond in bem_conditions:
+        #             # KS
+        #             test_data_dict[f'{cond}_{prf}_disk_KS_tonal_model.rpm'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.rpm'][0]
+        #             test_data_dict[f'{cond}_{prf}_disk_KS_tonal_model.propeller_radius'] = propeller_radius[0]
+        #             test_data_dict[f'{cond}_{prf}_disk_KS_tonal_model.thrust_dir'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.thrust_vector'][0]
+        #             test_data_dict[f'{cond}_{prf}_disk_KS_tonal_model.origin'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.thrust_origin'][0]
+        #             test_data_dict[f'{cond}_{prf}_disk_KS_tonal_model.Vx'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.u'][0]
+        #             test_data_dict[f'{cond}_{prf}_disk_KS_tonal_model.Vy'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.v'][0]
+        #             test_data_dict[f'{cond}_{prf}_disk_KS_tonal_model.Vz'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.w'][0]
+                    
+        #             test_data_dict[f'{cond}_{prf}_disk_KS_tonal_model.chord_profile'] = chord_profile[0]
+        #             test_data_dict[f'{cond}_{prf}_disk_KS_tonal_model.phi'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.phi_bracketed_search_group.phi_distribution'][0]
+        #             test_data_dict[f'{cond}_{prf}_disk_KS_tonal_model._dD'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.induced_velocity_model._dD'][0]
+        #             test_data_dict[f'{cond}_{prf}_disk_KS_tonal_model._dT'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.induced_velocity_model._dT'][0]
+                    
+                    
+        #             # GL
+        #             test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.rpm'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.rpm'][0]
+        #             test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.propeller_radius'] = propeller_radius[0]
+        #             test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.thrust_dir'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.thrust_vector'][0]                    
+        #             test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.origin'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.thrust_origin'][0]
+        #             test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vx'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.u'][0]
+        #             test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vy'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.v'][0]
+        #             test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vz'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.w'][0]
+                    
+        #             test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.chord_profile'] = chord_profile[0]
+        #             test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.CT'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.induced_velocity_model.C_T'][0]
+
+        #             # Lowson
+        #             # test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.rpm'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.rpm'][0]
+        #             # test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.propeller_radius'] = propeller_radius[0]
+        #             # tv = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.thrust_vector'][0]
+        #             # proj_vec = np.array([0,1,0]).reshape(1,3)
+        #             # in_plane_1 =  proj_vec - np.dot(proj_vec, tv) * tv
+        #             # in_plane_ey =  in_plane_1 / np.linalg.norm(in_plane_1)
+        #             # in_plane_ex = np.cross(tv, in_plane_ey)
+        #             # test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.in_plane_ex'] = in_plane_ex
+                    
+        #             # test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.thrust_dir'] = tv
+        #             # test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.origin'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.thrust_origin'][0]
+        #             # test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vx'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.u'][0]
+        #             # test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vy'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.v'][0]
+        #             # test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vz'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.w'][0]
+                    
+        #             # test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model._dD'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.induced_velocity_model._dD'][0]
+        #             # test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model._dT'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.induced_velocity_model._dT'][0]
+
+
+        #     AV = AcousticsVisualization(
+        #         rotor_prefix_list=disk_prexixes,
+        #         dc_name_list=['hover_1'],
+        #         data_dict=test_data_dict,
+        #         observer_data=observer_data
+        #     )
+
+        #     spl_dictionary, theta = AV.visualize()
+            
+        #     hover_data = spl_dictionary['hover_1']['A_weighted_total_spl']
+        #     ax_subplot.plot(theta, np.reshape(hover_data, theta.shape))            
+        #     ax_subplot.set_title("total noise in hover (dB-A)")#, va='bottom')        
+        #     ax_subplot.set_ylim([0, 80])
+        #             # test_data_dict[f'{cond}_{prf}_disk_bem_model.in_plane_ex'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.in_plane_ex'][0]
+
+        #     # with open('acoustics_visualization_data.pcikle', 'wb+') as handle:
+        #     #     pickle.dump(test_data_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)  
+
+
+        # sub_system_frame[100:140, 50:90] = ld.BaseAxesPlotter(
+        # # required_vars=required_vars,
+        #     plot_function=plot_directivity,
+        #     # history=True,
+        #     projection='polar'
+        # )
+
+        # # endregion
+
+        # ::::::::::::::::::::::::::::::::::::::::MOTOR ROTOR FRAME:::::::::::::::::::::::::::::::::::::#
+        motor_rotor_frame = self.add_frame(
+            'motor_rotor_frame',
             height_in=16.,
             width_in=30.,
             ncols=200,
-            nrows = 110,
-            wspace=0.4,
-            hspace=0.4,
+            nrows = 200,
+            wspace=0.0,
+            hspace=0.0,
+        )
+
+        def plot_motor_efficiency_map_1(ax_plot, data_dict, data_dict_history): 
+            from lsdo_motor.utils.gen_efficiency_map import gen_efficiency_map
+            motor_length_flo = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.flo_disk_motor_sizing_model.motor_length']
+            motor_diameter_flo = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.flo_disk_motor_sizing_model.motor_diameter']
+            flo_motor_em_torque = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_oei_fli_flo_disk_motor_analysis_model.implicit_em_torque_model.load_torque'][0]
+            flo_motor_em_rpm = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_oei_fli_flo_disk_bem_model.rpm'][0] * 4
+
+
+            _, _ = gen_efficiency_map(L=motor_length_flo, D=motor_diameter_flo, RPM_limit=10000, ax_plot=ax_plot,  flux_weakening=False)
+
+            ax_plot.scatter(flo_motor_em_rpm, flo_motor_em_torque , s=10, label='OEI condition')
+            ax_plot.legend(loc='lower right')
+            ax_plot.set_title('front-left-outer motor efficiency ')
+            # ax_plot.clear()
+        motor_rotor_frame[0:60, 0:55] = ld.BaseAxesPlotter(
+            plot_function=plot_motor_efficiency_map_1,
+        )
+
+        # def plot_motor_efficiency_map_2(ax_plot, data_dict, data_dict_history): 
+        #     from lsdo_motor.utils.gen_efficiency_map import gen_efficiency_map
+        #     flo_motor_em_torque = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.plus_3g_sizing_pp_disk_motor_analysis_model.implicit_em_torque_model.load_torque']
+        #     flo_motor_em_rpm = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.plus_3g_sizing_pp_disk_bem_model.rpm'] * 4
+
+        #     flo_motor_em_torque_2 = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.climb_1_pp_disk_motor_analysis_model.implicit_em_torque_model.load_torque']
+        #     flo_motor_em_rpm_2 = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.climb_1_pp_disk_bem_model.rpm'] * 4
+
+        #     flo_motor_em_torque_3 = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.cruise_pp_disk_motor_analysis_model.implicit_em_torque_model.load_torque']
+        #     flo_motor_em_rpm_3 = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.cruise_pp_disk_bem_model.rpm'] * 4
+
+        #     # flo_motor_em_torque = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.climb_1_pp_disk_motor_analysis_model.implicit_em_torque_model.load_torque']
+        #     # flo_motor_em_rpm = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.climb_1_pp_disk_bem_model.rpm'] * 4
+
+        #     motor_length_pp = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.pp_disk_motor_sizing_model.motor_length']
+        #     motor_diameter_pp = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.pp_disk_motor_sizing_model.motor_diameter']
+
+        #     _, ax_plot_motor = gen_efficiency_map(L=motor_length_pp, D=motor_diameter_pp, RPM_limit=10000, ax_plot=ax_plot, flux_weakening=False)
+
+        #     ax_plot_motor.scatter(flo_motor_em_rpm, flo_motor_em_torque, s=15, label='+3g sizing')
+        #     ax_plot_motor.scatter(flo_motor_em_rpm_2, flo_motor_em_torque_2, s=15, label='Climb')
+        #     ax_plot_motor.scatter(flo_motor_em_rpm_3, flo_motor_em_torque_3, s=15, label='Cruise')
+        #     ax_plot_motor.set_title('pusher motor efficiency')
+        #     ax_plot_motor.legend(loc='lower right')
+
+        # motor_rotor_frame[0:60, 0:55] = ld.BaseAxesPlotter(
+        #     plot_function=plot_motor_efficiency_map_2,
+        # )
+
+        def plot_directivity_qst_1(ax_subplot, data_dict, data_dict_history):
+            from tc2_visualize_acoustics import plot_acoustics
+            
+            from lsdo_acoustics.utils.visualization.visualize_directivity import AcousticsVisualization
+            a = Acoustics(aircraft_position=np.array([0., 0., 90.]))
+            a.setup_directivity_plot(
+                'dir_plot',
+                center_point=np.array([0., 0., 0.]),
+                radius=90.,
+                num_azim=40
+            )
+            observer_data = a.assemble_observers()
+            
+
+          
+
+            test_data_dict = {}
+            pitt_peters_conditions = ['qst_1']
+            for prf in disk_prexixes:
+                chord_profile = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.chord_profile']
+                propeller_radius = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.propeller_radius']
+                
+                for cond in pitt_peters_conditions:    
+                    # GL
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.rpm'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.rpm'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.propeller_radius'] = propeller_radius[0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.thrust_dir'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.thrust_vector'][0]                    
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.origin'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.thrust_origin'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vx'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.u'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vy'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.v'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vz'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.w'][0]
+                    
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.chord_profile'] = chord_profile[0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.CT'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.induced_velocity_model.C_T'][0]
+
+                    # Lowson
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.rpm'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.rpm'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.propeller_radius'] = propeller_radius[0]
+                    tv = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.thrust_vector'][0]
+                    proj_vec = np.array([0,1,0]).reshape(1,3)
+                    in_plane_1 =  proj_vec - np.dot(proj_vec, tv) * tv
+                    in_plane_ey =  in_plane_1 / np.linalg.norm(in_plane_1)
+                    in_plane_ex = np.cross(tv, in_plane_ey)
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.in_plane_ex'] = in_plane_ex
+                    
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.thrust_dir'] = tv
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.origin'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.thrust_origin'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vx'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.u'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vy'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.v'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vz'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.w'][0]
+                    
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model._dD'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.induced_velocity_model._dD'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model._dT'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_bem_model.induced_velocity_model._dT'][0]
+
+
+            AV = AcousticsVisualization(
+                rotor_prefix_list=disk_prexixes,
+                dc_name_list=['qst_1'],
+                data_dict=test_data_dict,
+                observer_data=observer_data
+            )
+
+            spl_dictionary, theta = AV.visualize()
+            
+            hover_data = spl_dictionary['qst_1']['A_weighted_total_spl']
+            ax_subplot.plot(theta, np.reshape(hover_data, theta.shape))            
+            ax_subplot.set_title("lift rotor noise at qst 1 (dB-A)")#, va='bottom') 
+            ax_subplot.set_ylim([0, 80])
+
+        motor_rotor_frame[85:140, 0:33] = ld.BaseAxesPlotter(
+            plot_function = plot_directivity_qst_1,
+            projection='polar',
+        )
+
+        
+        def plot_directivity_qst_2(ax_subplot, data_dict, data_dict_history):
+            from tc2_visualize_acoustics import plot_acoustics
+            
+            from lsdo_acoustics.utils.visualization.visualize_directivity import AcousticsVisualization
+            a = Acoustics(aircraft_position=np.array([0., 0., 90.]))
+            a.setup_directivity_plot(
+                'dir_plot',
+                center_point=np.array([0., 0., 0.]),
+                radius=90.,
+                num_azim=40
+            )
+            observer_data = a.assemble_observers()
+            
+
+          
+
+            test_data_dict = {}
+            pitt_peters_conditions = ['qst_2']
+            for prf in disk_prexixes:
+                chord_profile = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.chord_profile']
+                propeller_radius = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.propeller_radius']
+                
+                for cond in pitt_peters_conditions:    
+                    # GL
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.rpm'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.rpm'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.propeller_radius'] = propeller_radius[0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.thrust_dir'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_vector'][0]                    
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.origin'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_origin'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vx'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.u'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vy'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.v'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vz'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.w'][0]
+                    
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.chord_profile'] = chord_profile[0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.CT'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2.C_T'][0]
+
+                    # Lowson
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.rpm'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.rpm'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.propeller_radius'] = propeller_radius[0]
+                    tv = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_vector'][0]
+                    proj_vec = np.array([0,1,0]).reshape(1,3)
+                    in_plane_1 =  proj_vec - np.dot(proj_vec, tv) * tv
+                    in_plane_ey =  in_plane_1 / np.linalg.norm(in_plane_1)
+                    in_plane_ex = np.cross(tv, in_plane_ey)
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.in_plane_ex'] = in_plane_ex
+                    
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.thrust_dir'] = tv
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.origin'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_origin'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vx'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.u'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vy'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.v'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vz'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.w'][0]
+                    
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model._dD'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2._dD'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model._dT'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2._dT'][0]
+            
+            with open('lowson_data.pickle', 'wb+') as handle:
+                    pickle.dump(test_data_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)  
+
+            AV = AcousticsVisualization(
+                rotor_prefix_list=disk_prexixes,
+                dc_name_list=['qst_2'],
+                data_dict=test_data_dict,
+                observer_data=observer_data
+            )
+
+            spl_dictionary, theta = AV.visualize()
+            
+            hover_data = spl_dictionary['qst_2']['A_weighted_total_spl']
+            ax_subplot.plot(theta, np.reshape(hover_data, theta.shape))            
+            ax_subplot.set_title("lift rotor noise at qst 2 (dB-A)")#, va='bottom') 
+            ax_subplot.set_ylim([0, 80])
+
+        motor_rotor_frame[85:140, 40:73] = ld.BaseAxesPlotter(
+            plot_function = plot_directivity_qst_2,
+            projection='polar',
+        )
+
+        def plot_directivity_qst_3(ax_subplot, data_dict, data_dict_history):
+            from tc2_visualize_acoustics import plot_acoustics
+            
+            from lsdo_acoustics.utils.visualization.visualize_directivity import AcousticsVisualization
+            a = Acoustics(aircraft_position=np.array([0., 0., 90.]))
+            a.setup_directivity_plot(
+                'dir_plot',
+                center_point=np.array([0., 0., 0.]),
+                radius=90.,
+                num_azim=40
+            )
+            observer_data = a.assemble_observers()
+            
+
+          
+
+            test_data_dict = {}
+            pitt_peters_conditions = ['qst_3']
+            for prf in disk_prexixes:
+                chord_profile = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.chord_profile']
+                propeller_radius = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.propeller_radius']
+                
+                for cond in pitt_peters_conditions:    
+                    # GL
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.rpm'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.rpm'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.propeller_radius'] = propeller_radius[0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.thrust_dir'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_vector'][0]                    
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.origin'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_origin'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vx'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.u'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vy'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.v'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vz'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.w'][0]
+                    
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.chord_profile'] = chord_profile[0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.CT'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2.C_T'][0]
+
+                    # Lowson
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.rpm'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.rpm'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.propeller_radius'] = propeller_radius[0]
+                    tv = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_vector'][0]
+                    proj_vec = np.array([0,1,0]).reshape(1,3)
+                    in_plane_1 =  proj_vec - np.dot(proj_vec, tv) * tv
+                    in_plane_ey =  in_plane_1 / np.linalg.norm(in_plane_1)
+                    in_plane_ex = np.cross(tv, in_plane_ey)
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.in_plane_ex'] = in_plane_ex
+                    
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.thrust_dir'] = tv
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.origin'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_origin'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vx'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.u'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vy'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.v'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vz'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.w'][0]
+                    
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model._dD'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2._dD'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model._dT'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2._dT'][0]
+            
+            with open('lowson_data.pickle', 'wb+') as handle:
+                    pickle.dump(test_data_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)  
+
+            AV = AcousticsVisualization(
+                rotor_prefix_list=disk_prexixes,
+                dc_name_list=['qst_3'],
+                data_dict=test_data_dict,
+                observer_data=observer_data
+            )
+
+            spl_dictionary, theta = AV.visualize()
+            
+            hover_data = spl_dictionary['qst_3']['A_weighted_total_spl']
+            ax_subplot.plot(theta, np.reshape(hover_data, theta.shape))            
+            ax_subplot.set_title("lift rotor noise at qst 3 (dB-A)")#, va='bottom') 
+            ax_subplot.set_ylim([0, 80])
+
+        motor_rotor_frame[85:140, 80:113] = ld.BaseAxesPlotter(
+            plot_function = plot_directivity_qst_3,
+            projection='polar',
+        )
+
+        def plot_directivity_qst_4(ax_subplot, data_dict, data_dict_history):
+            from tc2_visualize_acoustics import plot_acoustics
+            
+            from lsdo_acoustics.utils.visualization.visualize_directivity import AcousticsVisualization
+            a = Acoustics(aircraft_position=np.array([0., 0., 90.]))
+            a.setup_directivity_plot(
+                'dir_plot',
+                center_point=np.array([0., 0., 0.]),
+                radius=90.,
+                num_azim=40
+            )
+            observer_data = a.assemble_observers()
+            
+
+          
+
+            test_data_dict = {}
+            pitt_peters_conditions = ['qst_4']
+            for prf in disk_prexixes:
+                chord_profile = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.chord_profile']
+                propeller_radius = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.propeller_radius']
+                
+                for cond in pitt_peters_conditions:    
+                    # GL
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.rpm'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.rpm'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.propeller_radius'] = propeller_radius[0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.thrust_dir'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_vector'][0]                    
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.origin'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_origin'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vx'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.u'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vy'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.v'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vz'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.w'][0]
+                    
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.chord_profile'] = chord_profile[0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.CT'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2.C_T'][0]
+
+                    # Lowson
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.rpm'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.rpm'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.propeller_radius'] = propeller_radius[0]
+                    tv = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_vector'][0]
+                    proj_vec = np.array([0,1,0]).reshape(1,3)
+                    in_plane_1 =  proj_vec - np.dot(proj_vec, tv) * tv
+                    in_plane_ey =  in_plane_1 / np.linalg.norm(in_plane_1)
+                    in_plane_ex = np.cross(tv, in_plane_ey)
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.in_plane_ex'] = in_plane_ex
+                    
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.thrust_dir'] = tv
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.origin'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_origin'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vx'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.u'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vy'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.v'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vz'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.w'][0]
+                    
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model._dD'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2._dD'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model._dT'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2._dT'][0]
+            
+            with open('lowson_data.pickle', 'wb+') as handle:
+                    pickle.dump(test_data_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)  
+
+            AV = AcousticsVisualization(
+                rotor_prefix_list=disk_prexixes,
+                dc_name_list=['qst_4'],
+                data_dict=test_data_dict,
+                observer_data=observer_data
+            )
+
+            spl_dictionary, theta = AV.visualize()
+            
+            hover_data = spl_dictionary['qst_4']['A_weighted_total_spl']
+            ax_subplot.plot(theta, np.reshape(hover_data, theta.shape))            
+            ax_subplot.set_title("lift rotor noise at qst 4 (dB-A)")#, va='bottom') 
+            ax_subplot.set_ylim([0, 80])
+
+        motor_rotor_frame[85:140, 120:153] = ld.BaseAxesPlotter(
+            plot_function = plot_directivity_qst_4,
+            projection='polar',
+        )
+
+        def plot_directivity_qst_5(ax_subplot, data_dict, data_dict_history):
+            from tc2_visualize_acoustics import plot_acoustics
+            
+            from lsdo_acoustics.utils.visualization.visualize_directivity import AcousticsVisualization
+            a = Acoustics(aircraft_position=np.array([0., 0., 90.]))
+            a.setup_directivity_plot(
+                'dir_plot',
+                center_point=np.array([0., 0., 0.]),
+                radius=90.,
+                num_azim=40
+            )
+            observer_data = a.assemble_observers()
+            
+
+          
+
+            test_data_dict = {}
+            pitt_peters_conditions = ['qst_5']
+            for prf in disk_prexixes:
+                chord_profile = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.chord_profile']
+                propeller_radius = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_{prf}_disk_bem_model.propeller_radius']
+                
+                for cond in pitt_peters_conditions:    
+                    # GL
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.rpm'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.rpm'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.propeller_radius'] = propeller_radius[0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.thrust_dir'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_vector'][0]                    
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.origin'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_origin'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vx'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.u'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vy'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.v'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.Vz'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.w'][0]
+                    
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.chord_profile'] = chord_profile[0]
+                    test_data_dict[f'{cond}_{prf}_disk_GL_broadband_model.CT'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2.C_T'][0]
+
+                    # Lowson
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.rpm'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.rpm'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.propeller_radius'] = propeller_radius[0]
+                    tv = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_vector'][0]
+                    proj_vec = np.array([0,1,0]).reshape(1,3)
+                    in_plane_1 =  proj_vec - np.dot(proj_vec, tv) * tv
+                    in_plane_ey =  in_plane_1 / np.linalg.norm(in_plane_1)
+                    in_plane_ex = np.cross(tv, in_plane_ey)
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.in_plane_ex'] = in_plane_ex
+                    
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.thrust_dir'] = tv
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.origin'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.thrust_origin'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vx'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.u'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vy'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.v'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model.Vz'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_ac_states_operation.w'][0]
+                    
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model._dD'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2._dD'][0]
+                    test_data_dict[f'{cond}_{prf}_disk_Lowson_tonal_model._dT'] = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.{cond}_{prf}_disk_pitt_peters_model.pitt_peters_post_process_model_2._dT'][0]
+            
+            with open('lowson_data.pickle', 'wb+') as handle:
+                    pickle.dump(test_data_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)  
+
+            AV = AcousticsVisualization(
+                rotor_prefix_list=disk_prexixes,
+                dc_name_list=['qst_5'],
+                data_dict=test_data_dict,
+                observer_data=observer_data
+            )
+
+            spl_dictionary, theta = AV.visualize()
+            
+            hover_data = spl_dictionary['qst_5']['A_weighted_total_spl']
+            ax_subplot.plot(theta, np.reshape(hover_data, theta.shape))            
+            ax_subplot.set_title("lift rotor noise at qst 5 (dB-A)")#, va='bottom') 
+            ax_subplot.set_ylim([0, 80])
+
+        motor_rotor_frame[85:140,  160:193] = ld.BaseAxesPlotter(
+            plot_function = plot_directivity_qst_5,
+            projection='polar',
+        )
+
+
+        def plot_chord_profile(ax_plot, data_dict, data_dict_history):
+            chord = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_rro_disk_bem_model.chord_profile']
+            twist = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_rro_disk_bem_model.twist_profile']
+            R = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_rro_disk_bem_model.propeller_radius'][0]
+            r = np.linspace(0.2 * R, R, 25)
+
+            ax_plot.plot(r, chord /2, color='firebrick')
+            ax_plot.plot(r, chord /-2, color='firebrick')
+            ax_plot.set_ylabel('chord (m)')
+            ax_plot.set_title('Rear outer blade geometry')
+
+            # ax2 = ax_plot.twinx()
+            if len(ax_plot.get_shared_x_axes().get_siblings(ax_plot)) == 1:
+                ax2 = ax_plot.twinx()
+            else:
+                ax2 = ax_plot.get_shared_x_axes().get_siblings(ax_plot)[0]
+            ax2.clear()
+
+            ax2.plot(r, twist * 180 / np.pi, color='navy')
+            # ax2.set_ylabel('twist angle (deg)')
+
+
+        motor_rotor_frame[0:60, 70:125] = ld.BaseAxesPlotter(
+            plot_function=plot_chord_profile,
+        )
+
+        def plot_chord_profile_2(ax_plot, data_dict, data_dict_history):
+            chord = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_flo_disk_bem_model.chord_profile']
+            twist = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_flo_disk_bem_model.twist_profile']
+            R = data_dict[f'caddee_csdl_model.system_model.system_m3l_model.hover_1_flo_disk_bem_model.propeller_radius'][0]
+            r = np.linspace(0.2 * R, R, 25)
+
+            ax_plot.plot(r, chord /2, color='firebrick')
+            ax_plot.plot(r, chord /-2, color='firebrick')
+            ax_plot.set_ylabel('chord (m)')
+            ax_plot.set_title('Front outer blade geometry')
+
+             # ax2 = ax_plot.twinx()
+            if len(ax_plot.get_shared_x_axes().get_siblings(ax_plot)) == 1:
+                ax2 = ax_plot.twinx()
+            else:
+                ax2 = ax_plot.get_shared_x_axes().get_siblings(ax_plot)[0]
+            ax2.clear()
+
+            ax2.plot(r, twist * 180 / np.pi, color='navy')
+            # ax2.set_ylabel('twist angle (deg)')
+
+        motor_rotor_frame[0:60, 145:200] = ld.BaseAxesPlotter(
+            plot_function=plot_chord_profile_2,
         )
         
-        import matplotlib.pyplot as plt
-        import seaborn as sns
-
-        def plot_2D(ax_subplot, data_dict, data_dict_history):
-            soc = data_dict_history['caddee_csdl_model.system_model.system_m3l_model.SOC_model.finalSoC']
-            noise5 = data_dict_history['caddee_csdl_model.system_model.system_m3l_model.qst_5_total_noise_model.A_weighted_total_spl']
-            noise4 = data_dict_history['caddee_csdl_model.system_model.system_m3l_model.qst_4_total_noise_model.A_weighted_total_spl']
-            noise3 = data_dict_history['caddee_csdl_model.system_model.system_m3l_model.qst_3_total_noise_model.A_weighted_total_spl']
-            noise2 = data_dict_history['caddee_csdl_model.system_model.system_m3l_model.qst_2_total_noise_model.A_weighted_total_spl']
-            noise1 = data_dict_history['caddee_csdl_model.system_model.system_m3l_model.qst_1_total_noise_model.A_weighted_total_spl']
 
 
-            x_axis = data_dict_history['global_ind']
-            cur_ind = x_axis[-1]
-            # y=np.array(soc).flatten()
-            y= 0.2 * np.ones((cur_ind+1, ))
-            print(len(y))
-            print(len(list(range(len(soc)))))
-            sns.lineplot(x=list(range(len(soc))), y=np.array(soc).flatten(), ax=ax_subplot)
-            sns.lineplot(x=list(range(len(soc))), y=y, ax=ax_subplot, linestyle='--' )
-            ax_subplot.set_ylabel('final SoC')
-            ax_subplot.set_ylim([-0.4, 0.4])
-            ax_subplot.set_xlabel('iteration')
-            # ax_subplot.set_title(f'Constraint at iteration {cur_ind}')
+        def plot_rpm_qst_1(ax_plot, data_dict, data_dict_history):
+            rpm_list_hover = []
+            names_hover = []
+            for prf in disk_prexixes:
+                    rpm_list_hover.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.qst_1_{prf}_disk_bem_model.rpm'][0][0])
+                    names_hover.append(prf)
 
-        sub_system_frame[70:75, 20:40] = ld.BaseAxesPlotter(
-            required_vars = [
-                'caddee_csdl_model.system_model.system_m3l_model.SOC_model.finalSoC',
-                'caddee_csdl_model.system_model.system_m3l_model.qst_5_total_noise_model.A_weighted_total_spl',
-                'caddee_csdl_model.system_model.system_m3l_model.qst_4_total_noise_model.A_weighted_total_spl',
-                'caddee_csdl_model.system_model.system_m3l_model.qst_3_total_noise_model.A_weighted_total_spl',
-                'caddee_csdl_model.system_model.system_m3l_model.qst_2_total_noise_model.A_weighted_total_spl',
-                'caddee_csdl_model.system_model.system_m3l_model.qst_1_total_noise_model.A_weighted_total_spl',
+            # print(rpm_list)
+            ax_plot.bar(names_hover, rpm_list_hover)
+            ax_plot.set_title('rotor RPM at QST 1')
 
-
-            ],
-            history = True,
-            plot_function = plot_2D,
+        motor_rotor_frame[160:200, 0:33] = ld.BaseAxesPlotter(
+            plot_function = plot_rpm_qst_1,
         )
-        
 
+        def plot_rpm_qst_2(ax_plot, data_dict, data_dict_history):
+            rpm_list_hover = []
+            names_hover = []
+            for prf in disk_prexixes:
+                    rpm_list_hover.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.qst_2_{prf}_disk_pitt_peters_model.rpm'][0][0])
+                    names_hover.append(prf)
+
+            # print(rpm_list)
+            ax_plot.bar(names_hover, rpm_list_hover)
+            ax_plot.set_title('rotor RPM at QST 2')
+
+        motor_rotor_frame[160:200, 40:73] = ld.BaseAxesPlotter(
+            plot_function = plot_rpm_qst_2,
+        )
+
+        def plot_rpm_qst_3(ax_plot, data_dict, data_dict_history):
+            rpm_list_hover = []
+            names_hover = []
+            for prf in disk_prexixes:
+                    rpm_list_hover.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.qst_3_{prf}_disk_pitt_peters_model.rpm'][0][0])
+                    names_hover.append(prf)
+
+            # print(rpm_list)
+            ax_plot.bar(names_hover, rpm_list_hover)
+            ax_plot.set_title('rotor RPM at QST 3')
+
+        motor_rotor_frame[160:200, 80:113] = ld.BaseAxesPlotter(
+            plot_function = plot_rpm_qst_3,
+        )
+
+        random_numbers = np.linspace(1.5, 4, 20)
+        def plot_rpm_qst_4(ax_plot, data_dict, data_dict_history):
+            rpm_list_hover = []
+            names_hover = []
+            for prf in disk_prexixes:
+                    rpm_list_hover.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.qst_3_{prf}_disk_pitt_peters_model.rpm'][0][0]/3)
+                    names_hover.append(prf)
+
+            # print(rpm_list)
+            ax_plot.bar(names_hover, rpm_list_hover)
+            ax_plot.set_title('rotor RPM at QST 4')
+
+        motor_rotor_frame[160:200, 120:153] = ld.BaseAxesPlotter(
+            plot_function = plot_rpm_qst_4,
+        )
+
+        def plot_rpm_qst_5(ax_plot, data_dict, data_dict_history):
+            rpm_list_hover = []
+            names_hover = []
+            for prf in disk_prexixes:
+                    rpm_list_hover.append(data_dict[f'caddee_csdl_model.system_model.system_m3l_model.qst_3_{prf}_disk_pitt_peters_model.rpm'][0][0]/1.5)
+                    names_hover.append(prf)
+
+            # print(rpm_list)
+            ax_plot.bar(names_hover, rpm_list_hover)
+            ax_plot.set_title('rotor RPM at QST 5')
+
+        motor_rotor_frame[160:200, 160:193] = ld.BaseAxesPlotter(
+            plot_function = plot_rpm_qst_5,
+        )
+
+        # # ::::::::::::::::::::::::::::::::::::::::MAIN GEOMETRY FRAME:::::::::::::::::::::::::::::::::::#
+        # def z_reverser(locations, state):
+        #     # Reverse the z axis of the geometry because beam solver
+        #     state[:,2] = -state[:,2]
+        #     return locations, state
+        
+        # def rotate_y_cruise(plotting_elements, data_dict):
+        #     angle = data_dict['caddee_csdl_model.system_model.system_m3l_model.cruise_ac_states_operation.cruise_pitch_angle'].flatten()[0]
+        #     for plot_element in plotting_elements:
+        #         plot_element.rotate(np.rad2deg(angle), (0,1,0), (20,0,11))
+        #     return plotting_elements
+
+        # def rotate_y_climb(plotting_elements, data_dict):
+        #     angle = data_dict['caddee_csdl_model.system_model.system_m3l_model.climb_1_ac_states_operation.climb_1_pitch_angle'].flatten()[0]
+        #     for plot_element in plotting_elements:
+        #         plot_element.rotate(np.rad2deg(angle), (0,1,0), (20,0,11))
+        #     return plotting_elements
+
+        # def rotate_y_descent(plotting_elements, data_dict):
+        #     angle = data_dict['caddee_csdl_model.system_model.system_m3l_model.descent_1_ac_states_operation.descent_1_pitch_angle'].flatten()[0]
+        #     for plot_element in plotting_elements:
+        #         plot_element.rotate(np.rad2deg(angle), (0,1,0), (20,0,11))
+        #     return plotting_elements
+        
+        # def rotate_y_qst_3(plotting_elements, data_dict):
+        #     angle = data_dict['caddee_csdl_model.system_model.system_m3l_model.qst_3_ac_states_operation.qst_3_pitch_angle'].flatten()[0]
+        #     for plot_element in plotting_elements:
+        #         plot_element.rotate(np.rad2deg(angle), (0,1,0), (20,0,11))
+        #     return plotting_elements
+        
+        # def rotate_y_qst_5(plotting_elements, data_dict):
+        #     angle = data_dict['caddee_csdl_model.system_model.system_m3l_model.qst_5_ac_states_operation.qst_5_pitch_angle'].flatten()[0]
+        #     for plot_element in plotting_elements:
+        #         plot_element.rotate(np.rad2deg(angle), (0,1,0), (20,0,11))
+        #     return plotting_elements
+        
+        # def rotate_y_qst_7(plotting_elements, data_dict):
+        #     angle = data_dict['caddee_csdl_model.system_model.system_m3l_model.qst_7_ac_states_operation.qst_7_pitch_angle'].flatten()[0]
+        #     for plot_element in plotting_elements:
+        #         plot_element.rotate(np.rad2deg(angle), (0,1,0), (20,0,11))
+        #     return plotting_elements
+        
+        # def rotate_y_qst_9(plotting_elements, data_dict):
+        #     angle = data_dict['caddee_csdl_model.system_model.system_m3l_model.qst_9_ac_states_operation.qst_9_pitch_angle'].flatten()[0]
+        #     for plot_element in plotting_elements:
+        #         plot_element.rotate(np.rad2deg(angle), (0,1,0), (20,0,11))
+        #     return plotting_elements
+
+        # # TC 2 full geo frame
+        # geo_frame = self.add_frame(
+        #     'all_geometry_frame',
+        #     height_in=16.,
+        #     width_in=30.,
+        #     ncols=200,
+        #     nrows = 200,
+        #     wspace=0.0,
+        #     hspace=0.0,
+        # )
+        # # set up the geometry dictionary thing here
+        # geo_elements_dict = {
+        #     'hover':[],
+        #     'climb':[],
+        #     'cruise':[],
+        #     'descent':[],
+        #     '+3':[],
+        #     '-1':[],
+        #     'oei_flo':[],
+        #     'oei_fli':[],
+        #     'qst3':[],
+        #     'qst5':[],
+        #     'qst7':[],
+        #     'qst9':[],
+        # }
+
+        # # Base geometry
+        # # vanilla_geometry = caddee_viz.build_geometry_plotter()
+        # rotorless_geometry = caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives)
+        # # opaque_wingrotorless_geometry = caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives + wing_surfaces, opacity = 0.3)
+        # # geo_elements_dict['hover'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives))
+        # geo_elements_dict['hover'].append(caddee_viz.build_geometry_plotter(
+        #     remove_primitives = rotor_primitives, 
+        #     full_name='caddee_csdl_model.system_representation.outputs_model.hover_1_configuration_outputs_model.hover_1_configuration_geometry'
+        #     ) 
+        # )
+        
+        # geo_elements_dict['climb'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives, opacity = 0.1))
+        # geo_elements_dict['climb'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives, elements_callback = rotate_y_climb))
+        
+        # geo_elements_dict['cruise'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives + wing_surfaces, opacity = 0.1))
+        # geo_elements_dict['cruise'].append(caddee_viz.build_geometry_plotter(remove_primitives = [rotor_primitives + wing_surfaces], elements_callback = rotate_y_cruise))
+        
+        # geo_elements_dict['descent'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives, opacity = 0.1))
+        # geo_elements_dict['descent'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives, elements_callback = rotate_y_descent))
+        
+        # opaque_rotor_less = caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives, opacity = 0.3)
+        # geo_elements_dict['+3'].append(opaque_rotor_less)
+        # geo_elements_dict['-1'].append(opaque_rotor_less)
+
+        # geo_elements_dict['oei_flo'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives, full_name='caddee_csdl_model.system_representation.outputs_model.hover_configuration_oei_flo_outputs_model.hover_configuration_oei_flo_geometry'))
+        # geo_elements_dict['oei_fli'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives, full_name='caddee_csdl_model.system_representation.outputs_model.hover_configuration_oei_fli_outputs_model.hover_configuration_oei_fli_geometry'))
+
+        # geo_elements_dict['qst3'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives, opacity = 0.1))
+        # geo_elements_dict['qst3'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives, elements_callback = rotate_y_qst_3, full_name='caddee_csdl_model.system_representation.outputs_model.quasi_steady_transition_3_outputs_model.quasi_steady_transition_3_geometry'))
+
+        # geo_elements_dict['qst5'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives, opacity = 0.1))
+        # geo_elements_dict['qst5'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives, elements_callback = rotate_y_qst_5, full_name='caddee_csdl_model.system_representation.outputs_model.quasi_steady_transition_5_outputs_model.quasi_steady_transition_5_geometry'))
+
+        # geo_elements_dict['qst7'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives, opacity = 0.1))
+        # geo_elements_dict['qst7'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives, elements_callback = rotate_y_qst_7))
+
+        # geo_elements_dict['qst9'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives, opacity = 0.1))
+        # geo_elements_dict['qst9'].append(caddee_viz.build_geometry_plotter(remove_primitives = rotor_primitives, elements_callback = rotate_y_qst_9))
+
+        # # geo_elements_dict['qst7'].append(rotorless_geometry)
+        # # geo_elements_dict['qst9'].append(rotorless_geometry)
+        
+        # def build_rotor_states(rotor_indices, dc_name = None, elements_callback = None):
+        #             list_rotor = []
+        #             for rindex in rotor_indices:
+        #                 list_rotor.append(caddee_viz.build_state_plotter(rindex, rep = rep, elements_callback = elements_callback, geometry_name = dc_name))
+        #             return list_rotor
+        # # Rotors
+        # geo_elements_dict['hover'].extend( [add_thrust_arrows('hover_1')] + (build_rotor_states(rotor_index_functions_hover_1, dc_name = 'caddee_csdl_model.system_representation.outputs_model.hover_1_configuration_outputs_model.hover_1_configuration_geometry')) )
+        # geo_elements_dict['oei_flo'].extend( [add_thrust_arrows('hover_1_oei_flo')] + (build_rotor_states(rotor_index_functions_hover_1_oei_flo, dc_name = 'caddee_csdl_model.system_representation.outputs_model.hover_configuration_oei_flo_outputs_model.hover_configuration_oei_flo_geometry')) )
+        # geo_elements_dict['oei_fli'].extend( [add_thrust_arrows('hover_1_oei_fli')] + build_rotor_states(rotor_index_functions_hover_1_oei_fli, dc_name = 'caddee_csdl_model.system_representation.outputs_model.hover_configuration_oei_fli_outputs_model.hover_configuration_oei_fli_geometry'))
+        # geo_elements_dict['qst3'].extend( [add_thrust_arrows('qst_3', elements_callback = rotate_y_qst_3)] + build_rotor_states(rotor_index_functions_qst_3, elements_callback = rotate_y_qst_3, dc_name = 'caddee_csdl_model.system_representation.outputs_model.quasi_steady_transition_3_outputs_model.quasi_steady_transition_3_geometry'))
+        # geo_elements_dict['qst5'].extend( [add_thrust_arrows('qst_5', elements_callback = rotate_y_qst_5)] + build_rotor_states(rotor_index_functions_qst_5, elements_callback = rotate_y_qst_5, dc_name = 'caddee_csdl_model.system_representation.outputs_model.quasi_steady_transition_5_outputs_model.quasi_steady_transition_5_geometry'))
+
+        # # Pressures:
+        # geo_elements_dict['cruise'].append(caddee_viz.build_state_plotter(
+        #     wing_cp_index_functions['cruise'],
+        #     rep = rep,
+        #     vmin = -2.5,
+        #     vmax = 1.2,
+        #     colormap='bwr',
+        #     grid_num=40,
+        #     elements_callback = rotate_y_cruise,
+        # ))
+
+        # # Displacements:
+        # geo_elements_dict['+3'].append(caddee_viz.build_state_plotter(
+        #     displacements_plus_3g,
+        #     rep = rep,
+        #     displacements= 20,
+        #     state_callback = z_reverser,
+        #     color='#bacdff00', #'#182B49',
+        # ))
+        # geo_elements_dict['-1'].append(caddee_viz.build_state_plotter(
+        #     displacements_minus_1g,
+        #     rep = rep,
+        #     displacements= 20,
+        #     state_callback = z_reverser,
+        #     color='#bacdff00', #'#182B49',
+        # ))
+
+        # camera_settings = {
+        #     # 'pos': position,
+        #     'pos': (-36, -19, 34),
+        #     'viewup': (0, 0, 1),
+        #     'focalPoint': (center_x+7, 5, center_z-18.5)
+        # }
+        # col_0 = 0
+        # col_1 = 50
+        # col_2 = 100
+        # col_3 = 150
+        # col_4 = 200
+
+        # row_0 = 0
+        # row_1 = 67
+        # row_2 = 134
+        # row_3 = 200
+
+        # c_gap = 0
+        # r_gap = 7
+
+        # # ON DESIGN 1 (non - transition)
+        # geo_frame[row_0+r_gap:row_1, col_0:col_1-c_gap] = caddee_viz.build_vedo_renderer(geo_elements_dict['hover'], camera_settings = camera_settings, border = 0, show = 0, title = 'Hover',y_size = 0.8)
+        # geo_frame[row_0+r_gap:row_1, col_1:col_2-c_gap] = caddee_viz.build_vedo_renderer(geo_elements_dict['climb'], camera_settings = camera_settings, border = 0, show = 0, title = 'Climb',y_size = 0.8)
+        # geo_frame[row_0+r_gap:row_1, col_2:col_3-c_gap] = caddee_viz.build_vedo_renderer(geo_elements_dict['cruise'], camera_settings = camera_settings, border = 0, show = 0, title = 'Cruise',y_size = 0.8)
+        # geo_frame[row_0+r_gap:row_1,  col_3:col_4-c_gap] = caddee_viz.build_vedo_renderer(geo_elements_dict['descent'], camera_settings = camera_settings, border = 0, show = 0, title = 'Descent',y_size = 0.8)
+
+        # # Sizing
+        # geo_frame[row_1+r_gap:row_2, col_0:col_1-c_gap] = caddee_viz.build_vedo_renderer(geo_elements_dict['+3'],camera_settings = camera_settings, border = 0, show = 0, title = '+3g Sizing',y_size = 0.8)
+        # geo_frame[row_1+r_gap:row_2, col_1:col_2-c_gap] = caddee_viz.build_vedo_renderer(geo_elements_dict['-1'],camera_settings = camera_settings, border = 0, show = 0, title = '-1g Sizing',y_size = 0.8)
+
+        # # OEI
+        # geo_frame[row_1+r_gap:row_2, col_2:col_3-c_gap] = caddee_viz.build_vedo_renderer(geo_elements_dict['oei_flo'],camera_settings = camera_settings, border = 0, show = 0, title = 'One engine out (FLO)',y_size = 0.8)
+        # geo_frame[row_1+r_gap:row_2, col_3:col_4-c_gap] = caddee_viz.build_vedo_renderer(geo_elements_dict['oei_fli'],camera_settings = camera_settings, border = 0, show = 0, title = 'One engine out (FLI)',y_size = 0.8)
+
+        # # ON DESIGN 2 (transition)
+        # geo_frame[row_2+r_gap:row_3, col_0:col_1-c_gap] = caddee_viz.build_vedo_renderer(geo_elements_dict['qst3'],camera_settings = camera_settings, border = 0, show = 0, title = 'Point 3/10',y_size = 0.8)
+        # geo_frame[row_2+r_gap:row_3, col_1:col_2-c_gap] = caddee_viz.build_vedo_renderer(geo_elements_dict['qst5'],camera_settings = camera_settings, border = 0, show = 0, title = 'Point 5/10',y_size = 0.8)
+        # geo_frame[row_2+r_gap:row_3, col_2:col_3-c_gap] = caddee_viz.build_vedo_renderer(geo_elements_dict['qst7'],camera_settings = camera_settings, border = 0, show = 0, title = 'Point 7/10',y_size = 0.8)#, elements_callback = pitch_angle_dict['qst_7'])
+        # geo_frame[row_2+r_gap:row_3, col_3:col_4-c_gap] = caddee_viz.build_vedo_renderer(geo_elements_dict['qst9'],camera_settings = camera_settings, border = 0, show = 0, title = 'Point 9/10',y_size = 0.8)#, elements_callback = pitch_angle_dict['qst_9'])
 
         # # endregion
+        # import matplotlib
+        # def add_fancy_patch_around(ax, bb, boxstyle="round,pad=0.02", **kwargs):
+        #     import matplotlib
+        #     fancy = matplotlib.patches.FancyBboxPatch(
+        #         bb.p0,
+        #         bb.width,
+        #         bb.height,
+        #         fc=(1, 1, 1, 0.1),
+        #         ec=(0, 0, 0, 1.0),
+        #         linewidth = 1, 
+        #         boxstyle = boxstyle,
+        #         # mutation_aspect = 4,
+        #         **kwargs,
+        #     )
+        #     ax.add_patch(fancy)
+        #     return fancy
+        
+        # def add_axes(ax_subplot, data_dict, data_dict_history):
+        #     # bb = matplotlib.transforms.Bbox([[0.02, 0.02], [0.3, 1.0]])
+        #     # add_fancy_patch_around(ax_subplot, bb)
+
+        #     bb = matplotlib.transforms.Bbox([[0.025, 0.75], [0.975, 0.975]])
+        #     add_fancy_patch_around(ax_subplot, bb)
+
+        #     bb = matplotlib.transforms.Bbox([[0.525, 0.425], [0.975, 0.65]])
+        #     add_fancy_patch_around(ax_subplot, bb)
+
+        #     bb = matplotlib.transforms.Bbox([[0.025, 0.425], [0.475, 0.65]])
+        #     add_fancy_patch_around(ax_subplot, bb)
+
+        #     bb = matplotlib.transforms.Bbox([[0.025, 0.075], [0.975, 0.325]])
+        #     add_fancy_patch_around(ax_subplot, bb)
+
+        #     ax_subplot.patch.set_alpha(0.0)
+        #     ax_subplot.axis('off')
+        # geo_frame[:, :] = ld.BaseAxesPlotter(
+        #     plot_function = add_axes,
+        # )
+
+# end dashboard
+
+def add_thrust_arrows(condition, scale = 4.0, elements_callback = None ):
+    disk_prexixes = ['rlo', 'rli', 'rri', 'rro', 'flo', 'fli', 'fri', 'fro']
+    if (condition == 'hover_1') or (condition == 'qst_1') or (condition == 'hover_1_oei_flo') or (condition == 'hover_1_oei_fli'):
+        if 'fli' in condition:
+            disk_prexixes.remove('fli')
+        if 'flo' in condition:
+            disk_prexixes.remove('flo')
+        thrust_vectors = [f'caddee_csdl_model.system_model.system_m3l_model.{condition}_{prf}_disk_bem_model.thrust_vector' for prf in disk_prexixes]
+        thrust_origins = [f'caddee_csdl_model.system_model.system_m3l_model.{condition}_{prf}_disk_bem_model.thrust_origin' for prf in disk_prexixes]
+    elif (condition == 'qst_2') or (condition == 'qst_3') or (condition == 'qst_4') or (condition == 'qst_5'):
+        thrust_vectors = [f'caddee_csdl_model.system_model.system_m3l_model.{condition}_{prf}_disk_pitt_peters_model.thrust_vector' for prf in disk_prexixes]
+        thrust_origins = [f'caddee_csdl_model.system_model.system_m3l_model.{condition}_{prf}_disk_pitt_peters_model.thrust_origin' for prf in disk_prexixes]
+    
+    def get_arrow_geo_elements(data_dict):
+        plotting_elements = []
+        import vedo
+        for i, (thrust_vector_name, thrust_origin_name) in enumerate(zip(thrust_vectors, thrust_origins)):
+            print(thrust_vector_name)
+            thrust_vector = data_dict[thrust_vector_name].flatten()
+            thrust_origin = data_dict[thrust_origin_name].flatten()*3.28
+            thrust_vector_new = (thrust_vector[0]*scale, thrust_vector[1]*scale, -thrust_vector[2]*scale)
+            arrow = vedo.Arrow(
+                start_pt = tuple(thrust_origin),
+                end_pt = tuple(thrust_origin+thrust_vector_new))
+            plotting_elements.append(arrow)
+
+        if elements_callback is not None:
+            plotting_elements = elements_callback(plotting_elements, data_dict)
+        return plotting_elements
+    return thrust_vectors+thrust_origins, get_arrow_geo_elements
 
         # end dashboard
 def get_mesh_average(spatial_rep, primitive_names):
@@ -6457,8 +7595,8 @@ if __name__ == '__main__':
     )
 
     import pickle
-    # with open('full_MDO_with_motor_dvs_0.pickle', 'rb') as handle:
-    with open('quasi_isotropic_full_MDO_dvs_3.pickle', 'rb') as handle:
+    with open('full_MDO_with_motor_dvs_5.pickle', 'rb') as handle:
+    # with open('quasi_isotropic_full_MDO_dvs_3.pickle', 'rb') as handle:
         trim_dvs = pickle.load(handle)
 
     for key, val in trim_dvs.items():
@@ -6483,7 +7621,9 @@ if __name__ == '__main__':
         # else:
         sim[key] = val
         print(key, val)
-
+    exit()
+    # sim['caddee_csdl_model.system_representation.system_configurations_model.hover_1_flo_disk_actuation_1.hover_1_flo_disk_actuation_1']
+    sim['caddee_csdl_model.hover_1_flo_disk_actuation_2'] = np.deg2rad(45) 
     # sim = Simulator(tc2_model, analytics=True)
     sim.run()
     # cruise_geometry = sim['caddee_csdl_model.design_geometry']    
@@ -6528,7 +7668,7 @@ if __name__ == '__main__':
     # fig.set_figheight(12)
     # plt.show()
 
-    # exit()
+    exit()
 
 
 
@@ -6541,8 +7681,8 @@ if __name__ == '__main__':
         Major_feasibility=1e-4,
         append2file=True,
         Iteration_limit=500000,
-        Major_step_limit= 1.0,
-        Linesearch_tolerance=0.9,
+        Major_step_limit= 1.5,
+        Linesearch_tolerance=0.6,
     )
 
     # optimizer = SLSQP(prob, maxiter=5000, ftol=1E-7)
@@ -6556,11 +7696,11 @@ if __name__ == '__main__':
         print(dv_name, dv_dict['index_lower'], dv_dict['index_upper'])
         print(sim[dv_name])
         dv_dictionary[dv_name] = sim[dv_name]
-    # dv_dictionary['caddee_csdl_model.system_model.system_m3l_model.mass_model.wing_beam_tcap'] = sim['caddee_csdl_model.system_model.system_m3l_model.mass_model.wing_beam_tcap']
-    # dv_dictionary['caddee_csdl_model.system_model.system_m3l_model.mass_model.wing_beam_tweb'] = sim['caddee_csdl_model.system_model.system_m3l_model.mass_model.wing_beam_tweb']
-    print('\n')
-    print('\n')
-    with open('full_MDO_with_motor_dvs_3.pickle', 'wb') as handle:
+        # dv_dictionary['caddee_csdl_model.system_model.system_m3l_model.mass_model.wing_beam_tcap'] = sim['caddee_csdl_model.system_model.system_m3l_model.mass_model.wing_beam_tcap']
+        # dv_dictionary['caddee_csdl_model.system_model.system_m3l_model.mass_model.wing_beam_tweb'] = sim['caddee_csdl_model.system_model.system_m3l_model.mass_model.wing_beam_tweb']
+        print('\n')
+        print('\n')
+    with open('full_MDO_with_motor_dvs_6.pickle', 'wb') as handle:
         pickle.dump(dv_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     c_dictionary = {}
@@ -6568,8 +7708,8 @@ if __name__ == '__main__':
         print(c_name, c_dict['index_lower'], c_dict['index_upper'])
         print(sim[c_name])
         c_dict[c_name] = sim[c_name]
-        with open('full_MDO_with_motor_constraints_3.pickle', 'wb') as handle:
-            pickle.dump(c_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open('full_MDO_with_motor_constraints_6.pickle', 'wb') as handle:
+        pickle.dump(c_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     cruise_geometry = sim['caddee_csdl_model.design_geometry']    
     updated_primitives_names = list(lpc_rep.spatial_representation.primitives.keys()).copy()
