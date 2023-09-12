@@ -36,10 +36,6 @@ pip install smt vedo cython
 ```
 
 Within the caddee environment, you'll also need to clone and install several repositories. Use the ```pip3 install -e .``` command within each repository's directory after cloning.
-```bash
-conda activate caddee
-pip install smt vedo cython
-```
 
 ## Troubleshooting
 If you encounter any issues when plotting the mesh, consult [this link](https://github.com/conda-forge/ctng-compilers-feedstock/issues/95#issuecomment-1449848343) for potential solutions.
