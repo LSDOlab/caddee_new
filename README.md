@@ -12,39 +12,38 @@
 [![Forks](https://img.shields.io/github/forks/LSDOlab/lsdo_project_template.svg)](https://github.com/LSDOlab/lsdo_project_template/network)
 [![Issues](https://img.shields.io/github/issues/LSDOlab/lsdo_project_template.svg)](https://github.com/LSDOlab/lsdo_project_template/issues)
 
+# Instructions for Setting Up Your Environment
 
-A template repository for LSDOlab projects
+## Update and Install System Packages
 
-This repository serves as a template for all LSDOlab projects with regard to documentation, testing and hosting of open-source code.
-
-*README.md file contains high-level information about your package: it's purpose, high-level instructions for installation and usage.*
-
-# Installation
-
-## Installation instructions for users
-For direct installation with all dependencies, run on the terminal or command line
-```sh
-pip install git+https://github.com/LSDOlab/lsdo_project_template.git
-```
-If you want users to install a specific branch, run
-```sh
-pip install git+https://github.com/LSDOlab/lsdo_project_template.git@branch
+```bash
+sudo apt-get update
+sudo apt-get dist-upgrade
+sudo apt-get install build-essential
+sudo apt-get install ffmpeg libsm6 libxext6
 ```
 
-**Enabled by**: `packages=find_packages()` in the `setup.py` file.
-
-## Installation instructions for developers
-To install `lsdo_project_template`, first clone the repository and install using pip.
-On the terminal or command line, run
-```sh
-git clone https://github.com/LSDOlab/lsdo_project_template.git
-pip install -e ./lsdo_project_template
+## Create and Set Up Conda Environment
+Create a new Conda environment named 'caddee' with Anaconda and Python 3.10:
+```bash
+conda create -n caddee anaconda python=3.9
 ```
 
-# For Developers
-For details on documentation, refer to the README in `docs` directory.
+Once the environment is set up, activate it and install the required Python packages:
+```bash
+conda activate caddee
+pip install smt vedo cython
+```
 
-For details on testing/pull requests, refer to the README in `tests` directory.
+Within the caddee environment, you'll also need to clone and install several repositories. Use the ```pip3 install -e .``` command within each repository's directory after cloning.
+```bash
+conda activate caddee
+pip install smt vedo cython
+```
+
+## Troubleshooting
+If you encounter any issues when plotting the mesh, consult [this link](https://github.com/conda-forge/ctng-compilers-feedstock/issues/95#issuecomment-1449848343) for potential solutions.
+
 
 # License
 This project is licensed under the terms of the **GNU Lesser General Public License v3.0**.
