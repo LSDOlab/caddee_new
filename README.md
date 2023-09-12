@@ -32,7 +32,7 @@ conda create -n caddee anaconda python=3.9
 Once the environment is set up, activate it and install the required Python packages:
 ```bash
 conda activate caddee
-pip install smt vedo cython
+pip install smt vedo
 ```
 
 Within the caddee environment, you'll also need to clone and install several repositories. Use the ```pip3 install -e .``` command within each repository's directory after cloning.
