@@ -1,5 +1,5 @@
 import csdl
-from csdl_om import Simulator
+# from csdl_om import Simulator
 import numpy as np
 import scipy.sparse as sps
 
@@ -71,7 +71,7 @@ class SystemRepresentationAssemblyCSDL(csdl.Model):
 
 if __name__ == "__main__":
     import csdl
-    # from csdl_om import Simulator
+    # # from csdl_om import Simulator
     from python_csdl_backend import Simulator
     import numpy as np
 

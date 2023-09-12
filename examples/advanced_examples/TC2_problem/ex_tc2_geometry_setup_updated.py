@@ -18,6 +18,14 @@ spatial_rep = lpc_rep.spatial_representation
 spatial_rep.import_file(file_name=file_name)
 spatial_rep.refit_geometry(file_name=file_name)
 
+# TODO
+# 1) helper function for lines 28-255
+# 2) storing imports/projections: clean up code + location of where to store imports/projections
+# 3) FFDs + inner optimization: @Andrew: finalize API; formally move into lsdo_geo (xyz_to_uvw_indices); think about api changes for free vs prescribed varaibles for inner optimization + FFD
+
+
+# 4) converting lsdo_geo to m3l
+
 t1 = time.time()
 
 # region create components

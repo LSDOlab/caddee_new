@@ -87,6 +87,7 @@ def build_cp_index_function(wing, grid_num, design_condition, system_m3l_model, 
             coefficients[entry] = m3l.Variable(f'{entry}_cp_coefficients', shape=(3, 10, 1))
             spaces[entry] = bsplinespace
 
+    # NOTE: Maybe revisit IndexedFunctionSpace (original plan was to use geometry)
     cp_cruise_index_space = m3l.IndexedFunctionSpace(name='wing_cp_space', spaces=spaces)
     cp_cruise_indexed_function = m3l.IndexedFunction(name='wing_cp_indexed_function', space=cp_cruise_index_space, coefficients=coefficients)
 
@@ -717,9 +718,15 @@ hover_1_oei_flo.set_module_input(name='observer_location', val=np.array([0, 0, 0
 
 hover_1_oei_flo_ac_states = hover_1_oei_flo.evaluate_ac_states()
 
+rpm_1 = m3l_model.set_module_input('rpm', val=1200,...)
+rpm_2 = m3l_model.set_module_input('rpm', val=1200,...)
+rpm_3 = m3l_model.set_module_input('rpm', val=1200,...)
+
 rlo_bem_model = BEM(disk_prefix='hover_1_oei_flo_rlo_disk', blade_prefix='rlo', component=rlo_disk, mesh=bem_mesh_lift)
-rlo_bem_model.set_module_input('rpm', val=1233.65794802, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
-rlo_bem_forces, rlo_bem_moments,_ ,_ ,_,_,rlo_Q, rlo_ux = rlo_bem_model.evaluate(ac_states=hover_1_oei_flo_ac_states, design_condition=hover_1_oei_flo)
+rlo_rpm = rlo_bem_model.set_module_input('rpm', val=1233.65794802, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
+rlo_bem_forces, rlo_bem_moments,_ ,_ ,_,_,rlo_Q, rlo_ux = rlo_bem_model.evaluate(ac_states=hover_1_oei_flo_ac_states, design_condition=hover_1_oei_flo, rpm_1)
+
+rlo_motor_output = motor_model.evaluate(rlo_rpm, others)
 
 rli_bem_model = BEM(disk_prefix='hover_1_oei_flo_rli_disk', blade_prefix='rli', component=rli_disk, mesh=bem_mesh_lift)
 rli_bem_model.set_module_input('rpm', val=1120.44195053, dv_flag=True, lower=500, upper=4000, scaler=1e-3)
@@ -2803,6 +2810,10 @@ rlo_bem_model = PittPeters(disk_prefix='qst_4_rlo_disk', blade_prefix='rlo', com
 rlo_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 rlo_bem_forces, rlo_bem_moments,rlo_dT ,rlo_dQ ,rlo_dD, rlo_Ct,rlo_Q, rlo_ux = rlo_bem_model.evaluate(ac_states=qst_4_ac_states, design_condition=qst_4)
 
+bem_outputs = bem_model.evaluate(ac_states=ac_states) # NOTE: have soler developers return a dataclass if the evaluate method has more than x number of outputs
+F = bem_outputs.F
+
+
 rli_bem_model = PittPeters(disk_prefix='qst_4_rli_disk', blade_prefix='rli', component=rli_disk, mesh=pitt_peters_mesh_lift)
 rli_bem_model.set_module_input('rpm', val=1350, dv_flag=True, lower=5, upper=4000, scaler=1e-2)
 rli_bem_forces, rli_bem_moments, rli_dT ,rli_dQ ,rli_dD, rli_Ct,rli_Q, rli_ux = rli_bem_model.evaluate(ac_states=qst_4_ac_states, design_condition=qst_4)
@@ -4795,7 +4806,8 @@ final_SoC = soc_model.evaluate(battery_mass=battery_mass, total_energy_consumpti
 system_m3l_model.register_output(final_SoC)
 # endregion
 
-# region add design conditions to design scenario
+# region add design conditions to design scenario 
+# TODO: check if add_design_condition is necessary--> Seems that it shouldn't be necessary
 # wing sizing conditions
 design_scenario.add_design_condition(plus_3g_condition)
 design_scenario.add_design_condition(minus_1g_condition)
@@ -4822,10 +4834,19 @@ design_scenario.add_design_condition(descent_1)
 # endregion
 
 system_model.add_design_scenario(design_scenario)
+
 system_model.add_m3l_model('system_m3l_model', system_m3l_model)
 
 
 caddee_csdl_model = caddee.assemble_csdl()
+
+# TODO/ NOTE
+# - Can we convert high-level geometric variables to 'module_inputs' (seems difficult because it's case dependent)
+# - Can we automate/abstract these explcit connections from the user? 
+# - Would be more consistent if this were using m3l + modules
+# - Can we handle constraints and the objective similar to module_inputs?
+# - As much as possible, connections should be handled through m3l
+# - Can one m3l instance have multiple evaluates that a solver developer can document? (e.g., evaluate_f_m, evaluate_thrust_vector); would be very convenient
 
 # region connections
 caddee_csdl_model.connect('system_model.system_m3l_model.mass_model.wing_beam_tweb', 'system_model.system_m3l_model.plus_3g_sizing_wing_eb_beam_model.Aframe.wing_beam_tweb')
@@ -5644,6 +5665,8 @@ caddee_csdl_model.add_objective('system_model.system_m3l_model.total_constant_ma
 
 
 # region TC 2 csdl model
+
+
 import csdl
 upstream_model = csdl.Model()
 wing_area = upstream_model.create_input('wing_area', val=200.)
@@ -5752,6 +5775,7 @@ tc2_model.add_constraint('caddee_csdl_model.system_model.system_m3l_model.climb_
 tc2_model.add_constraint('caddee_csdl_model.system_model.system_m3l_model.cruise_pp_disk_bem_model.T', lower=20, scaler=1e-2)
 # endregion
 
+# Dashboard stuff 
 design_configuration_map = {
    'minus_1g_sizing':"minus_1g_configuration", 
    'plus_3g_sizing':"plus_3g_configuration",

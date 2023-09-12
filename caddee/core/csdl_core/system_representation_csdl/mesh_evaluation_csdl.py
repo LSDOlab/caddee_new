@@ -1,5 +1,5 @@
 import csdl
-from csdl_om import Simulator
+# from csdl_om import Simulator
 import numpy as np
 import scipy.sparse as sps
 import array_mapper as am
@@ -131,7 +131,7 @@ class NonlinearOutputsOperation(csdl.CustomExplicitOperation):
 
 if __name__ == "__main__":
     import csdl
-    # from csdl_om import Simulator
+    # # from csdl_om import Simulator
     from python_csdl_backend import Simulator
     import numpy as np
     from vedo import Points, Plotter
@@ -287,7 +287,7 @@ if __name__ == "__main__":
     spatial_rep.plot_meshes([wing_camber_surface_csdl, horizontal_stabilizer_camber_surface_csdl], mesh_plot_types=['wireframe'], mesh_opacity=1.)
 
 # import csdl
-# from csdl_om import Simulator
+# # from csdl_om import Simulator
 # import numpy as np
 # import scipy.sparse as sps
 
@@ -354,7 +354,7 @@ if __name__ == "__main__":
 
 # if __name__ == "__main__":
 #     import csdl
-#     # from csdl_om import Simulator
+#     # # from csdl_om import Simulator
 #     from python_csdl_backend import Simulator
 #     import numpy as np
 #     from vedo import Points, Plotter

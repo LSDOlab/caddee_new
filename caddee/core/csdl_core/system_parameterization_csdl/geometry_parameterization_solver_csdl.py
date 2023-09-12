@@ -369,7 +369,7 @@ class GeometryParameterizationSolverOperation(csdl.CustomImplicitOperation):
 if __name__ == "__main__":
     import csdl
     from python_csdl_backend import Simulator
-    # from csdl_om import Simulator
+    # # from csdl_om import Simulator
     import numpy as np
     from src.caddee.concept.geometry.geometry import Geometry
     from src.caddee.concept.geometry.geocore.component import Component

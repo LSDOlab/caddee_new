@@ -1,5 +1,5 @@
 import csdl
-from csdl_om import Simulator
+# from csdl_om import Simulator
 import numpy as np
 
 # class PiecewiseHeavisideOperation(csdl.CustomExplicitOperation):

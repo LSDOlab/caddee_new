@@ -1,5 +1,5 @@
 import csdl
-from csdl_om import Simulator
+# from csdl_om import Simulator
 import numpy as np
 import scipy.sparse as sps
 import array_mapper as am
