@@ -26,7 +26,7 @@ sudo apt-get install ffmpeg libsm6 libxext6
 ## Create and Set Up Conda Environment
 Create a new Conda environment named 'caddee' with Anaconda and Python 3.10:
 ```bash
-conda create -n caddee anaconda python=3.9
+conda create -n caddee anaconda python=3.10
 ```
 
 Once the environment is set up, activate it and install the required Python packages:
