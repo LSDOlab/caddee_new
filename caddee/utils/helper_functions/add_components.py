@@ -75,17 +75,13 @@ def add_components(vsp_component_names : list, system_representation : cd.System
 
 
 if __name__ == '__main__':
-    print(process_string('EngineGroup_10'))
-
     from caddee import IMPORTS_FILES_FOLDER
 
-    lpc_rep = cd.SystemRepresentation()
-    lpc_param = cd.SystemParameterization(system_representation=lpc_rep)
+    lpc_rep = cd.SystemRepresentation(
+        file=IMPORTS_FILES_FOLDER / 'LPC_final_custom_blades.stp',
+    )
 
-    file_name = IMPORTS_FILES_FOLDER / 'LPC_final_custom_blades.stp'
-    spatial_rep = lpc_rep.spatial_representation
-    spatial_rep.import_file(file_name=file_name)
-    spatial_rep.refit_geometry(file_name=file_name)
+    lpc_param = cd.SystemParameterization(system_representation=lpc_rep)
 
     comps = Comps(
         system_rep=lpc_rep,

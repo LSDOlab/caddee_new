@@ -23,6 +23,7 @@ spatial_rep.refit_geometry(file_name=file_name)
 # 2) storing imports/projections: clean up code + location of where to store imports/projections
 # 3) FFDs + inner optimization: @Andrew: finalize API; formally move into lsdo_geo (xyz_to_uvw_indices); think about api changes for free vs prescribed varaibles for inner optimization + FFD
 
+# 5) Difference between get_primitives and get_geometry_primitives
 
 # 4) converting lsdo_geo to m3l
 
