@@ -32,7 +32,8 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
 
     def initialize(self, kwargs):
         # Each design condition needs a name 
-        self.parameters.declare(name='name', default='', types=str)
+        # self.parameters.declare(name='name', default='', types=str)
+        super().initialize(kwargs=kwargs)
 
         self.atmosphere_model = None
         self.sub_conditions = dict()
@@ -43,7 +44,6 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
         # Parameters
         self.parameters.declare(name='stability_flag', default=False, types=bool)
         self.parameters.declare(name='dynamic_flag', default=False, types=bool)
-        return
 
 
     def add_m3l_model(self, name, model):
@@ -54,9 +54,13 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
             self.m3l_models[name] = model
         return
 
-    def evaluate_ac_states(self):
+    def evaluate(self, mach_number, pitch_angle, altitude, range, observer_location):
+        """
+        Returns a data class
+        """
+
         self.arguments = {}
-        self.name = f"{self.parameters['name']}_ac_states_operation"
+        # self.name = f"{self.parameters['name']}_ac_states_operation"
 
         u = m3l.Variable(name='u', shape=(self.num_nodes, ), operation=self)
         v = m3l.Variable(name='v', shape=(self.num_nodes, ), operation=self)

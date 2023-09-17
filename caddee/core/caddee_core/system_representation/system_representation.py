@@ -150,11 +150,11 @@ class SystemRepresentation(CADDEEBase):
         This method sets the 'Components' attribute of the SystemRepresentation class
         (i.e., it creates an instance of the 'Components' container class)
 
-        Parameters:
+        Parameters
         ------------
             kwargs: specify the desired name of your component as well as the corresponding name of the component within the OpenVSP geometry
 
-        Example:
+        Example
         -----------
             ```py
             assemble_components(
@@ -251,7 +251,7 @@ if __name__ == '__main__':
     from caddee import IMPORTS_FILES_FOLDER
 
     lpc_rep = SystemRepresentation()
-    lpc_param = cd. SystemParameterization(system_representation=lpc_rep)
+    lpc_param = cd.SystemParameterization(system_representation=lpc_rep)
 
     file_name = IMPORTS_FILES_FOLDER / 'LPC_final_custom_blades.stp'
     spatial_rep = lpc_rep.spatial_representation
