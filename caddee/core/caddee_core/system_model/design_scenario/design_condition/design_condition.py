@@ -2,6 +2,41 @@ from caddee.utils.caddee_base import CADDEEBase
 import numpy as np
 from csdl import GraphRepresentation
 import m3l
+from dataclasses import dataclass
+from typing import Union
+
+
+@dataclass
+class AcStates:
+    """
+    Container data class for aircraft states and time (for steady cases only)
+    """
+    u : m3l.Variable = None
+    v : m3l.Variable = None
+    w : m3l.Variable = None
+    p : m3l.Variable = None
+    q : m3l.Variable = None
+    r : m3l.Variable = None
+    theta : m3l.Variable = None
+    phi : m3l.Variable = None
+    gamma : m3l.Variable = None
+    psi : m3l.Variable = None
+    x : m3l.Variable = None
+    y : m3l.Variable = None
+    z : m3l.Variable = None
+    time : m3l.Variable = None
+
+@dataclass
+class AtmosphericProperties:
+    """
+    Container data class for atmospheric variables 
+    """
+    density : m3l.Variable = None
+    temperature : m3l.Variable = None
+    pressure : m3l.Variable = None
+    dynamic_viscosity : m3l.Variable = None
+    speed_of_sound : m3l.Variable = None
+
 
 
 class SteadyDesignCondition(m3l.ExplicitOperation):
@@ -54,13 +89,19 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
             self.m3l_models[name] = model
         return
 
-    def evaluate(self, mach_number, pitch_angle, altitude, range, observer_location):
+    def evaluate(self, mach_number, pitch_angle, altitude, range, observer_location) -> Union[AcStates, AtmosphericProperties]:
         """
         Returns a data class
         """
 
         self.arguments = {}
         # self.name = f"{self.parameters['name']}_ac_states_operation"
+
+        self.arguments['mach_number'] = mach_number
+        self.arguments['pitch_angle'] = pitch_angle
+        self.arguments['altitude'] = altitude
+        self.arguments['observer_location'] = observer_location
+
 
         u = m3l.Variable(name='u', shape=(self.num_nodes, ), operation=self)
         v = m3l.Variable(name='v', shape=(self.num_nodes, ), operation=self)
@@ -81,23 +122,59 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
 
         t = m3l.Variable(name='time', shape=(self.num_nodes, ), operation=self)
 
-        ac_states = {
-            'u' : u,
-            'v' : v,
-            'w' : w,
-            'p' : p,
-            'q' : q,
-            'r' : r,
-            'phi' : phi,
-            'gamma' : gamma,
-            'psi' : psi,
-            'theta' : theta,
-            'x' : x,
-            'y' : y,
-            'z' : z,
-            'time' : t,
-        }
-        return ac_states
+        # ac_states = {
+        #     'u' : u,
+        #     'v' : v,
+        #     'w' : w,
+        #     'p' : p,
+        #     'q' : q,
+        #     'r' : r,
+        #     'phi' : phi,
+        #     'gamma' : gamma,
+        #     'psi' : psi,
+        #     'theta' : theta,
+        #     'x' : x,
+        #     'y' : y,
+        #     'z' : z,
+        #     'time' : t,
+        # }
+
+        ac_states = AcStates()
+        ac_states.u = u
+        ac_states.v = v
+        ac_states.w = w
+        
+        ac_states.phi = phi
+        ac_states.gamma = gamma
+        ac_states.psi = psi
+        ac_states.theta = theta
+        
+        ac_states.p = p
+        ac_states.q = q
+        ac_states.r = r
+
+        ac_states.x = x
+        ac_states.y = y
+        ac_states.z = z
+        
+        ac_states.time = t
+
+
+        rho = m3l.Variable(name='density', shape=(self.num_nodes, ), operation=self)
+        mu = m3l.Variable(name='dynamic_viscosity', shape=(self.num_nodes, ), operation=self)
+        pressure = m3l.Variable(name='pressure', shape=(self.num_nodes, ), operation=self)
+
+        a = m3l.Variable(name='speed_of_sound', shape=(self.num_nodes, ), operation=self)
+        temp = m3l.Variable(name='temperature', shape=(self.num_nodes, ), operation=self)
+
+        atmosphere = AtmosphericProperties()
+        atmosphere.density = rho
+        atmosphere.dynamic_viscosity = mu
+        atmosphere.pressure = pressure
+        atmosphere.speed_of_sound = a 
+        atmosphere.temperature = temp
+        
+        return ac_states, atmosphere
     
     def _assemble_csdl(self):
         if len(self.m3l_models) > 1:
@@ -108,6 +185,8 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
 
         return csdl_model
     
+
+
 
 class CruiseCondition(SteadyDesignCondition):
     """
