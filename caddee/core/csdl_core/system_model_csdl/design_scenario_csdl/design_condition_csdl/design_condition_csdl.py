@@ -5,7 +5,7 @@ from caddee.core.caddee_core.system_model.design_scenario.design_condition.desig
 import numpy as np
 
 
-class SteadyDesignConditionCSDL(BaseModelCSDL):
+class SteadyDesignConditionCSDL(csdl.Model):
     def initialize(self):
         self.parameters.declare('steady_condition', types=SteadyDesignCondition)
         
@@ -20,8 +20,8 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
 
     def define(self):
         cruise_condition = self.parameters['cruise_condition']
-        ac_module = self.module # self.parameters['aircraft_condition_module']
-        cruise_name = self.prepend
+        # ac_module = self.module # self.parameters['aircraft_condition_module']
+        # cruise_name = self.prepend
 
         # Required variables (user needs to provide these)
         theta = self.register_module_input(f'{cruise_name}_pitch_angle', shape=(1, ), computed_upstream=False)

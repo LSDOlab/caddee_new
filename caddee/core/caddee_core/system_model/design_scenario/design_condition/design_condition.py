@@ -1,6 +1,6 @@
 from caddee.utils.caddee_base import CADDEEBase
 import numpy as np
-from csdl import GraphRepresentation
+from csdl import GraphRepresentation, Model
 import m3l
 from dataclasses import dataclass
 from typing import Union
@@ -78,7 +78,6 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
 
         # Parameters
         self.parameters.declare(name='stability_flag', default=False, types=bool)
-        self.parameters.declare(name='dynamic_flag', default=False, types=bool)
 
 
     def add_m3l_model(self, name, model):
@@ -89,10 +88,104 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
             self.m3l_models[name] = model
         return
 
-    def evaluate(self, mach_number, pitch_angle, altitude, range, observer_location) -> Union[AcStates, AtmosphericProperties]:
+    
+    
+    def _assemble_csdl(self):
+        if len(self.m3l_models) > 1:
+            raise Exception(f"More than one m3l model added to design condition {self.parameters['name']}")
+        else:
+            for m3l_model_name, m3l_model in self.m3l_models.items():
+                csdl_model = m3l_model.assemble_csdl()
+
+        return csdl_model
+    
+
+
+
+class CruiseCondition(SteadyDesignCondition):
+    """
+    Subclass of SteadyDesignCondition intended to define cruise mission segments of air vehicles.
+    
+    CADDEE inputs (set by set_module_input()):
+    ---
+        - range : range of a cruise condition
+        - time : time of a cruise condition
+        - altitude : altitude at cruise
+        - mach_number : aircraft free-stream Mach number  (can't be specified if cruise_speed)
+        - cruise_speed : aircraft cruise speed (can't be specified if mach_number)
+        - theta : aircraft pitch angle
+        - observer_location : x, y, z location of aircraft; z can be different from altitude
+    """
+    def initialize(self, kwargs):
+        return super().initialize(kwargs)
+
+    def compute(self) -> Model:
         """
-        Returns a data class
+        Returns a csdl model
+        """ 
+        from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import CruiseConditionCSDL
+        csdl_model = CruiseConditionCSDL(
+            # module=self,
+            # prepend=self.parameters['name'],
+            cruise_condition=self,
+        )
+        return csdl_model
+    
+
+    def evaluate(self, mach_number : Union[m3l.Variable, None], pitch_angle : m3l.Variable, altitude : m3l.Variable, cruise_range : m3l.Variable, 
+                 observer_location : m3l.Variable, time=None, cruise_speed=None) -> Union[AcStates, AtmosphericProperties]:
         """
+        Returns a data class with aircraft states and atmospheric properties 
+        
+        
+        Parameters
+        ----------
+        mach_number : m3l variable, None
+            The intended mach number of the cruise condition
+        
+        pitch_angle : m3l variable 
+            The aircraft pitch angle (theta)
+        
+        altitude : m3l variable
+            The altitude of the aircraft 
+        
+        cruise_range : m3l variable, None
+            The range of the cruise condition
+        
+        observer_location : m3l Variable
+            The observer location from the aircraft (in the Cartesian reference frame)
+        
+        time : None, m3l Variable - optional (default: None)
+            The time of the cruise condition (can't be specified if 'mach_number' and 'cruise_range' are already set)
+        
+        cruise_speed  : None, m3l Variable - optional (default: None)
+            The cruise speed can be specified in place of mach_number 
+        
+            
+        """
+        dc_name = self.parameters['name']
+        
+        # Chck if user inputs are valid
+        if all([mach_number, cruise_speed]):
+            raise ValueError(f"Design condition {dc_name}: Cannot specify 'mach_number' and 'cruise_speed' at the same time")
+        elif all([mach_number, cruise_range, time]):
+            raise ValueError(f"Design condition {dc_name}: Cannot specify 'mach_number' and 'cruise_range', and 'time' at the same time")
+        elif all([cruise_range, time, cruise_speed]):
+            raise ValueError(f"Design condition {dc_name}: Cannot specify 'mach_number' and 'time', and 'cruise_speed' at the same time")
+        
+        if all([mach_number, cruise_range]):
+            pass
+        elif all([cruise_range, time]):
+            pass
+        elif all([cruise_range, cruise_speed]):
+            pass
+        elif all([mach_number, time]):
+            pass
+        elif all([cruise_speed, time]):
+            pass
+        else:
+            raise ValueError(f"Design condition '{dc_name}': Not enough information to determine 'speed', 'range', and 'time' for design condition '{dc_name}'. Please specify either ('speed', 'range'), ('speed', 'time'), ('mach_number', 'range'), ('mach_number', 'time'), or ('range', 'time').")
+
 
         self.arguments = {}
         # self.name = f"{self.parameters['name']}_ac_states_operation"
@@ -100,8 +193,14 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
         self.arguments['mach_number'] = mach_number
         self.arguments['pitch_angle'] = pitch_angle
         self.arguments['altitude'] = altitude
+        self.arguments['cruise_range'] = cruise_range
         self.arguments['observer_location'] = observer_location
+        self.arguments['time'] = time
+        self.arguments['cruise_speed'] = cruise_speed
 
+
+        print(self)
+        print('\n')
 
         u = m3l.Variable(name='u', shape=(self.num_nodes, ), operation=self)
         v = m3l.Variable(name='v', shape=(self.num_nodes, ), operation=self)
@@ -139,80 +238,57 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
         #     'time' : t,
         # }
 
-        ac_states = AcStates()
-        ac_states.u = u
-        ac_states.v = v
-        ac_states.w = w
-        
-        ac_states.phi = phi
-        ac_states.gamma = gamma
-        ac_states.psi = psi
-        ac_states.theta = theta
-        
-        ac_states.p = p
-        ac_states.q = q
-        ac_states.r = r
-
-        ac_states.x = x
-        ac_states.y = y
-        ac_states.z = z
-        
-        ac_states.time = t
-
-
-        rho = m3l.Variable(name='density', shape=(self.num_nodes, ), operation=self)
-        mu = m3l.Variable(name='dynamic_viscosity', shape=(self.num_nodes, ), operation=self)
-        pressure = m3l.Variable(name='pressure', shape=(self.num_nodes, ), operation=self)
-
-        a = m3l.Variable(name='speed_of_sound', shape=(self.num_nodes, ), operation=self)
-        temp = m3l.Variable(name='temperature', shape=(self.num_nodes, ), operation=self)
-
-        atmosphere = AtmosphericProperties()
-        atmosphere.density = rho
-        atmosphere.dynamic_viscosity = mu
-        atmosphere.pressure = pressure
-        atmosphere.speed_of_sound = a 
-        atmosphere.temperature = temp
-        
-        return ac_states, atmosphere
-    
-    def _assemble_csdl(self):
-        if len(self.m3l_models) > 1:
-            raise Exception(f"More than one m3l model added to design condition {self.parameters['name']}")
-        else:
-            for m3l_model_name, m3l_model in self.m3l_models.items():
-                csdl_model = m3l_model.assemble_csdl()
-
-        return csdl_model
-    
-
-
-
-class CruiseCondition(SteadyDesignCondition):
-    """
-    Subclass of SteadyDesignCondition intended to define cruise mission segmenst of air vehicles.
-    
-    CADDEE inputs (set by set_module_input()):
-    ---
-        - range : range of a cruise condition
-        - time : time of a cruise condition
-        - altitude : altitude at cruise
-        - mach_number : aircraft free-stream Mach number  (can't be specified if cruise_speed)
-        - cruise_speed : aircraft cruise speed (can't be specified if mach_number)
-        - theta : aircraft pitch angle
-        - observer_location : x, y, z location of aircraft; z can be different from altitude
-    """
-    def initialize(self, kwargs):
-        return super().initialize(kwargs)
-
-    def compute(self): 
-        from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import CruiseConditionCSDL
-        csdl_model = CruiseConditionCSDL(
-            module=self,
-            prepend=self.parameters['name'],
-            cruise_condition=self,
+        ac_states = AcStates(
+            u=u,
+            v=v,
+            w=w,
+            phi=phi,
+            gamma=gamma,
+            psi=psi,
+            theta=theta,
+            p=p,
+            q=q,
+            r=r,
+            x=x,
+            y=y,
+            z=z,
+            time=t,
         )
-        return csdl_model
+        # ac_states.u = u
+        # ac_states.v = v
+        # ac_states.w = w
+        
+        # ac_states.phi = phi
+        # ac_states.gamma = gamma
+        # ac_states.psi = psi
+        # ac_states.theta = theta
+        
+        # ac_states.p = p
+        # ac_states.q = q
+        # ac_states.r = r
+
+        # ac_states.x = x
+        # ac_states.y = y
+        # ac_states.z = z
+        
+        # ac_states.time = t
+
+
+        # rho = m3l.Variable(name='density', shape=(self.num_nodes, ), operation=self)
+        # mu = m3l.Variable(name='dynamic_viscosity', shape=(self.num_nodes, ), operation=self)
+        # pressure = m3l.Variable(name='pressure', shape=(self.num_nodes, ), operation=self)
+
+        # a = m3l.Variable(name='speed_of_sound', shape=(self.num_nodes, ), operation=self)
+        # temp = m3l.Variable(name='temperature', shape=(self.num_nodes, ), operation=self)
+
+        # atmosphere = AtmosphericProperties()
+        # atmosphere.density = rho
+        # atmosphere.dynamic_viscosity = mu
+        # atmosphere.pressure = pressure
+        # atmosphere.speed_of_sound = a 
+        # atmosphere.temperature = temp
+        
+        return ac_states #, atmosphere
     
 
 class HoverCondition(SteadyDesignCondition):

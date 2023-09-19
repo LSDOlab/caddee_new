@@ -11,18 +11,19 @@ test_condition = cd.CruiseCondition(
     name='test_condition'
 )
 
-M = test_condition.create_input('mach_number', val=0.3, shape=(1, ))
-
-# test_condition.set_module_input('pitch_angle', val=0.03369678, dv_flag=True, lower=np.deg2rad(-5), upper=np.deg2rad(5))
-# test_condition.set_module_input('mach_number', val=0.17354959)
-# test_condition.set_module_input('altitude', val=300)
-# test_condition.set_module_input(name='range', val=20)
-# test_condition.set_module_input(name='observer_location', val=np.array([0, 0, 0]))
+M = test_condition.create_input('mach_number', val=0.3)
+theta = test_condition.create_input('pitch_angle', val=0)
+altitude = test_condition.create_input('altitude', val=1000)
+cruise_range = test_condition.create_input('cruise_range', val=40000)
+observer_location = test_condition.create_input('observer_location', val=np.array([0., 0., 0.,]))
 
 
-ac_states = test_condition.evaluate_ac_states()
 
-m3l_model.register_output(ac_states, test_condition)
+ac_states = test_condition.evaluate(mach_number=M, pitch_angle=theta, 
+                                    altitude=altitude, cruise_range=cruise_range, 
+                                    observer_location=observer_location)
+
+m3l_model.register_output(ac_states)
 
 csdl_model = m3l_model.assemble_csdl()
 
