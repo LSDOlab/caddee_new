@@ -67,6 +67,8 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
             self.register_output('cruise_speed', cruise_speed)
             self.register_output('cruise_time', cruise_time)
 
+
+
         elif all([speed_m3l, time_m3l]):
             cruise_speed = self.declare_variable('cruise_speed', shape=(num_nodes, ))
             cruise_time = self.declare_variable('cruise_time', shape=(num_nodes, ))

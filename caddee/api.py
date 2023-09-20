@@ -8,7 +8,9 @@ from caddee.core.caddee_core.system_model.design_scenario.design_scenario import
 from caddee.core.caddee_core.system_model.design_scenario.design_condition.design_condition import (
     CruiseCondition,
     ClimbCondition,
-    HoverCondition
+    HoverCondition,
+    AcStates,
+    AtmosphericProperties,
 )
 from caddee.core.caddee_core.system_model.design_scenario.design_condition.atmosphere.atmosphere import Atmosphere
 from caddee.core.caddee_core.system_representation.component.component import Component, LiftingSurface, Rotor

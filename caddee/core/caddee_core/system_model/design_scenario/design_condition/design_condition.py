@@ -3,7 +3,7 @@ import numpy as np
 from csdl import GraphRepresentation, Model
 import m3l
 from dataclasses import dataclass
-from typing import Union
+from typing import Union, Tuple
 from caddee.core.caddee_core.system_model.design_scenario.design_condition.atmosphere.atmosphere import Atmosphere
 
 
@@ -133,7 +133,7 @@ class CruiseCondition(SteadyDesignCondition):
     
 
     def evaluate(self, mach_number : Union[m3l.Variable, None], pitch_angle : m3l.Variable, altitude : m3l.Variable, cruise_range : m3l.Variable, 
-                 observer_location : m3l.Variable, time=None, cruise_speed=None) -> Union[AcStates, AtmosphericProperties]:
+                 observer_location : m3l.Variable, time=None, cruise_speed=None) -> tuple[AcStates, AtmosphericProperties]:
         """
         Returns a data class with aircraft states and atmospheric properties 
         
