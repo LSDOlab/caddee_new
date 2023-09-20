@@ -20,100 +20,149 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
 
     def define(self):
         cruise_condition = self.parameters['cruise_condition']
+        cruise_condition_name = cruise_condition.parameters['name']
+        num_nodes = cruise_condition.num_nodes
         # ac_module = self.module # self.parameters['aircraft_condition_module']
         # cruise_name = self.prepend
+        print('\n')
+        print('inputs', cruise_condition.arguments)
+        print('num_nodes', num_nodes)
 
         # Required variables (user needs to provide these)
-        theta = self.register_module_input(f'{cruise_name}_pitch_angle', shape=(1, ), computed_upstream=False)
-        h = self.register_module_input(f'{cruise_name}_altitude', shape=(1, ), computed_upstream=False)
-        observer_location = self.register_module_input(f'{cruise_name}_observer_location', shape=(3, ), computed_upstream=False)
+        # theta = self.register_module_input(f'{cruise_name}_pitch_angle', shape=(1, ), computed_upstream=False)
+        # h = self.register_module_input(f'{cruise_name}_altitude', shape=(1, ), computed_upstream=False)
+        # observer_location = self.register_module_input(f'{cruise_name}_observer_location', shape=(3, ), computed_upstream=False)
 
-        if cruise_condition.atmosphere_model:
-            self.add_module(cruise_condition.atmosphere_model._assemble_csdl(cruise_name), 'atmosphere_model')
+        theta = self.declare_variable('pitch_angle', shape=(num_nodes))
+        h = self.declare_variable('altitude', shape=(num_nodes))
+        observer_location = self.declare_variable('observer_location', shape=(3, num_nodes))
 
-        # Check which user-defined variables are available to compute cruise speed 
-        if set(['range', 'time', 'speed']).issubset(ac_module.inputs):
-            raise Exception(f"Error in design condition '{cruise_name}': cannot specify 'range', 'time', and 'speed' at the same time")
-        elif set(['range', 'time', 'mach_number']).issubset(ac_module.inputs):
-            raise Exception(f"Error in design condition '{cruise_name}': cannot specify 'range', 'time', and 'mach_number' at the same time")
+        atmosphere_model = cruise_condition.atmosphere_model(name=f'atmosphere_model')
+        atmosphere_model.num_nodes = num_nodes
+        atmosphere_model_csdl = atmosphere_model.compute()
+        self.add(atmosphere_model_csdl, 'atmosphere_model')
 
+        speed_of_sound = self.declare_variable('speed_of_sound', shape=(num_nodes, ))
 
-        elif set(['range', 'time']).issubset(ac_module.inputs):
-            range = self.register_module_input(f'{cruise_name}_range', shape=(1, ), computed_upstream=False)
-            time = self.register_module_input(f'{cruise_name}_time', shape=(1, ), computed_upstream=False)
-            speed = range/time
-            self.register_module_output(f'{cruise_name}_speed', speed)
-            raise Exception("This part of if-else has not been tested")
-        elif set(['mach_number', 'time']).issubset(ac_module.inputs):
-            a = self.register_module_input(f'{cruise_name}_speed_of_sound', shape=(1, ))
-            time = self.register_module_input(f'{cruise_name}_time', shape=(1, ), computed_upstream=False)
-            M = self.register_module_input(f'{cruise_name}_mach_number', shape=(1, ), computed_upstream=False)
-            speed = a * M
-            range = speed * time
-            self.register_module_output(f'{cruise_name}_range', range)
-            self.register_module_output(f'{cruise_name}_speed', speed)
-            raise Exception("This part of if-else has not been tested")
-        elif set(['mach_number', 'range']).issubset(ac_module.inputs):
-            a = self.register_module_input(f'{cruise_name}_speed_of_sound', shape=(1, ))
-            range = self.register_module_input(f'{cruise_name}_range', shape=(1, ), computed_upstream=False)
-            M = self.register_module_input(f'{cruise_name}_mach_number', shape=(1, ), computed_upstream=False)
-            speed = a * M
-            time = range / speed
-            self.register_module_output(f'{cruise_name}_time', time)
-            self.register_module_output(f'{cruise_name}_speed', speed)
-        elif set(['speed', 'time']).issubset(ac_module.inputs):
-            speed = self.register_module_input(f'{cruise_name}_speed', shape=(1, ), computed_upstream=False)
-            time = self.register_module_input(f'{cruise_name}_time', shape=(1, ), computed_upstream=False)
-            range = speed * time
-            self.register_module_output(f'{cruise_name}_range', range)
-            raise Exception("This part of if-else has not been tested")
-        elif set(['speed', 'range']).issubset(ac_module.inputs):
-            speed = self.register_module_input(f'{cruise_name}_speed', shape=(1, ), computed_upstream=False)
-            range = self.register_module_input(f'{cruise_name}_range', shape=(1, ), computed_upstream=False)
-            time = range / speed 
-            self.register_module_output(f'{cruise_name}_time', time)
-            raise Exception("This part of if-else has not been tested")
-        else:
-            raise Exception(f"Not enough information to determine 'speed', 'range', and 'time' for design condition '{cruise_name}'. Please specify either ('speed', 'range'), ('speed', 'time'), ('mach_number', 'range'), ('mach_number', 'time'), or ('range', 'time').")
+        mach_m3l = cruise_condition.arguments['mach_number']
+        speed_m3l = cruise_condition.arguments['cruise_speed']
+        range_m3l = cruise_condition.arguments['cruise_range']
+        time_m3l = cruise_condition.arguments['cruise_time']
+
+        if all([range_m3l, time_m3l]):
+            cruise_range = self.declare_variable('cruise_range', shape=(num_nodes, ))
+            cruise_time = self.declare_variable('cruise_time', shape=(num_nodes, ))
+            
+            cruise_speed = cruise_range/cruise_time
+            
+            self.register_module_output(f'cruise_speed', cruise_speed)
+        
+        elif all([mach_m3l, range_m3l]):
+            mach_number = self.declare_variable('mach_number', shape=(num_nodes, ))
+            cruise_range = self.declare_variable('cruise_range', shape=(num_nodes, ))
+            
+            cruise_speed = speed_of_sound * mach_number
+            cruise_time = cruise_range / cruise_speed 
+
+            self.register_output('cruise_speed', cruise_speed)
+            self.register_output('cruise_time', cruise_time)
+
+        elif all([speed_m3l, time_m3l]):
+            cruise_speed = self.declare_variable('cruise_speed', shape=(num_nodes, ))
+            cruise_time = self.declare_variable('cruise_time', shape=(num_nodes, ))
+
+            cruise_range = cruise_speed * cruise_time
+            mach_number = cruise_speed / speed_of_sound
+
+            self.register_output('cruise_range', cruise_range)
+            self.register_output('mach_number', mach_number)
+
+        elif all([speed_m3l, range_m3l]):
+            cruise_speed = self.declare_variable('cruise_speed', shape=(num_nodes, ))
+            cruise_range = self.declare_variable('cruise_range', shape=(num_nodes, ))
+
+            mach_number = cruise_speed / speed_of_sound
+            cruise_time = cruise_range / cruise_speed
+
+            self.register_output('mach_number', mach_number)
+            self.register_output('cruise_time', cruise_time)
+
+        # if set(['range', 'time']).issubset(ac_module.inputs):
+        #     range = self.register_module_input(f'{cruise_name}_range', shape=(1, ), computed_upstream=False)
+        #     time = self.register_module_input(f'{cruise_name}_time', shape=(1, ), computed_upstream=False)
+        #     speed = range/time
+        #     self.register_module_output(f'{cruise_name}_speed', speed)
+        #     raise Exception("This part of if-else has not been tested")
+        # elif set(['mach_number', 'time']).issubset(ac_module.inputs):
+        #     a = self.register_module_input(f'{cruise_name}_speed_of_sound', shape=(1, ))
+        #     time = self.register_module_input(f'{cruise_name}_time', shape=(1, ), computed_upstream=False)
+        #     M = self.register_module_input(f'{cruise_name}_mach_number', shape=(1, ), computed_upstream=False)
+        #     speed = a * M
+        #     range = speed * time
+        #     self.register_module_output(f'{cruise_name}_range', range)
+        #     self.register_module_output(f'{cruise_name}_speed', speed)
+        #     raise Exception("This part of if-else has not been tested")
+        # elif set(['mach_number', 'range']).issubset(ac_module.inputs):
+        #     a = self.register_module_input(f'{cruise_name}_speed_of_sound', shape=(1, ))
+        #     range = self.register_module_input(f'{cruise_name}_range', shape=(1, ), computed_upstream=False)
+        #     M = self.register_module_input(f'{cruise_name}_mach_number', shape=(1, ), computed_upstream=False)
+        #     speed = a * M
+        #     time = range / speed
+        #     self.register_module_output(f'{cruise_name}_time', time)
+        #     self.register_module_output(f'{cruise_name}_speed', speed)
+        # elif set(['speed', 'time']).issubset(ac_module.inputs):
+        #     speed = self.register_module_input(f'{cruise_name}_speed', shape=(1, ), computed_upstream=False)
+        #     time = self.register_module_input(f'{cruise_name}_time', shape=(1, ), computed_upstream=False)
+        #     range = speed * time
+        #     self.register_module_output(f'{cruise_name}_range', range)
+        #     raise Exception("This part of if-else has not been tested")
+        # elif set(['speed', 'range']).issubset(ac_module.inputs):
+        #     speed = self.register_module_input(f'{cruise_name}_speed', shape=(1, ), computed_upstream=False)
+        #     range = self.register_module_input(f'{cruise_name}_range', shape=(1, ), computed_upstream=False)
+        #     time = range / speed 
+        #     self.register_module_output(f'{cruise_name}_time', time)
+        #     raise Exception("This part of if-else has not been tested")
+        # else:
+        #     raise Exception(f"Not enough information to determine 'speed', 'range', and 'time' for design condition '{cruise_name}'. Please specify either ('speed', 'range'), ('speed', 'time'), ('mach_number', 'range'), ('mach_number', 'time'), or ('range', 'time').")
         
         
         # Compute aircraft states
-        phi = observer_location[2] * 0
-        gamma = observer_location[2] * 0
-        psi = observer_location[2] * 0
-        psi_w = observer_location[2] * 0
+        phi = theta* 0
+        gamma = theta * 0
+        psi = theta * 0
+        psi_w = theta * 0
 
         alfa = theta - gamma
         beta = psi + psi_w
-        u = speed * csdl.cos(alfa) * csdl.cos(beta)
-        v = speed * csdl.sin(beta)
-        w = speed * csdl.sin(alfa) * csdl.cos(beta)
+        u = cruise_speed * csdl.cos(alfa) * csdl.cos(beta)
+        v = cruise_speed * csdl.sin(beta)
+        w = cruise_speed * csdl.sin(alfa) * csdl.cos(beta)
         p = u * 0
         q = u * 0
         r = u * 0
-        x = observer_location[0]
-        y = observer_location[1]
-        z = observer_location[2]
+        x = observer_location[0, :]
+        y = observer_location[1, :]
+        z = observer_location[2, :]
 
         # NOTE: below, we don't need to pre_pend the aircraft condition name any more since the vectorization will be handled by m3l
-        self.register_module_output('u', u)
-        self.register_module_output('v', v)
-        self.register_module_output('w', w)
+        self.register_output('u', u)
+        self.register_output('v', v)
+        self.register_output('w', w)
 
-        self.register_module_output('p', p)
-        self.register_module_output('q', q)
-        self.register_module_output('r', r)
+        self.register_output('p', p)
+        self.register_output('q', q)
+        self.register_output('r', r)
 
-        self.register_module_output('phi', phi * 1)
-        self.register_module_output('gamma', gamma * 1)
-        self.register_module_output('psi', psi * 1)
-        self.register_module_output('theta', theta * 1)
+        self.register_output('phi', phi * 1)
+        self.register_output('gamma', gamma * 1)
+        self.register_output('psi', psi * 1)
+        self.register_output('theta', theta * 1)
 
-        self.register_module_output('x', x * 1)
-        self.register_module_output('y', y * 1)
-        self.register_module_output('z', z * 1)
+        self.register_output('x', x * 1)
+        self.register_output('y', y * 1)
+        self.register_output('z', z * 1)
 
-        self.register_module_output('time', time * 1)
+        self.register_output('time', cruise_time * 1)
         return
 
 

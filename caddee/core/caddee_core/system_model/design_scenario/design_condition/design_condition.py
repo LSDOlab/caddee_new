@@ -4,12 +4,13 @@ from csdl import GraphRepresentation, Model
 import m3l
 from dataclasses import dataclass
 from typing import Union
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.atmosphere.atmosphere import Atmosphere
 
 
 @dataclass
 class AcStates:
     """
-    Container data class for aircraft states and time (for steady cases only)
+    Container data class for aircraft states and time (time for steady cases only)
     """
     u : m3l.Variable = None
     v : m3l.Variable = None
@@ -36,7 +37,6 @@ class AtmosphericProperties:
     pressure : m3l.Variable = None
     dynamic_viscosity : m3l.Variable = None
     speed_of_sound : m3l.Variable = None
-
 
 
 class SteadyDesignCondition(m3l.ExplicitOperation):
@@ -70,7 +70,7 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
         # self.parameters.declare(name='name', default='', types=str)
         super().initialize(kwargs=kwargs)
 
-        self.atmosphere_model = None
+        self.atmosphere_model = Atmosphere
         self.sub_conditions = dict()
         self.m3l_models = dict()
 
@@ -116,8 +116,8 @@ class CruiseCondition(SteadyDesignCondition):
         - theta : aircraft pitch angle
         - observer_location : x, y, z location of aircraft; z can be different from altitude
     """
-    def initialize(self, kwargs):
-        return super().initialize(kwargs)
+    # def initialize(self, kwargs): pass
+    #     # return super().initialize(kwargs)
 
     def compute(self) -> Model:
         """
@@ -195,12 +195,9 @@ class CruiseCondition(SteadyDesignCondition):
         self.arguments['altitude'] = altitude
         self.arguments['cruise_range'] = cruise_range
         self.arguments['observer_location'] = observer_location
-        self.arguments['time'] = time
+        self.arguments['cruise_time'] = time
         self.arguments['cruise_speed'] = cruise_speed
 
-
-        print(self)
-        print('\n')
 
         u = m3l.Variable(name='u', shape=(self.num_nodes, ), operation=self)
         v = m3l.Variable(name='v', shape=(self.num_nodes, ), operation=self)
@@ -221,22 +218,6 @@ class CruiseCondition(SteadyDesignCondition):
 
         t = m3l.Variable(name='time', shape=(self.num_nodes, ), operation=self)
 
-        # ac_states = {
-        #     'u' : u,
-        #     'v' : v,
-        #     'w' : w,
-        #     'p' : p,
-        #     'q' : q,
-        #     'r' : r,
-        #     'phi' : phi,
-        #     'gamma' : gamma,
-        #     'psi' : psi,
-        #     'theta' : theta,
-        #     'x' : x,
-        #     'y' : y,
-        #     'z' : z,
-        #     'time' : t,
-        # }
 
         ac_states = AcStates(
             u=u,
@@ -254,41 +235,25 @@ class CruiseCondition(SteadyDesignCondition):
             z=z,
             time=t,
         )
-        # ac_states.u = u
-        # ac_states.v = v
-        # ac_states.w = w
+
+
+        rho = m3l.Variable(name='density', shape=(self.num_nodes, ), operation=self)
+        mu = m3l.Variable(name='dynamic_viscosity', shape=(self.num_nodes, ), operation=self)
+        pressure = m3l.Variable(name='pressure', shape=(self.num_nodes, ), operation=self)
+
+        a = m3l.Variable(name='speed_of_sound', shape=(self.num_nodes, ), operation=self)
+        temp = m3l.Variable(name='temperature', shape=(self.num_nodes, ), operation=self)
+
+        atmosphere = AtmosphericProperties(
+            density=rho,
+            dynamic_viscosity=mu,
+            pressure=pressure,
+            speed_of_sound=a,
+            temperature=temp,
+        )
+
         
-        # ac_states.phi = phi
-        # ac_states.gamma = gamma
-        # ac_states.psi = psi
-        # ac_states.theta = theta
-        
-        # ac_states.p = p
-        # ac_states.q = q
-        # ac_states.r = r
-
-        # ac_states.x = x
-        # ac_states.y = y
-        # ac_states.z = z
-        
-        # ac_states.time = t
-
-
-        # rho = m3l.Variable(name='density', shape=(self.num_nodes, ), operation=self)
-        # mu = m3l.Variable(name='dynamic_viscosity', shape=(self.num_nodes, ), operation=self)
-        # pressure = m3l.Variable(name='pressure', shape=(self.num_nodes, ), operation=self)
-
-        # a = m3l.Variable(name='speed_of_sound', shape=(self.num_nodes, ), operation=self)
-        # temp = m3l.Variable(name='temperature', shape=(self.num_nodes, ), operation=self)
-
-        # atmosphere = AtmosphericProperties()
-        # atmosphere.density = rho
-        # atmosphere.dynamic_viscosity = mu
-        # atmosphere.pressure = pressure
-        # atmosphere.speed_of_sound = a 
-        # atmosphere.temperature = temp
-        
-        return ac_states #, atmosphere
+        return ac_states, atmosphere
     
 
 class HoverCondition(SteadyDesignCondition):
