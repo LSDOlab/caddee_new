@@ -54,11 +54,13 @@ bem_outputs = bem_model.evaluate(ac_states=ac_states, rpm=rpm, rotor_radius=roto
                 thrust_origin=thrust_origin, thrust_vector=thrust_vector, atmosphere=atmosphere,
                 blade_chord_cp=chord_cp, blade_twist_cp=twist_cp)
 
-bem_model.add_constraint(bem_outputs.T, equals=1000, scaler=1e-3)
-bem_model.add_constraint(bem_outputs.eta, equals=0.80)
-bem_model.add_objective(bem_outputs.Q, scaler=1e-2)
 
 m3l_model.register_output(bem_outputs)
+
+m3l_model.add_constraint(bem_outputs.T, equals=1000, scaler=1e-3)
+m3l_model.add_constraint(bem_outputs.eta, equals=0.80)
+m3l_model.add_objective(bem_outputs.Q, scaler=1e-2)
+
 
 
 csdl_model = m3l_model.assemble_csdl()
@@ -74,13 +76,13 @@ print(sim['single_BEM.BEM_external_inputs_model.rpm'])
 print(sim['single_BEM.T'])
 print(sim['single_BEM.eta'])
 print(sim['single_BEM.Q'])
-
+exit()
 
 prob = CSDLProblem(problem_name='blade_shape_opt', simulator=sim)
 optimizer = SLSQP(
     prob,
     maxiter=150, 
-    ftol=1e-4,
+    ftol=1e-5,
 )
 optimizer.solve()
 optimizer.print_results()

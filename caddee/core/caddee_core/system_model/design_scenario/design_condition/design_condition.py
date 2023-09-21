@@ -66,27 +66,12 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
     """
 
     def initialize(self, kwargs):
-        # Each design condition needs a name 
-        # self.parameters.declare(name='name', default='', types=str)
         super().initialize(kwargs=kwargs)
-
         self.atmosphere_model = Atmosphere
-        self.sub_conditions = dict()
-        self.m3l_models = dict()
-
         self.num_nodes = 1
 
         # Parameters
         self.parameters.declare(name='stability_flag', default=False, types=bool)
-
-
-    def add_m3l_model(self, name, model):
-        from m3l import Model
-        if not isinstance(model, Model):
-            raise TypeError("model_group must be of type 'm3l.Model' ")
-        else:
-            self.m3l_models[name] = model
-        return
 
     
     
@@ -125,8 +110,6 @@ class CruiseCondition(SteadyDesignCondition):
         """ 
         from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import CruiseConditionCSDL
         csdl_model = CruiseConditionCSDL(
-            # module=self,
-            # prepend=self.parameters['name'],
             cruise_condition=self,
         )
         return csdl_model
@@ -153,7 +136,8 @@ class CruiseCondition(SteadyDesignCondition):
             The range of the cruise condition
         
         observer_location : m3l Variable
-            The observer location from the aircraft (in the Cartesian reference frame)
+            The observer location from the aircraft (in the Cartesian reference frame). Note that altitude can the z \
+                variable (last entry) of the observer location can be different
         
         time : None, m3l Variable - optional (default: None)
             The time of the cruise condition (can't be specified if 'mach_number' and 'cruise_range' are already set)
@@ -267,8 +251,8 @@ class HoverCondition(SteadyDesignCondition):
         - observer_location : x, y, z location of aircraft; z can be different from altitude
 
     """
-    def initialize(self, kwargs):
-        return super().initialize(kwargs)    
+    def evaluate(self, altitude : m3l.Variable, hover_time : m3l.Variable, observer_location : m3l.Variable) -> tuple[AcStates, AtmosphericProperties]:
+        return 
 
     def compute(self): 
         from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.design_condition_csdl import HoverConditionCSDL

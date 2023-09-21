@@ -88,45 +88,6 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
 
             self.register_output('mach_number', mach_number)
             self.register_output('cruise_time', cruise_time)
-
-        # if set(['range', 'time']).issubset(ac_module.inputs):
-        #     range = self.register_module_input(f'{cruise_name}_range', shape=(1, ), computed_upstream=False)
-        #     time = self.register_module_input(f'{cruise_name}_time', shape=(1, ), computed_upstream=False)
-        #     speed = range/time
-        #     self.register_module_output(f'{cruise_name}_speed', speed)
-        #     raise Exception("This part of if-else has not been tested")
-        # elif set(['mach_number', 'time']).issubset(ac_module.inputs):
-        #     a = self.register_module_input(f'{cruise_name}_speed_of_sound', shape=(1, ))
-        #     time = self.register_module_input(f'{cruise_name}_time', shape=(1, ), computed_upstream=False)
-        #     M = self.register_module_input(f'{cruise_name}_mach_number', shape=(1, ), computed_upstream=False)
-        #     speed = a * M
-        #     range = speed * time
-        #     self.register_module_output(f'{cruise_name}_range', range)
-        #     self.register_module_output(f'{cruise_name}_speed', speed)
-        #     raise Exception("This part of if-else has not been tested")
-        # elif set(['mach_number', 'range']).issubset(ac_module.inputs):
-        #     a = self.register_module_input(f'{cruise_name}_speed_of_sound', shape=(1, ))
-        #     range = self.register_module_input(f'{cruise_name}_range', shape=(1, ), computed_upstream=False)
-        #     M = self.register_module_input(f'{cruise_name}_mach_number', shape=(1, ), computed_upstream=False)
-        #     speed = a * M
-        #     time = range / speed
-        #     self.register_module_output(f'{cruise_name}_time', time)
-        #     self.register_module_output(f'{cruise_name}_speed', speed)
-        # elif set(['speed', 'time']).issubset(ac_module.inputs):
-        #     speed = self.register_module_input(f'{cruise_name}_speed', shape=(1, ), computed_upstream=False)
-        #     time = self.register_module_input(f'{cruise_name}_time', shape=(1, ), computed_upstream=False)
-        #     range = speed * time
-        #     self.register_module_output(f'{cruise_name}_range', range)
-        #     raise Exception("This part of if-else has not been tested")
-        # elif set(['speed', 'range']).issubset(ac_module.inputs):
-        #     speed = self.register_module_input(f'{cruise_name}_speed', shape=(1, ), computed_upstream=False)
-        #     range = self.register_module_input(f'{cruise_name}_range', shape=(1, ), computed_upstream=False)
-        #     time = range / speed 
-        #     self.register_module_output(f'{cruise_name}_time', time)
-        #     raise Exception("This part of if-else has not been tested")
-        # else:
-        #     raise Exception(f"Not enough information to determine 'speed', 'range', and 'time' for design condition '{cruise_name}'. Please specify either ('speed', 'range'), ('speed', 'time'), ('mach_number', 'range'), ('mach_number', 'time'), or ('range', 'time').")
-        
         
         # Compute aircraft states
         phi = theta* 0
