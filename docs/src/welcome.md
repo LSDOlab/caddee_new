@@ -20,10 +20,10 @@ Include figures from the relevant paper and citation.
 ```
 
 <!-- Remove/add custom pages from/to toc as per your package's requirement -->
-<!-- 
+
 ```{toctree}
 :maxdepth: 1
-:hidden: -->
+:hidden:
 
 src/getting_started
 src/background

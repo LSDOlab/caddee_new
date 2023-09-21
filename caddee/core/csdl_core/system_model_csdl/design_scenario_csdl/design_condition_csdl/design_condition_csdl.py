@@ -22,16 +22,6 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
         cruise_condition = self.parameters['cruise_condition']
         cruise_condition_name = cruise_condition.parameters['name']
         num_nodes = cruise_condition.num_nodes
-        # ac_module = self.module # self.parameters['aircraft_condition_module']
-        # cruise_name = self.prepend
-        print('\n')
-        print('inputs', cruise_condition.arguments)
-        print('num_nodes', num_nodes)
-
-        # Required variables (user needs to provide these)
-        # theta = self.register_module_input(f'{cruise_name}_pitch_angle', shape=(1, ), computed_upstream=False)
-        # h = self.register_module_input(f'{cruise_name}_altitude', shape=(1, ), computed_upstream=False)
-        # observer_location = self.register_module_input(f'{cruise_name}_observer_location', shape=(3, ), computed_upstream=False)
 
         theta = self.declare_variable('pitch_angle', shape=(num_nodes))
         h = self.declare_variable('altitude', shape=(num_nodes))
@@ -55,7 +45,7 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
             
             cruise_speed = cruise_range/cruise_time
             
-            self.register_module_output(f'cruise_speed', cruise_speed)
+            self.register_output(f'cruise_speed', cruise_speed)
         
         elif all([mach_m3l, range_m3l]):
             mach_number = self.declare_variable('mach_number', shape=(num_nodes, ))
@@ -135,44 +125,41 @@ class HoverConditionCSDL(SteadyDesignConditionCSDL):
 
     def define(self):
         hover_condition = self.parameters['hover_condition']
-        hover_module = self.module 
-        hover_name = self.prepend
+        num_nodes = hover_condition.num_nodes
 
-        if not set(hover_module.inputs).issubset(set(['altitude', 'hover_time', 'observer_location'])):
-            raise Exception("The only allowed inputs are altitude, hover_time, and observer_location")
+        h = self.declare_variable('altitude', shape=(num_nodes))
+        observer_location = self.declare_variable('observer_location', shape=(3, num_nodes))
+        t = self.declare_variable(f'hover_time', shape=(num_nodes, ))
 
-        h = self.register_module_input(f'{hover_name}_altitude', shape=(1, ), computed_upstream=False)
-        t = self.register_module_input(f'{hover_name}_hover_time', shape=(1, ), computed_upstream=False)
-        obs_loc = self.register_module_input(f'{hover_name}_observer_location', shape=(3, ), computed_upstream=False)
+        atmosphere_model = hover_condition.atmosphere_model(name=f'atmosphere_model')
+        atmosphere_model.num_nodes = num_nodes
+        atmosphere_model_csdl = atmosphere_model.compute()
+        self.add(atmosphere_model_csdl, 'atmosphere_model')
 
-        self.register_module_output(f'{hover_name}_time', t * 1.)
 
-        if hover_condition.atmosphere_model:
-            self.add_module(hover_condition.atmosphere_model._assemble_csdl(hover_name), 'atmosphere_model')
-
-        x = obs_loc[0]
-        y = obs_loc[1]
-        z = obs_loc[2]
+        x = observer_location[0, :]
+        y = observer_location[1, :]
+        z = observer_location[2, :]
 
         # NOTE: still need to register the 12 aircraft states but all except location should be zero
-        self.register_module_output('u', x * 0)
-        self.register_module_output('v', x * 0)
-        self.register_module_output('w', x * 0)
+        self.register_output('u', x * 0)
+        self.register_output('v', x * 0)
+        self.register_output('w', x * 0)
 
-        self.register_module_output('p', x * 0)
-        self.register_module_output('q', x * 0)
-        self.register_module_output('r', x * 0)
+        self.register_output('p', x * 0)
+        self.register_output('q', x * 0)
+        self.register_output('r', x * 0)
 
-        self.register_module_output('phi', x * 0)
-        self.register_module_output('gamma', x * 0)
-        self.register_module_output('psi',  x * 0)
-        self.register_module_output('theta', x * 0)
+        self.register_output('phi', x * 0)
+        self.register_output('gamma', x * 0)
+        self.register_output('psi',  x * 0)
+        self.register_output('theta', x * 0)
 
-        self.register_module_output('x', x * 1)
-        self.register_module_output('y', y * 1)
-        self.register_module_output('z', z * 1)
+        self.register_output('x', x * 1)
+        self.register_output('y', y * 1)
+        self.register_output('z', z * 1)
 
-        self.register_module_output('time', t * 1.)
+        self.register_output('time', t * 1.)
         return
 
 
@@ -182,67 +169,97 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
 
     def define(self):
         climb_condition = self.parameters['climb_condition']
-        climb_module = self.module 
-        climb_name = self.prepend
+        num_nodes = climb_condition.num_nodes
+        arguments = climb_condition.arguments
 
-        if not set(climb_module.inputs).issubset(set(['initial_altitude', 'final_altitude',
-                                                      'altitude', 'mach_number',
-                                                      'speed', 'time', 'climb_gradient',
-                                                      'pitch_angle', 'flight_path_angle',
-                                                      'observer_location'])):
-            raise Exception("Provided an input that's not acceptable")
+        mach_number_m3l = self.arguments['mach_number']
+        flight_path_anlge_m3l = arguments['flight_path_anlge']
+        climb_gradient_m3l =  arguments['climb_gradient']
+        climb_speed_m3l =  arguments['climb_speed']
+        climb_time_m3l = arguments['climb_time']
 
-        if set(['initial_altitude', 'final_altitude']).issubset(climb_module.inputs):
-            ih = self.register_module_input(f'{climb_name}_initial_altitude', shape=(1,), computed_upstream=False)
-            fh = self.register_module_input(f'{climb_name}_final_altitude', shape=(1,), computed_upstream=False)
-            self.register_module_output(f'{climb_name}_altitude', (ih + fh) / 2)
+        ih = self.declare_variable('initial_altitude', shape=(num_nodes,))
+        fh = self.declare_variable('final_altitude', shape=(num_nodes,))
+        theta = self.declare_variable('pitch_angle', shape=(num_nodes,))
 
-        if climb_condition.atmosphere_model:
-            self.add_module(climb_condition.atmosphere_model._assemble_csdl(climb_name), 'atmosphere_model')
+        self.register_output('altitude', (ih + fh) / 2)
+
+        atmosphere_model = climb_condition.atmosphere_model(name=f'atmosphere_model')
+        atmosphere_model.num_nodes = num_nodes
+        atmosphere_model_csdl = atmosphere_model.compute()
+        self.add(atmosphere_model_csdl, 'atmosphere_model')
         
-        if set(['climb_gradient', 'gamma', 'pitch_angle']).issubset(climb_module.inputs):
-            gamma = self.register_module_input(f'{climb_name}_flight_path_angle', shape=(1, ), computed_upstream=False)
-            cg = self.register_module_input(f'{climb_name}_climb_gradient', shape=(1, ), computed_upstream=False)
-            theta = self.register_module_input(f'{climb_name}_pitch_angle', shape=(1,), computed_upstream=False)
+        if all([climb_gradient_m3l, flight_path_anlge_m3l]):
+            gamma = self.declare_variable('flight_path_angle', shape=(num_nodes, ))
+            cg = self.declare_variable('climb_gradient', shape=(num_nodes, ))
+            a = self.declare_variable('speed_of_sound', shape=(num_nodes,))
 
             V = cg / csdl.sin(gamma)
-            self.register_module_output(f'{climb_name}_speed', V)
-            raise Exception("This part of if-else has not been tested")
-        elif set(['mach_number', 'pitch_angle', 'initial_altitude', 'final_altitude', 'time']).issubset(climb_module.inputs):
-            a = self.register_module_input(f'{climb_name}_speed_of_sound', shape=(1,))
-            M = self.register_module_input(f'{climb_name}_mach_number', shape=(1,), computed_upstream=False)
-            theta = self.register_module_input(f'{climb_name}_pitch_angle', shape=(1,), computed_upstream=False)
-            t = self.register_module_input(f'{climb_name}_time', shape=(1,), computed_upstream=False)
+            M = V / a
+            self.register_output('climb_speed', V)
+            self.register_output('mach_number', M)
+        
+        elif all([mach_number_m3l, climb_time_m3l]):
+            a = self.declare_variable('speed_of_sound', shape=(num_nodes,))
+            M = self.declare_variable('mach_number', shape=(num_nodes,))
+            t = self.declare_variable('climb_time', shape=(num_nodes,))
 
             V = a * M
             total_distance_traveled = V * t
             vertical_distance_gained = fh - ih
+            cg = vertical_distance_gained / t
             gamma = csdl.arcsin(vertical_distance_gained / total_distance_traveled)
-            self.register_module_output(f'{climb_name}_speed', V)
-            self.register_module_output(f'{climb_name}_flight_path_angle', gamma)
-            raise Exception("This part of if-else has not been tested")
-        elif set(['mach_number', 'pitch_angle', 'initial_altitude', 'final_altitude', 'flight_path_angle']).issubset(climb_module.inputs):
-            a = self.register_module_input(f'{climb_name}_speed_of_sound', shape=(1,))
+            self.register_output('climb_speed', V)
+            self.register_output('flight_path_angle', gamma)
+            self.register_output('climb_gradient', cg)
+        
+        elif all([climb_speed_m3l, climb_time_m3l]):
+            a = self.declare_variable('speed_of_sound', shape=(num_nodes,))
+            V = self.declare_variable('climb_speed', shape=(num_nodes, ))
+            t = self.declare_variable('climb_time', shape=(num_nodes,))
 
-            M = self.register_module_input(f'{climb_name}_mach_number', shape=(1,), computed_upstream=False)
-            theta = self.register_module_input(f'{climb_name}_pitch_angle', shape=(1,), computed_upstream=False)
-            gamma = self.register_module_input(f'{climb_name}_flight_path_angle', shape=(1,), computed_upstream=False)
+
+            M = V / a
+            total_distance_traveled = V * t
+            vertical_distance_gained = fh - ih
+            cg = vertical_distance_gained / t
+            gamma = csdl.arcsin(vertical_distance_gained / total_distance_traveled)
+            self.register_output('flight_path_angle', gamma)
+            self.register_output('climb_gradient', cg)
+            self.register_output('mach_number', M)
+
+        elif all([mach_number_m3l, flight_path_anlge_m3l]):
+            a = self.declare_variable('speed_of_sound', shape=(num_nodes,))
+            M = self.declare_variable('mach_number', shape=(num_nodes,))
+            gamma = self.declare_variable('flight_path_angle', shape=(num_nodes, ))
 
             V = a * M
             cg = V*csdl.sin(gamma) + 1e-4
             t = ((fh - ih) / cg)
-            self.register_module_output(f'{climb_name}_speed', V)
-            self.register_module_output(f'{climb_name}_time', t)
+            self.register_output('climb_speed', V)
+            self.register_output('climb_time', t)
+
+        elif all([climb_speed_m3l, flight_path_anlge_m3l]):
+            V = self.declare_variable('climb_speed', shape=(num_nodes, ))
+            a = self.declare_variable('speed_of_sound', shape=(num_nodes,))
+            gamma = self.declare_variable('flight_path_angle', shape=(num_nodes, ))
+
+            M = V / a
+            cg = V*csdl.sin(gamma) + 1e-4
+            t = ((fh - ih) / cg)
+            self.register_output('climb_speed', V)
+            self.register_output('climb_time', t)
+            self.register_output('mach_number', M)
         else:
             raise NotImplementedError
 
-        observer_location = self.register_module_input(f'{climb_name}_observer_location', shape=(3, ), computed_upstream=False)
-        # h = self.register_module_input(f'{climb_name}_altitude', shape=(1, ), computed_upstream=False)
+        observer_location = self.declare_variable('observer_location', shape=(3, num_nodes))
+        # h = self.register_module_input(f'{climb_name}_altitude', shape=(1, ))
 
         # Compute aircraft states
-        phi = observer_location[2] * 0
-        psi = observer_location[2] * 0
-        psi_w = observer_location[2] * 0
+        phi = theta * 0
+        psi = theta * 0
+        psi_w = theta * 0
 
         alfa = theta - gamma
         beta = psi + psi_w
@@ -252,29 +269,29 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
         p = u * 0
         q = u * 0
         r = u * 0
-        x = observer_location[0]
-        y = observer_location[1]
-        z = observer_location[2]
+        x = observer_location[0, :]
+        y = observer_location[1, :]
+        z = observer_location[2, :]
 
         # NOTE: below, we don't need to pre_pend the aircraft condition name any more since the vectorization will be handled by m3l
-        self.register_module_output('u', u)
-        self.register_module_output('v', v)
-        self.register_module_output('w', w)
+        self.register_output('u', u)
+        self.register_output('v', v)
+        self.register_output('w', w)
 
-        self.register_module_output('p', p)
-        self.register_module_output('q', q)
-        self.register_module_output('r', r)
+        self.register_output('p', p)
+        self.register_output('q', q)
+        self.register_output('r', r)
 
-        self.register_module_output('phi', phi * 1)
-        self.register_module_output('gamma', gamma * 1)
-        self.register_module_output('psi', psi * 1)
-        self.register_module_output('theta', theta * 1)
+        self.register_output('phi', phi * 1)
+        self.register_output('gamma', gamma * 1)
+        self.register_output('psi', psi * 1)
+        self.register_output('theta', theta * 1)
 
-        self.register_module_output('x', x * 1)
-        self.register_module_output('y', y * 1)
-        self.register_module_output('z', z * 1)
+        self.register_output('x', x * 1)
+        self.register_output('y', y * 1)
+        self.register_output('z', z * 1)
 
-        self.register_module_output('time', t * 1.)
+        self.register_output('time', t * 1.)
         return
 
         
