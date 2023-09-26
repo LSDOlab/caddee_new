@@ -106,7 +106,7 @@ class SimpleAtmosphereCSDL(csdl.Model):
 
     def define(self):
         prefix = self.parameters['atmosphere_model'].parameters['name']
-
+        num_nodes = self.parameters['atmosphere_model'].num_nodes
 
         pd = self.density_coefs
         pp = self.pressure_coefs
@@ -115,23 +115,24 @@ class SimpleAtmosphereCSDL(csdl.Model):
 
         # x = self.declare_variable('altitude',val=1000)
         # x = self.declare_variable(prefix + '_' + 'altitude', shape=(1, ))
-        x = self.declare_variable('altitude', shape=(1, ))
+        x = self.declare_variable('altitude', shape=(num_nodes, ))
 
         #px = p[0]*x**(N-1) + p[1]*x**(N-2) + p[2]*x**(N-3) + p[3]*x**(N-4) + p[4]*x**(N-5)...
-        temp_density = self.create_output('temp_density',shape=(N),val=0)
-        temp_pressure = self.create_output('temp_pressure',shape=(N),val=0)
-        temp_temperature = self.create_output('temp_temperature',shape=(N),val=0)
+        temp_density = self.create_output('temp_density',shape=(num_nodes, N),val=0)
+        temp_pressure = self.create_output('temp_pressure',shape=(num_nodes, N),val=0)
+        temp_temperature = self.create_output('temp_temperature',shape=(num_nodes, N),val=0)
         for i in range(N):
-            temp_density[i] = pd[i]*x**(N - 1 - i)
-            temp_pressure[i] = pp[i]*x**(N - 1 - i)
-            temp_temperature[i] = pt[i]*x**(N - 1 - i)
+            for j in range(num_nodes):
+                temp_density[j, i] = csdl.reshape(pd[i]*x[j]**(N - 1 - i), new_shape=(1, 1,))
+                temp_pressure[j, i] = csdl.reshape(pp[i]*x[j]**(N - 1 - i), new_shape=(1, 1,))
+                temp_temperature[j, i] = csdl.reshape(pt[i]*x[j]**(N - 1 - i), new_shape=(1, 1,))
 
         
-        density = csdl.sum(temp_density)
+        density = csdl.sum(temp_density, axes=(1, ))
         #self.register_output('density',density)
-        pressure = csdl.sum(temp_pressure)
+        pressure = csdl.sum(temp_pressure, axes=(1, ))
         #self.register_output('pressure',pressure)
-        temperature = csdl.sum(temp_temperature)
+        temperature = csdl.sum(temp_temperature, axes=(1, ))
         #self.register_output('temperature',temperature)
         
 

@@ -86,7 +86,6 @@ class C172PropulsionModelCSDL(ModuleCSDL):
                                   shape=(num_nodes, 1), units='rad', val=0)
 
         rho = 1.225
-        # endregion
 
         rad = csdl.expand(var=prop_radius, shape=(num_nodes, 1))
 

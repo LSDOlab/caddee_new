@@ -11,6 +11,7 @@ from caddee.core.caddee_core.system_model.design_scenario.design_condition.desig
     HoverCondition,
     AcStates,
     AtmosphericProperties,
+    LinearStabilityAnalysis
 )
 from caddee.core.caddee_core.system_model.design_scenario.design_condition.atmosphere.atmosphere import Atmosphere
 from caddee.core.caddee_core.system_representation.component.component import Component, LiftingSurface, Rotor
