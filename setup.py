@@ -38,6 +38,7 @@ setup(
         'numpy',
         'pytest',
         'myst-nb',
+        'csdl @ git+https://github.com/LSDOlab/csdl.git',
         'sphinx',
         'sphinx_rtd_theme',
         'sphinx-copybutton',
