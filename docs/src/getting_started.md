@@ -7,11 +7,10 @@ and running a minimal example.
 Depending on the user's operating system, the installation instructions may be different.
 
 ## Windows
-CADDEE's geometry engine uses Cython which causes issues with Windows. As a workaround the quickest way to install CADDEE on Windows is 
-through [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install) (WSL), which requires Windows 10 (version 2004 or higher) or Windows 11. 
-The default Linux distribution installed by WSL is Ubuntu. Once WSL is installed we recommend creating 
-Once WSL is sucessfully installed, open an (Ubuntu) terminal window and execute the following commands
+CADDEE's geometry engine uses software that is incompatible with Windows at this time. As a simple workaround, the quickest way to install CADDEE on Windows is through [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install) (WSL), which requires Windows 10 (version 2004 or higher) or Windows 11. The default Linux distribution installed by WSL is Ubuntu.
+Once WSL is sucessfully installed, open an (Ubuntu) terminal window (simply type Ubuntu in the Windows search bar) and execute the following commands. 
 
+### Step 1: Update packages
 ```sh
 $ sudo apt-get update
 $ sudo apt-get dist-upgrade
@@ -19,60 +18,81 @@ $ sudo apt-get install build-essential
 $ sudo apt-get install ffmpeg libsm6 libxext6
 ```
 
-For direct installation with all dependencies, run on the terminal or command line
+### Step 2: Install miniconda
+Next, we recommend the usage of Python environments. [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/) is a compact version of the Anaconda Python distribution. Please see the link to find detailed installation instructions and verify that the commands below to install Miniconda are up-to-date. 
+
 ```sh
-$ pip install git+https://github.com/LSDOlab/lsdo_project_template.git
+$ mkdir -p ~/miniconda3
+$ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+$ bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+$ rm -rf ~/miniconda3/miniconda.sh
 ```
-If you want users to install a specific branch, run
+
+### Step 3: Create conda environment
+Now, create a Conda environment. We recommend Python 3.9. Afterward, activate the environment.
+
 ```sh
-$ pip install git+https://github.com/LSDOlab/lsdo_project_template.git@branch
+$ conda create --name caddee python==3.9
+$ conda activate caddee
 ```
 
-**Enabled by**: Copying the `setup.py` file, changing your repository name and version, 
-and adding all your dependencies into the list `install_requires`.
+Note that in the command above `caddee` is the name of the environment and be anything. 
 
-### Installation instructions for developers
-To install `lsdo_project_template`, first clone the repository and install using pip.
-On the terminal or command line, run
+### Step 4: Install CADDEE and other packages
+Next, we recommend creating an easily accessable directory on your local machine where you install CADDEE and any other packages that may be necessary. The command  `mkdir packages` will make a sub-directory called 'packages' inside your current direcory and you can change your directory accordingly by typing `cd packages`. If you already have central directory where you would like to install all your packages in, change the directory by typing `cd path/to/desired/directory`. Once you are in the right directory execute the following commands. 
+
 ```sh
-$ git clone https://github.com/LSDOlab/lsdo_project_template.git
-$ pip install -e ./lsdo_project_template
+$ git clone https://github.com/LSDOlab/caddee_new.git
+$ cd caddee
+$ pip install -e .
+$ cd ..
 ```
-**Enabled by**: Copying the setup.py file, and changing your repository name and version.
 
-## Setting up Documentation
+Note that this installs CADDEE into the specified Conda enveironment and everytime you open a new Ubuntu terminal window, you need to activate the conda environment. Future versions of CADDEE can be 'pulled' from github by typing
 
-If you are not interested in using this repository as a template but only want to use the documentation template, 
-just copy the `/docs` directory and the `.readthedocs.yaml` file into your package root.
-However, make sure you have all the dependencies mentioned in the `setup.py` file installed before you build your
-documentation.
+```sh
+$ git pull
+```
 
-### Writing
-Start by modifying the documentation pages by editing `.md` files in the `/src` directory.
-Customize/add/remove pages from the template according to your package's requirements.
+While most packages needed to run CADDEE will be installed automatically, there are a number of packages that you may need for certain (physics-based) simulations. We recommend the following packages to be installed additionally:
 
-For automatically generated API references, add docstrings to your modules, classes, functions, etc., and
-then edit the list of directories containing files with docstrings intended for automatic API generation. 
-This can be done by editing the line `autoapi_dirs = ["../../lsdo_project_template/core"]` 
-in `conf.py` in the `/src` directory.
+#### Geometry engine lsdo_geo: 
+This package is needed for any analysis that involves a central geometry or changes to it.
 
-Add Python files for examples and Jupyter notebooks for tutorials into the main project repository. 
-Filenames for examples should start with'ex_'.
-Add your examples and tutorials to the toctrees in `examples.md` and `tutorials.md` respectively.
+```sh
+$ git clone https://github.com/LSDOlab/lsdo_geo.git
+$ cd lsdo_geo
+$ pip install -e .
+$ cd ..
+```
 
-### Building
-Once you have all the source code written for your documentation, on the terminal/command line, run `make html`.
-This will build all the html pages locally and you can verify if the documentation was built as intended by
-opening the `docs/_build/html/welcome.html` on your browser.
+#### Vortex-based Aerodynamic Solver Toolkit (VAST): 
+This package is needed to perform pyhsics-based aerodynamic analysis using vortex theory via the steady or unsteady vortex-lattice methd (VLM)
 
-### Hosting
-On your *Read the Docs* account, **import** your project **manually** from github repository, and link the `/docs` directory.
-Make sure to edit `requirements.txt` with dependencies for *Read the Docs* to build the documentation exactly
-as in your local build.
-Optionally, edit the `.readthedocs.yml` in the project root directory for building with specific operating systems or versions of Python.
-After you commit and push, *Read the Docs* will build your package on its servers and once its complete,
-you will see your documentation online.
-The default website address will be generated based on your *Read the Docs* project name as `https://<proj_name>.readthedocs.io/`.
-You can also customize the URL on *Read the Docs*, if needed.
+```sh
+$ cd ..
+$ git clone https://github.com/jiy352/VAST.git
+$ cd VAST
+$ pip install -e .
+$ cd ..
+```
 
-## Setting up Testing
+#### lsdo_rotor:
+This package is needed to perform rotor aerodynamic analysis through blade element momentum (BEM) theory and steady-state dynamic inflow solver (Pitt--Peters).
+
+```sh
+$ git clone https://github.com/LSDOlab/lsdo_rotor.git
+$ cd lsdo_rotor
+$ pip install -e .
+$ cd ..
+```
+
+#### Aframe:
+This package is needed for 1-D beam structural analysis
+
+```sh
+$ git clone https://github.com/LSDOlab/aframe.git
+$ cd aframe
+$ pip install -e .
+$ cd ..
+```

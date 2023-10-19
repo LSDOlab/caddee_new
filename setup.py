@@ -37,6 +37,8 @@ setup(
     install_requires=[
         'numpy',
         'pytest',
+        'pandas',
+        'regex',
         'myst-nb',
         'csdl @ git+https://github.com/LSDOlab/csdl.git',
         'python_csdl_backend @ git+https://github.com/LSDOlab/python_csdl_backend.git',
