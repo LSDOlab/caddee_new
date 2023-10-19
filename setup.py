@@ -39,7 +39,7 @@ setup(
         'wheel',
         'twine',
         'myst-nb',
-        'sphinx',
+        'sphinx', # Mostly useful for developer but doesn't need to be installed for a user
         'sphinx_rtd_theme',
         'sphinx-copybutton',
         'sphinx-autoapi',

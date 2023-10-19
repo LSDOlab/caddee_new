@@ -30,7 +30,7 @@ version = '0.1'
 # ones.
 extensions = [
     "sphinx_rtd_theme",
-    # "autoapi.extension",
+    "autoapi.extension",
     "numpydoc",                 
     "sphinx_copybutton",            # allows copying code embedded in the docs rendered from .md or .ipynb files
     "myst_nb",                      # renders .md, .myst, .ipynb files
@@ -50,7 +50,7 @@ nb_execution_mode = 'off'
 # autodoc_typehints = 'description'
 
 # autoapi options
-autoapi_dirs = ["../caddee/core"]
+autoapi_dirs = ["../caddee"]
 autoapi_root = 'src/autoapi'
 autoapi_type = 'python'
 autoapi_file_patterns = ['*.py', '*.pyi']

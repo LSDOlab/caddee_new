@@ -1,6 +1,4 @@
 from caddee.core.caddee_core.caddee import CADDEE
-# from caddee.core.caddee_core.system_representation.system_representation import SystemRepresentation
-# from caddee.core.caddee_core.system_parameterization.system_parameterization import SystemParameterization, SystemRepresentation
 from caddee.core.caddee_core.system_model.system_model import SystemModel
 
 from caddee.core.caddee_core.system_model.sizing_group.sizing_models.m4_regressions import M4Regressions
