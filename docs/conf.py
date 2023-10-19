@@ -16,9 +16,9 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'lsdo_project_template'
-copyright = '2023, Anugrah'
-author = 'Anugrah'
+project = 'CADDEE'
+copyright = '2023, Marius Ruh'
+author = 'Marius Ruh'
 version = '0.1'
 # release = 0.1.0rtc
 
