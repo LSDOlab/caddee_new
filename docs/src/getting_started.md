@@ -4,15 +4,20 @@ and running a minimal example.
 
 ## Installation
 
-### Installation instructions for users
 Depending on the user's operating system, the installation instructions may be different.
 
 ## Windows
 CADDEE's geometry engine uses Cython which causes issues with Windows. As a workaround the quickest way to install CADDEE on Windows is 
-through [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install) (WSL).
-The default Linux distribution installed by WSL is Ubuntu. 
+through [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install) (WSL), which requires Windows 10 (version 2004 or higher) or Windows 11. 
+The default Linux distribution installed by WSL is Ubuntu. Once WSL is installed we recommend creating 
+Once WSL is sucessfully installed, open an (Ubuntu) terminal window and execute the following commands
 
-
+```sh
+$ sudo apt-get update
+$ sudo apt-get dist-upgrade
+$ sudo apt-get install build-essential
+$ sudo apt-get install ffmpeg libsm6 libxext6
+```
 
 For direct installation with all dependencies, run on the terminal or command line
 ```sh

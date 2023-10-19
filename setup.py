@@ -39,7 +39,7 @@ setup(
         'pytest',
         'myst-nb',
         'csdl @ git+https://github.com/LSDOlab/csdl.git',
-        'python_csdl_backen @ git+https://github.com/LSDOlab/python_csdl_backend.git',
+        'python_csdl_backend @ git+https://github.com/LSDOlab/python_csdl_backend.git',
         'sphinx',
         'sphinx_rtd_theme',
         'sphinx-copybutton',
