@@ -33,7 +33,7 @@ setup(
         'pytest',
         'csdl @ git+https://github.com/LSDOlab/csdl.git', # 'sphinx-collections',
         'python_csdl_backend @ git+https://github.com/LSDOlab/python_csdl_backend.git',
-        'lsdo_geo @ git+https://github.com/LSDOlab/lsdo_geo.git',
+        # 'lsdo_geo @ git+https://github.com/LSDOlab/lsdo_geo.git',
         'm3l @ git+https://github.com/LSDOlab/m3l.git',
         'setuptools',
         'wheel',
