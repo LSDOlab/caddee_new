@@ -1,6 +1,5 @@
 # Getting started
-This page provides instructions for installing your package 
-and running a minimal example.
+This page provides instructions for installing CADDEE.
 
 ## Installation
 
@@ -95,4 +94,17 @@ $ git clone https://github.com/LSDOlab/aframe.git
 $ cd aframe
 $ pip install -e .
 $ cd ..
+```
+
+## Ubuntu
+The installation instructions for Ubuntu are the same from <u>step 1 onward</u>.
+
+## MacOS
+The installation instructions for MacOS are the same from <u> step 2 onward</u>. It is important to note that the commands for installing miniconda are slightly different to taken into account the correct operating system.
+
+```sh
+mkdir -p ~/miniconda3
+curl https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh -o ~/miniconda3/miniconda.sh
+bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+rm -rf ~/miniconda3/miniconda.sh
 ```
