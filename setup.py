@@ -31,7 +31,7 @@ setup(
     install_requires=[
         'numpy',
         'pytest',
-        'csdl @ git+https://github.com/LSDOlab/csdl.git', # 'sphinx-collections',
+        'csdl @ git+https://github.com/LSDOlab/csdl.git',
         'python_csdl_backend @ git+https://github.com/LSDOlab/python_csdl_backend.git',
         # 'lsdo_geo @ git+https://github.com/LSDOlab/lsdo_geo.git',
         'm3l @ git+https://github.com/LSDOlab/m3l.git',
@@ -45,7 +45,7 @@ setup(
         'sphinx-autoapi',
         'numpydoc',
         'gitpython',
-        'sphinxcontrib-collections @ git+https://github.com/anugrahjo/sphinx-collections.git', # 'sphinx-collections',
+        # 'sphinxcontrib-collections @ git+https://github.com/anugrahjo/sphinx-collections.git', # 'sphinx-collections',
         'sphinxcontrib-bibtex',
     ],
     classifiers=[
