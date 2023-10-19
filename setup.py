@@ -20,8 +20,8 @@ setup(
     author_email='mruh@ucsd.edu',
     license='LGPLv3+',
     keywords='caddee aircraft design framework',
-    url='http://github.com/LSDOlab/lsdo_project_template',
-    download_url='http://pypi.python.org/pypi/lsdo_project_template',
+    url='http://github.com/LSDOlab/caddee_new',
+    download_url='http://pypi.python.org/pypi/caddee_new',
     description='A comprehensive aircraft design framework',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -31,7 +31,7 @@ setup(
     install_requires=[
         'numpy',
         'pytest',
-        'csdl @ git+https://github.com/LSDOlab/csdl.git', # 'sphinx-collections',
+        'csdl @ git+https://github.com/LSDOlab/csdl.git',
         'python_csdl_backend @ git+https://github.com/LSDOlab/python_csdl_backend.git',
         # 'lsdo_geo @ git+https://github.com/LSDOlab/lsdo_geo.git',
         'm3l @ git+https://github.com/LSDOlab/m3l.git',
@@ -45,7 +45,7 @@ setup(
         'sphinx-autoapi',
         'numpydoc',
         'gitpython',
-        # 'sphinxcontrib-collections @ git+https://github.com/anugrahjo/sphinx-collections.git', # 'sphinx-collections',
+        'sphinxcontrib-collections @ git+https://github.com/anugrahjo/sphinx-collections.git', # 'sphinx-collections',
         'sphinxcontrib-bibtex',
     ],
     classifiers=[
