@@ -1,8 +1,8 @@
 import numpy as np
-from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
+
 import csdl
 
-class EnergyModelCSDL(ModuleCSDL):
+class EnergyModelCSDL(csdl.Model):
     def initialize(self):
         self.parameters.declare('design_condition_name')
         self.parameters.declare('argument_names')
@@ -12,11 +12,11 @@ class EnergyModelCSDL(ModuleCSDL):
         arg_names = self.parameters['argument_names']
         num_args = len(arg_names)
 
-        t = self.register_module_input('time')
+        t = self.declare_variable('time')
 
-        power_per_comp = self.register_module_output('power_per_comp', shape=(num_args,))
+        power_per_comp = self.create_output('power_per_comp', shape=(num_args,))
         for i in range(num_args):
-            power_per_comp[i] = self.register_module_input(arg_names[i], shape=(1,)) * 1.
+            power_per_comp[i] = self.declare_variable(arg_names[i], shape=(1,)) * 1.
 
         total_power = csdl.sum(power_per_comp)
-        self.register_module_output(f'{dc_name}_energy', t*total_power)
+        self.register_output(f'{dc_name}_energy', t*total_power)

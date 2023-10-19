@@ -1,3 +1,5 @@
+'''Example 5 : Description of example 2'''
+
 import caddee.api as cd
 import m3l
 from python_csdl_backend import Simulator
@@ -5,6 +7,7 @@ import numpy as np
 from lsdo_rotor import BEM, BEMMesh
 from modopt.scipy_library import SLSQP
 from modopt.csdl_library import CSDLProblem
+
 
 m3l_model = m3l.Model()
 
@@ -47,6 +50,7 @@ rotor_radius = m3l_model.create_input('rotor_radius', val=0.8)
 cruise_condition = cd.CruiseCondition(
     name='cruise_condition',
     num_nodes=1,
+    stability_flag=True,
 )
 
 
@@ -68,37 +72,43 @@ cruise_rpm = m3l_model.create_input('cruise_rpm', val=2000)
 cruise_bem_outputs = bem_model_cruise.evaluate(ac_states=ac_states, rpm=cruise_rpm, rotor_radius=rotor_radius, 
                 thrust_origin=thrust_origin_hover, thrust_vector=thrust_vector_hover, atmosphere=atmosphere,
                 blade_chord_cp=chord_cp, blade_twist_cp=twist_cp)
+
+
 m3l_model.register_output(cruise_bem_outputs)
 
 stability_analysis = cd.LinearStabilityAnalysis(design_condition=cruise_condition)
-damping_ratios = stability_analysis.evaluate(ac_states=ac_states, cg_vector=None, vehicle_mass=None, forces_moments=[cruise_bem_outputs.forces, cruise_bem_outputs.moments])
-m3l_model.register_output(damping_ratios)
+# damping_ratios = stability_analysis.evaluate(ac_states=ac_states, cg_vector=None, vehicle_mass=None, solvers=[bem_model_cruise])
+A_long, A_lat = stability_analysis.evaluate(vehicle_mass=None, aerodynamic_outputs=[cruise_bem_outputs])
+m3l_model.register_output(A_long)
+m3l_model.register_output(A_lat)
 
 
-hover_condition = cd.HoverCondition(name='hover_condition')
+# hover_condition = cd.HoverCondition(name='hover_condition')
 
-hover_altitude = m3l_model.create_input('hover_altitude', val=1000.)
-hover_time = m3l_model.create_input('time', val=100.)
-observer_location = m3l_model.create_input('hover_observer_location', val=np.array([0., 0., 0.]))
+# hover_altitude = m3l_model.create_input('hover_altitude', val=1000.)
+# hover_time = m3l_model.create_input('time', val=100.)
+# observer_location = m3l_model.create_input('hover_observer_location', val=np.array([0., 0., 0.]))
 
-hover_ac_state, hover_atmosphere = hover_condition.evaluate(
-    altitude=hover_altitude, hover_time=hover_time, observer_location=observer_location
-)
-m3l_model.register_output(hover_ac_state)
+# hover_ac_state, hover_atmosphere = hover_condition.evaluate(
+#     altitude=hover_altitude, hover_time=hover_time, observer_location=observer_location
+# )
+# m3l_model.register_output(hover_ac_state)
 
-hover_rpm = m3l_model.create_input('hover_rpm', val=1500)
+# hover_rpm = m3l_model.create_input('hover_rpm', val=1500)
 
-hover_bem_outputs = bem_model_hover.evaluate(ac_states=hover_ac_state, rpm=hover_rpm, rotor_radius=rotor_radius, thrust_origin=thrust_origin_hover, thrust_vector=thrust_vector_hover, atmosphere=hover_atmosphere, blade_chord_cp=chord_cp, blade_twist_cp=twist_cp)
-m3l_model.register_output(hover_bem_outputs)
+# hover_bem_outputs = bem_model_hover.evaluate(ac_states=hover_ac_state, rpm=hover_rpm, rotor_radius=rotor_radius, thrust_origin=thrust_origin_hover, thrust_vector=thrust_vector_hover, atmosphere=hover_atmosphere, blade_chord_cp=chord_cp, blade_twist_cp=twist_cp)
+# m3l_model.register_output(hover_bem_outputs)
 
 
-m3l_model.add_constraint(cruise_bem_outputs.T, equals=1000, scaler=1e-3)
-m3l_model.add_constraint(cruise_bem_outputs.eta, equals=0.80)
-m3l_model.add_objective(cruise_bem_outputs.Q, scaler=1e-2)
+# m3l_model.add_constraint(cruise_bem_outputs.T, equals=1000, scaler=1e-3)
+# m3l_model.add_constraint(cruise_bem_outputs.eta, equals=0.80)
+# m3l_model.add_objective(cruise_bem_outputs.Q, scaler=1e-2)
 
 
 
 csdl_model = m3l_model.assemble_csdl()
+
+# csdl_model.connect('BEM_cruise.BEM_cruise.F', 'stability_analysis.BEM_cruise_F')
 
 sim = Simulator(csdl_model, analytics=True)
 sim.run()
@@ -110,10 +120,10 @@ print(sim['cruise_condition.cruise_speed'])
 
 print('\n')
 
-print(sim['BEM_cruise.BEM_external_inputs_model.rpm'])
-print(sim['BEM_cruise.T'])
-print(sim['BEM_cruise.eta'])
-print(sim['BEM_cruise.Q'])
+print(sim['BEM_cruise.BEM_cruise.BEM_external_inputs_model.rpm'])
+print(sim['BEM_cruise.BEM_cruise.T'])
+print(sim['BEM_cruise.BEM_cruise.eta'])
+print(sim['BEM_cruise.BEM_cruise.Q'])
 
 print('\n')
 
@@ -121,8 +131,19 @@ print('\n')
 # print(sim['BEM_cruise.BEM_external_inputs_model.thrust_vector'])
 # print(sim['BEM_cruise.BEM_external_inputs_model.velocity_vector'])
 # print(sim['BEM_cruise.F'])
-print(sim['BEM_cruise.u'])
-print(sim['stability_analysis.u_plus'])
+# print(sim['BEM_cruise.u'])
+print(sim['BEM_cruise.BEM_cruise.u'])
+print(sim['BEM_cruise.BEM_cruise.v'])
+print(sim['BEM_cruise.BEM_cruise.w'])
+print(sim['BEM_cruise.BEM_cruise.M'])
+print(sim['BEM_cruise.BEM_cruise.F'])
+print(sim['BEM_cruise.BEM_cruise.F_perturbed'])
+print('\n')
+A_long = sim['stability_analysis.A_long']
+
+w, v = np.linalg.eig(A_long)
+print(w)
+# print(sim['stability_analysis.u_plus'])
 
 # print(sim['BEM_hover.BEM_external_inputs_model.rpm'])
 # print(sim['BEM_hover.T'])
@@ -177,3 +198,9 @@ print(sim['BEM_hover.Q'])
 #           - Design condition has a subclass LinearStabilityAnalysis
 #           - cruise_condition.linear_stability_analysis.evaluate(ac_states=ac_states, cg_vector=cg_vector, vehicle_mass=mass, solvers=[bem, vlm])
 #           - NOTE: At this point, if executed properly, the design condition should have all the information about which solvers are used so the 'solvers=[]' argument shouldn't be necessary
+
+
+# dynamic_sisr_dev_2
+# m3l advanced examples
+
+# Stability analysis: main challenge is how to re-use the same models 

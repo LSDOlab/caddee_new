@@ -1,6 +1,6 @@
 import csdl
 from caddee.utils.base_model_csdl import BaseModelCSDL
-from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
+
 from caddee.core.caddee_core.system_model.design_scenario.design_condition.design_condition import SteadyDesignCondition, CruiseCondition, HoverCondition, ClimbCondition
 import numpy as np
 
@@ -25,7 +25,6 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
 
         theta = self.declare_variable('pitch_angle', shape=(num_nodes))
         h = self.declare_variable('altitude', shape=(num_nodes))
-        observer_location = self.declare_variable('observer_location', shape=(3, num_nodes))
 
         atmosphere_model = cruise_condition.atmosphere_model(name=f'atmosphere_model')
         atmosphere_model.num_nodes = num_nodes
@@ -93,29 +92,102 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
         p = u * 0
         q = u * 0
         r = u * 0
-        x = observer_location[0, :]
-        y = observer_location[1, :]
-        z = observer_location[2, :]
+        x = u * 0
+        y = u * 0
+        z = u * 0
+        
+        self.register_output('time', cruise_time * 1)
 
         # NOTE: below, we don't need to pre_pend the aircraft condition name any more since the vectorization will be handled by m3l
-        self.register_output('u', u)
-        self.register_output('v', v)
-        self.register_output('w', w)
+        if cruise_condition.parameters['stability_flag'] and (num_nodes>1):
+            raise NotImplementedError("Stability analysis for vectorized design conditions not yet implemented. 'num_nodes' can at most be 1 if stability analysis is to be performed")
+        
+        if cruise_condition.parameters['stability_flag'] and (num_nodes==1):
+        
+            u_stab = self.create_output('u', shape=(num_nodes * 13, ), val=0)
+            v_stab = self.create_output('v', shape=(num_nodes * 13, ), val=0)
+            w_stab = self.create_output('w', shape=(num_nodes * 13, ), val=0)
+            p_stab = self.create_output('p', shape=(num_nodes * 13, ), val=0)
+            q_stab = self.create_output('q', shape=(num_nodes * 13, ), val=0)
+            r_stab = self.create_output('r', shape=(num_nodes * 13, ), val=0)
+            phi_stab = self.create_output('phi', shape=(num_nodes * 13, ), val=0)
+            theta_stab = self.create_output('theta', shape=(num_nodes * 13, ), val=0)
+            psi_stab = self.create_output('psi', shape=(num_nodes * 13, ), val=0)
+            x_stab = self.create_output('x', shape=(num_nodes * 13, ), val=0)
+            y_stab = self.create_output('y', shape=(num_nodes * 13, ), val=0)
+            z_stab = self.create_output('z', shape=(num_nodes * 13, ), val=0)
+            
+            u_stab[0] = u
+            u_stab[1] = u + 2.5
+            u_stab[2:] = csdl.expand(u, shape=(11, ))
 
-        self.register_output('p', p)
-        self.register_output('q', q)
-        self.register_output('r', r)
+            v_stab[0:2] = csdl.expand(v, shape=(2, ))
+            v_stab[2] = v + 2.5
+            v_stab[3:] = csdl.expand(v, shape=(10, ))
 
-        self.register_output('phi', phi * 1)
-        self.register_output('gamma', gamma * 1)
-        self.register_output('psi', psi * 1)
-        self.register_output('theta', theta * 1)
+            w_stab[0:3] = csdl.expand(var=w, shape=(3, ))
+            w_stab[3] = w + 2.5
+            w_stab[4:] = csdl.expand(var=w, shape=(9, ))
 
-        self.register_output('x', x * 1)
-        self.register_output('y', y * 1)
-        self.register_output('z', z * 1)
+            p_stab[0:4] = csdl.expand(var=p, shape=(4, ))
+            p_stab[4] = p + np.deg2rad(5)
+            p_stab[5:] = csdl.expand(var=p, shape=(8, ))
 
-        self.register_output('time', cruise_time * 1)
+            q_stab[0:5] = csdl.expand(var=q, shape=(5, ))
+            q_stab[5] = q + np.deg2rad(5)
+            q_stab[6:] = csdl.expand(var=q, shape=(7, ))
+
+            r_stab[0:6] = csdl.expand(var=r, shape=(6, ))
+            r_stab[6] = r + np.deg2rad(5)
+            r_stab[7:] = csdl.expand(var=r, shape=(6, ))
+
+            phi_stab[0:7] = csdl.expand(var=phi, shape=(7, ))
+            phi_stab[7] =  phi + np.deg2rad(5)
+            phi_stab[8:] = csdl.expand(var=phi, shape=(5, ))
+
+            theta_stab[0:8] = csdl.expand(var=theta, shape=(8, ))
+            theta_stab[8] =  theta + np.deg2rad(5)
+            theta_stab[9:] = csdl.expand(var=theta, shape=(4, ))
+
+            psi_stab[0:9] = csdl.expand(var=psi, shape=(9, ))
+            psi_stab[9] =  psi + np.deg2rad(5)
+            psi_stab[10:] = csdl.expand(var=psi, shape=(3, ))
+
+            x_stab[0:10] = csdl.expand(var=x, shape=(10, ))
+            x_stab[10] = x + 1
+            x_stab[11:] = csdl.expand(var=x, shape=(2, ))
+
+            y_stab[0:11] = csdl.expand(var=y, shape=(11, ))
+            y_stab[11] = y + 1
+            y_stab[12] = y
+
+            z_stab[0:12] = csdl.expand(var=z, shape=(12, ))
+            z_stab[12] = z + 1
+
+
+            self.register_output('gamma', gamma * 1)
+
+        else: 
+            self.register_output('u', u)
+            self.register_output('v', v)
+            self.register_output('w', w)
+
+            self.register_output('p', p)
+            self.register_output('q', q)
+            self.register_output('r', r)
+
+            self.register_output('phi', phi * 1)
+            self.register_output('gamma', gamma * 1)
+            self.register_output('psi', psi * 1)
+            self.register_output('theta', theta * 1)
+
+            self.register_output('x', x * 1)
+            self.register_output('y', y * 1)
+            self.register_output('z', z * 1)
+
+
+        # stability_um_nodes = num_nodes + num_nodes * 8
+
         return
 
 
@@ -128,7 +200,6 @@ class HoverConditionCSDL(SteadyDesignConditionCSDL):
         num_nodes = hover_condition.num_nodes
 
         h = self.declare_variable('altitude', shape=(num_nodes))
-        observer_location = self.declare_variable('observer_location', shape=(3, num_nodes))
         t = self.declare_variable(f'hover_time', shape=(num_nodes, ))
 
         atmosphere_model = hover_condition.atmosphere_model(name=f'atmosphere_model')
@@ -137,9 +208,9 @@ class HoverConditionCSDL(SteadyDesignConditionCSDL):
         self.add(atmosphere_model_csdl, 'atmosphere_model')
 
 
-        x = observer_location[0, :]
-        y = observer_location[1, :]
-        z = observer_location[2, :]
+        x = h * 0
+        y = h * 0
+        z = h * 0
 
         # NOTE: still need to register the 12 aircraft states but all except location should be zero
         self.register_output('u', x * 0)
@@ -253,8 +324,7 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
         else:
             raise NotImplementedError
 
-        observer_location = self.declare_variable('observer_location', shape=(3, num_nodes))
-        # h = self.register_module_input(f'{climb_name}_altitude', shape=(1, ))
+        # h = self.declare_variable(f'{climb_name}_altitude', shape=(1, ))
 
         # Compute aircraft states
         phi = theta * 0
@@ -269,9 +339,9 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
         p = u * 0
         q = u * 0
         r = u * 0
-        x = observer_location[0, :]
-        y = observer_location[1, :]
-        z = observer_location[2, :]
+        x = u * 0
+        y = u * 0
+        z = u * 0
 
         # NOTE: below, we don't need to pre_pend the aircraft condition name any more since the vectorization will be handled by m3l
         self.register_output('u', u)
@@ -293,133 +363,5 @@ class ClimbConditionCSDL(SteadyDesignConditionCSDL):
 
         self.register_output('time', t * 1.)
         return
-
-        
-        
-        
-
-
-if __name__ == '__main__':
-    from lsdo_modules.module.module import Module
-    from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
-    from csdl import GraphRepresentation
-    from python_csdl_backend import Simulator
-    from caddee.utils.dummy_solvers.dummy_bem import DummyBEMCSDL, BEMDummyMesh
-
-    class DummyBEMCSDL(ModuleCSDL):
-        def initialize(self):
-            self.parameters.declare('num_nodes')
-            self.parameters.declare('num_blades')
-
-        def define(self):
-            num_nodes = self.parameters['num_nodes']
-            num_blades = self.parameters['num_blades']
-
-            # Aircraft states
-            u = self.register_module_input('u', shape=(num_nodes, ))
-            v = self.register_module_input('v', shape=(num_nodes, ))
-            w = self.register_module_input('w', shape=(num_nodes, ))
-            p = self.register_module_input('p', shape=(num_nodes, ))
-            self.register_output('p_test', p * 1)
-            q = self.register_module_input('q', shape=(num_nodes, ))
-            self.register_output('q_test', q * 1)
-            r = self.register_module_input('r', shape=(num_nodes, ))
-            self.register_output('r_test', r * 1)
-            phi = self.register_module_input('phi', shape=(num_nodes, ))
-            self.register_output('phi_test', phi * 1)
-            theta = self.register_module_input('theta', shape=(num_nodes, ))
-            self.register_output('theta_test', theta * 1)
-            psi = self.register_module_input('psi', shape=(num_nodes, ))
-            self.register_output('psi_test', psi * 1)
-            x = self.register_module_input('x', shape=(num_nodes, ))
-            self.register_output('x_test', x * 1)
-            y = self.register_module_input('y', shape=(num_nodes, ))
-            self.register_output('y_test', y * 1)
-            z = self.register_module_input('z', shape=(num_nodes, ))
-            self.register_output('z_test', z * 1)
-
-            # BEM-specific variables
-            rpm = self.register_module_input('rpm', shape=(num_nodes, ), computed_upstream=False)
-            self.print_var(rpm)
-            self.print_var(u)
-            R = csdl.expand(self.register_module_input('radius', shape=(1, )), (num_nodes, ))
-            self.print_var(R)
-            # NOTE: prefix only for mesh-like variables
-
-            # Some dummy computations for thrust and torque
-            angular_speed = (rpm / 60) * 2 * np.pi
-            V_tip = R * angular_speed
-            u_theta = 0.5 * V_tip
-            V_x = (u**2 + v**2 + w**2)**0.5
-            u_x = 1.3 * V_x
-
-            dT = T = 4 * np.pi * R * u_x * (u_x - V_x) * num_blades
-            dQ = Q = 2 * np.pi * R * u_x * u_theta * num_blades
-
-            self.register_module_output('dT', dT*1)
-            self.register_module_output('dQ', dQ*1)
-
-            # T = csdl.sum(dT, axes = (1,)) / shape[2]
-            # Q = csdl.sum(dQ, axes = (1,)) / shape[2]
-
-            self.register_module_output('T', T)
-            self.register_module_output('Q', Q)
-
-            self.register_module_output('F', csdl.expand(T*2, (num_nodes, 3), 'i->ij'))
-            self.register_module_output('M', csdl.expand(Q*2, (num_nodes, 3), 'i->ij'))
-
-    class DummyBEM(Module):
-        def _assemble_csdl(self): 
-            csdl_model = DummyBEMCSDL(
-                module=self,
-                num_nodes=1, 
-                num_blades=3,
-                name='BEM'
-            )
-            # csdl_model.define()
-            GraphRepresentation(csdl_model)
-            return csdl_model
-
-
-    class ACModule(Module):
-        def __init__(self) -> None:
-            self.models = []
-            super().__init__()
-        
-        def add_model(self, model):
-            # self.models.append(model._assemble_csdl())
-            self.models.append(model)
-
-        def _assemble_csdl(self):
-            csdl_model = AircraftConditionCSDL(
-                module=self,
-                name='test_ac_condition',
-                prefix='cruise',
-            )
-            GraphRepresentation(csdl_model)
-            return csdl_model
-
-    aircraft_condition = ACModule()
-
-    aircraft_condition.set_module_input('range', 60000)
-    aircraft_condition.set_module_input('time', 1800)
-    aircraft_condition.set_module_input('roll_angle', 0)
-    aircraft_condition.set_module_input('pitch_angle', 0.1)
-    aircraft_condition.set_module_input('yaw_angle', 0.1)
-    aircraft_condition.set_module_input('flight_path_angle', 0.1)
-    aircraft_condition.set_module_input('wind_angle', 0.1)
-    aircraft_condition.set_module_input('observer_location', np.array([0, 0, 0]))
-    
-    dummy_bem = DummyBEM()
-    dummy_bem.set_module_input('rpm', 1200)
-
-    aircraft_condition.add_model(dummy_bem)
-
-    csdl_model = aircraft_condition._assemble_csdl()
-    # print(csdl_model.module_inputs)
-    # print(csdl_model.module_outputs)
-    
-    sim = Simulator(csdl_model)
-    sim.run()
 
 

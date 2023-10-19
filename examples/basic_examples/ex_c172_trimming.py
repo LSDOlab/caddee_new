@@ -1,3 +1,5 @@
+'''Example 4 : Description of example 2'''
+
 import numpy as np
 import caddee.api as cd 
 import lsdo_geo as lg
@@ -67,13 +69,13 @@ cruise_model.register_output(c172_prop_forces)
 cruise_model.register_output(c172_prop_forces)
 
 # inertial forces and moments
-inertial_loads_model = cd.InertialLoadsM3L()
+inertial_loads_model = cd.InertialLoads()
 inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=c172_cg, totoal_mass=c172_mass, ac_states=ac_states)
 cruise_model.register_output(inertial_forces)
 cruise_model.register_output(inertial_moments)
 
 # total forces and moments 
-total_forces_moments_model = cd.TotalForcesMomentsM3L()
+total_forces_moments_model = cd.TotalForcesMoments()
 total_forces, total_moments = total_forces_moments_model.evaluate(
     c172_forces, 
     c172_moments, 
@@ -86,7 +88,7 @@ cruise_model.register_output(total_forces)
 cruise_model.register_output(total_moments)
 
 # pass total forces/moments + mass properties into EoM model
-eom_m3l_model = cd.EoMM3LEuler6DOF()
+eom_m3l_model = cd.EoMEuler6DOF()
 trim_residual = eom_m3l_model.evaluate(
     total_mass=c172_mass, 
     total_cg_vector=c172_cg, 
@@ -188,7 +190,7 @@ total_mass, total_inertia, cg_location = mass_properties.evaluate(m4_mass)
 
 
 
-eom_m3l_model = cd.EoMM3LEuler6DOF()
+eom_m3l_model = cd.EoMEuler6DOF()
 trim_residual = eom_m3l_model.evaluate(total_forces=total_forces, total_moments=None)
 cruise_model.register_output(trim_residual)
 

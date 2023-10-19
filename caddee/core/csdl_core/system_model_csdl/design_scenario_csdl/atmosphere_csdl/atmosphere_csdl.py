@@ -1,10 +1,10 @@
 from caddee.utils.base_model_csdl import BaseModelCSDL
-from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
+
 from caddee.core.caddee_core.system_model.design_scenario.design_condition.atmosphere.atmosphere import Atmosphere
 from csdl import Model
 
 """
-class SimpleAtmosphereCSDL(ModuleCSDL):
+class SimpleAtmosphereCSDL(csdl.Model):
     def initialize(self):
         self.parameters.declare('atmosphere_model', types=SimpleAtmosphereModel)
         self.parameters.declare('design_condition')

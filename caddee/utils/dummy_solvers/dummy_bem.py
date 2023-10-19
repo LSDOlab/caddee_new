@@ -5,13 +5,12 @@ from caddee.core.caddee_core.system_representation.component.component import Co
 from caddee.utils.caddee_base import CADDEEBase
 from caddee.utils.variable_group import VariableGroup
 import numpy as np
-from lsdo_modules.module.module import Module
-from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
+
 from csdl import GraphRepresentation
 
 
 
-class DummyBEMCSDLModules(ModuleCSDL):
+class DummyBEMCSDLModules(csdl.Model):
     def initialize(self):
         self.parameters.declare('num_nodes')
         self.parameters.declare('num_blades')
@@ -24,33 +23,33 @@ class DummyBEMCSDLModules(ModuleCSDL):
         prefix = self.parameters['prefix']
 
         # Aircraft states
-        u = self.register_module_input('u', shape=(num_nodes, ), vectorized=True)
-        v = self.register_module_input('v', shape=(num_nodes, ), vectorized=True)
-        w = self.register_module_input('w', shape=(num_nodes, ), vectorized=True)
-        p = self.register_module_input('p', shape=(num_nodes, ), vectorized=True)
+        u = self.declare_variable('u', shape=(num_nodes, ), vectorized=True)
+        v = self.declare_variable('v', shape=(num_nodes, ), vectorized=True)
+        w = self.declare_variable('w', shape=(num_nodes, ), vectorized=True)
+        p = self.declare_variable('p', shape=(num_nodes, ), vectorized=True)
         self.register_output('p_test', p * 1)
-        q = self.register_module_input('q', shape=(num_nodes, ), vectorized=True)
+        q = self.declare_variable('q', shape=(num_nodes, ), vectorized=True)
         self.register_output('q_test', q * 1)
-        r = self.register_module_input('r', shape=(num_nodes, ), vectorized=True)
+        r = self.declare_variable('r', shape=(num_nodes, ), vectorized=True)
         self.register_output('r_test', r * 1)
-        phi = self.register_module_input('phi', shape=(num_nodes, ), vectorized=True)
+        phi = self.declare_variable('phi', shape=(num_nodes, ), vectorized=True)
         self.register_output('phi_test', phi * 1)
-        theta = self.register_module_input('theta', shape=(num_nodes, ), vectorized=True)
+        theta = self.declare_variable('theta', shape=(num_nodes, ), vectorized=True)
         self.register_output('theta_test', theta * 1)
-        psi = self.register_module_input('psi', shape=(num_nodes, ), vectorized=True)
+        psi = self.declare_variable('psi', shape=(num_nodes, ), vectorized=True)
         self.register_output('psi_test', psi * 1)
-        x = self.register_module_input('x', shape=(num_nodes, ), vectorized=True)
+        x = self.declare_variable('x', shape=(num_nodes, ), vectorized=True)
         self.register_output('x_test', x * 1)
-        y = self.register_module_input('y', shape=(num_nodes, ), vectorized=True)
+        y = self.declare_variable('y', shape=(num_nodes, ), vectorized=True)
         self.register_output('y_test', y * 1)
-        z = self.register_module_input('z', shape=(num_nodes, ), vectorized=True)
+        z = self.declare_variable('z', shape=(num_nodes, ), vectorized=True)
         self.register_output('z_test', z * 1)
 
         # BEM-specific variables
-        rpm = self.register_module_input('rpm', shape=(num_nodes, ), vectorized=True, computed_upstream=False)
+        rpm = self.declare_variable('rpm', shape=(num_nodes, ), vectorized=True, computed_upstream=False)
         self.print_var(rpm)
         self.print_var(u)
-        r = self.register_module_input(f'{prefix}_radius', shape=(1, ), promotes=True)
+        r = self.declare_variable(f'{prefix}_radius', shape=(1, ), promotes=True)
         R = csdl.expand(r, (num_nodes, ))
         self.print_var(R)
         # NOTE: prefix only for mesh-like variables
@@ -65,17 +64,17 @@ class DummyBEMCSDLModules(ModuleCSDL):
         dT = T = 4 * np.pi * R * u_x * (u_x - V_x) * num_blades
         dQ = Q = 2 * np.pi * R * u_x * u_theta * num_blades
 
-        self.register_module_output('dT', dT*1)
-        self.register_module_output('dQ', dQ*1)
+        self.register_output('dT', dT*1)
+        self.register_output('dQ', dQ*1)
 
         # T = csdl.sum(dT, axes = (1,)) / shape[2]
         # Q = csdl.sum(dQ, axes = (1,)) / shape[2]
 
-        self.register_module_output('T', T)
-        self.register_module_output('Q', Q)
+        self.register_output('T', T)
+        self.register_output('Q', Q)
 
-        self.register_module_output('F', csdl.expand(T*2, (num_nodes, 3), 'i->ij'))
-        self.register_module_output('M', csdl.expand(Q*2, (num_nodes, 3), 'i->ij'))
+        self.register_output('F', csdl.expand(T*2, (num_nodes, 3), 'i->ij'))
+        self.register_output('M', csdl.expand(Q*2, (num_nodes, 3), 'i->ij'))
 
 class DummyBEMModules(MechanicsModel):
     def initialize(self, kwargs): 

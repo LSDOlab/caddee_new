@@ -7,12 +7,12 @@ from caddee.core.caddee_core.system_model.design_scenario.design_condition.mecha
 # from caddee.core.caddee_core.system_model.design_scenario.design_condition.nonmechanics_group. import NonmechanicsGroup
 from caddee.core.caddee_core.system_model.design_scenario.design_condition.power_group.power_model.power_model import PowerModel
 import warnings
-from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
-from caddee.core.caddee_core.system_representation.component.component import Component
+
+# from caddee.core.caddee_core.system_representation.component.component import Component
 from csdl import GraphRepresentation
 
 
-class BaseModelCSDL(ModuleCSDL):
+class BaseModelCSDL(csdl.Model):
     def initialize(self): pass
 
     def define(self): pass

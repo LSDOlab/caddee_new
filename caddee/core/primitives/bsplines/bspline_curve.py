@@ -102,7 +102,7 @@ class BSplineCurve(BSpline):
             num_points, max_iter,
             points, 
             self.control_points,
-            u_vec, grid_search_n
+            u_vec, self.knots_u.copy(), grid_search_n,
         )
 
         map = self.compute_evaluation_map(u_vec)
@@ -120,7 +120,7 @@ class BSplineCurve(BSpline):
 
         if return_parametric_coordinates:
             # return parametric_coordinates
-            return (u_vec,)
+            return (u_vec, map)
         else:
             return projected_points
 

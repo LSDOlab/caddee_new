@@ -1,10 +1,5 @@
 import numpy as np
-
 from caddee.utils.caddee_base import CADDEEBase
-
-from caddee.core.caddee_core.system_representation.spatial_representation import SpatialRepresentation
-from caddee.core.caddee_core.system_representation.component.component import Component, LiftingSurface, Rotor
-
 # Type checking imports
 import array_mapper as am
 

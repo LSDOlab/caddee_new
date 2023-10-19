@@ -14,7 +14,7 @@ class TotalMassPropertiesCSDL(BaseModelCSDL):
     def define(self):
         sizing_group = self.parameters['sizing_group']
         
-        ref_pt = self.register_module_input('ref_pt', shape=(3,), val=np.array([0, 0, 0]))
+        ref_pt = self.declare_variable('ref_pt', shape=(3,), val=np.array([0, 0, 0]))
         
         # Initialize mass proporties as CSDL variables with zero value
         # Total mass
@@ -35,14 +35,14 @@ class TotalMassPropertiesCSDL(BaseModelCSDL):
         # of the system (using parallel axis theorem)
 
         if sizing_group:
-            m_sc = self.register_module_input(f"m_total_constant", shape=(1, ))
-            cgx_sc = self.register_module_input(f"cgx_total_constant", shape=(1, ))
-            cgy_sc = self.register_module_input(f"cgy_total_constant", shape=(1, ))
-            cgz_sc = self.register_module_input(f"cgz_total_constant", shape=(1, ))
-            ixx_sc = self.register_module_input(f"ixx_total_constant", shape=(1, ))
-            iyy_sc = self.register_module_input(f"iyy_total_constant", shape=(1, ))
-            izz_sc = self.register_module_input(f"izz_total_constant", shape=(1, ))
-            ixz_sc = self.register_module_input(f"ixz_total_constant", shape=(1, ))
+            m_sc = self.declare_variable(f"m_total_constant", shape=(1, ))
+            cgx_sc = self.declare_variable(f"cgx_total_constant", shape=(1, ))
+            cgy_sc = self.declare_variable(f"cgy_total_constant", shape=(1, ))
+            cgz_sc = self.declare_variable(f"cgz_total_constant", shape=(1, ))
+            ixx_sc = self.declare_variable(f"ixx_total_constant", shape=(1, ))
+            iyy_sc = self.declare_variable(f"iyy_total_constant", shape=(1, ))
+            izz_sc = self.declare_variable(f"izz_total_constant", shape=(1, ))
+            ixz_sc = self.declare_variable(f"ixz_total_constant", shape=(1, ))
 
             # Compute total cg
             cgx = (m * cgx + m_sc * cgx_sc) / (m + m_sc)
@@ -64,14 +64,14 @@ class TotalMassPropertiesCSDL(BaseModelCSDL):
             m = m + m_sc
         
         # Varying MPs
-        m_v = self.register_module_input('m_total_varying', shape=(1, ), val=0.)
-        cgx_v = self.register_module_input('cgx_total_varying', shape=(1, ), val=0.)
-        cgy_v = self.register_module_input('cgy_total_varying', shape=(1, ), val=0.)
-        cgz_v = self.register_module_input('cgz_total_varying', shape=(1, ), val=0.)
-        ixx_v = self.register_module_input('ixx_total_varying', shape=(1, ), val=0.)
-        iyy_v = self.register_module_input('iyy_total_varying', shape=(1, ), val=0.)
-        izz_v = self.register_module_input('izz_total_varying', shape=(1, ), val=0.)
-        ixz_v = self.register_module_input('ixz_total_varying', shape=(1, ), val=0.)
+        m_v = self.declare_variable('m_total_varying', shape=(1, ), val=0.)
+        cgx_v = self.declare_variable('cgx_total_varying', shape=(1, ), val=0.)
+        cgy_v = self.declare_variable('cgy_total_varying', shape=(1, ), val=0.)
+        cgz_v = self.declare_variable('cgz_total_varying', shape=(1, ), val=0.)
+        ixx_v = self.declare_variable('ixx_total_varying', shape=(1, ), val=0.)
+        iyy_v = self.declare_variable('iyy_total_varying', shape=(1, ), val=0.)
+        izz_v = self.declare_variable('izz_total_varying', shape=(1, ), val=0.)
+        ixz_v = self.declare_variable('ixz_total_varying', shape=(1, ), val=0.)
 
         # Compute total cg
         cgx = (m * cgx + m_v * cgx_v) / (m + m_v)
@@ -96,11 +96,11 @@ class TotalMassPropertiesCSDL(BaseModelCSDL):
 
         # Register total system mass properties 
         self.print_var(m)
-        self.register_module_output('m_total', m)
-        self.register_module_output('cgx_total', cgx)
-        self.register_module_output('cgy_total', cgy)
-        self.register_module_output('cgz_total', cgz)
-        self.register_module_output('ixx_total', ixx)
-        self.register_module_output('iyy_total', iyy)
-        self.register_module_output('izz_total', izz)
-        self.register_module_output('ixz_total', ixz)
+        self.register_output('m_total', m)
+        self.register_output('cgx_total', cgx)
+        self.register_output('cgy_total', cgy)
+        self.register_output('cgz_total', cgz)
+        self.register_output('ixx_total', ixx)
+        self.register_output('iyy_total', iyy)
+        self.register_output('izz_total', izz)
+        self.register_output('ixz_total', ixz)

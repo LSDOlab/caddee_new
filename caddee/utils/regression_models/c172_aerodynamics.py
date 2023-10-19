@@ -1,38 +1,135 @@
-from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
 import csdl
 import m3l
+from dataclasses import dataclass
 
+
+class StabilityAdapterModelCSDL(csdl.Model):
+    def initialize(self):
+        self.parameters.declare('arguments', types=dict)
+        self.parameters.declare('num_nodes', types=int)
+        self.parameters.declare('neglect', types=list, default=[])
+    
+    def define(self):
+        args = self.parameters['arguments']
+        num_nodes = self.parameters['num_nodes']
+        ac_states = ['u', 'v', 'w', 'p', 'q', 'r', 'theta', 'phi', 'psi', 'x', 'y', 'z']
+        special_cases = self.parameters['neglect']
+        for key, value in args.items():
+            if key in ac_states:
+                csdl_var = self.declare_variable(key, shape=(num_nodes * 13, ))
+                self.register_output(name=f'{key}_exp', var=csdl_var * 1)
+            elif key in special_cases:
+                csdl_var = self.declare_variable(key, shape=value.shape)
+                self.register_output(name=f'{key}_exp', var=csdl_var * 1)
+            else:
+                csdl_var = self.declare_variable(key, shape=value.shape)
+                if len(value.shape) == 1 and value.shape[0] == 1:
+                    # print(key, value.shape)
+                    csdl_var_exp = csdl.expand(csdl_var, shape=(num_nodes * 13, ))
+                    self.register_output(name=f'{key}_exp', var=csdl_var_exp)
+                elif len(value.shape) == 1 and value.shape[0] != 1:
+                    # print(key, (13, ) + value.shape)
+                    csdl_var_exp = csdl.reshape(csdl.expand(csdl_var, shape=(13, ) + value.shape, indices='i->ji'), new_shape=(13, value.shape[0]))
+                    self.register_output(name=f'{key}_exp', var=csdl_var_exp)
+                elif len(value.shape) == 2:
+                    if num_nodes == value.shape[0]:
+                        csdl_var_exp = csdl.reshape(csdl.expand(csdl_var, shape=(13, ) + value.shape, indices='ij->kij'), new_shape=(13*num_nodes, value.shape[1]))
+                        self.register_output(name=f'{key}_exp', var=csdl_var_exp)
+                    elif num_nodes == value.shape[1]:
+                        csdl_var_exp = csdl.reshape(csdl.expand(csdl_var, shape=(13, ) + value.shape, indices='ij->kij'), new_shape=(13*num_nodes, value.shape[0]))
+                        self.register_output(name=f'{key}_exp', var=csdl_var_exp)
+                elif len(value.shape) > 2:
+                    raise NotImplementedError
+
+@dataclass
+class C172AeroOutputs:
+    forces : m3l.Variable = None
+    moments : m3l.Variable = None
 
 class C172AeroM3L(m3l.ExplicitOperation):
     def initialize(self, kwargs):
         # parameters
-        self.parameters.declare('component', default=None, types=None)
-        self.num_nodes = 1
+        self.parameters.declare('num_nodes', types=int, default=1)
+        self._stability_flag = False
+        super().initialize(kwargs=kwargs)
+
+    def assign_attributes(self):
+        self.name = self.parameters['name']
 
     def compute(self) -> csdl.Model:
-        return C172AerodynamicsModelCSDL(
-            module=self,
+        num_nodes = self.parameters['num_nodes']
+        
+        if self._stability_flag:
+            csdl_model = StabilityAdapterModelCSDL(
+                arguments=self.arguments,
+                num_nodes=num_nodes,
+            )
+
+            solver_model =  C172AerodynamicsModelCSDL(
+                num_nodes=num_nodes * 13,
+                stability_flag=self._stability_flag,
+            )
+
+            operation_name = self.parameters['name']
+            
+            csdl_model.add(solver_model, operation_name, promotes=[])
+            for key, value in self.arguments.items():
+                csdl_model.connect(f'{key}_exp',f'{operation_name}.{key}')
+
+        else:
+            csdl_model =  C172AerodynamicsModelCSDL(
+                num_nodes=num_nodes,
+            )
+
+        return csdl_model
+
+    def evaluate(self, ac_states, delta_a, delta_r, delta_e) -> C172AeroOutputs:
+        self.arguments = {}
+        for key, value in ac_states.__dict__.items():
+            if key in ['time', 'stability_flag']:
+                pass
+            else:
+                self.arguments[key] = value
+        self.arguments['delta_a'] = delta_a
+        self.arguments['delta_e'] = delta_e
+        self.arguments['delta_r'] = delta_r
+
+        self._stability_flag = ac_states.stability_flag
+
+        if self._stability_flag:
+            num_nodes = self.parameters['num_nodes'] * 13
+            forces = m3l.Variable(name=f'{self.name}.F', shape=(num_nodes, 3), operation=self)
+            moments = m3l.Variable(name=f'{self.name}.M', shape=(num_nodes, 3), operation=self)
+
+        else: 
+            num_nodes = self.parameters['num_nodes']
+            forces = m3l.Variable(name='F', shape=(num_nodes, 3), operation=self)
+            moments = m3l.Variable(name='M', shape=(num_nodes, 3), operation=self)
+        
+        c172_aero_outputs = C172AeroOutputs(
+            forces=forces,
+            moments=moments
         )
 
-    def evaluate(self, ac_states):
-        operation_csdl = self.compute()
-        arguments = ac_states
+        # if self._stability_flag:
+        #     forces_perturbed = m3l.Variable(name='F_perturbed', shape=(8, 3), operation=self)
+        #     moments_perturbed = m3l.Variable(name='M_perturbed', shape=(8, 3), operation=self)
+        #     c172_aero_outputs.forces_perturbed = forces_perturbed
+        #     c172_aero_outputs.moments_perturbed = moments_perturbed
 
-        c172_aero_operation = m3l.CSDLOperation(name='c172_aero_model', arguments=arguments, operation_csdl=operation_csdl)
-        forces = m3l.Variable(name='F', shape=(self.num_nodes, 3), operation=c172_aero_operation)
-        moments = m3l.Variable(name='M', shape=(self.num_nodes, 3), operation=c172_aero_operation)
-
-        return forces, moments
+        return c172_aero_outputs
 
 
-class C172AerodynamicsModelCSDL(ModuleCSDL):
+class C172AerodynamicsModelCSDL(csdl.Model):
 
     def initialize(self):
-        self.parameters.declare(name='name', default='aerodynamics')
+        # self.parameters.declare(name='name', default='aerodynamics')
         self.parameters.declare('num_nodes', default=1)
+        self.parameters.declare('stability_flag', types=bool, default=False)
         return
     def define(self):
         num_nodes = self.parameters['num_nodes']
+        stability_flag = self.parameters['stability_flag']
 
         CL_q = 7.282
         Cm_q = -6.232
@@ -41,63 +138,65 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
         Cn_beta = 0.0126
 
         # Inputs constant across conditions (segments)
-        Sw = self.declare_variable(name='wing_area', shape=(1,), val=16.2, units='m**2')
-        chord = self.declare_variable(name='wing_chord', shape=(1,), val=1.49352, units='m')
-        b = self.declare_variable(name='wing_span', shape=(1,), val=10.91184, units='m')
+        Sw = self.create_input(name='wing_area', shape=(1,), val=16.2, units='m**2')
+        chord = self.create_input(name='wing_chord', shape=(1,), val=1.49352, units='m')
+        b = self.create_input(name='wing_span', shape=(1,), val=10.91184, units='m')
 
         # Inputs changing across conditions (segments)
-        u = self.register_module_input(name='u',
-                                       shape=(num_nodes, 1), units='rad', val=50, promotes=True)
-        v = self.register_module_input(name='v',
+        u = self.declare_variable(name='u',
+                                       shape=(num_nodes, 1), units='rad', val=1)
+        v = self.declare_variable(name='v',
                                   shape=(num_nodes, 1), units='rad', val=0)
-        w = self.register_module_input(name='w',
-                                  shape=(num_nodes, 1), units='rad', val=0)
-
-        p = self.register_module_input(name='p',
-                                  shape=(num_nodes, 1), units='rad', val=0)
-        q = self.register_module_input(name='q',
-                                  shape=(num_nodes, 1), units='rad', val=0)
-        r = self.register_module_input(name='r',
+        w = self.declare_variable(name='w',
                                   shape=(num_nodes, 1), units='rad', val=0)
 
-        Phi = self.register_module_input(name='phi',
+        p = self.declare_variable(name='p',
+                                  shape=(num_nodes, 1), units='rad', val=0)
+        q = self.declare_variable(name='q',
+                                  shape=(num_nodes, 1), units='rad', val=0)
+        r = self.declare_variable(name='r',
+                                  shape=(num_nodes, 1), units='rad', val=0)
+
+        Phi = self.declare_variable(name='phi',
                                     shape=(num_nodes, 1), units='rad', val=0)
-        Theta = self.register_module_input(name='theta',
+        Theta = self.declare_variable(name='theta',
                                       shape=(num_nodes, 1), units='rad', val=0)
-        Psi = self.register_module_input(name='psi',
+        Psi = self.declare_variable(name='psi',
                                     shape=(num_nodes, 1), units='rad', val=0)
 
-        gamma = self.register_module_input(name='gamma',
+        gamma = self.declare_variable(name='gamma',
                                       shape=(num_nodes, 1), units='rad', val=0.)
         psiw = self.declare_variable(name='Psi_W',
                                      shape=(num_nodes, 1), units='rad', val=0)
 
-        delta_e = self.register_module_input(name='delta_e',
-                                        shape=(num_nodes, 1), units='rad', val=0, computed_upstream=False)
-        delta_r = self.register_module_input(name='delta_r',
-                                        shape=(num_nodes, 1), units='rad', val=0, computed_upstream=False)
-        delta_a = self.register_module_input(name='delta_a',
-                                        shape=(num_nodes, 1), units='rad', val=0, computed_upstream=False)
+        delta_e = self.declare_variable(name='delta_e',
+                                        shape=(num_nodes, 1), units='rad', val=0)
+        delta_r = self.declare_variable(name='delta_r',
+                                        shape=(num_nodes, 1), units='rad', val=0)
+        delta_a = self.declare_variable(name='delta_a',
+                                        shape=(num_nodes, 1), units='rad', val=0)
 
-        x = self.register_module_input(name='x',
+        x = self.declare_variable(name='x',
                                   shape=(num_nodes, 1), units='rad', val=0)
-        y = self.register_module_input(name='y',
+        y = self.declare_variable(name='y',
                                   shape=(num_nodes, 1), units='rad', val=0)
-        z = self.register_module_input(name='z',
+        z = self.declare_variable(name='z',
                                   shape=(num_nodes, 1), units='rad', val=0)
 
         V = (u ** 2 + v ** 2 + w ** 2) ** 0.5
 
-
+        self.register_output('dummy_1', psiw * Psi * Theta * gamma)
         # self.print_var(var=rho)
         rho = 1.225  # todo: compute as a function of altitude
-
-        alpha = Theta - gamma
+        
+        alpha = csdl.arctan(w / u) # Theta - gamma #  Theta - gamma # 
         alpha_deg = alpha * 57.2958
-
-        beta = Psi + psiw
+        self.register_output('alpha', alpha)
+        beta =   csdl.arcsin(v / V) # Psi + psiw #
         beta_deg = beta * 57.2958
-
+        self.register_output('beta', beta)
+        # self.print_var(alpha)
+        # self.print_var(beta)
         delta_e_deg = delta_e * 57.2958
         delta_a_deg = delta_a * 57.2958
         delta_r_deg = delta_r * 57.2958
@@ -167,31 +266,31 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
         Cn_delta_aile = 0.  # todo: fit a bivariate regression
 
         # Final aerodynamic coefficients
-        CL = CL_alpha + CL_delta_elev + wing_chord / (2 * V) * (CL_q * q)
+        CL = CL_alpha + CL_delta_elev + wing_chord / (2 * V+1e-4) * (CL_q * q)
         CD = CD_alpha + CD_delta_elev
-        Cm = Cm_alpha + Cm_delta_elev + wing_chord / (2 * V) * (2 * Cm_q * q)
+        Cm = Cm_alpha + Cm_delta_elev + wing_chord / (2 * V+1e-4) * (2 * Cm_q * q)
 
         CY = (
                 CY_beta * beta_deg +
                 CY_delta_rud * delta_r_deg +
-                wing_span / (2 * V) * (CY_p * p + CY_r * r)
+                wing_span / (2 * V + 1e-4) * (CY_p * p + CY_r * r)
         )
         Cl = (
                 0.1 * Cl_beta * beta_deg +
                 Cl_delta_aile * delta_a_deg +
                 0.075 * Cl_delta_rud * delta_r_deg +
-                wing_span / (2 * V) * (Cl_p * p + Cl_r * r)
+                wing_span / (2 * V+1e-4) * (Cl_p * p + Cl_r * r)
         )
-        self.register_module_output('Cl', Cl)
-        self.register_module_output('Cl_delta_aile', Cl_delta_aile)
-        self.register_module_output('Cl_delta_rud', Cl_delta_rud)
-        self.register_module_output('delta_r_deg', delta_r_deg)
+        self.register_output('Cl', Cl)
+        self.register_output('Cl_delta_aile', Cl_delta_aile)
+        self.register_output('Cl_delta_rud', Cl_delta_rud)
+        self.register_output('delta_r_deg', delta_r_deg)
 
         Cn = (
                 Cn_beta * beta_deg +
                 Cn_delta_aile +
                 0.075 * Cn_delta_rud * delta_r_deg +
-                wing_span / (2 * V) * (Cn_p * p + Cn_r * r)
+                wing_span / (2 * (V+1e-4)) * (Cn_p * p + Cn_r * r)
         )
 
         qBar = 0.5 * rho * V ** 2
@@ -213,8 +312,11 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
         M_wind[:, 1] = m 
         M_wind[:, 2] = n 
 
-        F = self.register_module_output(name='F', shape=(num_nodes, 3))
-        M = self.register_module_output(name='M', shape=(num_nodes, 3))
+        F = self.create_output(name='F_compute', shape=(num_nodes, 3))
+        M = self.create_output(name='M_compute', shape=(num_nodes, 3))
+
+        # alpha = Theta - gamma
+        # beta = Psi + psiw
 
         for ii in range(num_nodes):
             # https://www.mathworks.com/help/aeroblks/directioncosinematrixbodytowind.html
@@ -228,11 +330,12 @@ class C172AerodynamicsModelCSDL(ModuleCSDL):
             DCM_bw[2:3, 0:1] = -csdl.sin(alpha[ii, 0])
             DCM_bw[2:3, 1:2] = alpha[ii, 0] * 0
             DCM_bw[2:3, 2:3] = csdl.cos(alpha[ii, 0])
-
             F[ii, :] = csdl.reshape(csdl.matvec(csdl.transpose(DCM_bw), csdl.reshape(F_wind[ii, :], (3,))), (1, 3))
             M[ii, :] = csdl.reshape(csdl.matvec(csdl.transpose(DCM_bw), csdl.reshape(M_wind[ii, :], (3,))), (1, 3))
-        
-        return
+    
+        self.register_output(name='F', var=F*1)
+        self.register_output(name='M', var=M*1)
+
 
 
 if __name__ == "__main__":

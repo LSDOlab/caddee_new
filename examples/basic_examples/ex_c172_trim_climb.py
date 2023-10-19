@@ -1,3 +1,6 @@
+'''Example 1 : Description of example 1'''
+
+
 import numpy as np
 import caddee.api as cd
 import m3l
@@ -44,7 +47,7 @@ ac_states = climb_condition.evaluate_ac_states()
 climb_model.register_output(ac_states)
 
 # Inertial forces and moments
-inertial_loads_model = cd.InertialLoadsM3L()
+inertial_loads_model = cd.InertialLoads()
 inertial_forces, inertial_moments = inertial_loads_model.evaluate(
     total_cg_vector=c172_cg,
     totoal_mass=c172_mass,
@@ -74,7 +77,7 @@ climb_model.register_output(c172_prop_forces)
 climb_model.register_output(c172_prop_forces)
 
 # total forces and moments
-total_forces_moments_model = cd.TotalForcesMomentsM3L()
+total_forces_moments_model = cd.TotalForcesMoments()
 total_forces, total_moments = total_forces_moments_model.evaluate(
     c172_forces,
     c172_moments,
@@ -87,7 +90,7 @@ climb_model.register_output(total_forces)
 climb_model.register_output(total_moments)
 
 # pass total forces/moments + mass properties into EoM model
-eom_m3l_model = cd.EoMM3LEuler6DOF()
+eom_m3l_model = cd.EoMEuler6DOF()
 trim_residual = eom_m3l_model.evaluate(
     total_mass=c172_mass,
     total_cg_vector=c172_cg,

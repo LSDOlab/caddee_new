@@ -1,14 +1,40 @@
 ##ex all
 from caddee.core.caddee_core.system_model.sizing_group.sizing_models.sizing_model import SizingModel
-from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
+
 import m3l
 import csdl
+from dataclasses import dataclass
+
+
+@dataclass
+class MassProperties:
+    """
+    Simple container class for standard mass properties. 
+    
+    Solver developer should follow this naming convention:
+
+    Parameters
+    ----------
+    mass : m3l.Variabl
+        The mass of the vehicle
+   
+    cg : m3l.Variable
+        The center of gravity vector (w.r.t the nose of the vehicle)
+    
+    inertia_tensor : m3l.Variable
+        The full 3x3 inertia tensor (w.r.t the global reference frame)
+    """
+    mass : m3l.Variable = None
+    cg : m3l.Variable = None
+    inertia_tensor : m3l.Variable = None
+
+
 
 
 class C172MassProperties(m3l.ExplicitOperation):
     def initialize(self, kwargs):
         # parameters
-        self.parameters.declare('component', default=None, types=None)
+        self.parameters.declare('name', types=str, default='C172_mass_properties')
 
     def compute(self):
         csdl_model = C172MassPropertiesCSDL()
@@ -16,17 +42,20 @@ class C172MassProperties(m3l.ExplicitOperation):
         return csdl_model
     
 
-    def evaluate(self):
-        operation_csdl = self.compute()
-        arguments = {}
+    def evaluate(self) -> MassProperties:
+        self.arguments = {}
 
-        c172_sizing_operation = m3l.CSDLOperation(name='c172_sizing', arguments=arguments, operation_csdl=operation_csdl)
+        mass = m3l.Variable(name='mass', shape=(1, ), operation=self)
+        cg_vector = m3l.Variable(name='cg_vector', shape=(3, ), operation=self)
+        inertia_tensor = m3l.Variable(name='inertia_tensor', shape=(3, 3), operation=self)
 
-        mass = m3l.Variable(name='mass', shape=(1, ), operation=c172_sizing_operation)
-        cg_vector = m3l.Variable(name='cg_vector', shape=(3, ), operation=c172_sizing_operation)
-        inertia_tensor = m3l.Variable(name='inertia_tensor', shape=(3, 3), operation=c172_sizing_operation)
+        mass_properties = MassProperties(
+            mass=mass,
+            cg=cg_vector,
+            inertia_tensor=inertia_tensor,
+        )
 
-        return mass, cg_vector, inertia_tensor
+        return mass_properties
 
     # def _assemble_csdl(self):
     #     csdl_model = C172MassPropertiesCSDL()
@@ -34,15 +63,15 @@ class C172MassProperties(m3l.ExplicitOperation):
 
 
 
-class C172MassPropertiesCSDL(ModuleCSDL):
+class C172MassPropertiesCSDL(csdl.Model):
     def initialize(self):
         self.parameters.declare('name', default='C172MP', types=str)
 
     def define(self):
         shape = (1,)
 
-        area = self.register_module_input('wing_area', shape=shape, units='m^2', val=210.)
-        ar = self.register_module_input('wing_AR', shape=shape, val=13.)
+        area = self.declare_variable('wing_area', shape=shape, units='m^2', val=210.)
+        ar = self.declare_variable('wing_AR', shape=shape, val=13.)
 
         # Random junk computations. The value is specified
         m = 1043.2616 + (1.2 * area + 0.6 * ar) * 0
@@ -55,21 +84,21 @@ class C172MassPropertiesCSDL(ModuleCSDL):
         cgy = (0.2343 * area + 321 * ar) * 0
         cgz = 5. + (0.2212 * area + 454 * ar) * 0
 
-        self.register_module_output(
+        self.register_output(
             name='mass',
             var=m)        
         
-        inertia_tensor = self.register_module_output('inertia_tensor', shape=(3, 3), val=0)
+        inertia_tensor = self.create_output('inertia_tensor', shape=(3, 3), val=0)
         inertia_tensor[0, 0] = csdl.reshape(Ixx, (1, 1))
         inertia_tensor[0, 2] = csdl.reshape(Ixz, (1, 1))
         inertia_tensor[1, 1] = csdl.reshape(Iyy, (1, 1))
         inertia_tensor[2, 0] = csdl.reshape(Ixz, (1, 1))
         inertia_tensor[2, 2] = csdl.reshape(Izz, (1, 1))
         
-        cg_vector = self.register_module_output('cg_vector', shape=(3, ), val=0)
-        cg_vector[0] = cgx
-        cg_vector[1] = cgy
-        cg_vector[2] = cgz
+        cg_vector = self.create_output('cg_vector', shape=(3, ), val=0)
+        cg_vector[0] = cgx * 0.3024
+        cg_vector[1] = cgy * 0.3024
+        cg_vector[2] = cgz * 0.3024
 
 
 

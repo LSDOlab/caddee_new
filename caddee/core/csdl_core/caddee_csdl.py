@@ -1,6 +1,6 @@
 from csdl import Model
 # from caddee.core.caddee_core.caddee import CADDEE
-from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
+
 # from caddee.core.caddee_core.system_representation.system_representation import SystemRepresentation
 # from caddee.core.caddee_core.system_parameterization.system_parameterization import SystemParameterization
 from caddee.core.caddee_core.system_model.system_model import SystemModel
@@ -8,7 +8,7 @@ from caddee.core.csdl_core.system_model_csdl.system_model_csdl import SystemMode
 from caddee.core.csdl_core.system_parameterization_csdl.system_parameterization_csdl import SystemParameterizationCSDL
 from caddee.core.csdl_core.system_representation_csdl.system_representation_csdl import SystemRepresentationCSDL
 
-class CADDEECSDL(ModuleCSDL):
+class CADDEECSDL(csdl.Model):
     """
     Top-level caddee csdl class
 
@@ -55,7 +55,7 @@ class CADDEECSDL(ModuleCSDL):
         )
         self.add_module(system_model_csdl, 'system_model')
 
-        # system_model_csdl = ModuleCSDL()
+        # system_model_csdl = csdl.Model()
 
         # system_model_m3l_models = system_model.m3l_models
         # for m3l_model_name, m3l_model in system_model_m3l_models.items():

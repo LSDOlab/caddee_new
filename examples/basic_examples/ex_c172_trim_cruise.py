@@ -1,3 +1,4 @@
+'''Example 2 : Description of example 2'''
 import numpy as np
 import caddee.api as cd
 import m3l
@@ -10,111 +11,101 @@ caddee = cd.CADDEE()
 caddee.system_model = system_model = cd.SystemModel()
 
 # m3l sizing model
-sizing_model = m3l.Model()
+m3l_model = m3l.Model()
+
 
 # Aircraft sizing
 c172_sizing = cd.C172MassProperties()
-c172_mass, c172_cg, c172_I = c172_sizing.evaluate()
-sizing_model.register_output(c172_mass)
-sizing_model.register_output(c172_cg)
-sizing_model.register_output(c172_I)
+mass_properties = c172_sizing.evaluate()
+m3l_model.register_output(mass_properties)
 
-system_model.add_m3l_model('sizing_model', sizing_model)
+ref_pt = np.array([4.5, 0., 5.]) * 0.3024
+ref_pt = m3l_model.create_input('ref_pt', val=ref_pt)
 
-ref_pt = np.array([4.5, 0., 5])
-
-# design scenario
-design_scenario = cd.DesignScenario(name='aircraft_trim')
 
 # cruise condition
-cruise_model = m3l.Model()
-cruise_condition = cd.CruiseCondition(name="cruise_1")
-cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
-
-cruise_condition.set_module_input(name='mach_number', val=0.17)
-cruise_condition.set_module_input(name='range', val=40000)
-cruise_condition.set_module_input(name='altitude', val=500)
-cruise_condition.set_module_input(name='wing_incidence_angle', val=np.deg2rad(0))
-cruise_condition.set_module_input(name='pitch_angle', val=np.deg2rad(2), dv_flag=True, lower=np.deg2rad(0), upper=np.deg2rad(5))
-cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 500]))
-
-ac_states = cruise_condition.evaluate_ac_states()
-cruise_model.register_output(ac_states)
-
-# Inertial forces and moments
-inertial_loads_model = cd.InertialLoadsM3L()
-inertial_forces, inertial_moments = inertial_loads_model.evaluate(
-    total_cg_vector=c172_cg,
-    totoal_mass=c172_mass,
-    ac_states=ac_states
+cruise_condition = cd.CruiseCondition(
+    name="cruise_1",
+    stability_flag=True,
+    num_nodes=1,
 )
-cruise_model.register_output(inertial_forces)
-cruise_model.register_output(inertial_moments)
+
+# cruise_speed = m3l_model.create_input('cruise_speed', val=67.9)
+mach_number = m3l_model.create_input('mach_number', val=np.array([0.15]))
+altitude = m3l_model.create_input('cruise_altitude', val=np.array([1500]))
+pitch_angle = m3l_model.create_input('pitch_angle', val=np.array([np.deg2rad(2.67324908)]), dv_flag=True, lower=np.deg2rad(-10), upper=np.deg2rad(10))
+range = m3l_model.create_input('cruise_range', val=np.array([40000]))
+
+ac_states, atmosphere = cruise_condition.evaluate(
+    mach_number=mach_number, 
+    pitch_angle=pitch_angle, 
+    altitude=altitude, 
+    cruise_range=range
+)
+m3l_model.register_output(ac_states)
 
 # aero forces and moments
-c172_aero_model = cd.C172AeroM3L()
-c172_aero_model.set_module_input('delta_a', val=np.deg2rad(0))
-c172_aero_model.set_module_input('delta_r', val=np.deg2rad(0))
-c172_aero_model.set_module_input('delta_e', val=np.deg2rad(0),
-                                 dv_flag=True, lower=np.deg2rad(-10), upper=np.deg2rad(10))
-c172_forces, c172_moments = c172_aero_model.evaluate(ac_states=ac_states)
-cruise_model.register_output(c172_forces)
-cruise_model.register_output(c172_moments)
+c172_aero_model = cd.C172AeroM3L(
+    name='cruise_c172_aero_regression',
+    num_nodes=1,
+)
+aileron_deflection = m3l_model.create_input(name='delta_a', val=np.array([0]))
+rudder_deflection = m3l_model.create_input(name='delta_r', val=np.array([0]))
+elevator_deflection = m3l_model.create_input(name='delta_e', val=np.array([np.deg2rad(-1.32724268)]), dv_flag=True, lower=np.deg2rad(-10), upper=np.deg2rad(10))
+
+c172_aero_outputs = c172_aero_model.evaluate(
+    ac_states=ac_states,
+    delta_a=aileron_deflection,
+    delta_r=rudder_deflection,
+    delta_e=elevator_deflection,
+)
+
+m3l_model.register_output(c172_aero_outputs)
+
 
 # prop forces and moments
-c172_prop_model = cd.C172PropulsionModel()
-c172_prop_model.set_module_input('propeller_radius', val=1.)
-c172_prop_model.set_module_input('omega', val=2800, dv_flag=True, lower=2000, upper=2800, scaler=1e-3)
-c172_prop_model.set_module_input('thrust_origin', val=np.array([0., 0., 5.]))
-c172_prop_model.set_module_input('ref_pt', val=ref_pt)
-c172_prop_forces, c172_prop_moments = c172_prop_model.evaluate(ac_states=ac_states)
-cruise_model.register_output(c172_prop_forces)
-cruise_model.register_output(c172_prop_forces)
-
-# total forces and moments
-total_forces_moments_model = cd.TotalForcesMomentsM3L()
-total_forces, total_moments = total_forces_moments_model.evaluate(
-    c172_forces,
-    c172_moments,
-    c172_prop_forces,
-    c172_prop_moments,
-    inertial_forces,
-    inertial_moments
+c172_prop_model = cd.C172PropulsionModel(
+    name='cruise_c172_prop_regression',
+    num_nodes=1,
 )
-cruise_model.register_output(total_forces)
-cruise_model.register_output(total_moments)
 
-# pass total forces/moments + mass properties into EoM model
-eom_m3l_model = cd.EoMM3LEuler6DOF()
-trim_residual = eom_m3l_model.evaluate(
-    total_mass=c172_mass,
-    total_cg_vector=c172_cg,
-    total_inertia_tensor=c172_I,
-    total_forces=total_forces,
-    total_moments=total_moments,
-    ac_states=ac_states
+
+prop_radius = m3l_model.create_input('prop_radius', val=1.)
+omega = m3l_model.create_input('omega', val=np.array([2109.07445251]), dv_flag=True, lower=2000, upper=2800, scaler=1e-3)
+thrust_origin = m3l_model.create_input('thrust_origin', val=np.array([4.5, 0., 5.]) * 0.3024)
+thrust_vector = m3l_model.create_input('thrust_vector', val=np.array([1., 0., 0.]))
+
+c172_prop_outputs = c172_prop_model.evaluate(
+    ac_states=ac_states,
+    prop_radius=prop_radius,
+    rpm=omega,
+    thrust_origin=thrust_origin,
+    thrust_vector=thrust_vector,
+    ref_pt=ref_pt,
 )
-cruise_model.register_output(trim_residual)
+m3l_model.register_output(c172_prop_outputs)
 
-caddee_csdl_model = cruise_model._assemble_csdl()
-caddee_csdl_model.add_objective('EulerEoMGenRefPt.trim_residual')
+# F_prop = c172_prop_outputs.forces
+# F_wing = c172_aero_outputs.forces
+# # F_prop_norm = m3l.norm(F_prop, order=2, axes=(1,))
+# F_wing_norm = m3l.cross(m3l.norm(F_wing + F_prop, order=2, axes=(0,)), thrust_vector)
+# m3l_model.register_output(F_wing_norm)
+# m3l_model.register_output(F_prop + F_wing)
+
+trim_variables = cruise_condition.assemble_trim_residual(
+    mass_properties=mass_properties, 
+    aero_propulsive_outputs=[c172_aero_outputs, c172_prop_outputs],
+    ac_states=ac_states,
+    ref_pt=ref_pt,
+)
+m3l_model.register_output(trim_variables)
+
+
+caddee_csdl_model = m3l_model.assemble_csdl()
+# caddee_csdl_model.add_objective('cruise_1_eom_model.accelerations')
 
 # create and run simulator
 sim = Simulator(caddee_csdl_model, analytics=True)
 sim.run()
 
-# exit()
-
-sim.check_totals()
-
-prob = CSDLProblem(problem_name='c172_cruise_trim', simulator=sim)
-optimizer = SLSQP(
-    prob,
-    maxiter=100,
-    ftol=1e-15,
-)
-optimizer.solve()
-optimizer.print_results()
-print("Cruise angle of attack", np.rad2deg(optimizer.outputs['x'][-1, 0]))
-print("Cruise elevator deflection", np.rad2deg(optimizer.outputs['x'][-1, 2]))
-print("Cruise pusher rotor RPM", optimizer.outputs['x'][-1, 1]*1000)
+cd.print_caddee_outputs(m3l_model, sim)

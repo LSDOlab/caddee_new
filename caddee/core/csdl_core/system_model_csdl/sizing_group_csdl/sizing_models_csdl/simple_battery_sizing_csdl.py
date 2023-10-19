@@ -1,10 +1,10 @@
 from csdl import Model
 import numpy as np
-from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
+
 import csdl
 
 
-class SimpleBatterySizingCSDL(ModuleCSDL):
+class SimpleBatterySizingCSDL(csdl.Model):
     def initialize(self):
         self.parameters.declare('name', default='simple_battery_sizing', types=str)
         self.parameters.declare('battery_packaging_fraction', default=0.1, types=float)
@@ -14,16 +14,16 @@ class SimpleBatterySizingCSDL(ModuleCSDL):
         shape = (1, )
         battery_packaging_frac = self.parameters['battery_packaging_fraction']
         
-        batt_mass = self.register_module_input('battery_mass', shape=shape, val=800, computed_upstream=False)
-        battery_position = self.register_module_input('battery_position', shape=(3, ), val=np.array([3., 0, 0.5]), computed_upstream=False)
-        batt_energy_dens = self.register_module_input('battery_energy_density', shape=shape, val=400, computed_upstream=False)
+        batt_mass = self.declare_variable('battery_mass', shape=shape, val=800, computed_upstream=False)
+        battery_position = self.declare_variable('battery_position', shape=(3, ), val=np.array([3., 0, 0.5]), computed_upstream=False)
+        batt_energy_dens = self.declare_variable('battery_energy_density', shape=shape, val=400, computed_upstream=False)
         
         x = battery_position[0]
         y = battery_position[1]
         z = battery_position[2]
         
-        self.register_module_output('mass', batt_mass * (1 + battery_packaging_frac))
-        self.register_module_output('cg_vector', battery_position * 1)
+        self.register_output('mass', batt_mass * (1 + battery_packaging_frac))
+        self.register_output('cg_vector', battery_position * 1)
 
         ixx = batt_mass * (y**2 + z**2)
         ixy = -batt_mass * (x * y)
@@ -35,7 +35,7 @@ class SimpleBatterySizingCSDL(ModuleCSDL):
         izy = iyz * 1
         izz = batt_mass * (x**2  + y**2)
 
-        inertia_tensor = self.register_module_output('inertia_tensor', shape=(3, 3), val=0)
+        inertia_tensor = self.create_output('inertia_tensor', shape=(3, 3), val=0)
         inertia_tensor[0, 0] = csdl.reshape(ixx, (1, 1))
         inertia_tensor[0, 1] = csdl.reshape(ixy, (1, 1))
         inertia_tensor[0, 2] = csdl.reshape(ixz, (1, 1))
@@ -48,13 +48,13 @@ class SimpleBatterySizingCSDL(ModuleCSDL):
 
         
         
-        self.register_module_output('total_energy', batt_energy_dens * 3600 * batt_mass)
+        self.register_output('total_energy', batt_energy_dens * 3600 * batt_mass)
 
-        self.register_module_output('battery_pack_mass', batt_mass * (1 + battery_packaging_frac))
+        self.register_output('battery_pack_mass', batt_mass * (1 + battery_packaging_frac))
         
-        self.register_module_output('cgx', battery_position[0] * 1)
-        self.register_module_output('cgy', battery_position[1] * 1)
-        self.register_module_output('cgz', battery_position[2] * 1)
+        self.register_output('cgx', battery_position[0] * 1)
+        self.register_output('cgy', battery_position[1] * 1)
+        self.register_output('cgz', battery_position[2] * 1)
         self.create_input('ixx', val=0)
         self.create_input('iyy', val=0)
         self.create_input('izz', val=0)

@@ -117,7 +117,7 @@ class TotalConstantMassCSDL(BaseModelCSDL):
         inertia_input_names = self.parameters['inertia_input_names']
         
         
-        ref_pt = self.register_module_input('ref_pt', shape=(3,), val=np.array([0, 0, 0]))
+        ref_pt = self.declare_variable('ref_pt', shape=(3,), val=np.array([0, 0, 0]))
         
         # Total mass
         m = self.create_input('m_compute', val=0)
@@ -125,7 +125,7 @@ class TotalConstantMassCSDL(BaseModelCSDL):
         # common_mass_properties 
         for i in range(len(mass_input_names)):
             mass_name = mass_input_names[i]
-            m_model = self.register_module_input(mass_name, shape=(1, ))
+            m_model = self.declare_variable(mass_name, shape=(1, ))
             
 
             # Compute total mass
@@ -138,14 +138,14 @@ class TotalConstantMassCSDL(BaseModelCSDL):
         # models_dict = sizing_group.models_dictionary
         # for model_name, model in models_dict.items():
         #     # Declare individual mass properties from models 
-        #     m_model = self.register_module_input(f"{model_name}.mass", shape=(1, ))
-        #     cgx_model = self.register_module_input(f"{model_name}.cgx", shape=(1, ))
-        #     cgy_model = self.register_module_input(f"{model_name}.cgy", shape=(1, ))
-        #     cgz_model = self.register_module_input(f"{model_name}.cgz", shape=(1, ))
-        #     ixx_model = self.register_module_input(f"{model_name}.ixx", shape=(1, ))
-        #     iyy_model = self.register_module_input(f"{model_name}.iyy", shape=(1, ))
-        #     izz_model = self.register_module_input(f"{model_name}.izz", shape=(1, ))
-        #     ixz_model = self.register_module_input(f"{model_name}.ixz", shape=(1, ))
+        #     m_model = self.declare_variable(f"{model_name}.mass", shape=(1, ))
+        #     cgx_model = self.declare_variable(f"{model_name}.cgx", shape=(1, ))
+        #     cgy_model = self.declare_variable(f"{model_name}.cgy", shape=(1, ))
+        #     cgz_model = self.declare_variable(f"{model_name}.cgz", shape=(1, ))
+        #     ixx_model = self.declare_variable(f"{model_name}.ixx", shape=(1, ))
+        #     iyy_model = self.declare_variable(f"{model_name}.iyy", shape=(1, ))
+        #     izz_model = self.declare_variable(f"{model_name}.izz", shape=(1, ))
+        #     ixz_model = self.declare_variable(f"{model_name}.ixz", shape=(1, ))
 
         #     # Compute total cg
         #     cgx = (m * cgx + m_model * cgx_model) / (m + m_model)
@@ -167,16 +167,16 @@ class TotalConstantMassCSDL(BaseModelCSDL):
         #     m = m + m_model
 
         # Register total constant mass properties 
-        self.register_module_output('total_constant_mass', m)
+        self.register_output('total_constant_mass', m)
         
         
-        # self.register_module_output('cgx_total_constant', cgx)
-        # self.register_module_output('cgy_total_constant', cgy)
-        # self.register_module_output('cgz_total_constant', cgz)
-        # self.register_module_output('ixx_total_constant', ixx)
-        # self.register_module_output('iyy_total_constant', iyy)
-        # self.register_module_output('izz_total_constant', izz)
-        # self.register_module_output('ixz_total_constant', ixz)
+        # self.register_output('cgx_total_constant', cgx)
+        # self.register_output('cgy_total_constant', cgy)
+        # self.register_output('cgz_total_constant', cgz)
+        # self.register_output('ixx_total_constant', ixx)
+        # self.register_output('iyy_total_constant', iyy)
+        # self.register_output('izz_total_constant', izz)
+        # self.register_output('ixz_total_constant', ixz)
 
 
 class VaryingMassPropertiesCSDL(BaseModelCSDL):
@@ -200,7 +200,7 @@ class VaryingMassPropertiesCSDL(BaseModelCSDL):
         inertia_input_names = self.parameters['inertia_input_names']
         
         
-        ref_pt = self.register_module_input('ref_pt', shape=(3,), val=np.array([0, 0, 0]))
+        ref_pt = self.declare_variable('ref_pt', shape=(3,), val=np.array([0, 0, 0]))
         
         # Initialize mass proporties as CSDL variables with zero value
         # Total mass
@@ -225,13 +225,13 @@ class VaryingMassPropertiesCSDL(BaseModelCSDL):
             cg_name = cg_input_names[i]
             inertia_name = inertia_input_names[i]
             
-            m_model = self.register_module_input(mass_name, shape=(1, ))
-            cg_model = self.register_module_input(cg_name, shape=(3, ))
+            m_model = self.declare_variable(mass_name, shape=(1, ))
+            cg_model = self.declare_variable(cg_name, shape=(3, ))
             cgx_model = cg_model[0]
             cgy_model = cg_model[1]
             cgz_model = cg_model[2]
 
-            inertia_model = self.register_module_input(inertia_name, shape=(3, 3))
+            inertia_model = self.declare_variable(inertia_name, shape=(3, 3))
             ixx_model = csdl.reshape(inertia_model[0, 0], (1, ))
             iyy_model = csdl.reshape(inertia_model[1, 1], (1, ))
             izz_model = csdl.reshape(inertia_model[2, 2], (1, ))
@@ -265,19 +265,19 @@ class VaryingMassPropertiesCSDL(BaseModelCSDL):
         m = m + m_fudge
 
 
-        inertia_tensor = self.register_module_output('total_inertia_tensor', shape=(3, 3), val=0)
+        inertia_tensor = self.create_output('total_inertia_tensor', shape=(3, 3), val=0)
         inertia_tensor[0, 0] = csdl.reshape(ixx, (1, 1))
         inertia_tensor[0, 2] = csdl.reshape(ixz, (1, 1))
         inertia_tensor[2, 0] = csdl.reshape(ixz, (1, 1))
         inertia_tensor[1, 1] = csdl.reshape(iyy, (1, 1))
         inertia_tensor[2, 2] = csdl.reshape(izz, (1, 1))
 
-        cg_vector = self.register_module_output('total_cg_vector', shape=(3, ), val=0)
+        cg_vector = self.register_output('total_cg_vector', shape=(3, ), val=0)
         cg_vector[0] = cgx
         cg_vector[1] = cgy
         cg_vector[2] = cgz
 
 
         # Register total constant mass properties 
-        self.register_module_output('total_mass', m)
+        self.register_output('total_mass', m)
         
