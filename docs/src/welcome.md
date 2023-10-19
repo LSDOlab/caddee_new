@@ -1,8 +1,13 @@
 # Welcome to CADDEE
 
 
+![alt text](/src/images/movie_all_geometry_frame.gif "Title displayed")
+
+
 The Comprehensive Analysis high-Dimensional Design Environment for Engineering systems (CADDEE) framework is python-based framework for the conceptual design of aircraft and other 
 complex engineering systems. It leverages recent advances in automated adjoint-based sensitivity analysis to systematically explore the high-dimensional design space of complex engineering system by considering the entire mission or design cycle, and by using pyhsics-based models of varying fidelity. 
+
+![alt text](/src/images/movie_sub_system_frame.gif "Title displayed")
 
 
 # Cite us
