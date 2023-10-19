@@ -138,3 +138,11 @@ top_level_req.in
 top_level_req.txt
 _autosummary
 _conf_master.py
+*.out
+*.xml
+*.iml
+**/SUMMARY_GRAPH*
+
+# IGNORE THE pickle FILES
+*.pickle
+

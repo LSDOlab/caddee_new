@@ -1,12 +1,12 @@
 import csdl 
 from caddee.utils.caddee_base import CADDEEBase
-from caddee.caddee_core.system_model.design_scenario.design_condition.power_group.power_model.power_model import PowerModel
-from caddee.caddee_core.system_representation.component.component import Component
-from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.power_group.power_model.power_model import PowerModel
+from caddee.core.caddee_core.system_representation.component.component import Component
+
 from csdl import GraphRepresentation
 
 
-class DummyMotorCSDL(ModuleCSDL):
+class DummyMotorCSDL(csdl.Model):
     def initialize(self):
         self.parameters.declare('num_nodes', default=None, types=int, allow_none=True)
         self.parameters.declare('prefix', default=None, types=str, allow_none=True)
@@ -16,11 +16,11 @@ class DummyMotorCSDL(ModuleCSDL):
         shape = (num_nodes, )
 
         prefix = self.parameters['prefix']
-        rpm = self.register_module_input('rpm', shape=shape, vectorized=True)
-        load_torque = self.register_module_input('Q', shape=shape)
+        rpm = self.declare_variable('rpm', shape=shape, vectorized=True)
+        load_torque = self.declare_variable('Q', shape=shape)
 
         power = csdl.sum(rpm * load_torque, axes = (0,))
-        self.register_module_output('power', power)
+        self.register_output('power', power)
 
 
 class DummyMotorMesh(CADDEEBase):

@@ -1,6 +1,6 @@
 from csdl import Model 
 from caddee.utils.base_model_csdl import BaseModelCSDL
-from caddee.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_group import MechanicsGroup
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_group import MechanicsGroup
 
 
 class MechanicsGroupCSDL(BaseModelCSDL):

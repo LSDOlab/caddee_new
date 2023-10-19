@@ -1,6 +1,6 @@
 from csdl import Model
 from caddee.utils.base_model_csdl import BaseModelCSDL
-from caddee.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_group import MechanicsGroup
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_group import MechanicsGroup
 import numpy as np
 
 
@@ -20,7 +20,7 @@ class VaryingMassPropertiesCSDL(BaseModelCSDL):
     def define(self):
         mech_group = self.parameters['mechanics_group']
         
-        ref_pt = self.register_module_input('ref_pt', shape=(3,), val=np.array([0, 0, 0]))
+        ref_pt = self.declare_variable('ref_pt', shape=(3,), val=np.array([0, 0, 0]))
         
         # Initialize mass proporties as CSDL variables with zero value
         # Total mass
@@ -46,14 +46,14 @@ class VaryingMassPropertiesCSDL(BaseModelCSDL):
         for mech_model in mech_models:
             model_name = mech_model_names[counter]
             # Declare individual mass properties from models 
-            m_model = self.register_module_input(f"{model_name}.mass", shape=(1, ))
-            cgx_model = self.register_module_input(f"{model_name}.cgx", shape=(1, ))
-            cgy_model = self.register_module_input(f"{model_name}.cgy", shape=(1, ))
-            cgz_model = self.register_module_input(f"{model_name}.cgz", shape=(1, ))
-            ixx_model = self.register_module_input(f"{model_name}.ixx", shape=(1, ))
-            iyy_model = self.register_module_input(f"{model_name}.iyy", shape=(1, ))
-            izz_model = self.register_module_input(f"{model_name}.izz", shape=(1, ))
-            ixz_model = self.register_module_input(f"{model_name}.ixz", shape=(1, ))
+            m_model = self.declare_variable(f"{model_name}.mass", shape=(1, ))
+            cgx_model = self.declare_variable(f"{model_name}.cgx", shape=(1, ))
+            cgy_model = self.declare_variable(f"{model_name}.cgy", shape=(1, ))
+            cgz_model = self.declare_variable(f"{model_name}.cgz", shape=(1, ))
+            ixx_model = self.declare_variable(f"{model_name}.ixx", shape=(1, ))
+            iyy_model = self.declare_variable(f"{model_name}.iyy", shape=(1, ))
+            izz_model = self.declare_variable(f"{model_name}.izz", shape=(1, ))
+            ixz_model = self.declare_variable(f"{model_name}.ixz", shape=(1, ))
 
             # Compute total cg
             cgx = (m * cgx + m_model * cgx_model) / (m + m_model)
@@ -77,11 +77,11 @@ class VaryingMassPropertiesCSDL(BaseModelCSDL):
             counter += 1
 
         # Register total constant mass properties 
-        self.register_module_output('m_total_varying', m * 1)
-        self.register_module_output('cgx_total_varying', cgx * 1)
-        self.register_module_output('cgy_total_varying', cgy * 1)
-        self.register_module_output('cgz_total_varying', cgz * 1)
-        self.register_module_output('ixx_total_varying', ixx * 1)
-        self.register_module_output('iyy_total_varying', iyy * 1)
-        self.register_module_output('izz_total_varying', izz * 1)
-        self.register_module_output('ixz_total_varying', ixz * 1)
+        self.register_output('m_total_varying', m * 1)
+        self.register_output('cgx_total_varying', cgx * 1)
+        self.register_output('cgy_total_varying', cgy * 1)
+        self.register_output('cgz_total_varying', cgz * 1)
+        self.register_output('ixx_total_varying', ixx * 1)
+        self.register_output('iyy_total_varying', iyy * 1)
+        self.register_output('izz_total_varying', izz * 1)
+        self.register_output('ixz_total_varying', ixz * 1)

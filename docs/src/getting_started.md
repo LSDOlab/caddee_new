@@ -5,6 +5,15 @@ and running a minimal example.
 ## Installation
 
 ### Installation instructions for users
+Depending on the user's operating system, the installation instructions may be different.
+
+## Windows
+CADDEE's geometry engine uses Cython which causes issues with Windows. As a workaround the quickest way to install CADDEE on Windows is 
+through [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install) (WSL).
+The default Linux distribution installed by WSL is Ubuntu. 
+
+
+
 For direct installation with all dependencies, run on the terminal or command line
 ```sh
 $ pip install git+https://github.com/LSDOlab/lsdo_project_template.git

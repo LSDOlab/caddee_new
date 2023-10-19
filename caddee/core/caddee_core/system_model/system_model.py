@@ -1,11 +1,12 @@
 from caddee.utils.caddee_base import CADDEEBase
-from caddee.caddee_core.system_model.sizing_group.sizing_group import SizingGroup
+from caddee.core.caddee_core.system_model.sizing_group.sizing_group import SizingGroup
 
 class SystemModel(CADDEEBase):
     def initialize(self, kwargs):
         self.sizing_group = None
         self.design_scenario_dictionary = {}
         self.connections_list = []
+        self.m3l_models = dict()
 
     def add_design_scenario(self,design_scenario):
         if design_scenario.parameters['name'] == '':
@@ -32,3 +33,10 @@ class SystemModel(CADDEEBase):
         """
         self.connections_list.append((upstream_comp, upstream_vars, downstream_comp, downstream_vars_dict))
         return
+    
+    def add_m3l_model(self, name, model):
+        from m3l import Model
+        if not isinstance(model, Model):
+            raise TypeError("model_group must be of type 'm3l.Model' ")
+        else:
+            self.m3l_models[name] = model

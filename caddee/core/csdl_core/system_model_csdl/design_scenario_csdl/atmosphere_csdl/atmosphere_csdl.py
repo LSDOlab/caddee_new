@@ -1,10 +1,10 @@
 from caddee.utils.base_model_csdl import BaseModelCSDL
-from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
-from caddee.caddee_core.system_model.design_scenario.design_condition.atmosphere.atmosphere import SimpleAtmosphereModel
+
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.atmosphere.atmosphere import Atmosphere
 from csdl import Model
 
 """
-class SimpleAtmosphereCSDL(ModuleCSDL):
+class SimpleAtmosphereCSDL(csdl.Model):
     def initialize(self):
         self.parameters.declare('atmosphere_model', types=SimpleAtmosphereModel)
         self.parameters.declare('design_condition')
@@ -66,12 +66,9 @@ S1 = 110.4
 gamma = 1.4
 
 
-class SimpleAtmosphereCSDL(ModuleCSDL):
+class SimpleAtmosphereCSDL(csdl.Model):
     def initialize(self):
-        self.parameters.declare('atmosphere_model', types=SimpleAtmosphereModel)
-        self.parameters.declare('design_condition')
-
-
+        self.parameters.declare('atmosphere_model', types=Atmosphere)
 
         num = 500
         altitude = np.linspace(0,47000,num)
@@ -107,21 +104,9 @@ class SimpleAtmosphereCSDL(ModuleCSDL):
         self.pressure_coefs = pressure_coefs
         self.temperature_coefs = temperature_coefs
 
-        """
-        d_model = np.polyval(density_coefs, altitude)
-        p_model = np.polyval(pressure_coefs, altitude)
-        t_model = np.polyval(temperature_coefs, altitude)
-        plt.plot(d_model)
-        plt.show()
-        plt.plot(p_model)
-        plt.show()
-        plt.plot(t_model)
-        plt.show()
-        """
-
     def define(self):
-        prefix = self.parameters['design_condition']
-
+        prefix = self.parameters['atmosphere_model'].parameters['name']
+        num_nodes = self.parameters['atmosphere_model'].num_nodes
 
         pd = self.density_coefs
         pp = self.pressure_coefs
@@ -129,23 +114,25 @@ class SimpleAtmosphereCSDL(ModuleCSDL):
         N = len(pd)
 
         # x = self.declare_variable('altitude',val=1000)
-        x = self.declare_variable(prefix + '_' + 'altitude', shape=(1, ))
+        # x = self.declare_variable(prefix + '_' + 'altitude', shape=(1, ))
+        x = self.declare_variable('altitude', shape=(num_nodes, ))
 
         #px = p[0]*x**(N-1) + p[1]*x**(N-2) + p[2]*x**(N-3) + p[3]*x**(N-4) + p[4]*x**(N-5)...
-        temp_density = self.create_output('temp_density',shape=(N),val=0)
-        temp_pressure = self.create_output('temp_pressure',shape=(N),val=0)
-        temp_temperature = self.create_output('temp_temperature',shape=(N),val=0)
+        temp_density = self.create_output('temp_density',shape=(num_nodes, N),val=0)
+        temp_pressure = self.create_output('temp_pressure',shape=(num_nodes, N),val=0)
+        temp_temperature = self.create_output('temp_temperature',shape=(num_nodes, N),val=0)
         for i in range(N):
-            temp_density[i] = pd[i]*x**(N - 1 - i)
-            temp_pressure[i] = pp[i]*x**(N - 1 - i)
-            temp_temperature[i] = pt[i]*x**(N - 1 - i)
+            for j in range(num_nodes):
+                temp_density[j, i] = csdl.reshape(pd[i]*x[j]**(N - 1 - i), new_shape=(1, 1,))
+                temp_pressure[j, i] = csdl.reshape(pp[i]*x[j]**(N - 1 - i), new_shape=(1, 1,))
+                temp_temperature[j, i] = csdl.reshape(pt[i]*x[j]**(N - 1 - i), new_shape=(1, 1,))
 
         
-        density = csdl.sum(temp_density)
+        density = csdl.sum(temp_density, axes=(1, ))
         #self.register_output('density',density)
-        pressure = csdl.sum(temp_pressure)
+        pressure = csdl.sum(temp_pressure, axes=(1, ))
         #self.register_output('pressure',pressure)
-        temperature = csdl.sum(temp_temperature)
+        temperature = csdl.sum(temp_temperature, axes=(1, ))
         #self.register_output('temperature',temperature)
         
 
@@ -156,8 +143,58 @@ class SimpleAtmosphereCSDL(ModuleCSDL):
         a = (gamma * R * temperature)**0.5
 
         # caddee outputs:
-        self.register_output(prefix + '_' + 'temperature',temperature)
-        self.register_output(prefix + '_' + 'pressure',pressure)
-        self.register_output(prefix + '_' + 'density',density)
-        self.register_output(prefix + '_' + 'dynamic_viscosity',mu)
-        self.register_output(prefix + '_' + 'speed_of_sound', a)
+        # self.register_output(prefix + '_' + 'temperature',temperature)
+        # self.register_output(prefix + '_' + 'pressure',pressure)
+        # self.register_output(prefix + '_' + 'density',density)
+        # self.register_output(prefix + '_' + 'dynamic_viscosity',mu)
+        # self.register_output(prefix + '_' + 'speed_of_sound', a)
+
+        self.register_output('temperature',temperature)
+        self.register_output('pressure',pressure)
+        self.register_output('density',density)
+        self.register_output('dynamic_viscosity',mu)
+        self.register_output('speed_of_sound', a)
+
+
+if __name__ == '__main__':
+    num = 500
+    altitude = np.linspace(0,47000,num)
+
+    pressure = np.zeros(num)
+    density = np.zeros(num)
+    temperature = np.zeros(num)
+
+    # standard atmosphere model
+    for i, z in enumerate(altitude):
+        # valid through 47000 m / 154000 ft
+        if z <= 11000:
+            a = -6.5E-3 # K/m
+            temperature[i] = Ts + a*z
+            pressure[i] = Ps*((temperature[i]/Ts)**((-g)/(a*R)))
+            density[i] = rhoS*((temperature[i]/Ts)**(-((g/(a*R)) + 1)))
+        elif z > 11000 and z <= 25000:
+            temperature[i] = 216.6 # isothermal region
+            pressure[i] = P11*(np.exp(-(g/(R*temperature[i]))*(z - 11000)))
+            density[i] = rho11*(np.exp(-(g/(R*216.66))*(z - 11000)))
+        elif z > 25000 and z <= 47000:
+            a = 3E-3
+            temperature[i] = 216.66 + a*(z - 25000)
+            pressure[i] = P25*((temperature[i]/216.66)**((-g)/(a*R)))
+            density[i] = rho25*((temperature[i]/216.66)**(-((g/(a*R)) + 1)))
+
+
+    degree = 6
+    density_coefs = np.polyfit(altitude, density, degree)
+    pressure_coefs = np.polyfit(altitude, pressure, degree)
+    temperature_coefs = np.polyfit(altitude, temperature, degree)
+
+    import matplotlib.pyplot as plt
+    d_model = np.polyval(density_coefs, altitude)
+    p_model = np.polyval(pressure_coefs, altitude)
+    t_model = np.polyval(temperature_coefs, altitude)
+    plt.plot(altitude, d_model)
+    plt.show()
+    plt.plot(altitude, p_model)
+    plt.show()
+    plt.plot(altitude, t_model)
+    plt.show()

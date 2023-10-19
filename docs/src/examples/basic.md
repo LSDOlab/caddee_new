@@ -11,8 +11,7 @@ examples page.
 ```{toctree}
 :maxdepth: 1
 
-../_temp/examples/basic_examples/ex_c172_aerodynamics
-../_temp/examples/basic_examples/ex_c172_aerodynamics
-../_temp/examples/basic_examples/ex_c172_trimming
-../_temp/examples/basic_examples/ex_c172_weights
+../_temp/examples/basic_examples/ex_c172_trim_cruise
+../_temp/examples/basic_examples/ex_BEM_VLM
+
 ```

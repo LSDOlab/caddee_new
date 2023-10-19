@@ -1,75 +1,215 @@
-##skip
-import caddee.api as cd
-from python_csdl_backend import Simulator
-import numpy as np
+'''Example 4 : Description of example 2'''
 
-from caddee_execution_scripts.c172.c172_weights import C172MassProperties
+import numpy as np
+import caddee.api as cd 
+import lsdo_geo as lg
+import m3l
+from python_csdl_backend import Simulator
+from caddee import IMPORTS_FILES_FOLDER
+import array_mapper as am
+from modopt.scipy_library import SLSQP, BFGS, COBYLA
+from modopt.csdl_library import CSDLProblem
+
 
 caddee = cd.CADDEE()
+caddee.system_model = system_model = cd.SystemModel()
 
 
+# m3l sizing model
+sizing_model = m3l.Model()
 
-# region System Representation
+# Battery sizing
+c172_sizing = cd.C172MassProperties()
+c172_mass, c172_cg, c172_I = c172_sizing.evaluate()
+sizing_model.register_output(c172_mass)
+sizing_model.register_output(c172_cg)
+sizing_model.register_output(c172_I)
 
-caddee.system_representation = sys_rep = cd.SystemRepresentation()
+system_model.add_m3l_model('sizing_model', sizing_model)
 
-caddee.system_parameterization = sys_param = None
-wing = cd.LiftingSurface(name='aircraft')
-push_rotor = cd.Rotor(name='pusher_rotor')
+# design scenario
+design_scenario = cd.DesignScenario(name='aircraft_trim')
 
-sys_rep.add_component(wing)
-sys_rep.add_component(push_rotor)
-# endregion
+# cruise condition
+cruise_model = m3l.Model()
+cruise_condition = cd.CruiseCondition(name="cruise_1")
+cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
 
+cruise_condition.set_module_input(name='altitude', val=1000)
+cruise_condition.set_module_input(name='mach_number', val=0.17)
+cruise_condition.set_module_input(name='range', val=40000)
+cruise_condition.set_module_input(name='wing_incidence_angle', val=np.deg2rad(0), dv_flag=False)
+cruise_condition.set_module_input(name='pitch_angle', val=0, dv_flag=True, lower=np.deg2rad(0), upper=np.deg2rad(5))
+cruise_condition.set_module_input(name='flight_path_angle', val=0)
+cruise_condition.set_module_input(name='roll_angle', val=0)
+cruise_condition.set_module_input(name='yaw_angle', val=0)
+cruise_condition.set_module_input(name='wind_angle', val=0)
+cruise_condition.set_module_input(name='observer_location', val=np.array([0, 0, 500]))
 
-# region System Model
+ac_states = cruise_condition.evaluate_ac_states()
+cruise_model.register_output(ac_states)
 
-system_model = cd.SystemModel()
+# aero forces and moments
+c172_aero_model = cd.C172AeroM3L()
+c172_aero_model.set_module_input('delta_a', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-10), upper=np.deg2rad(10))
+c172_aero_model.set_module_input('delta_r', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-10), upper=np.deg2rad(10))
+c172_aero_model.set_module_input('delta_e', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-10), upper=np.deg2rad(10))
+c172_forces, c172_moments = c172_aero_model.evaluate(ac_states=ac_states)
+cruise_model.register_output(c172_forces)
+cruise_model.register_output(c172_moments)
 
-# region Sizing Group
-system_model.sizing_group = sizing_group = cd.SizingGroup()
+# prop forces and moments
+c172_prop_model = cd.C172PropulsionModel()
+c172_prop_model.set_module_input('propeller_radius', val=1.)
+c172_prop_model.set_module_input('omega', val=2800, dv_flag=True, lower=2200, scaler=1e-3)
+c172_prop_model.set_module_input('thrust_origin', val=np.array([0., 0., 0.]))
+c172_prop_model.set_module_input('ref_pt', val=np.array([0., 0., 0.]))
+c172_prop_forces, c172_prop_moments = c172_prop_model.evaluate(ac_states=ac_states)
+cruise_model.register_output(c172_prop_forces)
+cruise_model.register_output(c172_prop_forces)
 
-c172_mp = C172MassProperties()
-sizing_group.add_module(c172_mp)
-# endregion
+# inertial forces and moments
+inertial_loads_model = cd.InertialLoads()
+inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=c172_cg, totoal_mass=c172_mass, ac_states=ac_states)
+cruise_model.register_output(inertial_forces)
+cruise_model.register_output(inertial_moments)
 
-# region Design Scenario
-design_scenario = cd.DesignScenario(name='mission')
-design_scenario.equations_of_motion_csdl = cd.EulerFlatEarth6DoFGenRef
-
-# region Hover Design Condition
-hover_condition = cd.AircraftCondition(
-    name='hover',
-    stability_flag=False,
-    dynamic_flag=False,
+# total forces and moments 
+total_forces_moments_model = cd.TotalForcesMoments()
+total_forces, total_moments = total_forces_moments_model.evaluate(
+    c172_forces, 
+    c172_moments, 
+    c172_prop_forces,
+    c172_prop_moments,
+    inertial_forces, 
+    inertial_moments
 )
-hover_condition.atmosphere_model = cd.SimpleAtmosphereModel()
-hover_condition.set_module_input('time', 120)
-hover_condition.set_module_input('speed', 1e-3)
-hover_condition.set_module_input('roll_angle', 0)
-hover_condition.set_module_input('pitch_angle', np.deg2rad(0), dv_flag=False)
-hover_condition.set_module_input('yaw_angle', 0)
-hover_condition.set_module_input('flight_path_angle', 0)
-hover_condition.set_module_input('wind_angle', 0)
-hover_condition.set_module_input('altitude', 500.)
-hover_condition.set_module_input('observer_location', np.array([0., 0., 500.]))
+cruise_model.register_output(total_forces)
+cruise_model.register_output(total_moments)
 
-design_scenario.add_design_condition(design_condition=hover_condition)
-dummy_computation = cd.MechanicsGroup()
-hover_condition.mechanics_group = dummy_computation
+# pass total forces/moments + mass properties into EoM model
+eom_m3l_model = cd.EoMEuler6DOF()
+trim_residual = eom_m3l_model.evaluate(
+    total_mass=c172_mass, 
+    total_cg_vector=c172_cg, 
+    total_inertia_tensor=c172_I, 
+    total_forces=total_forces, 
+    total_moments=total_moments,
+    ac_states=ac_states
+)
+cruise_model.register_output(trim_residual)
+
+caddee_csdl_model = cruise_model._assemble_csdl()
+caddee_csdl_model.add_objective('EulerEoMGenRefPt.trim_residual')
+# # Add cruise m3l model to cruise condition
+# cruise_condition.add_m3l_model('cruise_model', cruise_model)
+
+# # Add design condition to design scenario
+# design_scenario.add_design_condition(cruise_condition)
+
+# # Add design scenario to system_model
+# system_model.add_design_scenario(design_scenario=design_scenario)
+
+# # get final caddee csdl model
+# caddee_csdl_model = caddee.assemble_csdl()
+
+# create and run simulator
+sim = Simulator(caddee_csdl_model, analytics=True)
+sim.run()
+
+sim.check_totals()
+
+exit()
+
+prob = CSDLProblem(problem_name='c172_trim', simulator=sim)
+optimizer = SLSQP(
+    prob,
+    maxiter=100, 
+    ftol=1e-15,
+)
+optimizer.solve()
+optimizer.print_results()
+# csdl_test_model = test_m3l_model._assemble_csdl()
+# sim = Simulator(csdl_test_model, analytics=True)
+# sim.run()
+
+exit()
+
+
+
+
+
+# design scenario
+design_scenario = cd.DesignScenario(name="aircraft_trim")
+
+# design condition
+cruise_condition = cd.CruiseCondition(name="cruise_1")
+cruise_condition.atmosphere_model = cd.SimpleAtmosphereModel()
+
+cruise_condition.set_module_input(name='altitude', val=1000)
+cruise_condition.set_module_input(name='mach_number', val=0.17, dv_flag=True)
+cruise_condition.set_module_input(name='range', val=40000)
+cruise_condition.set_module_input(name='wing_incidence_angle', val=np.deg2rad(1), dv_flag=True)
+cruise_condition.set_module_input(name='pitch_angel', val=0)
+cruise_condition.set_module_input(name='roll_angle', val=0)
+cruise_condition.set_module_input(name='yaw_angle', val=0)
+cruise_condition.set_module_input(name='observer_loacation', val=np.array([0, 0, 500]))
+
+
+# m3l api 
+cruise_model = m3l.Model()
+
+
+
+# region future code
+# order_u = 3
+# num_control_points_u = 35
+# knots_u_beginning = np.zeros((order_u-1,))
+# knots_u_middle = np.linspace(0., 1., num_control_points_u+2)
+# knots_u_end = np.ones((order_u-1,))
+# knots_u = np.hstack((knots_u_beginning, knots_u_middle, knots_u_end))
+# order_v = 1
+# knots_v = np.array([0., 0.5, 1.])
+
+# dummy_b_spline_space = lg.BSplineSpace(name='dummy_b_spline_space', order=(order_u,1), knots=(knots_u,knots_v))
+# dummy_function_space = lg.BSplineSetSpace(name='dummy_space', b_spline_spaces={'dummy_b_spline_space': dummy_b_spline_space})
+
+# cruise_wing_pressure_coefficients = m3l.Variable(name='cruise_wing_pressure_coefficients', shape=(num_control_points_u,1,3))
+# cruise_wing_pressure = m3l.Function(name='cruise_wing_pressure', function_space=dummy_function_space, coefficients=cruise_wing_pressure_coefficients)
+
+# vlm = VLMM3L(vlm_mesh)
+# vlm_forces = vlm.evaluate(displacements=None)
+
+# bem_forces = bem.evaluate(input=None)
+
+# total_forces = vlm_forces + bem_forces
 # endregion
 
-system_model.add_design_scenario(design_scenario=design_scenario)
-# endregion
+mass_properties = cd.TotalMPs()
+total_mass, total_inertia, cg_location = mass_properties.evaluate(m4_mass)
 
-# endregion
 
-caddee.system_model = system_model
-# endregion
 
-caddee_csdl = caddee.assemble_csdl_modules()
+eom_m3l_model = cd.EoMEuler6DOF()
+trim_residual = eom_m3l_model.evaluate(total_forces=total_forces, total_moments=None)
+cruise_model.register_output(trim_residual)
 
-# caddee_csdl.add_objective('system_model.mission.eom.obj_r', scaler=1e-1)
 
-sim = Simulator(caddee_csdl, analytics=True, display_scripts=True)
+
+
+
+# ...
+
+# add model group to design condition
+cruise_condition.add_model_group(cruise_model_group)
+
+
+# add design condition to design scenario
+design_scenario.add_design_condition(cruise_condition)
+
+# get final caddee csdl model
+caddee_csdl_model = caddee.assemble_csdl()
+
+# create and run simulator
+sim = Simulator(caddee_csdl_model)
 sim.run()

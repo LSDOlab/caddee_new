@@ -1,18 +1,18 @@
 from csdl import Model
 import csdl
 from caddee.utils.helper_functions.camel_to_snake import camel_to_snake
-from caddee.caddee_core.system_model.design_scenario.design_condition.design_condition import DesignCondition
-from caddee.caddee_core.system_model.sizing_group.sizing_models.sizing_model import SizingModel
-from caddee.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_model.mechanics_model import MechanicsModel
-# from caddee.caddee_core.system_model.design_scenario.design_condition.nonmechanics_group. import NonmechanicsGroup
-from caddee.caddee_core.system_model.design_scenario.design_condition.power_group.power_model.power_model import PowerModel
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.design_condition import SteadyDesignCondition
+from caddee.core.caddee_core.system_model.sizing_group.sizing_models.sizing_model import SizingModel
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_model.mechanics_model import MechanicsModel
+# from caddee.core.caddee_core.system_model.design_scenario.design_condition.nonmechanics_group. import NonmechanicsGroup
+from caddee.core.caddee_core.system_model.design_scenario.design_condition.power_group.power_model.power_model import PowerModel
 import warnings
-from lsdo_modules.module_csdl.module_csdl import ModuleCSDL
-from caddee.caddee_core.system_representation.component.component import Component
+
+# from caddee.core.caddee_core.system_representation.component.component import Component
 from csdl import GraphRepresentation
 
 
-class BaseModelCSDL(ModuleCSDL):
+class BaseModelCSDL(csdl.Model):
     def initialize(self): pass
 
     def define(self): pass
@@ -197,8 +197,8 @@ class BaseModelCSDL(ModuleCSDL):
         self.register_output(name + '_z', z * 1)
     
     def vectorize_inputs(self, group): 
-        from caddee.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_model.mechanics_model import MechanicsModel
-        from caddee.caddee_core.system_model.design_scenario.design_condition.power_group.power_model.power_model import PowerModel
+        from caddee.core.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_model.mechanics_model import MechanicsModel
+        from caddee.core.caddee_core.system_model.design_scenario.design_condition.power_group.power_model.power_model import PowerModel
         model_names_list = group._all_models_names_list
         model_list = group._all_models_list 
         print('model_list', model_list)
@@ -289,8 +289,8 @@ class BaseModelCSDL(ModuleCSDL):
 
         Only caddee_inputs are vectorized.
         """
-        from caddee.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_group import MechanicsGroup
-        from caddee.caddee_core.system_model.design_scenario.design_condition.power_group.power_group import PowerGroup
+        from caddee.core.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_group import MechanicsGroup
+        from caddee.core.caddee_core.system_model.design_scenario.design_condition.power_group.power_group import PowerGroup
         from builtins import any as b_any
         
         
@@ -402,7 +402,7 @@ class BaseModelCSDL(ModuleCSDL):
                 
                 # Upstream
                 # If connecting from a design condition 
-                if isinstance(upstream, DesignCondition):
+                if isinstance(upstream, SteadyDesignCondition):
                     des_cond_name = upstream.parameters['name']
                     for i in range(len(upstream_vars)):
                         upstream_var = upstream_vars[i] 
@@ -425,7 +425,7 @@ class BaseModelCSDL(ModuleCSDL):
 
                 # Downstream
                 # If connecting to a design condition (not allowed)
-                if isinstance(downstream, DesignCondition):
+                if isinstance(downstream, SteadyDesignCondition):
                     raise Exception('Cannot connect to a desing condition')
                 # If connecting to a sizing model 
                 elif isinstance(downstream, SizingModel):
@@ -584,7 +584,7 @@ class BaseModelCSDL(ModuleCSDL):
             # Case 1) Connecting non-vectorized variables 
             # Ex: Between sizing models or from a design condition
             # to a sizing model 
-            if isinstance(_from, DesignCondition) and isinstance(_to, SizingModel):
+            if isinstance(_from, SteadyDesignCondition) and isinstance(_to, SizingModel):
                 design_condition_name = _from.parameters['name']
                 for design_scenario_name, design_scenario in design_scenario_dict.items():
                     if design_condition_name in design_scenario.design_condition_dictionary:

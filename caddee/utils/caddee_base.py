@@ -1,11 +1,9 @@
 from caddee.utils.options_dictionary import OptionsDictionary
-from caddee.utils.variables_metadata_dictionary import VariablesMetadataDictionary
 from abc import ABC, abstractmethod
-from lsdo_modules.module.module import Module
 
 
 
-class CADDEEBase(Module): #pass
+class CADDEEBase(): #pass
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.assign_attributes()  # Added this to make code more developer friendly (more familiar looking)

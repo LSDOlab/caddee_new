@@ -45,16 +45,16 @@ class VectorizationCSDL(BaseModelCSDL):
                         if var_name in comp_vars:
                             name = f'{var_name}_{comp_name}'
                             vectorized_vars.append(name)
-                            vect_var = self.register_module_output(name=name, shape=(num_nodes, 1), val=0)
+                            vect_var = self.create_output(name=name, shape=(num_nodes, 1), val=0)
                             for i in range(num_nodes):
                                 if selection_list[i] == 1:
-                                    vect_var[i] = self.register_module_input(f'{conditions_list[i]}_{name}')
+                                    vect_var[i] = self.declare_variable(f'{conditions_list[i]}_{name}')
                         else:
                             vectorized_vars.append(var_name)
                             # print('var_name-----------', var_name)
-                            vect_var = self.register_module_output(name=var_name, shape=(num_nodes, 1), val=0)
+                            vect_var = self.create_output(name=var_name, shape=(num_nodes, 1), val=0)
                             for i in range(num_nodes):
-                                vect_var[i] = self.register_module_input(f'{conditions_list[i]}_{var_name}')
+                                vect_var[i] = self.declare_variable(f'{conditions_list[i]}_{var_name}')
                     else:
                         pass
                 else:
@@ -65,9 +65,9 @@ class VectorizationCSDL(BaseModelCSDL):
         missing_states = [state for state in ac_states if state not in vectorized_vars]
         if missing_states:
             for state in missing_states:
-                vect_var = self.register_module_output(name=state, shape=(num_nodes, 1), val=0)
+                vect_var = self.create_output(name=state, shape=(num_nodes, 1), val=0)
                 for i in range(num_nodes):
-                    vect_var[i] = self.register_module_input(f'{conditions_list[i]}_{state}')
+                    vect_var[i] = self.declare_variable(f'{conditions_list[i]}_{state}')
 
 
 
