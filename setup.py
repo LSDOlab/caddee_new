@@ -55,6 +55,7 @@ setup(
         'setuptools',
         'wheel',
         'twine',
+        'astroid==2.15.5',
     ],
     classifiers=[
         'Programming Language :: Python',
