@@ -6,6 +6,8 @@ This page provides instructions for installing CADDEE.
 Depending on the user's operating system, the installation instructions may be different.
 
 ## Windows
+
+### Step 0: Installing WSL
 CADDEE's geometry engine uses software that is incompatible with Windows at this time. As a simple workaround, the quickest way to install CADDEE on Windows is through [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install) (WSL), which requires Windows 10 (version 2004 or higher) or Windows 11. The default Linux distribution installed by WSL is Ubuntu.
 Once WSL is sucessfully installed, open an (Ubuntu) terminal window (simply type Ubuntu in the Windows search bar) and execute the following commands. 
 
