@@ -29,8 +29,8 @@ prop_disk = geometry.declare_component(component_name='propeller_disk', b_spline
 wing = geometry.declare_component(component_name='wing', b_spline_search_names=['WingGeom'])
 
 # ------------------------ Creating a VLM mesh with 15-1 span-wise and 10-1 chord-wise panels
-num_spanwise_vlm = 15
-num_chordwise_vlm = 10
+num_spanwise_vlm = 25
+num_chordwise_vlm = 15
 
 # Projecting a linearly spaced array onto the leading and trailing edge
 # NOTE: project returns parametric coordinate (i.e., u, v) 
@@ -76,11 +76,13 @@ disk_edge_point_4 = geometry.evaluate(disk_edge_point_4_parametric)
 
 # Compute the rotor_radius and thrust vector
 rotor_radius = m3l.norm(disk_edge_point_2 - disk_edge_point_1) / 2
-thrust_vector = m3l.cross(disk_edge_point_3 - disk_edge_point_4,disk_edge_point_2-disk_edge_point_1)
+thrust_vector = m3l.cross(disk_edge_point_3 - disk_edge_point_4, disk_edge_point_2-disk_edge_point_1)
 # NOTE the thrust vector passed into BEM needs to be a unit vector pointing in the correct direction
 thrust_unit_vector = thrust_vector / m3l.norm(thrust_vector)
 print(thrust_vector.value)
 print(thrust_unit_vector.value) 
+print(rotor_radius.value) 
+# exit()
 # Make sure the thrust vector points in the correct direction according to the body-fixed reference frame
 # e.g., [1, 0, 0] means in the direction of the nose of the aircraft 
 
@@ -178,6 +180,7 @@ sim.run()
 # Optionally, a user can print all variables and their values that were registered as outputs in this run file
 cd.print_caddee_outputs(m3l_model, sim)
 
+
 # Optional for advanced users: A user can take advantage of CADDEE's SIFR interface to plot field quantities such as pressure 
 # on top of the geometry 
 plot = True
@@ -185,8 +188,8 @@ plot = True
 if plot:
     # Here, we need to define where VLM outputs exist on the geometry
     # There are 15 and 10 span-wise and chord-wise nodes, respectively, which means that there are 14 and 9 panels
-    num_spanwise_vlm = 14
-    num_chordwise_vlm = 9
+    num_spanwise_vlm = 24
+    num_chordwise_vlm = 14
 
     # We prject the points where we expect VLM outputs onto the geometry
     wing_le_parametric = wing.project(np.linspace(np.array([3., -5., 0.]), np.array([3., 5., 0.]), num_spanwise_vlm), plot=False)
