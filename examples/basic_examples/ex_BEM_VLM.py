@@ -76,11 +76,13 @@ disk_edge_point_4 = geometry.evaluate(disk_edge_point_4_parametric)
 
 # Compute the rotor_radius and thrust vector
 rotor_radius = m3l.norm(disk_edge_point_2 - disk_edge_point_1) / 2
-thrust_vector = m3l.cross(disk_edge_point_3 - disk_edge_point_4,disk_edge_point_2-disk_edge_point_1)
+thrust_vector = m3l.cross(disk_edge_point_3 - disk_edge_point_4, disk_edge_point_2-disk_edge_point_1)
 # NOTE the thrust vector passed into BEM needs to be a unit vector pointing in the correct direction
 thrust_unit_vector = thrust_vector / m3l.norm(thrust_vector)
 print(thrust_vector.value)
 print(thrust_unit_vector.value) 
+print(rotor_radius.value) 
+# exit()
 # Make sure the thrust vector points in the correct direction according to the body-fixed reference frame
 # e.g., [1, 0, 0] means in the direction of the nose of the aircraft 
 
@@ -177,6 +179,7 @@ sim.run()
 
 # Optionally, a user can print all variables and their values that were registered as outputs in this run file
 cd.print_caddee_outputs(m3l_model, sim)
+
 
 # Optional for advanced users: A user can take advantage of CADDEE's SIFR interface to plot field quantities such as pressure 
 # on top of the geometry 
