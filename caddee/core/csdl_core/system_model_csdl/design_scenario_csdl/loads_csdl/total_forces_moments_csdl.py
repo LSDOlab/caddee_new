@@ -1,5 +1,4 @@
 import csdl 
-from caddee.core.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_group import MechanicsGroup
 import m3l
 
 

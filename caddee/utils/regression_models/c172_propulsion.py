@@ -1,7 +1,5 @@
 ##skip
 
-from caddee.core.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_model.mechanics_model import \
-    MechanicsModel
 import csdl
 import numpy as np
 import m3l

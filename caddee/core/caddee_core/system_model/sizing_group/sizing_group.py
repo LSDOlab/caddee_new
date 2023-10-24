@@ -1,7 +1,6 @@
-from caddee.core.caddee_core.system_model.design_scenario.design_condition.model_group.model_group import ModelGroup
 
 
-class SizingGroup(ModelGroup):
+class SizingGroup():
     def initialize(self, kwargs):
         # Need super here to get some attributes from ModelGroup 
         # (would be overwritten by this initialize otherwise)

@@ -3,9 +3,6 @@ import csdl
 from caddee.utils.helper_functions.camel_to_snake import camel_to_snake
 from caddee.core.caddee_core.system_model.design_scenario.design_condition.design_condition import SteadyDesignCondition
 from caddee.core.caddee_core.system_model.sizing_group.sizing_models.sizing_model import SizingModel
-from caddee.core.caddee_core.system_model.design_scenario.design_condition.mechanics_group.mechanics_model.mechanics_model import MechanicsModel
-# from caddee.core.caddee_core.system_model.design_scenario.design_condition.nonmechanics_group. import NonmechanicsGroup
-from caddee.core.caddee_core.system_model.design_scenario.design_condition.power_group.power_model.power_model import PowerModel
 import warnings
 
 # from caddee.core.caddee_core.system_representation.component.component import Component
