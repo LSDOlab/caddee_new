@@ -1,24 +1,19 @@
-'''Example 2 : Description of example 2'''
+'''Example TC2 geometry setup: Description of example 2'''
 import numpy as np
 import caddee.api as cd 
 import lsdo_geo as lg
 import m3l
 from python_csdl_backend import Simulator
-from caddee.core.caddee_core.system_representation.prescribed_actuations import PrescribedRotation
 from caddee import IMPORTS_FILES_FOLDER
 import array_mapper as am
 import time
 from caddee import PROJECTIONS_FOLDER
 
 
-lpc_rep = cd.SystemRepresentation()
-lpc_param = cd.SystemParameterization(system_representation=lpc_rep)
-
-file_name = IMPORTS_FILES_FOLDER / 'LPC_final_custom_blades.stp'
-spatial_rep = lpc_rep.spatial_representation
-spatial_rep.import_file(file_name=file_name)
-spatial_rep.refit_geometry(file_name=file_name)
-
+geometry = lg.import_geometry(IMPORTS_FILES_FOLDER / 'LPC_final_custom_blades.stp')
+geometry.refit(parallelize=True)
+geometry.plot()
+exit()
 # TODO
 # 1) helper function for lines 28-255
 # 2) storing imports/projections: clean up code + location of where to store imports/projections
