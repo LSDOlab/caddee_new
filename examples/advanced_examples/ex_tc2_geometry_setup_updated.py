@@ -2,17 +2,46 @@
 import numpy as np
 import caddee.api as cd 
 import lsdo_geo as lg
+from lsdo_geo import IMPORT_FOLDER
 import m3l
 from python_csdl_backend import Simulator
-from caddee import IMPORTS_FILES_FOLDER
 import array_mapper as am
 import time
 from caddee import PROJECTIONS_FOLDER
 
 
-geometry = lg.import_geometry(IMPORTS_FILES_FOLDER / 'LPC_final_custom_blades.stp')
+# Importing and refitting the geometry
+geometry = lg.import_geometry(IMPORT_FOLDER / 'LPC_final_custom_blades.stp')
 geometry.refit(parallelize=True)
 geometry.plot()
+
+
+# Declaring all components
+comps_declaration_dict = dict(
+    fuselage='Fuselage_***.main',
+    wing='Wing',
+    weird_nose_hub='EngineGroup_10',
+    h_tail='Tail_1',
+    v_tail='Tail_2',
+    pp_disk='Rotor-9-disk',
+    pp_blade_1='Rotor_9_blades, 0',
+    pp_blade_2='Rotor_9_blades, 1',
+    pp_blade_3='Rotor_9_blades, 2',
+    pp_blade_4='Rotor_9_blades, 3',
+    pp_hub='Rotor_9_Hub',
+)
+
+comps = geometry.declare_multiple_components(comps_declaration_dict=comps_declaration_dict)
+
+
+# Making meshes
+num_spanwise_vlm = 25
+num_chordwise_vlm = 2
+
+wing_trailing_edge_parmetric = comps.wing.project(np.linspace(np.array([15., -26., 7.5]), np.array([15., 26., 7.5]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), plot=True)  
+wing_leading_edge_parametric = comps.wing.project(wing_trailing_edge.evaluate() - wing_surface_offset, direction=np.array([0., 0., -1.]), grid_search_n=50, plot=plot_wing_mesh)
+
+
 exit()
 # TODO
 # 1) helper function for lines 28-255
