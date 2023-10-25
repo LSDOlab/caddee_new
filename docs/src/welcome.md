@@ -38,5 +38,6 @@ src/getting_started
 src/background
 src/tutorials
 src/examples
+src/developer_guidelines
 src/api
 ```
