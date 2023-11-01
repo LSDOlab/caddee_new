@@ -80,7 +80,8 @@ class PavGeomMesh:
         }
         self.functions = {
             'wing_thickness': None,
-            'wing_displacement': None,
+            'wing_displacement_input': None,
+            'wing_displacement_output': None,
             'wing_force': None,
             'wing_cp': None
         }
@@ -121,7 +122,8 @@ class PavGeomMesh:
             left_wing_bottom_names = []
             left_wing_te_top_names = []
             left_wing_te_bottom_names = []
-            for i in range(22 + 172, 37 + 172):
+            # NOTE: The '+1' in the range upper bound was added later to correct an error
+            for i in range(22 + 172, 37 + 172+1):
                 surf_name = 'Wing_1_' + str(i)
                 left_wing_names.append(surf_name)
                 if i % 4 == 2:
@@ -191,6 +193,7 @@ class PavGeomMesh:
             self.geom_data['primitive_names']['left_wing_top_names'] = left_wing_top_names
             self.geom_data['primitive_names']['left_wing_bottom_names'] = left_wing_bottom_names
             self.geom_data['primitive_names']['right_wing'] = right_wing_names
+            self.geom_data['primitive_names']['both_wings'] = right_wing_names + left_wing_names
 
             self.geom_data['components']['wing_te'] = wing_te
             self.geom_data['components']['wing_oml'] = wing_oml
@@ -335,6 +338,7 @@ class PavGeomMesh:
 
         left_wing_names = self.geom_data['primitive_names']['left_wing']
         right_wing_names = self.geom_data['primitive_names']['right_wing']
+        both_wings_names = self.geom_data['primitive_names']['both_wings']
 
         if left_wing_shell_flag:
             structural_left_wing_names = self.geom_data['primitive_names']['structural_left_wing_names']
@@ -357,14 +361,18 @@ class PavGeomMesh:
             wing_stress = index_functions(structural_left_wing_names, 'wing_stress', space_t, 1)
             self.functions['wing_stress'] = wing_stress
 
-            # wing displacement function
+            # wing displacement input function
             order = 3
-            shape = 5
+            shape = 20
             space_u = lg.BSplineSpace(name='displacement_base_space',
                                       order=(order, order),
                                       control_points_shape=(shape, shape))
-            wing_displacement = index_functions(structural_left_wing_names, 'wing_displacement', space_u, 3)
-            self.functions['wing_displacement'] = wing_displacement
+            wing_displacement_input = index_functions(both_wings_names, 'wing_displacement_input', space_u, 3, value=np.zeros((shape, shape, 3)))
+            self.functions['wing_displacement_input'] = wing_displacement_input
+
+            # wing displacement output function (uses space of displacement input)
+            wing_displacement_output = index_functions(both_wings_names, 'wing_displacement_output', space_u, 3)
+            self.functions['wing_displacement_output'] = wing_displacement_output
 
         # wing force function
         num = 25
@@ -553,6 +561,7 @@ class PavGeomMesh:
             if debug_geom_flag:
                 spatial_rep.plot_meshes([wing_camber_surface])
             self.mesh_data['vlm']['chamber_surface']['wing'] = wing_camber_surface
+            self.mesh_data['vlm']['chamber_surface']['wing_undef'] = wing_camber_surface  # Added to include undeformed mesh in VLM solver
             self.mesh_data['vlm']['mesh_name']['wing'] = wing_vlm_mesh_name
 
             # Chord distribution
