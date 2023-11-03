@@ -31,15 +31,22 @@ comps_declaration_dict = dict(
     pp_hub='Rotor_9_Hub',
 )
 
+from dataclasses import dataclass, is_dataclass
 comps = geometry.declare_multiple_components(comps_declaration_dict=comps_declaration_dict)
-
-
+print(is_dataclass(comps))
+print(comps.fields)
 # Making meshes
 num_spanwise_vlm = 25
 num_chordwise_vlm = 2
 
+wing_surface_offset = np.zeros((num_spanwise_vlm, 3))
+wing_surface_offset[2:-2, 0] = 5.5
+wing_surface_offset[[0, -1], 0] = 1.1
+wing_surface_offset[[1, -2], 0] = 3
+wing_surface_offset[:, 2] = -1
+
 wing_trailing_edge_parmetric = comps.wing.project(np.linspace(np.array([15., -26., 7.5]), np.array([15., 26., 7.5]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), plot=True)  
-wing_leading_edge_parametric = comps.wing.project(wing_trailing_edge.evaluate() - wing_surface_offset, direction=np.array([0., 0., -1.]), grid_search_n=50, plot=plot_wing_mesh)
+wing_leading_edge_parametric = comps.wing.project(wing_trailing_edge_parmetric.value - wing_surface_offset, direction=np.array([0., 0., -1.]), grid_search_n=50, plot=True)
 
 
 exit()

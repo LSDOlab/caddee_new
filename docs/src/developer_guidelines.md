@@ -5,10 +5,10 @@ In this sectio we give examples for developers to connect their solvers to CADDE
 ## Solver requirements
 
 ### CSDL
-Since CADDEE leverages large-scale gradient-based sensitivity analysis, any solver should provide ways to compute derivatives. For the current version of CADDEE, this requirement must be met by implementing a sovler in the Computational System Design Language (CSDL) [CSDL](https://lsdolab.github.io/csdl/), which is a domain-embedded modeling language for multidisciplinary design optimization (MDO), which automates derivative computation. Future versions of CADDEE will support the integration of solvers written in any automatic differentation (AD) package.  
+Since CADDEE leverages large-scale gradient-based sensitivity analysis, any solver should provide ways to compute derivatives. For the current version of CADDEE, this requirement must be met by implementing a sovler in the Computational System Design Language [CSDL](https://lsdolab.github.io/csdl/), which is a domain-embedded modeling language for multidisciplinary design optimization (MDO), which automates derivative computation. Future versions of CADDEE will support the integration of solvers written in any automatic differentation (AD) package.  
 
 ### M3L
-In addition, a solver's front-end must be wrapped witin the multi-fidelity, multidisciplinary modeling (M3L) language [M3L](https://github.com/LSDOlab/m3l), which is a package for modularly specifying model data transfer. 
+In addition, a solver's front-end must be wrapped witin the multi-fidelity, multidisciplinary modeling language [M3L](https://github.com/LSDOlab/m3l), which is a package for modularly specifying model data transfer. 
 
 
 ### Specifying solver outputs 
