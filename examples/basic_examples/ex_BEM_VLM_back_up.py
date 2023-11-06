@@ -6,15 +6,15 @@ from python_csdl_backend import Simulator
 from modopt.scipy_library import SLSQP
 from modopt.csdl_library import CSDLProblem
 import lsdo_geo as lg
-from caddee import IMPORTS_FILES_FOLDER
+from caddee import GEOMETRY_FILES_FOLDER
 import time 
-from lsdo_rotor.core.BEM_caddee.BEM_caddee import BEM, BEMMesh
+from lsdo_rotor.core.BEM.BEM_caddee import BEM, BEMParameters
 from VAST.core.fluid_problem import FluidProblem
 from VAST.core.vast_solver import VASTFluidSover
 
 
 # Importing, refitting and plotting the geometry (plotting is optional)
-geometry = lg.import_geometry(IMPORTS_FILES_FOLDER  / 'test_prop_plus_wing_2.stp', parallelize=False)
+geometry = lg.import_geometry(GEOMETRY_FILES_FOLDER  / 'test_prop_plus_wing.stp', parallelize=False)
 geometry.refit(parallelize=True, num_coefficients=(10, 10))
 geometry.plot()
 
@@ -80,19 +80,18 @@ print(m3l.norm(thrust_vector).shape)
 print(thrust_unit_vector.value)
 
 
-bem_mesh = BEMMesh(
+bem_parameters = BEMParameters(
     num_blades=3,
     num_radial=25,
     num_tangential=1,
     airfoil='NACA_4412',
     use_custom_airfoil_ml=True,
-    use_rotor_geometry=False,
 )
 
 caddee = cd.CADDEE()
 caddee.system_model = system_model = cd.SystemModel()
 
-# m3l sizing model
+# m3l model
 m3l_model = m3l.Model()
 
 
@@ -142,10 +141,7 @@ m3l_model.register_output(vlm_outputs)
 # prop forces and moments
 bem_model = BEM(
     name='cruise_bem',
-    mesh=bem_mesh,
-    blade_prefix='blade',
-    disk_prefix='disk_p',
-    disk_suffix='disk_s',
+    BEM_parameters=bem_parameters,
     num_nodes=1,
 )
 

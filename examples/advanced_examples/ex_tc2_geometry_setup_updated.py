@@ -17,7 +17,7 @@ geometry.plot()
 
 
 # Declaring all components
-comps_declaration_dict = dict(
+components_dict = dict(
     fuselage='Fuselage_***.main',
     wing='Wing',
     weird_nose_hub='EngineGroup_10',
@@ -31,13 +31,23 @@ comps_declaration_dict = dict(
     pp_hub='Rotor_9_Hub',
 )
 
-from dataclasses import dataclass, is_dataclass
-comps = geometry.declare_multiple_components(comps_declaration_dict=comps_declaration_dict)
-print(is_dataclass(comps))
-print(comps.fields)
+wing = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
+h_tail = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
+v_tail = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
+fuselage = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
+pp_disk = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
+pp_blade_1 = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
+pp_blade_2 = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
+pp_blade_3 = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
+pp_blade_4 = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
+pp_hub = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
+
+comps = geometry.declare_multiple_components(components_dict=components_dict)
 # Making meshes
 num_spanwise_vlm = 25
 num_chordwise_vlm = 2
+
+plot=False
 
 wing_surface_offset = np.zeros((num_spanwise_vlm, 3))
 wing_surface_offset[2:-2, 0] = 5.5
@@ -45,8 +55,27 @@ wing_surface_offset[[0, -1], 0] = 1.1
 wing_surface_offset[[1, -2], 0] = 3
 wing_surface_offset[:, 2] = -1
 
-wing_trailing_edge_parmetric = comps.wing.project(np.linspace(np.array([15., -26., 7.5]), np.array([15., 26., 7.5]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), plot=True)  
-wing_leading_edge_parametric = comps.wing.project(wing_trailing_edge_parmetric.value - wing_surface_offset, direction=np.array([0., 0., -1.]), grid_search_n=50, plot=True)
+wing = comps.wing
+
+wing_te_parametric = comps.wing.project(np.linspace(np.array([15., -26., 7.5]), np.array([15., 26., 7.5]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), plot=plot)  
+wing_te_coord = geometry.evaluate(wing_te_parametric).reshape((-1, 3))
+wing_le_parametric = comps.wing.project(wing_te_coord.value - wing_surface_offset, direction=np.array([0., 0., -1.]), grid_search_density_parameter=50, plot=plot)
+wing_le_coord = geometry.evaluate(wing_le_parametric).reshape((-1, 3))
+
+
+# Get a chord curface mesh (i.e., a linspace between the leading and trailing edge)
+wing_chord_surface = m3l.linspace(wing_le_coord, wing_te_coord, num_chordwise_vlm)
+
+# Projecting the 2-D array onto the upper and lower surface of the wing to get the camber surface mesh
+wing_upper_surface_wireframe_parametric = wing.project(wing_chord_surface.value + np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_density_parameter=25, plot=True)
+wing_lower_surface_wireframe_parametric = wing.project(wing_chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., -1.]), grid_search_density_parameter=25, plot=True)
+wing_upper_surface_wireframe = geometry.evaluate(wing_upper_surface_wireframe_parametric).reshape((num_chordwise_vlm, num_spanwise_vlm, 3))
+wing_lower_surface_wireframe = geometry.evaluate(wing_lower_surface_wireframe_parametric).reshape((num_chordwise_vlm, num_spanwise_vlm, 3))
+
+wing_camber_surface = m3l.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1)#.reshape((-1, 3))
+
+# Optionally, the resulting camber surface mesh can be plotted
+geometry.plot_meshes(meshes=wing_camber_surface, mesh_plot_types=['wireframe'], mesh_opacity=1., mesh_color='#F5F0E6')
 
 
 exit()
