@@ -4,78 +4,200 @@ import caddee.api as cd
 import lsdo_geo as lg
 from lsdo_geo import IMPORT_FOLDER
 import m3l
-from python_csdl_backend import Simulator
-import array_mapper as am
-import time
-from caddee import PROJECTIONS_FOLDER
+from caddee.utils.helper_functions.geometry_helpers import make_rotor_mesh, make_vlm_camber_mesh, make_1d_box_beam_mesh, BladeParameters
 
 
 # Importing and refitting the geometry
 geometry = lg.import_geometry(IMPORT_FOLDER / 'LPC_final_custom_blades.stp')
 geometry.refit(parallelize=True)
-geometry.plot()
+# geometry.plot()
 
 
-# Declaring all components
-components_dict = dict(
-    fuselage='Fuselage_***.main',
-    wing='Wing',
-    weird_nose_hub='EngineGroup_10',
-    h_tail='Tail_1',
-    v_tail='Tail_2',
-    pp_disk='Rotor-9-disk',
-    pp_blade_1='Rotor_9_blades, 0',
-    pp_blade_2='Rotor_9_blades, 1',
-    pp_blade_3='Rotor_9_blades, 2',
-    pp_blade_4='Rotor_9_blades, 3',
-    pp_hub='Rotor_9_Hub',
-)
+# region Declaring all components
+# Wing, tails, fuselage
+wing = geometry.declare_component(component_name='wing', b_spline_search_names=['Wing'])
+h_tail = geometry.declare_component(component_name='h_tail', b_spline_search_names=['Tail_1'])
+v_tail = geometry.declare_component(component_name='v_tail', b_spline_search_names=['Tail_2'])
+fuselage = geometry.declare_component(component_name='fuselage', b_spline_search_names=['Fuselage_***.main'])
 
-wing = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
-h_tail = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
-v_tail = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
-fuselage = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
-pp_disk = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
-pp_blade_1 = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
-pp_blade_2 = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
-pp_blade_3 = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
-pp_blade_4 = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
-pp_hub = geometry.declare_component(component_name='Wing', b_spline_search_names=['Wing'])
+# Nose hub
+nose_hub = geometry.declare_component(component_name='weird_nose_hub', b_spline_search_names=['EngineGroup_10'])
 
-comps = geometry.declare_multiple_components(components_dict=components_dict)
-# Making meshes
+# Pusher prop
+pp_disk = geometry.declare_component(component_name='pp_disk', b_spline_search_names=['Rotor-9-disk'])
+pp_blade_1 = geometry.declare_component(component_name='pp_blade_1', b_spline_search_names=['Rotor_9_blades, 0'])
+pp_blade_2 = geometry.declare_component(component_name='pp_blade_2', b_spline_search_names=['Rotor_9_blades, 1'])
+pp_blade_3 = geometry.declare_component(component_name='pp_blade_3', b_spline_search_names=['Rotor_9_blades, 2'])
+pp_blade_4 = geometry.declare_component(component_name='pp_blade_4', b_spline_search_names=['Rotor_9_blades, 3'])
+pp_hub = geometry.declare_component(component_name='pp_hub', b_spline_search_names=['Rotor_9_Hub'])
+
+# Rotor: rear left outer
+rlo_disk = geometry.declare_component(component_name='rlo_disk', b_spline_search_names=['Rotor_2_disk'])
+rlo_blade_1 = geometry.declare_component(component_name='rlo_blade_1', b_spline_search_names=['Rotor_2_blades, 0'])
+rlo_blade_2 = geometry.declare_component(component_name='rlo_blade_2', b_spline_search_names=['Rotor_2_blades, 1'])
+rlo_hub = geometry.declare_component(component_name='rlo_hub', b_spline_search_names=['Rotor_2_Hub'])
+rlo_boom = geometry.declare_component(component_name='rlo_boom', b_spline_search_names=['Rotor_2_Support'])
+
+# Rotor: rear left inner
+rli_disk = geometry.declare_component(component_name='rli_disk', b_spline_search_names=['Rotor_4_disk'])
+rli_blade_1 = geometry.declare_component(component_name='rli_blade_1', b_spline_search_names=['Rotor_4_blades, 0'])
+rli_blade_2 = geometry.declare_component(component_name='rli_blade_2', b_spline_search_names=['Rotor_4_blades, 1'])
+rli_hub = geometry.declare_component(component_name='rli_hub', b_spline_search_names=['Rotor_4_Hub'])
+rli_boom = geometry.declare_component(component_name='rli_boom', b_spline_search_names=['Rotor_4_Support'])
+
+# Rotor: rear right inner
+rri_disk = geometry.declare_component(component_name='rri_disk', b_spline_search_names=['Rotor_6_disk'])
+rri_blade_1 = geometry.declare_component(component_name='rri_blade_1', b_spline_search_names=['Rotor_6_blades, 0'])
+rri_blade_2 = geometry.declare_component(component_name='rri_blade_2', b_spline_search_names=['Rotor_6_blades, 1'])
+rri_hub = geometry.declare_component(component_name='rri_hub', b_spline_search_names=['Rotor_6_Hub'])
+rri_boom = geometry.declare_component(component_name='rri_boom', b_spline_search_names=['Rotor_6_Support'])
+
+# Rotor: rear right outer
+rro_disk = geometry.declare_component(component_name='rro_disk', b_spline_search_names=['Rotor_8_disk'])
+rro_blade_1 = geometry.declare_component(component_name='rro_blade_1', b_spline_search_names=['Rotor_8_blades, 0'])
+rro_blade_2 = geometry.declare_component(component_name='rro_blade_2', b_spline_search_names=['Rotor_8_blades, 1'])
+rro_hub = geometry.declare_component(component_name='rro_hub', b_spline_search_names=['Rotor_8_Hub'])
+rro_boom = geometry.declare_component(component_name='rro_boom', b_spline_search_names=['Rotor_8_Support'])
+
+# Rotor: front left outer
+flo_disk = geometry.declare_component(component_name='flo_disk', b_spline_search_names=['Rotor_1_disk'])
+flo_blade_1 = geometry.declare_component(component_name='flo_blade_1', b_spline_search_names=['Rotor_1_blades, 0'])
+flo_blade_2 = geometry.declare_component(component_name='flo_blade_2', b_spline_search_names=['Rotor_1_blades, 1'])
+flo_hub = geometry.declare_component(component_name='flo_hub', b_spline_search_names=['Rotor_1_Hub'])
+flo_boom = geometry.declare_component(component_name='flo_boom', b_spline_search_names=['Rotor_1_Support'])
+
+# Rotor: front left inner
+fli_disk = geometry.declare_component(component_name='fli_disk', b_spline_search_names=['Rotor_3_disk'])
+fli_blade_1 = geometry.declare_component(component_name='fli_blade_1', b_spline_search_names=['Rotor_3_blades, 0'])
+fli_blade_2 = geometry.declare_component(component_name='fli_blade_2', b_spline_search_names=['Rotor_3_blades, 1'])
+fli_hub = geometry.declare_component(component_name='fli_hub', b_spline_search_names=['Rotor_3_Hub'])
+fli_boom = geometry.declare_component(component_name='fli_boom', b_spline_search_names=['Rotor_3_Support'])
+
+# Rotor: front right inner
+fri_disk = geometry.declare_component(component_name='fri_disk', b_spline_search_names=['Rotor_5_disk'])
+fri_blade_1 = geometry.declare_component(component_name='fri_blade_1', b_spline_search_names=['Rotor_5_blades, 0'])
+fri_blade_2 = geometry.declare_component(component_name='fri_blade_2', b_spline_search_names=['Rotor_5_blades, 1'])
+fri_hub = geometry.declare_component(component_name='fri_hub', b_spline_search_names=['Rotor_5_Hub'])
+fri_boom = geometry.declare_component(component_name='fri_boom', b_spline_search_names=['Rotor_5_Support'])
+
+# Rotor: front right outer
+fro_disk = geometry.declare_component(component_name='fro_disk', b_spline_search_names=['Rotor_7_disk'])
+fro_blade_1 = geometry.declare_component(component_name='fro_blade_1', b_spline_search_names=['Rotor_7_blades, 0'])
+fro_blade_2 = geometry.declare_component(component_name='fro_blade_2', b_spline_search_names=['Rotor_7_blades, 1'])
+fro_hub = geometry.declare_component(component_name='fro_hub', b_spline_search_names=['Rotor_7_Hub'])
+fro_boom = geometry.declare_component(component_name='fro_boom', b_spline_search_names=['Rotor_7_Support'])
+# endregion
+
+
+# region Making meshes
+# Wing 
 num_spanwise_vlm = 25
 num_chordwise_vlm = 2
 
-plot=False
+wing_te_right=np.array([13.4, 25.250, 7.5])
+wing_te_left=np.array([13.4, -25.250, 7.5])
+wing_te_center=np.array([14.332, 0., 8.439])
+wing_le_left=np.array([12.356, -25.25, 7.618])
+wing_le_right=np.array([12.356, 25.25, 7.618])
+wing_le_center=np.array([8.892, 0., 8.633])
 
-wing_surface_offset = np.zeros((num_spanwise_vlm, 3))
-wing_surface_offset[2:-2, 0] = 5.5
-wing_surface_offset[[0, -1], 0] = 1.1
-wing_surface_offset[[1, -2], 0] = 3
-wing_surface_offset[:, 2] = -1
+wing_vlm_mesh = make_vlm_camber_mesh(
+    geometry=geometry,
+    wing_component=wing,
+    num_spanwise=num_spanwise_vlm,
+    num_chordwise=num_chordwise_vlm,
+    te_right=wing_te_right,
+    te_left=wing_te_left,
+    te_center=wing_te_center,
+    le_left=wing_le_left,
+    le_right=wing_le_right,
+    le_center=wing_le_center,
+)
 
-wing = comps.wing
 
-wing_te_parametric = comps.wing.project(np.linspace(np.array([15., -26., 7.5]), np.array([15., 26., 7.5]), num_spanwise_vlm), direction=np.array([0., 0., -1.]), plot=plot)  
-wing_te_coord = geometry.evaluate(wing_te_parametric).reshape((-1, 3))
-wing_le_parametric = comps.wing.project(wing_te_coord.value - wing_surface_offset, direction=np.array([0., 0., -1.]), grid_search_density_parameter=50, plot=plot)
-wing_le_coord = geometry.evaluate(wing_le_parametric).reshape((-1, 3))
+# tail mesh
+num_spanwise_vlm_htail = 8
+num_chordwise_vlm_htail = 2
+
+tail_vlm_mesh = make_vlm_camber_mesh(
+    geometry=geometry,
+    wing_component=h_tail,
+    num_spanwise=num_spanwise_vlm_htail,
+    num_chordwise=num_chordwise_vlm_htail,
+    te_right=np.array([31.5, 6.75, 6.]),
+    te_left=np.array([31.5, -6.75, 6.]),
+    le_right=np.array([26.5, 6.75, 6.]),
+    le_left=np.array([26.5, -6.75, 6.]),
+)
 
 
-# Get a chord curface mesh (i.e., a linspace between the leading and trailing edge)
-wing_chord_surface = m3l.linspace(wing_le_coord, wing_te_coord, num_chordwise_vlm)
+# wing beam mesh
+num_wing_beam = 21
 
-# Projecting the 2-D array onto the upper and lower surface of the wing to get the camber surface mesh
-wing_upper_surface_wireframe_parametric = wing.project(wing_chord_surface.value + np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_density_parameter=25, plot=True)
-wing_lower_surface_wireframe_parametric = wing.project(wing_chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., -1.]), grid_search_density_parameter=25, plot=True)
-wing_upper_surface_wireframe = geometry.evaluate(wing_upper_surface_wireframe_parametric).reshape((num_chordwise_vlm, num_spanwise_vlm, 3))
-wing_lower_surface_wireframe = geometry.evaluate(wing_lower_surface_wireframe_parametric).reshape((num_chordwise_vlm, num_spanwise_vlm, 3))
+box_beam_mesh = make_1d_box_beam_mesh(
+    geometry=geometry,
+    wing_component=wing,
+    num_beam_nodes=num_wing_beam,
+    te_right=wing_te_right,
+    te_left=wing_te_left,
+    te_center=wing_te_center,
+    le_left=wing_le_left,
+    le_right=wing_le_right,
+    le_center=wing_le_center,
+    beam_width=0.5,
+    node_center=0.5,
+)
 
-wing_camber_surface = m3l.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1)#.reshape((-1, 3))
+# Rotor meshes
+num_radial = 30
+num_spanwise_vlm_rotor = 8
+num_chord_vlm_rotor = 2
 
-# Optionally, the resulting camber surface mesh can be plotted
-geometry.plot_meshes(meshes=wing_camber_surface, mesh_plot_types=['wireframe'], mesh_opacity=1., mesh_color='#F5F0E6')
+blade_1_params = BladeParameters(
+    blade_component=pp_blade_1,
+    point_on_leading_edge=np.array([32.150, 2.864, 8.225]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+blade_2_params = BladeParameters(
+    blade_component=pp_blade_2,
+    point_on_leading_edge=np.array([32.187, -0.421, 10.326]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+blade_3_params = BladeParameters(
+    blade_component=pp_blade_3,
+    point_on_leading_edge=np.array([32.187, -2.536, 7.369]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+blade_4_params = BladeParameters(
+    blade_component=pp_blade_4,
+    point_on_leading_edge=np.array([32.219, 0.388, 5.581]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+pp_mesh = make_rotor_mesh(
+    geometry=geometry,
+    num_radial=num_radial,
+    disk_component=pp_disk,
+    origin=np.array([32.625, 0., 7.79]),
+    y1=np.array([31.94, 0.00, 3.29]),
+    y2=np.array([31.94, 0.00, 12.29]),
+    z1=np.array([31.94, -4.50, 7.78]),
+    z2=np.array([31.94, 4.45, 7.77]),
+    blade_geometry_parameters=[blade_1_params, blade_2_params, blade_3_params, blade_4_params],
+    create_disk_mesh=True,
+)
+
+
+
+
+# endregion
 
 
 exit()
