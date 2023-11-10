@@ -30,3 +30,6 @@ from caddee.core.csdl_core.system_model_csdl.submodels.power_density_based_motor
 from caddee.core.csdl_core.system_model_csdl.energy_group_csdl.design_condition_energy_m3l import EnergyModelM3L
 from caddee.core.csdl_core.system_model_csdl.energy_group_csdl.total_energy_m3l import TotalEnergyModelM3L
 from caddee.core.csdl_core.system_model_csdl.energy_group_csdl.final_SoC_m3l import SOCModelM3L
+
+from caddee.utils.helper_functions.geometry_helpers import make_rotor_mesh, make_vlm_camber_mesh, make_1d_box_beam_mesh, BladeParameters
+

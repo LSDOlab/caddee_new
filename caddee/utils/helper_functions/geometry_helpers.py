@@ -122,7 +122,7 @@ def make_rotor_mesh(
                 raise ValueError(f"Odd number for 'num_spanwise_vlm' not yet implemented. Must be even number for now")
             num_chordwise = blade.num_chordwise_vlm
 
-            b_spline_patch = comp.project(p_o_le, plot=False)[0][0]
+            b_spline_patch = comp.project(p_o_le, plot=plot)[0][0]
 
             if counter == 0:
 
@@ -159,7 +159,8 @@ def make_rotor_mesh(
 
                 le = geometry.evaluate(le_list).reshape((-1, 3))
                 te = geometry.evaluate(te_list).reshape((-1, 3))
-                le_minus_te = le-te
+                # le_minus_te = le-te
+                le_minus_te = te-le
 
                 normal_exp = m3l.expand(thrust_unit_vector, new_shape=(num_radial, 3), indices='i->ji')
                 twist_profile = np.pi/2 - m3l.arccos(m3l.dot(normal_exp, le_minus_te, axis=1)/ m3l.norm(le_minus_te, axes=(1, )))
@@ -181,13 +182,13 @@ def make_rotor_mesh(
                 le_vlm = geometry.evaluate(le_list_vlm).reshape((-1, 3))
                 te_vlm = geometry.evaluate(te_list_vlm).reshape((-1, 3))
 
-                chord_surface = m3l.linspace(le_vlm, te_vlm, num_chordwise).reshape((-1, 3))
+                chord_surface = m3l.linspace(le_vlm, te_vlm, num_chordwise)# .reshape((-1, 3))
                 if num_chordwise > 2:
-                    upper_surface = geometry.evaluate(comp.project(chord_surface.value + thrust_vector.value, direction=thrust_unit_vector.value, plot=plot)).reshape((-1, 3))
-                    lower_surface = geometry.evaluate(comp.project(chord_surface.value - thrust_vector.value, direction=-1 * thrust_unit_vector.value, plot=plot)).reshape((-1, 3))
+                    upper_surface = geometry.evaluate(comp.project(chord_surface.value + thrust_vector.value, direction=thrust_unit_vector.value, plot=plot)).reshape((num_chordwise, num_spanwise, 3))
+                    lower_surface = geometry.evaluate(comp.project(chord_surface.value - thrust_vector.value, direction=-1 * thrust_unit_vector.value, plot=plot)).reshape((num_chordwise, num_spanwise, 3))
                     camber_surface = m3l.linspace(upper_surface, lower_surface, 1)
                 else: 
-                    camber_surface = chord_surface
+                    camber_surface = chord_surface.reshape((num_chordwise, num_spanwise, 3))
 
                 if plot:
                     geometry.plot_meshes(meshes=camber_surface, mesh_plot_types=['wireframe'], mesh_opacity=1., mesh_color='#F5F0E6')

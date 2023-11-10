@@ -2,13 +2,13 @@
 import numpy as np
 import caddee.api as cd 
 import lsdo_geo as lg
-from lsdo_geo import IMPORT_FOLDER
 import m3l
+from caddee import GEOMETRY_FILES_FOLDER
 from caddee.utils.helper_functions.geometry_helpers import make_rotor_mesh, make_vlm_camber_mesh, make_1d_box_beam_mesh, BladeParameters
 
 
 # Importing and refitting the geometry
-geometry = lg.import_geometry(IMPORT_FOLDER / 'LPC_final_custom_blades.stp')
+geometry = lg.import_geometry(GEOMETRY_FILES_FOLDER / 'LPC_final_custom_blades_3.stp', parallelize=True)
 geometry.refit(parallelize=True)
 # geometry.plot()
 
@@ -88,7 +88,6 @@ fro_hub = geometry.declare_component(component_name='fro_hub', b_spline_search_n
 fro_boom = geometry.declare_component(component_name='fro_boom', b_spline_search_names=['Rotor_7_Support'])
 # endregion
 
-
 # region Making meshes
 # Wing 
 num_spanwise_vlm = 25
@@ -153,30 +152,31 @@ num_radial = 30
 num_spanwise_vlm_rotor = 8
 num_chord_vlm_rotor = 2
 
+# Pusher prop
 blade_1_params = BladeParameters(
     blade_component=pp_blade_1,
-    point_on_leading_edge=np.array([32.150, 2.864, 8.225]),
+    point_on_leading_edge=np.array([31.649, 2.209, 7.411]),
     num_spanwise_vlm=num_spanwise_vlm_rotor,
     num_chordwise_vlm=num_chord_vlm_rotor,
 )
 
 blade_2_params = BladeParameters(
     blade_component=pp_blade_2,
-    point_on_leading_edge=np.array([32.187, -0.421, 10.326]),
+    point_on_leading_edge=np.array([31.704, 0.421, 10.654]),
     num_spanwise_vlm=num_spanwise_vlm_rotor,
     num_chordwise_vlm=num_chord_vlm_rotor,
 )
 
 blade_3_params = BladeParameters(
     blade_component=pp_blade_3,
-    point_on_leading_edge=np.array([32.187, -2.536, 7.369]),
+    point_on_leading_edge=np.array([31.853, -2.536, 8.270]),
     num_spanwise_vlm=num_spanwise_vlm_rotor,
     num_chordwise_vlm=num_chord_vlm_rotor,
 )
 
 blade_4_params = BladeParameters(
     blade_component=pp_blade_4,
-    point_on_leading_edge=np.array([32.219, 0.388, 5.581]),
+    point_on_leading_edge=np.array([31.672, -0.408, 5.254]),
     num_spanwise_vlm=num_spanwise_vlm_rotor,
     num_chordwise_vlm=num_chord_vlm_rotor,
 )
@@ -192,9 +192,248 @@ pp_mesh = make_rotor_mesh(
     z2=np.array([31.94, 4.45, 7.77]),
     blade_geometry_parameters=[blade_1_params, blade_2_params, blade_3_params, blade_4_params],
     create_disk_mesh=True,
+    plot=False,
 )
 
 
+# Rear left outer
+rlo_blade_1_params = BladeParameters(
+    blade_component=rlo_blade_1,
+    point_on_leading_edge=np.array([22.018, -19.243, 9.236]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+rlo_blade_2_params = BladeParameters(
+    blade_component=rlo_blade_2,
+    point_on_leading_edge=np.array([16.382, -18.257, 9.236]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+rlo_mesh = make_rotor_mesh(
+    geometry=geometry,
+    num_radial=num_radial,
+    disk_component=rlo_disk,
+    origin=np.array([19.2, -18.75, 9.01]),
+    y1=np.array([19.2, -13.75, 9.01]),
+    y2=np.array([19.2, -23.75, 9.01]),
+    z1=np.array([14.2, -18.75, 9.01]),
+    z2=np.array([24.2, -18.75, 9.01]),
+    blade_geometry_parameters=[rlo_blade_1_params, rlo_blade_2_params],
+    create_disk_mesh=True,
+    plot=False,
+)
+
+
+# Rear right outer 
+rro_blade_1_params = BladeParameters(
+    blade_component=rro_blade_1,
+    point_on_leading_edge=np.array([16.382, 18.257, 9.236]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+rro_blade_2_params = BladeParameters(
+    blade_component=rro_blade_2,
+    point_on_leading_edge=np.array([22.018, 19.195, 9.248]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+rro_mesh = make_rotor_mesh(
+    geometry=geometry,
+    num_radial=num_radial,
+    disk_component=rro_disk,
+    origin=np.array([19.2, 18.75, 9.01]),
+    y1=np.array([19.2, 23.75, 9.01]),
+    y2=np.array([19.2, 13.75, 9.01]),
+    z1=np.array([14.2, 18.75, 9.01]),
+    z2=np.array([24.2, 18.75, 9.01]),
+    blade_geometry_parameters=[rro_blade_1_params, rro_blade_2_params],
+    create_disk_mesh=True,
+    plot=False,
+)
+
+
+# Front left outer 
+flo_blade_1_params = BladeParameters(
+    blade_component=flo_blade_1,
+    point_on_leading_edge=np.array([7.888, -19.243, 6.956]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+flo_blade_2_params = BladeParameters(
+    blade_component=flo_blade_2,
+    point_on_leading_edge=np.array([2.252, -18.257, 6.956]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+flo_mesh = make_rotor_mesh(
+    geometry=geometry,
+    num_radial=num_radial,
+    disk_component=flo_disk,
+    origin=np.array([5.07, -18.75, 6.73]),
+    y1=np.array([5.070, -13.750, 6.730]),
+    y2=np.array([5.070, -23.750, 6.730]),
+    z1=np.array([0.070, -18.750, 6.730]),
+    z2=np.array([10.070, -18.750, 6.730]),
+    blade_geometry_parameters=[flo_blade_1_params, flo_blade_2_params],
+    create_disk_mesh=True,
+    plot=False,
+)
+
+# Front right outer 
+fro_blade_1_params = BladeParameters(
+    blade_component=fro_blade_1,
+    point_on_leading_edge=np.array([2.252, 18.257, 6.956]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+fro_blade_2_params = BladeParameters(
+    blade_component=fro_blade_2,
+    point_on_leading_edge=np.array([7.888, 19.243, 6.956]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+fro_mesh = make_rotor_mesh(
+    geometry=geometry,
+    num_radial=num_radial,
+    disk_component=fro_disk,
+    origin=np.array([5.07, 18.75, 6.73]),
+    y1=np.array([5.070, 23.750, 6.730]),
+    y2=np.array([5.070, 13.750, 6.730]),
+    z1=np.array([0.070, 18.750, 6.730]),
+    z2=np.array([10.070, 18.750, 6.730]),
+    blade_geometry_parameters=[fro_blade_1_params, fro_blade_2_params],
+    create_disk_mesh=True,
+    plot=False,
+)
+
+# Rear left inner
+rli_blade_1_params = BladeParameters(
+    blade_component=rli_blade_1,
+    point_on_leading_edge=np.array([15.578, -8.969, 9.437]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+rli_blade_2_params = BladeParameters(
+    blade_component=rli_blade_2,
+    point_on_leading_edge=np.array([21.578, -7.993, 9.593]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+rli_mesh = make_rotor_mesh(
+    geometry=geometry,
+    num_radial=num_radial,
+    disk_component=rli_disk,
+    origin=np.array([18.760, -8.537, 9.919]),
+    y1=np.array([18.760, -3.499, 9.996]),
+    y2=np.array([18.760, -13.401, 8.604]),
+    z1=np.array([13.760, -8.450, 9.300]),
+    z2=np.array([23.760, -8.450, 9.300]),
+    blade_geometry_parameters=[rli_blade_1_params, rli_blade_2_params],
+    create_disk_mesh=True,
+    plot=False,
+)
+
+
+# Rear right inner
+rri_blade_1_params = BladeParameters(
+    blade_component=rri_blade_1,
+    point_on_leading_edge=np.array([15.578, 8.969, 9.437]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+rri_blade_2_params = BladeParameters(
+    blade_component=rri_blade_2,
+    point_on_leading_edge=np.array([21.942, 7.989, 9.575]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+rri_mesh = make_rotor_mesh(
+    geometry=geometry,
+    num_radial=num_radial,
+    disk_component=rri_disk,
+    origin=np.array([18.760, 8.537, 9.919]),
+    y1=np.array([18.760, 13.401, 8.604]),
+    y2=np.array([18.760, 3.499, 9.996]),
+    z1=np.array([13.760, 8.450, 9.300]),
+    z2=np.array([23.760, 8.450, 9.300]),
+    blade_geometry_parameters=[rri_blade_1_params, rri_blade_2_params],
+    create_disk_mesh=True,
+    plot=False,
+)
+
+# Front left inner
+fli_blade_1_params = BladeParameters(
+    blade_component=fli_blade_1,
+    point_on_leading_edge=np.array([2.175, -8.634, 7.208]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+fli_blade_2_params = BladeParameters(
+    blade_component=fli_blade_2,
+    point_on_leading_edge=np.array([7.085, -7.692, 7.341]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+fli_mesh = make_rotor_mesh(
+    geometry=geometry,
+    num_radial=num_radial,
+    disk_component=fli_disk,
+    origin=np.array([4.630, -8.217, 7.659]),
+    y1=np.array([4.630, -3.179, 7.736]),
+    y2=np.array([4.630, -13.081, 6.344]),
+    z1=np.array([-0.370, -8.130, 7.040]),
+    z2=np.array([9.630, -8.130, 7.040]),
+    blade_geometry_parameters=[fli_blade_1_params, fli_blade_2_params],
+    create_disk_mesh=True,
+    plot=False,
+)
+
+# Front right inner
+fri_blade_1_params = BladeParameters(
+    blade_component=fri_blade_1,
+    point_on_leading_edge=np.array([7.448, 7.673, 7.333]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+fri_blade_2_params = BladeParameters(
+    blade_component=fri_blade_2,
+    point_on_leading_edge=np.array([1.085, 8.626, 7.155]),
+    num_spanwise_vlm=num_spanwise_vlm_rotor,
+    num_chordwise_vlm=num_chord_vlm_rotor,
+)
+
+fri_mesh = make_rotor_mesh(
+    geometry=geometry,
+    num_radial=num_radial,
+    disk_component=fri_disk,
+    origin=np.array([4.630, 8.217, 7.659]), 
+    y1=np.array([4.630, 13.081, 6.344]),
+    y2=np.array([4.630, 3.179, 7.736]),
+    z1=np.array([-0.370, 8.130, 7.040]),
+    z2=np.array([9.630, 8.130, 7.040]),
+    blade_geometry_parameters=[fri_blade_1_params, fri_blade_2_params],
+    create_disk_mesh=True,
+    plot=False,
+)
+
+
+
+exit()
 
 
 # endregion
