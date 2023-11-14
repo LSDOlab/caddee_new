@@ -456,6 +456,8 @@ cruise_structural_wing_mesh_displacements, cruise_structural_wing_mesh_rotations
 
 system_m3l_model.register_output(cruise_structural_wing_mesh_displacements, plus_3g_condition)
 
+
+
 from m3l.utils.utils import index_functions
 nodal_displacment = ebbeam.EBBeamNodalDisplacements(component=wing, beam_mesh=beam_mesh, beams=beams)
 surface_names = list(wing.get_primitives().keys())

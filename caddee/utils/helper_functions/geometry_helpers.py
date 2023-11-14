@@ -4,22 +4,9 @@ from dataclasses import dataclass, field
 import lsdo_geo as lg
 from scipy.interpolate import interp1d
 from typing import List
+from lsdo_rotor import RotorMeshes
 
 
-@dataclass
-class RotorMeshes:
-    """
-    Data class for rotor meshes
-    """
-    thrust_origin : m3l.Variable
-    thrust_vector : m3l.Variable
-    radius : m3l.Variable
-    in_plane_1 : m3l.Variable
-    in_plane_2 : m3l.Variable
-    disk_mesh : m3l.Variable = None
-    chord_profile : m3l.Variable = None
-    twist_profile : m3l.Variable = None
-    vlm_meshes : List[m3l.Variable] = field(default_factory=list)
 
 
 @dataclass
@@ -42,6 +29,13 @@ class SimpleBoxBeamMesh:
     width : m3l.Variable
     beam_nodes : m3l.Variable
 
+
+@ dataclass
+class LiftingSurfaceMeshes:
+    """Data class for wing meshes"""
+    vlm_mesh : m3l.Variable
+    oml_mesh : m3l.Variable
+    ml_mesh : m3l.Variable = None
 
 
 def make_rotor_mesh(
@@ -118,8 +112,7 @@ def make_rotor_mesh(
             comp = blade.blade_component
             p_o_le = blade.point_on_leading_edge
             num_spanwise = blade.num_spanwise_vlm
-            if num_spanwise %2 != 0:
-                raise ValueError(f"Odd number for 'num_spanwise_vlm' not yet implemented. Must be even number for now")
+            
             num_chordwise = blade.num_chordwise_vlm
 
             b_spline_patch = comp.project(p_o_le, plot=plot)[0][0]
@@ -148,7 +141,6 @@ def make_rotor_mesh(
 
 
                 linspace_parametric = np.hstack((np.linspace(0, 0.55, int(num_radial/2)), np.linspace(0.7, 1, int(num_radial/2))))
-                linspace_parametric_vlm = np.hstack((np.linspace(0, 0.55, int(num_spanwise/2)), np.linspace(0.7, 1, int(num_spanwise/2))))
                 le_list = []
                 te_list = []
 
@@ -173,6 +165,10 @@ def make_rotor_mesh(
                 rotor_mesh.twist_profile = twist_profile
 
             if num_spanwise is not None:
+                if num_spanwise %2 != 0:
+                    raise ValueError(f"Odd number for 'num_spanwise_vlm' not yet implemented. Must be even number for now")
+                linspace_parametric_vlm = np.hstack((np.linspace(0, 0.55, int(num_spanwise/2)), np.linspace(0.7, 1, int(num_spanwise/2))))
+
                 le_list_vlm = []
                 te_list_vlm = []
                 for i in range(num_spanwise):
@@ -218,7 +214,8 @@ def make_vlm_camber_mesh(
         grid_search_density_parameter : int = 50,
         le_interp : str = 'ellipse',
         te_interp : str = 'ellipse',
-) -> m3l.Variable: 
+        parametric_mesh_grid_num : int = 20,
+) -> LiftingSurfaceMeshes: 
     """
     Helper function to create a VLM camber mesh
     """
@@ -307,6 +304,9 @@ def make_vlm_camber_mesh(
 
     wing_upper_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value + np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_density_parameter=25, plot=plot)
     wing_lower_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., -1.]), grid_search_density_parameter=25, plot=plot)
+   
+    # actuated_geometry = geometry.rotate(...)
+   
     wing_upper_surface_wireframe = geometry.evaluate(wing_upper_surface_wireframe_parametric).reshape((num_chordwise, num_spanwise, 3))
     wing_lower_surface_wireframe = geometry.evaluate(wing_lower_surface_wireframe_parametric).reshape((num_chordwise, num_spanwise, 3))
 
@@ -315,7 +315,23 @@ def make_vlm_camber_mesh(
         geometry.plot_meshes(meshes=wing_camber_surface, mesh_plot_types=['wireframe'], mesh_opacity=1., mesh_color='#F5F0E6')
 
 
-    return wing_camber_surface
+    # OML parametric mesh
+    surfaces = wing_component.b_spline_names
+    oml_para_mesh = []
+    for name in surfaces:
+        for u in np.linspace(0,1,parametric_mesh_grid_num):
+            for v in np.linspace(0,1,parametric_mesh_grid_num):
+                oml_para_mesh.append((name, np.array([u,v]).reshape((1,2))))
+
+    oml_mesh = geometry.evaluate(oml_para_mesh).reshape((-1, 3))
+    # print(oml_mesh.shape)
+    # exit()
+    meshes = LiftingSurfaceMeshes(
+        vlm_mesh=wing_camber_surface,
+        oml_mesh=oml_mesh,
+    )
+
+    return meshes
 
 
 def make_1d_box_beam_mesh(
@@ -447,7 +463,78 @@ def make_1d_box_beam_mesh(
     return box_beam_mesh
 
 
+def compute_component_surface_area(
+        component : lg.BSplineSubSet,
+        geometry : lg.Geometry,
+        parametric_mesh_grid_num : int = 20,
+        plot : bool = False,
+) -> m3l.Variable:
+    """
+    Helper function to compute the surface area of a component
+    """
+     # OML parametric mesh
+    surfaces = component.b_spline_names
+    oml_meshes = []
+    surface_area = m3l.Variable(value=0, shape=(1, ))
+    for name in surfaces:
+        oml_para_mesh = []
+        for u in np.linspace(0, 1, parametric_mesh_grid_num):
+            for v in np.linspace(0, 1, parametric_mesh_grid_num):
+                oml_para_mesh.append((name, np.array([u,v]).reshape((1,2))))
+        
+        coords_m3l_vec = geometry.evaluate(oml_para_mesh)
+        coords_m3l = coords_m3l_vec.reshape((parametric_mesh_grid_num, parametric_mesh_grid_num, -1))
 
-   
+        indices = np.arange(parametric_mesh_grid_num**2 * 3).reshape((parametric_mesh_grid_num, parametric_mesh_grid_num, 3))
+        u_end_indices = indices[1:, :, :].flatten()
+        u_start_indices = indices[:-1, :, :].flatten()
 
+        v_end_indices = indices[:, 1:, :].flatten()
+        v_start_indices = indices[:, :-1, :].flatten()
+        
+        coords_u_end = coords_m3l_vec[u_end_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num, 3))
+        coords_u_start = coords_m3l_vec[u_start_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num, 3))
+
+        coords_v_end = coords_m3l_vec[v_end_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num, 3))
+        coords_v_start = coords_m3l_vec[v_start_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num, 3))
+
+
+        indices = np.arange(parametric_mesh_grid_num* (parametric_mesh_grid_num-1)  * 3).reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num, 3))
+        v_start_indices = indices[:, :-1, :].flatten()
+        v_end_indices = indices[:, 1:, :].flatten()
+        u_vectors = coords_u_end - coords_u_start
+        u_vectors_start = u_vectors.reshape((-1, ))
+        u_vectors_1 = u_vectors_start[v_start_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num-1, 3))
+        u_vectors_2 = u_vectors_start[v_end_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num-1, 3))
+
+
+        indices = np.arange(parametric_mesh_grid_num*(parametric_mesh_grid_num-1) * 3).reshape((parametric_mesh_grid_num, parametric_mesh_grid_num-1, 3))
+        u_start_indices = indices[:-1, :, :].flatten()
+        u_end_indices = indices[1:, :, :].flatten()
+        v_vectors = coords_v_end - coords_v_start
+        v_vectors_start = v_vectors.reshape((-1, ))
+        v_vectors_1 = v_vectors_start[u_start_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num-1, 3))
+        v_vectors_2 = v_vectors_start[u_end_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num-1, 3))
+
+        area_vectors_left_lower = m3l.cross(u_vectors_1, v_vectors_2, axis=2)
+        area_vectors_right_upper = m3l.cross(v_vectors_1, u_vectors_2, axis=2)
+        area_magnitudes_left_lower = m3l.norm(area_vectors_left_lower, order=2, axes=(-1, ))
+        area_magnitudes_right_upper = m3l.norm(area_vectors_right_upper, order=2, axes=(-1, ))
+        area_magnitudes = (area_magnitudes_left_lower + area_magnitudes_right_upper)/2
+        wireframe_area = m3l.sum(area_magnitudes, axes=(0, 1)).reshape((1, ))
+        surface_area =  surface_area + wireframe_area 
+        
+
+        # x_vectors = coords_m3l[1:, :, :] - coords_m3l[:-1, :, :]
+        # print(x_vectors.value)
+        oml_meshes.append(coords_m3l)
+    
+    
+
+    # oml_mesh = geometry.evaluate(oml_para_mesh).reshape((-1, 3))
+    if plot:
+        geometry.plot_meshes(meshes=oml_meshes)
+
+    # print(surface_area)
+    # exit()
 

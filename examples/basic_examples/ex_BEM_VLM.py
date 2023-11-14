@@ -11,7 +11,6 @@ from modopt.scipy_library import SLSQP
 from modopt.csdl_library import CSDLProblem
 import lsdo_geo as lg
 from caddee import GEOMETRY_FILES_FOLDER
-import time 
 from lsdo_rotor import BEM, BEMParameters
 from VAST.core.fluid_problem import FluidProblem
 from VAST.core.vast_solver import VASTFluidSover
@@ -34,7 +33,7 @@ num_chordwise_vlm = 15
 
 # Calling a helper function to create VLM mesh based on the 4 corner points of 
 # the wing plus the center point of the trailing edge
-wing_mesh = cd.make_vlm_camber_mesh(
+wing_meshes = cd.make_vlm_camber_mesh(
     geometry=geometry,
     wing_component=wing,
     num_spanwise=num_spanwise_vlm,
@@ -44,7 +43,7 @@ wing_mesh = cd.make_vlm_camber_mesh(
     te_right=np.array([4.33, 5., 0.]),
     te_center=np.array([5., 0., 0.]),
     te_left=np.array([4.33, -5., 0.]),
-    plot=False
+    plot=False,
 )
 
 
@@ -72,9 +71,8 @@ print(rotor_mesh.radius)
 
 
 # ------------------------ Analaysis
-# Create caddee and SystemModel object
+# Create caddee object
 caddee = cd.CADDEE()
-caddee.system_model = system_model = cd.SystemModel()
 
 # create m3l system model
 m3l_model = m3l.Model()
@@ -89,7 +87,7 @@ cruise_condition = cd.CruiseCondition(
 # Set operating conditions for steady design condition
 mach_number = m3l_model.create_input('mach_number', val=np.array([0.2]))
 altitude = m3l_model.create_input('cruise_altitude', val=np.array([1500]))
-pitch_angle = m3l_model.create_input('pitch_angle', val=np.array([np.deg2rad(0)]), dv_flag=True, lower=np.deg2rad(-10), upper=np.deg2rad(10))
+pitch_angle = m3l_model.create_input('pitch_angle', val=np.array([np.deg2rad(1.5)]), dv_flag=True, lower=np.deg2rad(-10), upper=np.deg2rad(10))
 range = m3l_model.create_input('cruise_range', val=np.array([40000]))
 
 # Evaluate aircraft states as well as atmospheric properties based on inputs to operating condition
@@ -109,7 +107,7 @@ vlm_model = VASTFluidSover(
         'wing_vlm_mesh'
     ],
     surface_shapes=[
-        (1, ) + wing_mesh.shape[1:]
+        (1, ) + wing_meshes.vlm_mesh.shape[1:]
     ],
     fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
     mesh_unit='m',
@@ -119,7 +117,7 @@ vlm_model = VASTFluidSover(
 # Evaluate VLM outputs and register them as outputs
 vlm_outputs = vlm_model.evaluate(
     ac_states=ac_states,
-    meshes=[wing_mesh],
+    meshes=[wing_meshes.vlm_mesh],
 )
 
 m3l_model.register_output(vlm_outputs)
