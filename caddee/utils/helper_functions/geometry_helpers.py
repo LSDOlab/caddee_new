@@ -215,10 +215,14 @@ def make_vlm_camber_mesh(
         le_interp : str = 'ellipse',
         te_interp : str = 'ellipse',
         parametric_mesh_grid_num : int = 20,
+        orientation : str = 'horizontal',
 ) -> LiftingSurfaceMeshes: 
     """
     Helper function to create a VLM camber mesh
     """
+    if orientation not in ['vertical', 'horizontal']:
+        raise ValueError(f"Uknown keyword argument {orientation}. Acceptable arguments are 'horizontal', and 'verical'")
+
     if le_center is not None:
         x = np.array([le_left[0], le_center[0], le_right[0]])
         y = np.array([le_left[1], le_center[1], le_right[1]])
@@ -302,9 +306,13 @@ def make_vlm_camber_mesh(
 
     wing_chord_surface = m3l.linspace(le, te, num_chordwise)
 
-    wing_upper_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value + np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_density_parameter=25, plot=plot)
-    wing_lower_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., -1.]), grid_search_density_parameter=25, plot=plot)
-   
+    if orientation == 'horizontal':
+        wing_upper_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value + np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_density_parameter=25, plot=plot)
+        wing_lower_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., -1.]), grid_search_density_parameter=25, plot=plot)
+    elif orientation == 'vertical':
+        wing_upper_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value + np.array([0., 1., 0.]), direction=np.array([0., 1., 0.]), grid_search_density_parameter=25, plot=plot)
+        wing_lower_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value - np.array([0., 1., 0.]), direction=np.array([0., -1., 0.]), grid_search_density_parameter=25, plot=plot)
+
     # actuated_geometry = geometry.rotate(...)
    
     wing_upper_surface_wireframe = geometry.evaluate(wing_upper_surface_wireframe_parametric).reshape((num_chordwise, num_spanwise, 3))
@@ -461,11 +469,12 @@ def make_1d_box_beam_mesh(
     )
 
     return box_beam_mesh
+    
 
 
 def compute_component_surface_area(
-        component : lg.BSplineSubSet,
-        geometry : lg.Geometry,
+        component_list : List[lg.BSplineSubSet],
+        geometry : lg.Geometry, # As long as this commes after FFD geometry changes should be reflected
         parametric_mesh_grid_num : int = 20,
         plot : bool = False,
 ) -> m3l.Variable:
@@ -473,68 +482,73 @@ def compute_component_surface_area(
     Helper function to compute the surface area of a component
     """
      # OML parametric mesh
-    surfaces = component.b_spline_names
-    oml_meshes = []
-    surface_area = m3l.Variable(value=0, shape=(1, ))
-    for name in surfaces:
-        oml_para_mesh = []
-        for u in np.linspace(0, 1, parametric_mesh_grid_num):
-            for v in np.linspace(0, 1, parametric_mesh_grid_num):
-                oml_para_mesh.append((name, np.array([u,v]).reshape((1,2))))
+    surface_area_list = []
+
+    for i in range(len(component_list)):
+        component = component_list[i]
+        surfaces = component.b_spline_names
+        oml_meshes = []
+        surface_area = m3l.Variable(value=0, shape=(1, ))
+        for name in surfaces:
+            oml_para_mesh = []
+            for u in np.linspace(0, 1, parametric_mesh_grid_num):
+                for v in np.linspace(0, 1, parametric_mesh_grid_num):
+                    oml_para_mesh.append((name, np.array([u,v]).reshape((1,2))))
+            
+            coords_m3l_vec = geometry.evaluate(oml_para_mesh)
+            coords_m3l = coords_m3l_vec.reshape((parametric_mesh_grid_num, parametric_mesh_grid_num, -1))
+
+            indices = np.arange(parametric_mesh_grid_num**2 * 3).reshape((parametric_mesh_grid_num, parametric_mesh_grid_num, 3))
+            u_end_indices = indices[1:, :, :].flatten()
+            u_start_indices = indices[:-1, :, :].flatten()
+
+            v_end_indices = indices[:, 1:, :].flatten()
+            v_start_indices = indices[:, :-1, :].flatten()
+            
+            coords_u_end = coords_m3l_vec[u_end_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num, 3))
+            coords_u_start = coords_m3l_vec[u_start_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num, 3))
+
+            coords_v_end = coords_m3l_vec[v_end_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num, 3))
+            coords_v_start = coords_m3l_vec[v_start_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num, 3))
+
+
+            indices = np.arange(parametric_mesh_grid_num* (parametric_mesh_grid_num-1)  * 3).reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num, 3))
+            v_start_indices = indices[:, :-1, :].flatten()
+            v_end_indices = indices[:, 1:, :].flatten()
+            u_vectors = coords_u_end - coords_u_start
+            u_vectors_start = u_vectors.reshape((-1, ))
+            u_vectors_1 = u_vectors_start[v_start_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num-1, 3))
+            u_vectors_2 = u_vectors_start[v_end_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num-1, 3))
+
+
+            indices = np.arange(parametric_mesh_grid_num*(parametric_mesh_grid_num-1) * 3).reshape((parametric_mesh_grid_num, parametric_mesh_grid_num-1, 3))
+            u_start_indices = indices[:-1, :, :].flatten()
+            u_end_indices = indices[1:, :, :].flatten()
+            v_vectors = coords_v_end - coords_v_start
+            v_vectors_start = v_vectors.reshape((-1, ))
+            v_vectors_1 = v_vectors_start[u_start_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num-1, 3))
+            v_vectors_2 = v_vectors_start[u_end_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num-1, 3))
+
+            area_vectors_left_lower = m3l.cross(u_vectors_1, v_vectors_2, axis=2)
+            area_vectors_right_upper = m3l.cross(v_vectors_1, u_vectors_2, axis=2)
+            area_magnitudes_left_lower = m3l.norm(area_vectors_left_lower, order=2, axes=(-1, ))
+            area_magnitudes_right_upper = m3l.norm(area_vectors_right_upper, order=2, axes=(-1, ))
+            area_magnitudes = (area_magnitudes_left_lower + area_magnitudes_right_upper)/2
+            wireframe_area = m3l.sum(area_magnitudes, axes=(0, 1)).reshape((1, ))
+            surface_area =  surface_area + wireframe_area 
+            
+
+            # x_vectors = coords_m3l[1:, :, :] - coords_m3l[:-1, :, :]
+            # print(x_vectors.value)
+            oml_meshes.append(coords_m3l)
         
-        coords_m3l_vec = geometry.evaluate(oml_para_mesh)
-        coords_m3l = coords_m3l_vec.reshape((parametric_mesh_grid_num, parametric_mesh_grid_num, -1))
-
-        indices = np.arange(parametric_mesh_grid_num**2 * 3).reshape((parametric_mesh_grid_num, parametric_mesh_grid_num, 3))
-        u_end_indices = indices[1:, :, :].flatten()
-        u_start_indices = indices[:-1, :, :].flatten()
-
-        v_end_indices = indices[:, 1:, :].flatten()
-        v_start_indices = indices[:, :-1, :].flatten()
         
-        coords_u_end = coords_m3l_vec[u_end_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num, 3))
-        coords_u_start = coords_m3l_vec[u_start_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num, 3))
+        surface_area_list.append(surface_area)
+        # oml_mesh = geometry.evaluate(oml_para_mesh).reshape((-1, 3))
+        if plot:
+            geometry.plot_meshes(meshes=oml_meshes)
 
-        coords_v_end = coords_m3l_vec[v_end_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num, 3))
-        coords_v_start = coords_m3l_vec[v_start_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num, 3))
-
-
-        indices = np.arange(parametric_mesh_grid_num* (parametric_mesh_grid_num-1)  * 3).reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num, 3))
-        v_start_indices = indices[:, :-1, :].flatten()
-        v_end_indices = indices[:, 1:, :].flatten()
-        u_vectors = coords_u_end - coords_u_start
-        u_vectors_start = u_vectors.reshape((-1, ))
-        u_vectors_1 = u_vectors_start[v_start_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num-1, 3))
-        u_vectors_2 = u_vectors_start[v_end_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num-1, 3))
-
-
-        indices = np.arange(parametric_mesh_grid_num*(parametric_mesh_grid_num-1) * 3).reshape((parametric_mesh_grid_num, parametric_mesh_grid_num-1, 3))
-        u_start_indices = indices[:-1, :, :].flatten()
-        u_end_indices = indices[1:, :, :].flatten()
-        v_vectors = coords_v_end - coords_v_start
-        v_vectors_start = v_vectors.reshape((-1, ))
-        v_vectors_1 = v_vectors_start[u_start_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num-1, 3))
-        v_vectors_2 = v_vectors_start[u_end_indices].reshape((parametric_mesh_grid_num-1, parametric_mesh_grid_num-1, 3))
-
-        area_vectors_left_lower = m3l.cross(u_vectors_1, v_vectors_2, axis=2)
-        area_vectors_right_upper = m3l.cross(v_vectors_1, u_vectors_2, axis=2)
-        area_magnitudes_left_lower = m3l.norm(area_vectors_left_lower, order=2, axes=(-1, ))
-        area_magnitudes_right_upper = m3l.norm(area_vectors_right_upper, order=2, axes=(-1, ))
-        area_magnitudes = (area_magnitudes_left_lower + area_magnitudes_right_upper)/2
-        wireframe_area = m3l.sum(area_magnitudes, axes=(0, 1)).reshape((1, ))
-        surface_area =  surface_area + wireframe_area 
-        
-
-        # x_vectors = coords_m3l[1:, :, :] - coords_m3l[:-1, :, :]
-        # print(x_vectors.value)
-        oml_meshes.append(coords_m3l)
-    
-    
-
-    # oml_mesh = geometry.evaluate(oml_para_mesh).reshape((-1, 3))
-    if plot:
-        geometry.plot_meshes(meshes=oml_meshes)
-
+    return surface_area_list
     # print(surface_area)
     # exit()
 

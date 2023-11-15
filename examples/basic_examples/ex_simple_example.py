@@ -4,7 +4,7 @@ import caddee.api as cd
 import m3l
 from python_csdl_backend import Simulator
 import numpy as np
-from lsdo_rotor import BEM, BEMMesh
+from lsdo_rotor import BEM, BEMParameters
 from modopt.scipy_library import SLSQP
 from modopt.csdl_library import CSDLProblem
 
@@ -12,11 +12,10 @@ from modopt.csdl_library import CSDLProblem
 m3l_model = m3l.Model()
 
 
-bem_mesh = BEMMesh(
+bem_parameters = BEMParameters(
     num_radial=30,
     num_tangential=1,
     num_blades=2,
-    use_rotor_geometry=False,
     airfoil='NACA_4412',
     use_custom_airfoil_ml=True,
 )
@@ -24,17 +23,13 @@ bem_mesh = BEMMesh(
 bem_model_cruise = BEM(
     name='BEM_cruise',
     num_nodes=1,
-    mesh=bem_mesh,
-    disk_prefix='disk',
-    blade_prefix='blade',
+    BEM_parameters=bem_parameters,
 )
 
 bem_model_hover = BEM(
     name='BEM_hover',
     num_nodes=1,
-    mesh=bem_mesh,
-    disk_prefix='disk',
-    blade_prefix='blade',
+    BEM_parameters=bem_parameters,
 )
 
 chord_cp = m3l_model.create_input('chord_cp', val=np.linspace(0.3, 0.1, 4), dv_flag=True, lower=0.01, upper=0.4)
@@ -58,12 +53,11 @@ speed = m3l_model.create_input('cruise_speed', val=60)
 altitude = m3l_model.create_input('cruise_altitude', val=1000)
 theta = m3l_model.create_input('pitch_angle', val=np.deg2rad(5))
 cruise_range = m3l_model.create_input('cruise_range', val=40000)
-observer_location = m3l_model.create_input('cruise_observer_location', val=np.array([0., 0., 0.,]))
 
 
 ac_states, atmosphere = cruise_condition.evaluate(mach_number=None, pitch_angle=theta, cruise_speed=speed,
                                     altitude=altitude, cruise_range=cruise_range, 
-                                    observer_location=observer_location)
+                                    )
 
 m3l_model.register_output(ac_states)
 
@@ -76,11 +70,11 @@ cruise_bem_outputs = bem_model_cruise.evaluate(ac_states=ac_states, rpm=cruise_r
 
 m3l_model.register_output(cruise_bem_outputs)
 
-stability_analysis = cd.LinearStabilityAnalysis(design_condition=cruise_condition)
-# damping_ratios = stability_analysis.evaluate(ac_states=ac_states, cg_vector=None, vehicle_mass=None, solvers=[bem_model_cruise])
-A_long, A_lat = stability_analysis.evaluate(vehicle_mass=None, aerodynamic_outputs=[cruise_bem_outputs])
-m3l_model.register_output(A_long)
-m3l_model.register_output(A_lat)
+# stability_analysis = cd.LinearStabilityAnalysis(design_condition=cruise_condition)
+# # damping_ratios = stability_analysis.evaluate(ac_states=ac_states, cg_vector=None, vehicle_mass=None, solvers=[bem_model_cruise])
+# A_long, A_lat = stability_analysis.evaluate(vehicle_mass=None, aerodynamic_outputs=[cruise_bem_outputs])
+# m3l_model.register_output(A_long)
+# m3l_model.register_output(A_lat)
 
 
 # hover_condition = cd.HoverCondition(name='hover_condition')

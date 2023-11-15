@@ -33,4 +33,4 @@ from caddee.core.csdl_core.system_model_csdl.energy_group_csdl.final_SoC_m3l imp
 
 from caddee.utils.helper_functions.geometry_helpers import make_rotor_mesh, make_vlm_camber_mesh, make_1d_box_beam_mesh, BladeParameters
 from caddee.utils.helper_functions.caddee_helper_functions import create_multiple_inputs
-
+from caddee.utils.aircraft_models.drag_models.drag_build_up import DragBuildUpModel

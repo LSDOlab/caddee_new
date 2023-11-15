@@ -18,9 +18,9 @@ from lsdo_acoustics import Acoustics, evaluate_multiple_acoustic_models
 from lsdo_motor import evaluate_multiple_motor_sizing_models, evaluate_multiple_motor_analysis_models, MotorAnalysis, MotorSizing
 from aframe import BeamMassModel, EBBeam, EBBeamForces
 
-from ex_tc2_geometry_setup_updated import (wing_meshes, tail_meshes, box_beam_mesh, pp_mesh, rlo_mesh, 
+from ex_tc2_geometry_setup_updated import (wing_meshes, tail_meshes, box_beam_mesh, pp_mesh, rlo_mesh, v_tail_meshes, 
                                            rli_mesh, rri_mesh, rro_mesh, flo_mesh, fli_mesh, fri_mesh, fro_mesh, num_wing_beam,
-                                           box_beam_mesh)
+                                           box_beam_mesh, drag_comp_list, S_ref)
 
 
 caddee = cd.CADDEE()
@@ -87,8 +87,8 @@ system_model.register_output(wing_beam_mass)
 
 # region +3g sizing
 sizing_3g_condition = cd.CruiseCondition(name='plus_3g_sizing')
-h_3g = system_model.create_input('altitude_3g', val=10000)
-M_3g = system_model.create_input('mach_3g', val=0.2)
+h_3g = system_model.create_input('altitude_3g', val=1000)
+M_3g = system_model.create_input('mach_3g', val=0.173)
 r_3g = system_model.create_input('range_3g', val=10000)
 theta_3g = system_model.create_input('pitch_angle_3g', val=np.deg2rad(0), dv_flag=True, lower=0, upper=np.deg2rad(20))
 
@@ -103,21 +103,24 @@ vlm_model = VASTFluidSover(
     surface_names=[
         'wing_mesh_plus_3g',
         'tail_mesh_plus_3g',
+        'vtail_mesh_plus_3g'
     ],
     surface_shapes=[
         (1, ) + wing_meshes.vlm_mesh.shape[1:],
         (1, ) + tail_meshes.vlm_mesh.shape[1:],
+        (1, ) + v_tail_meshes.vlm_mesh.shape[1:],
+    
     ],
     fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
     mesh_unit='ft',
-    cl0=[0.25, 0]
+    cl0=[0.4, 0, 0]
 )
 
 # Evaluate VLM outputs and register them as outputs
 vlm_outputs = vlm_model.evaluate(
     atmosphere=atmos_3g,
     ac_states=ac_states_3g,
-    meshes=[wing_meshes.vlm_mesh, tail_meshes.vlm_mesh],
+    meshes=[wing_meshes.vlm_mesh, tail_meshes.vlm_mesh, v_tail_meshes.vlm_mesh],
 )
 
 
@@ -170,96 +173,106 @@ beam_displacement_model = EBBeam(
 eb_beam_outputs = beam_displacement_model.evaluate(beam_mesh=box_beam_mesh, t_cap=wing_beam_tcap, t_web=wing_beam_tweb, forces=structural_wing_mesh_forces_3g)
 system_model.register_output(eb_beam_outputs)
 
+drag_build_up_model = cd.DragBuildUpModel(
+    name='sizing_drag_build_up',
+    num_nodes=1,
+    units='ft',
+)
+
+drag_build_up_outputs = drag_build_up_model.evaluate(atmos=atmos_3g, ac_states=ac_states_3g, drag_comp_list=drag_comp_list, s_ref=S_ref)
+system_model.register_output(drag_build_up_outputs)
+
+
 
 # endregion
 
 
-# region Hover condition
-hover_condition = cd.HoverCondition(
-    name='hover_condition_1',
-)
+# # region Hover condition
+# hover_condition = cd.HoverCondition(
+#     name='hover_condition_1',
+# )
 
-# Create inputs for hover condition
-hover_1_time = system_model.create_input('hover_1_time', val=90)
-hover_1_altitude = system_model.create_input('hover_1_altitude', val=100)
+# # Create inputs for hover condition
+# hover_1_time = system_model.create_input('hover_1_time', val=90)
+# hover_1_altitude = system_model.create_input('hover_1_altitude', val=100)
 
-# Evaluate aircraft states and atmospheric properties and register them as outputs
-hover_1_ac_states, hover_1_atmosphere = hover_condition.evaluate(hover_time=hover_1_time, altitude=hover_1_altitude)
-system_model.register_output(hover_1_ac_states)
-system_model.register_output(hover_1_atmosphere)
+# # Evaluate aircraft states and atmospheric properties and register them as outputs
+# hover_1_ac_states, hover_1_atmosphere = hover_condition.evaluate(hover_time=hover_1_time, altitude=hover_1_altitude)
+# system_model.register_output(hover_1_ac_states)
+# system_model.register_output(hover_1_atmosphere)
 
-hover_1_rpms = []
-for i in range(num_rotors):
-    hover_1_rpms.append(system_model.create_input(f'hover_1_rpm_{i}', val=1200, dv_flag=True, lower=800, upper=2000, scaler=1e-3))
+# hover_1_rpms = []
+# for i in range(num_rotors):
+#     hover_1_rpms.append(system_model.create_input(f'hover_1_rpm_{i}', val=1200, dv_flag=True, lower=800, upper=2000, scaler=1e-3))
 
-hover_bem_output_list = evaluate_multiple_BEM_models(
-    num_instances=8,
-    name_prefix='hover_1_bem',
-    bem_parameters=bem_hover_rotor_parameters,
-    bem_mesh_list=rotor_mesh_list,
-    rpm_list=hover_1_rpms,
-    ac_states=hover_1_ac_states,
-    atmoshpere=hover_1_atmosphere,
-    num_nodes=1,
-    m3l_model=system_model,
-)
+# hover_bem_output_list = evaluate_multiple_BEM_models(
+#     num_instances=8,
+#     name_prefix='hover_1_bem',
+#     bem_parameters=bem_hover_rotor_parameters,
+#     bem_mesh_list=rotor_mesh_list,
+#     rpm_list=hover_1_rpms,
+#     ac_states=hover_1_ac_states,
+#     atmoshpere=hover_1_atmosphere,
+#     num_nodes=1,
+#     m3l_model=system_model,
+# )
 
-hover_acoustics_data = Acoustics(
-    aircraft_position=np.array([0., 0., 100])
-)
+# hover_acoustics_data = Acoustics(
+#     aircraft_position=np.array([0., 0., 100])
+# )
 
-hover_acoustics_data.add_observer(
-    name='hover_observer',
-    obs_position=np.array([0., 0., 0.]),
-    time_vector=np.array([0.,]),
+# hover_acoustics_data.add_observer(
+#     name='hover_observer',
+#     obs_position=np.array([0., 0., 0.]),
+#     time_vector=np.array([0.,]),
 
-)
+# )
 
-hover_total_noise, hover_total_noise_a_weighted = evaluate_multiple_acoustic_models(
-    rotor_outputs=hover_bem_output_list,
-    acoustics_data=hover_acoustics_data,
-    ac_states=hover_1_ac_states,
-    tonal_noise_model='Lowson',
-    broadband_noise_model='GL',
-    altitude=hover_1_altitude,
-    rotor_parameters=bem_hover_rotor_parameters,
-    rotor_meshes=rotor_mesh_list,
-    rpm_list=hover_1_rpms,
-    model_name_prefix='hover_noise',
-    num_nodes=1,
-    m3l_model=system_model,
-)
+# hover_total_noise, hover_total_noise_a_weighted = evaluate_multiple_acoustic_models(
+#     rotor_outputs=hover_bem_output_list,
+#     acoustics_data=hover_acoustics_data,
+#     ac_states=hover_1_ac_states,
+#     tonal_noise_model='Lowson',
+#     broadband_noise_model='GL',
+#     altitude=hover_1_altitude,
+#     rotor_parameters=bem_hover_rotor_parameters,
+#     rotor_meshes=rotor_mesh_list,
+#     rpm_list=hover_1_rpms,
+#     model_name_prefix='hover_noise',
+#     num_nodes=1,
+#     m3l_model=system_model,
+# )
 
-hover_motor_outputs = evaluate_multiple_motor_analysis_models(
-    rotor_outputs_list=hover_bem_output_list,
-    motor_sizing_list=motor_sizing_outputs,
-    rotor_rpm_list=hover_1_rpms,
-    motor_diameter_list=motor_diameters,
-    name_prefix='hover_motor_analysis',
-    flux_weakening=False,
-    m3l_model=system_model,
-)
+# hover_motor_outputs = evaluate_multiple_motor_analysis_models(
+#     rotor_outputs_list=hover_bem_output_list,
+#     motor_sizing_list=motor_sizing_outputs,
+#     rotor_rpm_list=hover_1_rpms,
+#     motor_diameter_list=motor_diameters,
+#     name_prefix='hover_motor_analysis',
+#     flux_weakening=False,
+#     m3l_model=system_model,
+# )
 
-# endregion
+# # endregion
 
 caddee_csdl_model = system_model.assemble_csdl()
 
 sim = Simulator(caddee_csdl_model, analytics=True)
 sim.run()
 
-# cd.print_caddee_outputs(system_model, sim)
+cd.print_caddee_outputs(system_model, sim)
 print(sim['motor_sizing_2.mass'])
-print(sim['hover_motor_analysis_1.turns_per_phase'])
-print(sim['hover_motor_analysis_0.implicit_em_torque_model.T_lower_lim'])
-print(sim['hover_1_bem_2.Q'])
-print(sim['wing_beam_mass_model.mass'])
+# print(sim['hover_motor_analysis_1.turns_per_phase'])
+# print(sim['hover_motor_analysis_0.implicit_em_torque_model.T_lower_lim'])
+# print(sim['hover_1_bem_2.Q'])
+# print(sim['wing_beam_mass_model.mass'])
 print(sim['cruise_vlm_model.vast.VLMSolverModel.VLM_system.adapter_comp.psiw'])
 print(sim['cruise_vlm_model.vast.VLMSolverModel.VLM_system.solve_gamma_b_group.prepossing_before_Solve.RHS_group.KinematicVelocityComp.tail_mesh_plus_3g_coll_vel'])
 print(sim['cruise_vlm_model.vast.VLMSolverModel.VLM_system.solve_gamma_b_group.prepossing_before_Solve.RHS_group.KinematicVelocityComp.tail_mesh_plus_3g_rot_ref'])
 print(sim['cruise_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.density'])
 print(sim['cruise_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.panel_area_tail_mesh_plus_3g'])
 print(sim['cruise_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.panel_area_wing_mesh_plus_3g'])
-print(sim['hover_1_bem_2.thrust_origin'])
+# print(sim['hover_1_bem_2.thrust_origin'])
 # print(sim['vast_3g_nodal_forces.wing_mesh_plus_3g_oml_forces'])
 print(sim['eb_beam_3g.Aframe.comp_model.wing_beam_displacement'])
 print(sim['cruise_vlm_model.vast.VLMSolverModel.VLM_outputs.LiftDrag.F'])

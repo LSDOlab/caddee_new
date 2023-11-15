@@ -57,8 +57,8 @@ class LinearStabilityAnalysis(m3l.ImplicitOperation):
         self.residual_partials['lat_accelerations_jacobian'] = long_accelerations
         
         self.size = 4
-        long_residual = m3l.Variable('long_stab_residual', shape=(4, ), operation=self)
-        lat_residual = m3l.Variable('lat_stab_residual', shape=(4, ), operation=self)
+        long_residual = m3l.Variable(name='long_stab_residual', shape=(4, ), operation=self)
+        lat_residual = m3l.Variable(name='lat_stab_residual', shape=(4, ), operation=self)
 
         return long_residual, lat_residual
     
@@ -164,17 +164,17 @@ class LongitudinalAircraftStability(m3l.ExplicitOperation):
     def evaluate(self) -> LongitudinalStability:
         self.arguments = {}
 
-        short_period_real = m3l.Variable('short_period_real', shape=(1, ), operation=self)
-        short_period_imag = m3l.Variable('short_period_imag', shape=(1, ), operation=self)
-        short_period_natural_frequency = m3l.Variable('short_period_natural_frequency', shape=(1, ), operation=self)
-        short_period_damping_ratio = m3l.Variable('short_period_damping_ratio', shape=(1, ), operation=self)
-        short_period_time_to_double = m3l.Variable('short_period_time_to_double', shape=(1, ), operation=self)
+        short_period_real = m3l.Variable(name='short_period_real', shape=(1, ), operation=self)
+        short_period_imag = m3l.Variable(name='short_period_imag', shape=(1, ), operation=self)
+        short_period_natural_frequency = m3l.Variable(name='short_period_natural_frequency', shape=(1, ), operation=self)
+        short_period_damping_ratio = m3l.Variable(name='short_period_damping_ratio', shape=(1, ), operation=self)
+        short_period_time_to_double = m3l.Variable(name='short_period_time_to_double', shape=(1, ), operation=self)
 
-        phugoid_real = m3l.Variable('phugoid_real', shape=(1, ), operation=self)
-        phugoid_imag = m3l.Variable('phugoid_imag', shape=(1, ), operation=self)
-        phugoid_natural_frequency = m3l.Variable('phugoid_natural_frequency', shape=(1, ), operation=self)
-        phugoid_damping_ratio = m3l.Variable('phugoid_damping_ratio', shape=(1, ), operation=self)
-        phugoid_time_to_double = m3l.Variable('phugoid_time_to_double', shape=(1, ), operation=self)
+        phugoid_real = m3l.Variable(name='phugoid_real', shape=(1, ), operation=self)
+        phugoid_imag = m3l.Variable(name='phugoid_imag', shape=(1, ), operation=self)
+        phugoid_natural_frequency = m3l.Variable(name='phugoid_natural_frequency', shape=(1, ), operation=self)
+        phugoid_damping_ratio = m3l.Variable(name='phugoid_damping_ratio', shape=(1, ), operation=self)
+        phugoid_time_to_double = m3l.Variable(name='phugoid_time_to_double', shape=(1, ), operation=self)
 
         long_stab = LongitudinalStability(
             short_period_real=short_period_real,
@@ -222,23 +222,23 @@ class LateralAircraftStability(m3l.ExplicitOperation):
     def evaluate(self) -> LateralStability:
         self.arguments = {}
 
-        dutch_roll_real = m3l.Variable('dutch_roll_real', shape=(1, ), operation=self)
-        dutch_roll_imag = m3l.Variable('dutch_roll_imag', shape=(1, ), operation=self)
-        dutch_roll_natural_frequency = m3l.Variable('dutch_roll_natural_frequency', shape=(1, ), operation=self)
-        dutch_roll_damping_ratio = m3l.Variable('dutch_roll_damping_ratio', shape=(1, ), operation=self)
-        dutch_roll_time_to_double = m3l.Variable('dutch_roll_time_to_double', shape=(1, ), operation=self)
+        dutch_roll_real = m3l.Variable(name='dutch_roll_real', shape=(1, ), operation=self)
+        dutch_roll_imag = m3l.Variable(name='dutch_roll_imag', shape=(1, ), operation=self)
+        dutch_roll_natural_frequency = m3l.Variable(name='dutch_roll_natural_frequency', shape=(1, ), operation=self)
+        dutch_roll_damping_ratio = m3l.Variable(name='dutch_roll_damping_ratio', shape=(1, ), operation=self)
+        dutch_roll_time_to_double = m3l.Variable(name='dutch_roll_time_to_double', shape=(1, ), operation=self)
 
-        roll_real = m3l.Variable('roll_real', shape=(1, ), operation=self)
-        roll_imag = m3l.Variable('roll_imag', shape=(1, ), operation=self)
-        roll_natural_frequency = m3l.Variable('roll_natural_frequency', shape=(1, ), operation=self)
-        roll_damping_ratio = m3l.Variable('roll_damping_ratio', shape=(1, ), operation=self)
-        roll_time_to_double = m3l.Variable('roll_time_to_double', shape=(1, ), operation=self)
+        roll_real = m3l.Variable(name='roll_real', shape=(1, ), operation=self)
+        roll_imag = m3l.Variable(name='roll_imag', shape=(1, ), operation=self)
+        roll_natural_frequency = m3l.Variable(name='roll_natural_frequency', shape=(1, ), operation=self)
+        roll_damping_ratio = m3l.Variable(name='roll_damping_ratio', shape=(1, ), operation=self)
+        roll_time_to_double = m3l.Variable(name='roll_time_to_double', shape=(1, ), operation=self)
 
-        spiral_real = m3l.Variable('spiral_real', shape=(1, ), operation=self)
-        spiral_imag = m3l.Variable('spiral_imag', shape=(1, ), operation=self)
-        spiral_natural_frequency = m3l.Variable('spiral_natural_frequency', shape=(1, ), operation=self)
-        spiral_damping_ratio = m3l.Variable('spiral_damping_ratio', shape=(1, ), operation=self)
-        spiral_time_to_double = m3l.Variable('spiral_time_to_double', shape=(1, ), operation=self)
+        spiral_real = m3l.Variable(name='spiral_real', shape=(1, ), operation=self)
+        spiral_imag = m3l.Variable(name='spiral_imag', shape=(1, ), operation=self)
+        spiral_natural_frequency = m3l.Variable(name='spiral_natural_frequency', shape=(1, ), operation=self)
+        spiral_damping_ratio = m3l.Variable(name='spiral_damping_ratio', shape=(1, ), operation=self)
+        spiral_time_to_double = m3l.Variable(name='spiral_time_to_double', shape=(1, ), operation=self)
 
         lat_stab = LateralStability(
             dutch_roll_real=dutch_roll_real,

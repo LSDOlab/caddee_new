@@ -5,6 +5,7 @@ import lsdo_geo as lg
 import m3l
 from caddee import GEOMETRY_FILES_FOLDER
 from caddee.utils.helper_functions.geometry_helpers import make_rotor_mesh, make_vlm_camber_mesh, make_1d_box_beam_mesh, compute_component_surface_area, BladeParameters
+from caddee.utils.aircraft_models.drag_models.drag_build_up import DragComponent
 
 
 # Importing and refitting the geometry
@@ -91,7 +92,7 @@ fro_boom = geometry.declare_component(component_name='fro_boom', b_spline_search
 # region Making meshes
 # Wing 
 num_spanwise_vlm = 25
-num_chordwise_vlm = 2
+num_chordwise_vlm = 10
 
 wing_te_right=np.array([13.4, 25.250, 7.5])
 wing_te_left=np.array([13.4, -25.250, 7.5])
@@ -127,6 +128,23 @@ tail_meshes = make_vlm_camber_mesh(
     te_left=np.array([31.5, -6.75, 6.]),
     le_right=np.array([26.5, 6.75, 6.]),
     le_left=np.array([26.5, -6.75, 6.]),
+)
+
+# v tail mesh
+num_spanwise_vlm_vtail = 8
+num_chordwise_vlm_vtail = 6
+
+v_tail_meshes = make_vlm_camber_mesh(
+    geometry=geometry,
+    wing_component=v_tail,
+    num_spanwise=num_spanwise_vlm_vtail,
+    num_chordwise=num_chordwise_vlm_vtail,
+    le_left=np.array([20.843, 0., 8.231,]),
+    le_right=np.array([29.434, 0., 13.911,]),
+    te_left=np.array([30.543, 0., 8.231]),
+    te_right=np.array([32.065, 0., 13.911]),
+    plot=False,
+    orientation='vertical',
 )
 
 
@@ -432,21 +450,131 @@ fri_mesh = make_rotor_mesh(
     plot=False,
 )
 
-# Fuselage mesh
-compute_component_surface_area(
-    component=fro_boom,
+# Component surface areas
+component_list = [rlo_boom, rlo_hub, fuselage, wing, h_tail, v_tail, pp_hub, rlo_blade_1]
+surface_area_list = compute_component_surface_area(
+    component_list=component_list,
     geometry=geometry,
     parametric_mesh_grid_num=20,
-    plot=True,
+    plot=False,
 )
 
-# compute_component_surface_area(
-#     component=wing,
-#     geometry=geometry,
-#     parametric_mesh_grid_num=10,
-#     plot=True,
-# )
-# exit()
+
+# Drag components 
+# Fuselage
+fuselage_l1 = geometry.evaluate(fuselage.project(np.array([1.889, 0., 4.249]))).reshape((-1, 3))
+fuselage_l2 = geometry.evaluate(fuselage.project(np.array([31.889, 0., 7.798]))).reshape((-1, 3))
+fuselage_length = m3l.norm(fuselage_l2-fuselage_l1)
+
+fuselage_d1 = geometry.evaluate(fuselage.project(np.array([10.916, -2.945, 5.736]))).reshape((-1, 3))
+fuselage_d2=  geometry.evaluate(fuselage.project(np.array([10.916, 2.945, 5.736]))).reshape((-1, 3))
+fuselage_diameter = m3l.norm(fuselage_d2-fuselage_d1)
+
+fuselage_drag_comp = DragComponent(
+    component_type='fuselage',
+    wetted_area=surface_area_list[2],
+    characteristic_length=fuselage_length,
+    characteristic_diameter=fuselage_diameter,
+    Q=2.,
+
+)
+
+
+# wing
+wing_mid_le = geometry.evaluate(wing.project(np.array([8.892, 0., 8.633]))).reshape((-1, 3))
+wing_mid_te = geometry.evaluate(wing.project(np.array([14.332, 0, 8.439]))).reshape((-1, 3))
+wing_mid_chord_length = m3l.norm(wing_mid_le-wing_mid_te)
+
+wing_drag_comp = DragComponent(
+    component_type='wing',
+    wetted_area=surface_area_list[3],
+    characteristic_length=wing_mid_chord_length,
+    thickness_to_chord=0.16,
+    x_cm=0.25,
+    Q=2,
+)
+
+# h tail
+h_tail_mid_le = geometry.evaluate(h_tail.project(np.array([27.806, -6.520, 8.008]))).reshape((-1, 3))
+h_tail_mid_te = geometry.evaluate(h_tail.project(np.array([30.050, -6.520, 8.008]))).reshape((-1, 3))
+h_tail_chord_length = m3l.norm(h_tail_mid_le-h_tail_mid_te)
+
+h_tail_drag_comp = DragComponent(
+    component_type='wing',
+    wetted_area=surface_area_list[4],
+    characteristic_length=h_tail_chord_length,
+    thickness_to_chord=0.15,
+    x_cm=0.2,
+
+)
+
+# v tail
+v_tail_mid_le = geometry.evaluate(v_tail.project(np.array([26.971, 0.0, 11.038]))).reshape((-1, 3))
+v_tail_mid_te = geometry.evaluate(v_tail.project(np.array([31.302, 0.0, 11.038]))).reshape((-1, 3))
+v_tail_chord_length = m3l.norm(v_tail_mid_le-v_tail_mid_te)
+
+v_tail_drag_comp = DragComponent(
+    component_type='wing',
+    wetted_area=surface_area_list[5],
+    characteristic_length=v_tail_chord_length,
+    thickness_to_chord=0.115,
+    x_cm=0.2,
+)
+
+# boom
+boom_l1 = geometry.evaluate(rlo_boom.project(np.array([20.000, -18.750, 7.613]))).reshape((-1, 3))
+boom_l2 = geometry.evaluate(rlo_boom.project(np.array([12.000, -18.750, 7.613]))).reshape((-1, 3))
+boom_length = m3l.norm(boom_l1-boom_l2)
+
+boom_d1 = geometry.evaluate(rlo_boom.project(np.array([15.600, -19.250, 7.613]))).reshape((-1, 3))
+boom_d2 = geometry.evaluate(rlo_boom.project(np.array([15.600, -18.250, 7.613]))).reshape((-1, 3))
+boom_diameter = m3l.norm(boom_d1-boom_d2)
+
+boom_drag_comp = DragComponent(
+    component_type='boom',
+    wetted_area=surface_area_list[0],
+    characteristic_diameter=boom_diameter,
+    characteristic_length=boom_length,
+    multiplicity=8,
+    Q=2,
+)
+
+# lift hubs
+hub_l1 = geometry.evaluate(rlo_hub.project(np.array([18.075, -18.750,9.525]))).reshape((-1, 3))
+hub_l2 = geometry.evaluate(rlo_hub.project(np.array([20.325, -18.750,9.525]))).reshape((-1, 3))
+hub_length = m3l.norm(hub_l1-hub_l2)
+
+hub_drag_comp = DragComponent(
+    component_type='nacelle',
+    wetted_area=surface_area_list[1],
+    characteristic_diameter=hub_length,
+    characteristic_length=hub_length,
+    multiplicity=8,
+    Q=2,
+
+)
+
+
+# blade 
+blade_tip = geometry.evaluate(rlo_blade_2.project(np.array([14.200, -18.626, 9.040]))).reshape((-1, 3))
+blade_hub = geometry.evaluate(rlo_blade_2.project(np.array([18.200, -18.512, 9.197]))).reshape((-1, 3))
+
+blade_length = m3l.norm(blade_tip-blade_hub)
+
+blade_drag_comp = DragComponent(
+    component_type='flat_plate',
+    characteristic_length=blade_length,
+    wetted_area=surface_area_list[-1],
+    multiplicity=16,
+    Q=3,
+
+)
+
+drag_comp_list = [wing_drag_comp, fuselage_drag_comp, h_tail_drag_comp, v_tail_drag_comp,
+                  blade_drag_comp, boom_drag_comp, hub_drag_comp]
+
+S_ref = surface_area_list[3] / 2.1
+
 
 # endregion
 
