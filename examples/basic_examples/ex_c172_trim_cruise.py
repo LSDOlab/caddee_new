@@ -85,12 +85,6 @@ c172_prop_outputs = c172_prop_model.evaluate(
 )
 m3l_model.register_output(c172_prop_outputs)
 
-# F_prop = c172_prop_outputs.forces
-# F_wing = c172_aero_outputs.forces
-# # F_prop_norm = m3l.norm(F_prop, order=2, axes=(1,))
-# F_wing_norm = m3l.cross(m3l.norm(F_wing + F_prop, order=2, axes=(0,)), thrust_vector)
-# m3l_model.register_output(F_wing_norm)
-# m3l_model.register_output(F_prop + F_wing)
 
 trim_variables = cruise_condition.assemble_trim_residual(
     mass_properties=mass_properties, 
