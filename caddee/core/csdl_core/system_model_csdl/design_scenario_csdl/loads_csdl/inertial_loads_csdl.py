@@ -9,7 +9,9 @@ class InertialLoads(m3l.ExplicitOperation):
         self.parameters.declare('load_factor', default=1.)
         self.parameters.declare('name', types=str, default='inertial_loads_model')
         self._stability_flag = False
-        pass
+
+    def assign_attributes(self):
+        self.name = self.parameters['name']
 
     def compute(self):
         load_factor = self.parameters['load_factor']

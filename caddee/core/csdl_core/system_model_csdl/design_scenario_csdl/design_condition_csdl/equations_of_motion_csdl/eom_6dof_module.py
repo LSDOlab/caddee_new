@@ -12,8 +12,10 @@ class EoMEuler6DOF(m3l.ExplicitOperation):
         self.parameters.declare('name', types=str, default='eom_model')
         self._stability_flag = False
 
+    def assign_attributes(self):
+        self.name = self.parameters['name']
+
     def compute(self) -> csdl.Model:
-        name = self.parameters['name']
         if self._stability_flag:
             num_nodes = self.parameters['num_nodes'] * 13
         else:

@@ -1,6 +1,6 @@
 from csdl import Model
 import m3l
-from dataclasses import dataclass
+from dataclasses import dataclass, is_dataclass
 from typing import Union, Tuple
 from caddee.core.caddee_core.system_model.design_scenario.design_condition.atmosphere.atmosphere import Atmosphere
 from caddee.core.caddee_core.system_model.design_scenario.design_condition.linear_stability_analysis import (
@@ -13,6 +13,9 @@ from caddee.core.caddee_core.system_model.design_scenario.design_condition.linea
 from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.loads_csdl.inertial_loads_csdl import InertialLoads
 from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.loads_csdl.total_forces_moments_csdl import TotalForcesMoments
 from caddee.core.csdl_core.system_model_csdl.design_scenario_csdl.design_condition_csdl.equations_of_motion_csdl.eom_6dof_module import EoMEuler6DOF
+from caddee.core.csdl_core.system_model_csdl.mass_properties_csdl.constant_mass_properties_csdl import TotalMassPropertiesM3L
+from caddee.utils.helper_functions.caddee_helper_functions import flatten_list
+import warnings
 
 
 @dataclass
@@ -108,7 +111,7 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
         self.num_nodes = self.parameters['num_nodes']
         self.name = self.parameters['name']
 
-    def assemble_trim_residual(self, mass_properties, aero_propulsive_outputs: list,
+    def assemble_trim_residual(self, mass_properties : list, aero_propulsive_outputs: list,
                                ac_states, ref_pt=None) -> TrimVariables:
         """
         Method that assembles the following m3l models for each design condition
@@ -146,27 +149,57 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
         stability_flag = self.parameters['stability_flag']
         name = self.parameters['name']
 
+        total_mass_props_model = TotalMassPropertiesM3L(
+            name=f"{name}_total_mass_properties_model"
+        )
+        # print(len(mass_properties))
+        total_mass_props = total_mass_props_model.evaluate(component_mass_properties=flatten_list(mass_properties))
+        # exit()
+
         inertial_loads = InertialLoads(
             name=f"{name}_inertial_loads_model",
             num_nodes=self.num_nodes,
         )
         inertial_forces, inertial_moments = inertial_loads.evaluate(
-            total_cg_vector=mass_properties.cg,
-            totoal_mass=mass_properties.mass,
+            total_cg_vector=total_mass_props.cg_vector,
+            totoal_mass=total_mass_props.mass,
             ac_states=ac_states,
             ref_pt=ref_pt,
             stability=stability_flag,
 
         )
 
+        # Aero propulsive outputs 
+        if not isinstance(aero_propulsive_outputs, list):
+            raise TypeError(f"function argument 'aero_propulsive_outputs' must be a list - received {type(model_outputs)}")
+        
         aero_prop_outputs_m3l = []
-        for entry in aero_propulsive_outputs:
-            aero_prop_outputs_m3l.append(entry.forces)
-            aero_prop_outputs_m3l.append(entry.moments)
+        required_aero_outputs = ['forces', 'moments']
+        for model_outputs in aero_propulsive_outputs:
+            aero_outputs_keys =  model_outputs.__annotations__.keys()
+            available_required_outputs = [item for item in aero_outputs_keys if item in required_aero_outputs]
+            if not is_dataclass(model_outputs):
+                raise TypeError(f"function argument 'aero_propulsive_outputs' requires a list of data classes containing the outputs of a specific solver. Received entry of type {type(model_outputs)}")
+            elif required_aero_outputs != available_required_outputs:
+                raise ValueError(f"every aero propulsive solver must output a dataclass that contains at least the attributes 'forces' and 'moments', which are m3l Variables")
+
+            if (model_outputs.forces is None) and (model_outputs.moments is None):
+                raise ValueError("'forces' and 'moments' are both 'None'. Only 'Moments' can be None at this moment")
+            
+            elif not isinstance(model_outputs.forces, m3l.Variable):
+                raise ValueError(f"'forces' must be an m3l Variable. Received {type(model_outputs.forces)}")
+
+            if model_outputs.moments is None:
+                aero_prop_outputs_m3l.append(model_outputs.forces)
+                warnings.warn(f"Operation {model_outputs.forces.operation.name} does not compute moments")
+            else:
+                aero_prop_outputs_m3l.append(model_outputs.forces)
+                aero_prop_outputs_m3l.append(model_outputs.moments)
 
         all_forces = aero_prop_outputs_m3l + \
             [inertial_forces, inertial_moments]
 
+        # Total forces and moments
         total_forces_moments = TotalForcesMoments(
             name=f"{name}_total_forces_moments_model",
             num_nodes=self.num_nodes,
@@ -176,14 +209,15 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
             stability=stability_flag,
         )
 
+        # Equations of motion 
         eom_model = EoMEuler6DOF(
             name=f"{name}_eom_model",
             num_nodes=self.num_nodes,
         )
         accelerations, lhs_long, long_stab_state_vec, A_long, lhs_lat, lat_stab_state_vec, A_lat = eom_model.evaluate(
-            total_mass=mass_properties.mass,
-            total_cg_vector=mass_properties.cg,
-            total_inertia_tensor=mass_properties.inertia_tensor,
+            total_mass=total_mass_props.mass,
+            total_cg_vector=total_mass_props.cg_vector,
+            total_inertia_tensor=total_mass_props.inertia_tensor,
             total_forces=total_forces,
             total_moments=total_moments,
             ac_states=ac_states,

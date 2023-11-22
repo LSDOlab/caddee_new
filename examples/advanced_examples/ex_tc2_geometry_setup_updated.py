@@ -7,11 +7,21 @@ from caddee import GEOMETRY_FILES_FOLDER
 from caddee.utils.helper_functions.geometry_helpers import make_rotor_mesh, make_vlm_camber_mesh, make_1d_box_beam_mesh, compute_component_surface_area, BladeParameters
 from caddee.utils.aircraft_models.drag_models.drag_build_up import DragComponent
 
+# Instantiate system model
+system_model = m3l.Model()
+
 
 # Importing and refitting the geometry
 geometry = lg.import_geometry(GEOMETRY_FILES_FOLDER / 'LPC_final_custom_blades_3.stp', parallelize=True)
 geometry.refit(parallelize=True)
 # geometry.plot()
+
+# Create copies of the central geometries for different design conditions for which there are component actuations
+cruise_geometry = geometry.copy()
+climb_geometry = geometry.copy()
+descent_geometry = geometry.copy()
+plus_3g_geometry = geometry.copy()
+minus_1g_geometry = geometry.copy()
 
 
 # region Declaring all components
@@ -92,7 +102,7 @@ fro_boom = geometry.declare_component(component_name='fro_boom', b_spline_search
 # region Making meshes
 # Wing 
 num_spanwise_vlm = 25
-num_chordwise_vlm = 10
+num_chordwise_vlm = 40
 
 wing_te_right=np.array([13.4, 25.250, 7.5])
 wing_te_left=np.array([13.4, -25.250, 7.5])
@@ -112,23 +122,41 @@ wing_meshes = make_vlm_camber_mesh(
     le_left=wing_le_left,
     le_right=wing_le_right,
     le_center=wing_le_center,
+    grid_search_density_parameter=50,
+    off_set_x=0.2,
+    bunching_cos=True,
+    plot=False
 )
-
-
+# exit()
 # tail mesh
-num_spanwise_vlm_htail = 8
-num_chordwise_vlm_htail = 2
+num_spanwise_vlm_htail = 15
+num_chordwise_vlm_htail = 4
+
+
+tail_te_right = np.array([31.5, 6.75, 6.])
+tail_te_left = np.array([31.5, -6.75, 6.])
+tail_le_right = np.array([26.5, 6.75, 6.])
+tail_le_left = np.array([26.5, -6.75, 6.])
+
+tail_actuation_angle = system_model.create_input('cruise_tail_act_angle', val=0, dv_flag=True, lower=-10, upper=10, scaler=1e-1)
 
 tail_meshes = make_vlm_camber_mesh(
     geometry=geometry,
     wing_component=h_tail,
     num_spanwise=num_spanwise_vlm_htail,
     num_chordwise=num_chordwise_vlm_htail,
-    te_right=np.array([31.5, 6.75, 6.]),
-    te_left=np.array([31.5, -6.75, 6.]),
-    le_right=np.array([26.5, 6.75, 6.]),
-    le_left=np.array([26.5, -6.75, 6.]),
+    te_right=tail_te_right,
+    te_left=tail_te_left,
+    le_right=tail_le_right,
+    le_left=tail_le_left,
+    actuation_axis=[
+        0.75 * tail_te_right + 0.25 * tail_le_right,
+        0.75 * tail_te_left + 0.25 * tail_le_left
+    ],
+    actuation_angle=tail_actuation_angle,
+    plot=False
 )
+
 
 # v tail mesh
 num_spanwise_vlm_vtail = 8
@@ -210,7 +238,7 @@ pp_mesh = make_rotor_mesh(
     z1=np.array([31.94, -4.50, 7.78]),
     z2=np.array([31.94, 4.45, 7.77]),
     blade_geometry_parameters=[blade_1_params, blade_2_params, blade_3_params, blade_4_params],
-    create_disk_mesh=True,
+    create_disk_mesh=False,
     plot=False,
 )
 
@@ -240,7 +268,7 @@ rlo_mesh = make_rotor_mesh(
     z1=np.array([14.2, -18.75, 9.01]),
     z2=np.array([24.2, -18.75, 9.01]),
     blade_geometry_parameters=[rlo_blade_1_params, rlo_blade_2_params],
-    create_disk_mesh=True,
+    create_disk_mesh=False,
     plot=False,
 )
 
@@ -270,7 +298,7 @@ rro_mesh = make_rotor_mesh(
     z1=np.array([14.2, 18.75, 9.01]),
     z2=np.array([24.2, 18.75, 9.01]),
     blade_geometry_parameters=[rro_blade_1_params, rro_blade_2_params],
-    create_disk_mesh=True,
+    create_disk_mesh=False,
     plot=False,
 )
 
@@ -300,7 +328,7 @@ flo_mesh = make_rotor_mesh(
     z1=np.array([0.070, -18.750, 6.730]),
     z2=np.array([10.070, -18.750, 6.730]),
     blade_geometry_parameters=[flo_blade_1_params, flo_blade_2_params],
-    create_disk_mesh=True,
+    create_disk_mesh=False,
     plot=False,
 )
 
@@ -329,7 +357,7 @@ fro_mesh = make_rotor_mesh(
     z1=np.array([0.070, 18.750, 6.730]),
     z2=np.array([10.070, 18.750, 6.730]),
     blade_geometry_parameters=[fro_blade_1_params, fro_blade_2_params],
-    create_disk_mesh=True,
+    create_disk_mesh=False,
     plot=False,
 )
 
@@ -358,7 +386,7 @@ rli_mesh = make_rotor_mesh(
     z1=np.array([13.760, -8.450, 9.300]),
     z2=np.array([23.760, -8.450, 9.300]),
     blade_geometry_parameters=[rli_blade_1_params, rli_blade_2_params],
-    create_disk_mesh=True,
+    create_disk_mesh=False,
     plot=False,
 )
 
@@ -388,7 +416,7 @@ rri_mesh = make_rotor_mesh(
     z1=np.array([13.760, 8.450, 9.300]),
     z2=np.array([23.760, 8.450, 9.300]),
     blade_geometry_parameters=[rri_blade_1_params, rri_blade_2_params],
-    create_disk_mesh=True,
+    create_disk_mesh=False,
     plot=False,
 )
 
@@ -417,7 +445,7 @@ fli_mesh = make_rotor_mesh(
     z1=np.array([-0.370, -8.130, 7.040]),
     z2=np.array([9.630, -8.130, 7.040]),
     blade_geometry_parameters=[fli_blade_1_params, fli_blade_2_params],
-    create_disk_mesh=True,
+    create_disk_mesh=False,
     plot=False,
 )
 
@@ -446,7 +474,7 @@ fri_mesh = make_rotor_mesh(
     z1=np.array([-0.370, 8.130, 7.040]),
     z2=np.array([9.630, 8.130, 7.040]),
     blade_geometry_parameters=[fri_blade_1_params, fri_blade_2_params],
-    create_disk_mesh=True,
+    create_disk_mesh=False,
     plot=False,
 )
 
@@ -458,6 +486,7 @@ surface_area_list = compute_component_surface_area(
     parametric_mesh_grid_num=20,
     plot=False,
 )
+# endregion
 
 
 # Drag components 
@@ -475,8 +504,7 @@ fuselage_drag_comp = DragComponent(
     wetted_area=surface_area_list[2],
     characteristic_length=fuselage_length,
     characteristic_diameter=fuselage_diameter,
-    Q=2.,
-
+    Q=2.9,
 )
 
 
@@ -485,13 +513,17 @@ wing_mid_le = geometry.evaluate(wing.project(np.array([8.892, 0., 8.633]))).resh
 wing_mid_te = geometry.evaluate(wing.project(np.array([14.332, 0, 8.439]))).reshape((-1, 3))
 wing_mid_chord_length = m3l.norm(wing_mid_le-wing_mid_te)
 
+wing_le_right_mapped_array = geometry.evaluate(wing.project(wing_le_right)).reshape((-1, 3))
+wing_le_left_mapped_array = geometry.evaluate(wing.project(wing_le_left)).reshape((-1, 3))
+wing_span = m3l.norm(wing_le_left_mapped_array - wing_le_right_mapped_array)
+
 wing_drag_comp = DragComponent(
     component_type='wing',
     wetted_area=surface_area_list[3],
     characteristic_length=wing_mid_chord_length,
     thickness_to_chord=0.16,
-    x_cm=0.25,
-    Q=2,
+    x_cm=0.45,
+    Q=1.4,
 )
 
 # h tail
@@ -504,7 +536,8 @@ h_tail_drag_comp = DragComponent(
     wetted_area=surface_area_list[4],
     characteristic_length=h_tail_chord_length,
     thickness_to_chord=0.15,
-    x_cm=0.2,
+    x_cm=0.3,
+    Q=1.5,
 
 )
 
@@ -519,6 +552,7 @@ v_tail_drag_comp = DragComponent(
     characteristic_length=v_tail_chord_length,
     thickness_to_chord=0.115,
     x_cm=0.2,
+    Q=1.5,
 )
 
 # boom
@@ -536,7 +570,7 @@ boom_drag_comp = DragComponent(
     characteristic_diameter=boom_diameter,
     characteristic_length=boom_length,
     multiplicity=8,
-    Q=2,
+    Q=2.,
 )
 
 # lift hubs
@@ -550,7 +584,7 @@ hub_drag_comp = DragComponent(
     characteristic_diameter=hub_length,
     characteristic_length=hub_length,
     multiplicity=8,
-    Q=2,
+    Q=1,
 
 )
 
@@ -560,13 +594,12 @@ blade_tip = geometry.evaluate(rlo_blade_2.project(np.array([14.200, -18.626, 9.0
 blade_hub = geometry.evaluate(rlo_blade_2.project(np.array([18.200, -18.512, 9.197]))).reshape((-1, 3))
 
 blade_length = m3l.norm(blade_tip-blade_hub)
-
 blade_drag_comp = DragComponent(
     component_type='flat_plate',
     characteristic_length=blade_length,
     wetted_area=surface_area_list[-1],
     multiplicity=16,
-    Q=3,
+    Q=2,
 
 )
 
@@ -575,8 +608,17 @@ drag_comp_list = [wing_drag_comp, fuselage_drag_comp, h_tail_drag_comp, v_tail_d
 
 S_ref = surface_area_list[3] / 2.1
 
+wing_AR = wing_span**2 / S_ref
+
+
+# print(surface_area_list[1].value)
+# exit()
+
+# region actuations
+cruise_geometry = geometry.copy()
 
 # endregion
+
 
 
 # exit()

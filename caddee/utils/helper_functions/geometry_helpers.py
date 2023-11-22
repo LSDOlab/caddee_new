@@ -3,7 +3,7 @@ import numpy as np
 from dataclasses import dataclass, field
 import lsdo_geo as lg
 from scipy.interpolate import interp1d
-from typing import List
+from typing import List, Union
 from lsdo_rotor import RotorMeshes
 
 
@@ -211,11 +211,16 @@ def make_vlm_camber_mesh(
         le_center : np.ndarray = None,
         te_center : np.ndarray = None,
         plot: bool=False,
+        off_set_x=None, 
         grid_search_density_parameter : int = 50,
         le_interp : str = 'ellipse',
         te_interp : str = 'ellipse',
         parametric_mesh_grid_num : int = 20,
         orientation : str = 'horizontal',
+        bunching_cos : bool=False,
+        actuation_axis : List[np.ndarray] = [],
+        actuation_angle : Union[m3l.Variable, float, int] = None,
+    
 ) -> LiftingSurfaceMeshes: 
     """
     Helper function to create a VLM camber mesh
@@ -229,6 +234,7 @@ def make_vlm_camber_mesh(
         z = np.array([le_left[2], le_center[2], le_right[2]])
         fz = interp1d(y, z, kind='linear')
         array_to_project = np.zeros((num_spanwise, 3))
+        
         interp_y = np.linspace(y[0], y[2], num_spanwise)
         
         if le_interp == 'ellipse':
@@ -258,6 +264,9 @@ def make_vlm_camber_mesh(
         else:
             raise NotImplementedError
         
+        if off_set_x:
+            array_to_project[:, 0] -= off_set_x
+
         le = geometry.evaluate(wing_component.project(array_to_project, plot=plot, grid_search_density_parameter=grid_search_density_parameter)).reshape((-1, 3))
     
     else:
@@ -299,6 +308,9 @@ def make_vlm_camber_mesh(
         else:
             raise NotImplementedError
         
+        if off_set_x:
+            array_to_project[:, 0] += off_set_x
+
         te = geometry.evaluate(wing_component.project(array_to_project, plot=plot, grid_search_density_parameter=grid_search_density_parameter)).reshape((-1, 3))
     
     else:
@@ -306,12 +318,35 @@ def make_vlm_camber_mesh(
 
     wing_chord_surface = m3l.linspace(le, te, num_chordwise)
 
-    if orientation == 'horizontal':
-        wing_upper_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value + np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_density_parameter=25, plot=plot)
-        wing_lower_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., -1.]), grid_search_density_parameter=25, plot=plot)
-    elif orientation == 'vertical':
-        wing_upper_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value + np.array([0., 1., 0.]), direction=np.array([0., 1., 0.]), grid_search_density_parameter=25, plot=plot)
-        wing_lower_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value - np.array([0., 1., 0.]), direction=np.array([0., -1., 0.]), grid_search_density_parameter=25, plot=plot)
+    if bunching_cos:
+        chord_surface_ml = wing_chord_surface
+        i_vec = np.arange(0, len(chord_surface_ml.value))
+        x_range = np.linspace(0, 1, num_chordwise)
+
+        half_cos =  1-np.cos(i_vec * np.pi/(2 * (len(x_range)-1)))
+
+        x_interp_x = wing_chord_surface.value[0,:, 0].reshape(num_spanwise, 1) - ((chord_surface_ml.value[0, :, 0] - chord_surface_ml.value[-1, :, 0]).reshape(num_spanwise, 1) * half_cos.reshape(1,num_chordwise))
+        x_interp_y = wing_chord_surface.value[0,:, 1].reshape(num_spanwise, 1) - ((chord_surface_ml.value[0, :, 1] - chord_surface_ml.value[-1, :, 1]).reshape(num_spanwise, 1) * half_cos.reshape(1,num_chordwise))
+        x_interp_z = wing_chord_surface.value[0,:, 2].reshape(num_spanwise, 1) - ((chord_surface_ml.value[0, :, 2] - chord_surface_ml.value[-1, :, 2]).reshape(num_spanwise, 1) * half_cos.reshape(1,num_chordwise))
+
+        new_chord_surface = np.zeros((num_chordwise, num_spanwise, 3))
+        new_chord_surface[:, :, 0] = x_interp_x.T
+        new_chord_surface[:, :, 1] = x_interp_y.T
+        new_chord_surface[:, :, 2] = x_interp_z.T
+
+        if orientation == 'horizontal':
+            wing_upper_surface_wireframe_parametric = wing_component.project(new_chord_surface + np.array([0., 0., 0.5]), direction=np.array([0., 0., -1.]), grid_search_density_parameter=25, plot=plot)
+            wing_lower_surface_wireframe_parametric = wing_component.project(new_chord_surface - np.array([0., 0., 0.5]), direction=np.array([0., 0., 1.]), grid_search_density_parameter=35, plot=plot)
+        elif orientation == 'vertical':
+            raise NotImplementedError
+
+    else:
+        if orientation == 'horizontal':
+            wing_upper_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value + np.array([0., 0., 1.5]), direction=np.array([0., 0., -1.]), grid_search_density_parameter=30, plot=plot)
+            wing_lower_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value - np.array([0., 0., 0.9]), direction=np.array([0., 0., 1.]), grid_search_density_parameter=30, plot=plot)
+        elif orientation == 'vertical':
+            wing_upper_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value + np.array([0., 1., 0.]), direction=np.array([0., 1., 0.]), grid_search_density_parameter=26, plot=plot)
+            wing_lower_surface_wireframe_parametric = wing_component.project(wing_chord_surface.value - np.array([0., 1., 0.]), direction=np.array([0., -1., 0.]), grid_search_density_parameter=26, plot=plot)
 
     # actuated_geometry = geometry.rotate(...)
    
@@ -322,6 +357,23 @@ def make_vlm_camber_mesh(
     if plot:
         geometry.plot_meshes(meshes=wing_camber_surface, mesh_plot_types=['wireframe'], mesh_opacity=1., mesh_color='#F5F0E6')
 
+    # Actuations
+    if not actuation_axis and (actuation_angle is None):
+        pass
+    elif actuation_axis and (actuation_angle is None):
+        raise ValueError("Specified 'actuation_axis' but no 'actuation_angle'")
+    elif (actuation_angle is not None) and (len(actuation_axis) == 0):
+        raise ValueError(("Specified 'actuation_angle' but not 'actuation_axis'"))
+    else:
+        if len(actuation_axis) != 2:
+            raise ValueError(f"'actuation_axis' must be a list of length 2 (containing two vectors)")
+        
+        axis_origin = actuation_axis[0]
+        axis_vector = actuation_axis[1] - axis_origin
+
+        wing_component.rotate(axis_origin=axis_origin, axis_vector=axis_vector, angles=actuation_angle, units='degrees')
+        if plot:
+            geometry.plot()
 
     # OML parametric mesh
     surfaces = wing_component.b_spline_names
@@ -338,6 +390,7 @@ def make_vlm_camber_mesh(
         vlm_mesh=wing_camber_surface,
         oml_mesh=oml_mesh,
     )
+
 
     return meshes
 

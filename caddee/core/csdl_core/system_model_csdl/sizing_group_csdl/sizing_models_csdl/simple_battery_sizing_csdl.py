@@ -6,7 +6,6 @@ import csdl
 
 class SimpleBatterySizingCSDL(csdl.Model):
     def initialize(self):
-        self.parameters.declare('name', default='simple_battery_sizing', types=str)
         self.parameters.declare('battery_packaging_fraction', default=0.1, types=float)
         # Assume battery packaging is ~10% 
     
@@ -14,9 +13,9 @@ class SimpleBatterySizingCSDL(csdl.Model):
         shape = (1, )
         battery_packaging_frac = self.parameters['battery_packaging_fraction']
         
-        batt_mass = self.declare_variable('battery_mass', shape=shape, val=800, computed_upstream=False)
-        battery_position = self.declare_variable('battery_position', shape=(3, ), val=np.array([3., 0, 0.5]), computed_upstream=False)
-        batt_energy_dens = self.declare_variable('battery_energy_density', shape=shape, val=400, computed_upstream=False)
+        batt_mass = self.declare_variable('battery_mass', shape=shape, val=800)
+        battery_position = self.declare_variable('battery_position', shape=(3, ), val=np.array([3., 0, 0.5]))
+        batt_energy_dens = self.declare_variable('battery_energy_density', shape=shape, val=400)
         
         x = battery_position[0]
         y = battery_position[1]

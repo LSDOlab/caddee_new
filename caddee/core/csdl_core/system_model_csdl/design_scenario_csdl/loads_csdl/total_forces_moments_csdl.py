@@ -10,6 +10,10 @@ class TotalForcesMoments(m3l.ExplicitOperation):
         self.parameters.declare('not_nested_vars', types=list, default=['F_inertial', 'M_inertial'])
         self._stability_flag = False
         # super().initialize(kwargs=kwargs)
+
+    def assign_attributes(self):
+        self.name = self.parameters['name']
+
     def compute(self):
         if self._stability_flag:
             num_nodes = self.parameters['num_nodes'] * 13
@@ -92,14 +96,15 @@ class TotalForcesMomentsCSDL(csdl.Model):
 
 
         for i in range(len(forces_names)):
-                forces_name = forces_names[i]
-                moments_name = moments_names[i]
-                print('forces_name', forces_name)
-                F_model = self.declare_variable(forces_name, shape=(num_nodes, 3), val=0)
-                M_model = self.declare_variable(moments_name, shape=(num_nodes, 3), val=0)
+            forces_name = forces_names[i]
+            F_model = self.declare_variable(forces_name, shape=(num_nodes, 3), val=0)
+            F_total = F_total + F_model
 
-                F_total = F_total + F_model
-                M_total = M_total + M_model
+        for j in range(len(moments_names)):
+            moments_name = moments_names[j]
+            M_model = self.declare_variable(moments_name, shape=(num_nodes, 3), val=0)
+            M_total = M_total + M_model
+
         # exit()
         self.register_output('total_forces', F_total)
         self.register_output('total_moments', M_total)

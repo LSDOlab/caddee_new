@@ -28,3 +28,13 @@ def create_multiple_inputs(num_vars: int, m3l_model : m3l.Model, variable_prefix
             )
 
     return var_list
+
+
+def flatten_list(nested_list):
+    flattened_list = []
+    for element in nested_list:
+        if isinstance(element, list):
+            flattened_list.extend(flatten_list(element))
+        else:
+            flattened_list.append(element)
+    return flattened_list

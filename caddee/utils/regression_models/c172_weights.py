@@ -1,6 +1,4 @@
 ##ex all
-from caddee.core.caddee_core.system_model.sizing_group.sizing_models.sizing_model import SizingModel
-
 import m3l
 import csdl
 from dataclasses import dataclass

@@ -76,45 +76,60 @@ class M4RegressionsMinusWingCSDL(csdl.Model):
         for str, reg_coeff in nsm_dict.items():
             pred = reg_coeff[0] * wing_area + reg_coeff[1] * wing_AR + reg_coeff[2] * fuselage_length + reg_coeff[3] * battery_mass + reg_coeff[4] * cruise_speed + reg_coeff[5]
             self.register_output(str, pred)
-               
+
+        post_process = M4RegressionPostProcess(
+            shape=shape,
+        )
+
+        self.add(post_process, 'm4_post_process')
+
+
+class M4RegressionPostProcess(csdl.Model):
+    def initialize(self):
+        self.parameters.declare('shape', types=tuple)
+
+    def define(self):
+        shape = self.parameters['shape']
+        
         # Wing, booms, fuselage structural
         wing_boom_fuselage_structural_mass = self.declare_variable('wing_boom_fuselage_structural_mass', shape=shape)
         wing_boom_fuselage_structural_cg_x = self.declare_variable('wing_boom_fuselage_structural_cg_x', shape=shape)
-        wing_boom_fuselage_structural_cg_y = self.declare_variable('wing_boom_fuselage_structural_cg_y', shape=shape, val=0.0)
+        wing_boom_fuselage_structural_cg_y = self.create_input('wing_boom_fuselage_structural_cg_y', shape=shape, val=0.0)
         wing_boom_fuselage_structural_cg_z = self.declare_variable('wing_boom_fuselage_structural_cg_z', shape=shape,)
         wing_boom_fuselage_structural_I_xx_global = self.declare_variable('wing_boom_fuselage_structural_I_xx_global', shape=shape)
         wing_boom_fuselage_structural_I_yy_global = self.declare_variable('wing_boom_fuselage_structural_I_yy_global', shape=shape)
         wing_boom_fuselage_structural_I_zz_global = self.declare_variable('wing_boom_fuselage_structural_I_zz_global', shape=shape)
-        wing_boom_fuselage_structural_I_xy_global = self.declare_variable('wing_boom_fuselage_structural_I_xy_global', shape=shape, val=0.043383253255396936)
-        wing_boom_fuselage_structural_I_xz_global = self.declare_variable('wing_boom_fuselage_structural_I_xz_global', shape=shape, val=71.2668874236245)
-        wing_boom_fuselage_structural_I_yz_global = self.declare_variable('wing_boom_fuselage_structural_I_yz_global', shape=shape, val=-0.07399825214427834)
+        wing_boom_fuselage_structural_I_xy_global = self.create_input('wing_boom_fuselage_structural_I_xy_global', shape=shape, val=0.043383253255396936)
+        wing_boom_fuselage_structural_I_xz_global = self.create_input('wing_boom_fuselage_structural_I_xz_global', shape=shape, val=71.2668874236245)
+        wing_boom_fuselage_structural_I_yz_global = self.create_input('wing_boom_fuselage_structural_I_yz_global', shape=shape, val=-0.07399825214427834)
 
         # Empennage Structural 
         empennage_mass = self.declare_variable('empennage_struct_mass', shape=shape)
         empennage_struct_cg_x = self.declare_variable('empennage_struct_cg_x',shape=shape)
-        empennage_struct_cg_y = self.declare_variable('empennage_struct_cg_y',shape=shape,val=0.0)
+        empennage_struct_cg_y = self.create_input('empennage_struct_cg_y',shape=shape,val=0.0)
         empennage_struct_cg_z = self.declare_variable('empennage_struct_cg_z',shape=shape)
         empennage_struct_I_xx_global = self.declare_variable('empennage_struct_I_xx_global',shape=shape)
         empennage_struct_I_yy_global = self.declare_variable('empennage_struct_I_yy_global',shape=shape)
         empennage_struct_I_zz_global = self.declare_variable('empennage_struct_I_zz_global',shape=shape)
-        empennage_struct_I_xy_global = self.declare_variable('empennage_struct_I_xy_global',shape=shape,val=0.004868287408908892)
+        empennage_struct_I_xy_global = self.create_input('empennage_struct_I_xy_global',shape=shape,val=0.004868287408908892)
         empennage_struct_I_xz_global = self.declare_variable('empennage_struct_I_xz_global',shape=shape)
-        empennage_struct_I_yz_global = self.declare_variable('empennage_struct_I_yz_global',shape=shape,val=0.0034687070026175955)
+        empennage_struct_I_yz_global = self.create_input('empennage_struct_I_yz_global',shape=shape,val=0.0034687070026175955)
 
         # NSM
-        nsm_mass = self.declare_variable('nsm_mass', shape=shape, val=1339.607080322429)
+        nsm_mass = self.create_input('nsm_mass', shape=shape, val=1339.607080322429)
         nsm_cg_x = self.declare_variable('nsm_cg_x', shape=shape)
-        nsm_cg_y = self.declare_variable('nsm_cg_y', shape=shape, val=0.0)
+        nsm_cg_y = self.create_input('nsm_cg_y', shape=shape, val=0.0)
         nsm_cg_z = self.declare_variable('nsm_cg_z', shape=shape,)
         nsm_I_xx_global = self.declare_variable('nsm_I_xx_global', shape=shape)
         nsm_I_yy_global = self.declare_variable('nsm_I_yy_global', shape=shape)
         nsm_I_zz_global = self.declare_variable('nsm_I_zz_global', shape=shape)
-        nsm_I_xy_global = self.declare_variable('nsm_I_xy_global', shape=shape, val=-0.0715791329553327)
+        nsm_I_xy_global = self.create_input('nsm_I_xy_global', shape=shape, val=-0.0715791329553327)
         nsm_I_xz_global = self.declare_variable('nsm_I_xz_global', shape=shape)
-        nsm_I_yz_global = self.declare_variable('nsm_I_yz_global', shape=shape, val=-0.038325317735083846)
+        nsm_I_yz_global = self.create_input('nsm_I_yz_global', shape=shape, val=-0.038325317735083846)
 
         # Combining outputs from empennage, wing_boom_fuselage and nsm regressions 
-        total_mass = (wing_boom_fuselage_structural_mass + empennage_mass) * 1.22 + nsm_mass
+        # total_mass = (wing_boom_fuselage_structural_mass + empennage_mass) * 1.22 + nsm_mass
+        total_mass = (wing_boom_fuselage_structural_mass + empennage_mass)  + nsm_mass
         cg_x = ((wing_boom_fuselage_structural_cg_x * wing_boom_fuselage_structural_mass + empennage_struct_cg_x * empennage_mass + nsm_cg_x * nsm_mass)/ total_mass) #* 0.96
         cg_y = ( wing_boom_fuselage_structural_cg_y * wing_boom_fuselage_structural_mass + empennage_struct_cg_y * empennage_mass + nsm_cg_y * nsm_mass)/ total_mass
         cg_z = ( wing_boom_fuselage_structural_cg_z * wing_boom_fuselage_structural_mass + empennage_struct_cg_z * empennage_mass + nsm_cg_z * nsm_mass)/ total_mass
@@ -128,7 +143,7 @@ class M4RegressionsMinusWingCSDL(csdl.Model):
         Iyz = wing_boom_fuselage_structural_I_yz_global + empennage_struct_I_yz_global + nsm_I_yz_global
 
 
-        self.register_output('total_structural_mass',(empennage_mass +  wing_boom_fuselage_structural_mass) * 1.22)
+        self.register_output('total_structural_mass',(empennage_mass +  wing_boom_fuselage_structural_mass))# * 1.22)
         self.register_output('non_structural_mass', nsm_mass*1)
 
         self.register_output(

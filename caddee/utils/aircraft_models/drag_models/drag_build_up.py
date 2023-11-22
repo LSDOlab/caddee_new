@@ -44,7 +44,8 @@ class DragComponent:
 class DragBuildUpOutputs:
     D0 : m3l.Variable
     C_D0 : m3l.Variable
-    F : m3l.Variable
+    forces : m3l.Variable
+    moments : m3l.Variable = None
 
 
 class DragBuildUpModel(m3l.ExplicitOperation):
@@ -96,12 +97,13 @@ class DragBuildUpModel(m3l.ExplicitOperation):
 
         D = m3l.Variable(name='D0', shape=(self.num_nodes, ), operation=self)
         C_D0 = m3l.Variable(name='C_D0', shape=(self.num_nodes, ), operation=self)
-        F = m3l.Variable(name='F', shape=(self.num_nodes, ), operation=self)
+        F = m3l.Variable(name='F', shape=(self.num_nodes, 3), operation=self)
+        # M = m3l.Variable(name='M', shape=(self.num_nodes, 3), operation=self)
 
         outputs = DragBuildUpOutputs(
             D0=D,
             C_D0=C_D0,
-            F=F,
+            forces=F,
         )
 
         return outputs
@@ -161,7 +163,7 @@ class DragBuildUpCSDL(csdl.Model):
             Re = rho * V_inf * l / mu
 
             if comp.component_type == 'flat_plate':
-                Cf = 0.074 / Re**5
+                Cf = 0.074 / Re**(1/5)
 
             elif comp.component_type in ['wing', 'strut', 'tail', 'pylon']:
                 x_cm = comp.x_cm
@@ -209,7 +211,10 @@ class DragBuildUpCSDL(csdl.Model):
                 else:
                     raise NotImplementedError
                 
-            
+            self.register_output(f'Cf_{i}', Cf*1)
+            self.register_output(f'FF_{i}', FF* 1)
+            # self.print_var(Q)
+            self.register_output(f'S_wet_{i}', S_wet* 1)
             C_D0 =  C_D0 + (Cf * FF *  Q *  S_wet) * comp.multiplicity
 
         C_D0 = C_D0 / S_ref
@@ -217,6 +222,8 @@ class DragBuildUpCSDL(csdl.Model):
         
         self.register_output('D0', D)
         self.register_output('C_D0', C_D0)
+
+        # ref_pt = csdl.expand(self.declare_variable('ref_pt', shape=(3, ), val=np.array([0., 0., 0.])), shape=(num_nodes, 3), indices='i->ji')
 
         F = self.create_output('F', shape=(num_nodes, 3), val=0)
         for i in range(num_nodes):

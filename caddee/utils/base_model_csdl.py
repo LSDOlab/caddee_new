@@ -2,7 +2,6 @@ from csdl import Model
 import csdl
 from caddee.utils.helper_functions.camel_to_snake import camel_to_snake
 from caddee.core.caddee_core.system_model.design_scenario.design_condition.design_condition import SteadyDesignCondition
-from caddee.core.caddee_core.system_model.sizing_group.sizing_models.sizing_model import SizingModel
 import warnings
 
 # from caddee.core.caddee_core.system_representation.component.component import Component

@@ -227,7 +227,7 @@ class EulerFlatEarth6DoFGenRef(csdl.Model):
             atol=1E-8,
             iprint=False,
         )
-        solve_linear.linear_solver = csdl.ScipyKrylov()
+        solve_linear.linear_solver = csdl.DirectSolver()
         a_mat = self.declare_variable('mp_matrix', shape=(6, 6))
         b_mat = self.declare_variable('rhs', shape=(num_nodes, 6))
         accelerations = csdl.transpose(solve_linear(a_mat, b_mat))
