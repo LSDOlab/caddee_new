@@ -325,7 +325,7 @@ caddee_csdl_model = system_model.assemble_csdl()
 sim = Simulator(caddee_csdl_model, analytics=True)
 sim.run()
 
-sim.check_totals()
+# sim.check_totals()
 # exit()
 
 # prob = CSDLProblem(problem_name='TC2_new_caddee_test', simulator=sim)
