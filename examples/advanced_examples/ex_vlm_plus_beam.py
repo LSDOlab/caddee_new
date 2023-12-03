@@ -98,7 +98,7 @@ ffd_set = cd.SRBGFFDSet(
 # spatial_rep.update(updated_geometry, updated_primitives_names)
 # spatial_rep.plot()
 
-# exit()
+# 
 sys_param.add_geometry_parameterization(ffd_set)
 sys_param.setup()
 
@@ -212,7 +212,7 @@ bot = wing.project(wing_beam.value-offset, direction=np.array([0., 0., 1.]), plo
 height = am.norm((top - bot)*1)
 # print('HEIGHT IN FEET', height.evaluate())
 # height = am.subtract(top, bot)
-# exit()
+# 
 sys_rep.add_output(name='wing_beam_mesh', quantity=wing_beam)
 sys_rep.add_output(name='wing_beam_width', quantity=width)
 sys_rep.add_output(name='wing_beam_height', quantity=height)
@@ -425,7 +425,7 @@ sim.run()
 # print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.vm_stress'])
 # print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.wing_beam_forces'])
 
-# exit()
+# 
 
 # sim.compute_total_derivatives()
 # sim.check_totals()
@@ -626,7 +626,7 @@ print("I'm done.")
 # height = am.norm((top - bot)* 0.3048 - 0.05)
 # # height = am.subtract(top, bot)
 # # print(height.evaluate())
-# # exit()
+# # 
 
 # sys_rep.add_output(name='wing_beam_mesh', quantity=wing_beam)
 # sys_rep.add_output(name='wing_beam_width', quantity=width)
@@ -831,10 +831,10 @@ print("I'm done.")
 # print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.vm_stress'])
 # print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.wing_beam_forces'])
 
-# exit()
+# 
 # # sim.compute_total_derivatives()
 # sim.check_totals()
-# # exit()
+# # 
 
 # prob = CSDLProblem(problem_name='lpc', simulator=sim)
 # optimizer = SLSQP(prob, maxiter=1000, ftol=1E-5)

@@ -5,6 +5,8 @@ import csdl
 from caddee.utils.helper_classes import MassProperties
 from dataclasses import is_dataclass
 from typing import Union, List
+from caddee.utils.helper_functions.caddee_helper_functions import flatten_list
+
 
 class TotalConstantMassM3L(m3l.ExplicitOperation):
     def initialize(self, kwargs):
@@ -60,6 +62,8 @@ class TotalMassPropertiesM3L(m3l.ExplicitOperation):
     def evaluate(self, component_mass_properties : List[MassProperties]) -> MassProperties:
         self.arguments = dict()
         
+        component_mass_properties = flatten_list(component_mass_properties)
+
         if not isinstance(component_mass_properties, list):
             raise TypeError(f"Argument 'component_mass_properties' must be of type {type(list)}. Received {type(component_mass_properties)}")
 

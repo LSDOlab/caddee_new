@@ -112,7 +112,7 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
         self.name = self.parameters['name']
 
     def assemble_trim_residual(self, mass_properties : list, aero_propulsive_outputs: list,
-                               ac_states, ref_pt=None) -> TrimVariables:
+                               ac_states, load_factor : Union[int, float]=1., ref_pt=None) -> TrimVariables:
         """
         Method that assembles the following m3l models for each design condition
         in the following order:
@@ -140,6 +140,9 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
         ac_states : dataclass
             dataclass containing the aircraft states 
 
+        load_factor : float, int (default=1)
+            the load factor the aircraft experiences
+
         Returns
         -------
         An instance of the TrimVariables dataclass
@@ -154,11 +157,12 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
         )
         # print(len(mass_properties))
         total_mass_props = total_mass_props_model.evaluate(component_mass_properties=flatten_list(mass_properties))
-        # exit()
+        # 
 
         inertial_loads = InertialLoads(
             name=f"{name}_inertial_loads_model",
             num_nodes=self.num_nodes,
+            load_factor=load_factor,
         )
         inertial_forces, inertial_moments = inertial_loads.evaluate(
             total_cg_vector=total_mass_props.cg_vector,
@@ -166,7 +170,6 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
             ac_states=ac_states,
             ref_pt=ref_pt,
             stability=stability_flag,
-
         )
 
         # Aero propulsive outputs 
@@ -175,7 +178,7 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
         
         aero_prop_outputs_m3l = []
         required_aero_outputs = ['forces', 'moments']
-        for model_outputs in aero_propulsive_outputs:
+        for model_outputs in flatten_list(aero_propulsive_outputs):
             aero_outputs_keys =  model_outputs.__annotations__.keys()
             available_required_outputs = [item for item in aero_outputs_keys if item in required_aero_outputs]
             if not is_dataclass(model_outputs):
@@ -369,7 +372,7 @@ class CruiseCondition(SteadyDesignCondition):
                     f"Shape mismatch: variable '{var_name}' of condition '{self.name}' has shape {var.shape} but 'num_nodes' is {self.num_nodes}. Please set 'num_nodes' in the constructor accordingly or make sure that the shape of '{var_name}' matches 'num_nodes'.")
             else:
                 pass
-
+        
         u = m3l.Variable(name='u', shape=(self.num_nodes, ), operation=self)
         v = m3l.Variable(name='v', shape=(self.num_nodes, ), operation=self)
         w = m3l.Variable(name='w', shape=(self.num_nodes, ), operation=self)
@@ -556,7 +559,7 @@ class ClimbCondition(SteadyDesignCondition):
     """
 
     def evaluate(self, initial_altitude: m3l.Variable, final_altitude: m3l.Variable, pitch_angle: m3l.Variable,
-                 flight_path_anlge: Union[m3l.Variable, None], mach_number: Union[m3l.Variable, None],
+                 flight_path_angle: Union[m3l.Variable, None], mach_number: Union[m3l.Variable, None],
                  climb_gradient: Union[m3l.Variable, None] = None,
                  climb_speed: Union[m3l.Variable, None] = None,
                  climb_time: Union[m3l.Variable, None] = None) -> tuple[AcStates, AtmosphericProperties]:
@@ -592,13 +595,13 @@ class ClimbCondition(SteadyDesignCondition):
             raise ValueError(
                 f"Design condition {dc_name}: Cannot specify 'initial_altitude', 'final_altitude', 'climb_time', and 'climb_gradient' at the same time")
 
-        elif all([flight_path_anlge, climb_speed, climb_gradient]):
+        elif all([flight_path_angle, climb_speed, climb_gradient]):
             raise ValueError(
-                f"Design condition {dc_name}: Cannot specify 'flight_path_anlge', 'climb_speed', and 'climb_gradient' at the same time")
+                f"Design condition {dc_name}: Cannot specify 'flight_path_angle', 'climb_speed', and 'climb_gradient' at the same time")
 
-        elif all([flight_path_anlge, mach_number, climb_gradient]):
+        elif all([flight_path_angle, mach_number, climb_gradient]):
             raise ValueError(
-                f"Design condition {dc_name}: Cannot specify 'flight_path_anlge', 'mach_number', and 'climb_gradient' at the same time")
+                f"Design condition {dc_name}: Cannot specify 'flight_path_angle', 'mach_number', and 'climb_gradient' at the same time")
 
         self.arguments = {}
 
@@ -606,7 +609,7 @@ class ClimbCondition(SteadyDesignCondition):
         self.arguments['final_altitude'] = final_altitude
         self.arguments['pitch_angle'] = pitch_angle
         self.arguments['mach_number'] = mach_number
-        self.arguments['flight_path_anlge'] = flight_path_anlge
+        self.arguments['flight_path_angle'] = flight_path_angle
         self.arguments['climb_gradient'] = climb_gradient
         self.arguments['climb_speed'] = climb_speed
         self.arguments['climb_time'] = climb_time

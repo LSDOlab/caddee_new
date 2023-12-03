@@ -105,6 +105,6 @@ class TotalForcesMomentsCSDL(csdl.Model):
             M_model = self.declare_variable(moments_name, shape=(num_nodes, 3), val=0)
             M_total = M_total + M_model
 
-        # exit()
+        # 
         self.register_output('total_forces', F_total)
         self.register_output('total_moments', M_total)

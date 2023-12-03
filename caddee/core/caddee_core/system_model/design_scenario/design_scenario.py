@@ -154,7 +154,7 @@ class DesignScenario(CADDEEBase):
         mechanics_group.connections_list = mech_group_connections
         
         # print('mechanics_models_list', mechanics_models_list)
-        # exit()
+        # 
 
         nonmechanics_group = None
         

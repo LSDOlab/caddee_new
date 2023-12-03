@@ -25,7 +25,7 @@ file_name = 'LPC_test.stp'
 mech = sys_config.mechanical_structure
 mech.import_file(file_name=file_path + file_name)
 # mech.plot(plot_types=['mesh'])
-# exit()
+# 
 
 # Wing
 wing_primitive_names = list(mech.get_primitives(search_names=['Wing']).keys())
@@ -96,7 +96,7 @@ wing_upper_surface_wireframe = wing.project(chord_surface.value + np.array([0., 
 wing_lower_surface_wireframe = wing.project(chord_surface.value - np.array([0., 0., 1.]), direction=np.array([0., 0., 1.]), grid_search_n=15, plot=False)
 wing_camber_surface = am.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1) # this linspace will return average when n=1
 # mech.plot_meshes([wing_camber_surface])
-# exit()
+# 
 # Tail mesh
 num_spanwise_vlm = 5
 num_chordwise_vlm = 3
@@ -108,7 +108,7 @@ horizontal_stabilizer_lower_surface_wireframe = horizontal_stabilizer.project(ch
 horizontal_stabilizer_camber_surface = am.linspace(horizontal_stabilizer_upper_surface_wireframe, horizontal_stabilizer_lower_surface_wireframe, 1) # this linspace will return average when n=1
 # print(horizontal_stabilizer_camber_surface)
 # print(wing_camber_surface)
-# exit()
+# 
 # VLM mesh
 
 
@@ -263,7 +263,7 @@ updated_primitives_names = horizontal_stabilizer.primitive_names.copy()
 
 # mech.update(updated_geometry, updated_primitives_names)
 # mech.plot()
-# exit()
+# 
 
 
 motor_comp = cd.MotorComp(name='motor_1')
@@ -428,7 +428,7 @@ sim.run()
 
 print(t2-t1)
 # sim.check_totals()
-exit()
+
 prob = CSDLProblem(problem_name='LPC_trim', simulator=sim)
 optimizer = SNOPT(
     prob, 

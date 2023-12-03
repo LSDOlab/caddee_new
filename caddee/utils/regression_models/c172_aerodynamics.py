@@ -1,6 +1,7 @@
 import csdl
 import m3l
 from dataclasses import dataclass
+import numpy as np
 
 
 class StabilityAdapterModelCSDL(csdl.Model):
@@ -189,10 +190,16 @@ class C172AerodynamicsModelCSDL(csdl.Model):
         # self.print_var(var=rho)
         rho = 1.225  # todo: compute as a function of altitude
         
-        alpha = csdl.arctan(w / u) # Theta - gamma #  Theta - gamma # 
+        scaler_mat_numpy = np.ones((num_nodes, 1))
+        scaler_mat_numpy[0, :] = 0
+        scaler_mat = self.create_input('scaler_mat', val=scaler_mat_numpy)
+
+        alpha = csdl.arctan(-w / u) # + scaler_mat * Theta # Theta - gamma #  Theta - gamma # 
         alpha_deg = alpha * 57.2958
+        # self.print_var(Theta)
         self.register_output('alpha', alpha)
-        beta =   csdl.arcsin(v / V) # Psi + psiw #
+        self.print_var(alpha_deg)
+        beta =   csdl.arcsin(v / V) + scaler_mat * Psi # Psi + psiw #
         beta_deg = beta * 57.2958
         self.register_output('beta', beta)
         # self.print_var(alpha)

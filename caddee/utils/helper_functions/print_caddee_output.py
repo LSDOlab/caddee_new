@@ -4,7 +4,7 @@ import textwrap
 import numpy as np
 
 
-def print_caddee_outputs(m3l_model : m3l.Model, sim):
+def print_caddee_outputs(m3l_model : m3l.Model, sim, compact_print=False):
     """
     Funciton to print all (m3l) outputs a user registers inside their run script.
     The outputs is written to Pandas dataframe and organized in the following way:
@@ -24,10 +24,36 @@ def print_caddee_outputs(m3l_model : m3l.Model, sim):
             if 'stability' in var.operation.name:
                 stability_list.append(var.value.flatten())
             else:
-                print('Variable name:\t\t', var.name)
-                print('Variable operation:\t', var.operation.name)
-                print('Variable value:',  '\t' + str(var.value).replace('\n', '\n\t\t\t'))
-                print('\n')
+                if compact_print:
+                    if len(var.shape) <= 2:
+                        print('Variable name:\t\t', var.name)
+                        print('Variable operation:\t', var.operation.name)
+                        print('Variable value:',  '\t' + str(var.value).replace('\n', '\n\t\t\t'))
+                        print('\n')
+                else:
+                    print('Variable name:\t\t', var.name)
+                    print('Variable operation:\t', var.operation.name)
+                    print('Variable value:',  '\t' + str(var.value).replace('\n', '\n\t\t\t'))
+                    print('\n')
+        except:
+            pass
+
+        try:
+            var.value = sim[f"{var.operation.name}.{var.operation.name}.{var.name}"]
+            if 'stability' in var.operation.name:
+                stability_list.append(var.value.flatten())
+            else:
+                if compact_print:
+                    if len(var.shape) <= 2:
+                        print('Variable name:\t\t', var.name)
+                        print('Variable operation:\t', var.operation.name)
+                        print('Variable value:',  '\t' + str(var.value).replace('\n', '\n\t\t\t'))
+                        print('\n')
+                else:
+                    print('Variable name:\t\t', var.name)
+                    print('Variable operation:\t', var.operation.name)
+                    print('Variable value:',  '\t' + str(var.value).replace('\n', '\n\t\t\t'))
+                    print('\n')
         except:
             pass
 

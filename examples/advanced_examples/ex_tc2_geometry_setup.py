@@ -372,7 +372,7 @@ tail_qc = 0.75 * tail_root_chord_te_am + 0.25 * tail_root_chord_le_am
 
 wing_mc_fuselage_am = fuselage.project(wing_mc.value)
 # print(am.norm(wing_qc-tail_qc).value)
-# exit()
+# 
 lpc_param.add_input('tail_moment_arm', am.norm(wing_qc-tail_qc))
 
 vtail_le_am = vtail.project(np.array([30.843, 0.000, 8.231]))
@@ -513,7 +513,7 @@ lpc_param.add_input('pusher_prop_fuselage_connection', pp_disk_fuselage_connecti
 # updated_primitives_names = pp_blade_1_ffd_block.copy()
 # pp_blade_1_ffd_block.plot()
 
-# exit()
+# 
 
 # endregion
 
@@ -1333,7 +1333,7 @@ wing_upper_surface_ml_2 = wing.project(new_chord_surface_2 + np.array([0., 0., 0
 wing_lower_surface_ml_2 = wing.project(new_chord_surface_2 - np.array([0., 0., 0.5]), direction=np.array([0., 0., 1.]), grid_search_n=100, plot=False, max_iterations=200)
 
 print(wing_lower_surface_ml_2.value.shape)
-# exit()
+# 
 # wing_upper_surface_np_array = wing_upper_surface_ml_2.value
 # for i in range(num_spanwise_vlm-1):
 #     for j in range(100):
@@ -1342,7 +1342,7 @@ print(wing_lower_surface_ml_2.value.shape)
 #             dx = np.linalg.norm(wing_upper_surface_np_array[j, i, :] +  (wing_upper_surface_np_array[j, i, :] + wing_upper_surface_np_array[j, i, :])/2)
 #             area = dy * dx
 
-# exit()
+# 
 wing_oml_mesh_name_ml = 'wing_oml_mesh_ML'
 wing_oml_mesh_ml = am.vstack((wing_upper_surface_ml, wing_lower_surface_ml))
 # spatial_rep.plot_meshes([wing_camber_surface])
@@ -1477,7 +1477,7 @@ angles = np.linspace(0, 2*np.pi, num_tangential, endpoint=False)
 
 # polar_mesh = np.meshgrid(radius, angles)
 # # print(polar_mesh)
-# # exit()
+# # 
 # angles = np.linspace(0, 2 * np.pi, num_tangential)
 # rlo_disk_mesh = np.zeros((25, num_tangential, 3))
 # for i in range(num_tangential):
@@ -1497,7 +1497,7 @@ angles = np.linspace(0, 2*np.pi, num_tangential, endpoint=False)
 
 # rlo_disk.project(rlo_disk_mesh, direction=np.array([0., 0., -1.]) ,plot=True)
 # print(rlo_disk_mesh)
-# exit()
+# 
 
 
 # lifting line mesh
@@ -1543,7 +1543,7 @@ rlo_v_dist_te = am.subtract(rlo_blade_2_te_high_res, rlo_te_proj_disk)
 rlo_tot_v_dist = am.subtract(rlo_v_dist_le, rlo_v_dist_te)
 
 
-# exit()
+# 
 # endregion
 
 # region rear right outer (rro) rotor meshes
@@ -1592,7 +1592,7 @@ rro_le_proj_disk = rro_disk.project(rro_blade_2_le_high_res.evaluate(), directio
 rro_v_dist_le = am.subtract(rro_blade_2_le_high_res, rro_le_proj_disk)
 rro_v_dist_te = am.subtract(rro_blade_2_te_high_res, rro_te_proj_disk)
 rro_tot_v_dist = am.subtract(rro_v_dist_le, rro_v_dist_te)
-# exit()
+# 
 
 # endregion
 
@@ -1889,7 +1889,7 @@ fri_te_proj_disk = fri_disk.project(fri_blade_2_te_high_res.evaluate(), directio
 fri_v_dist_le = am.subtract(fri_blade_2_le_high_res, fri_le_proj_disk)
 fri_v_dist_te = am.subtract(fri_blade_2_te_high_res, fri_te_proj_disk)
 fri_tot_v_dist = am.subtract(fri_v_dist_le, fri_v_dist_te)
-# exit()
+# 
 # endregion
 
 # spatial_rep.plot_meshes([

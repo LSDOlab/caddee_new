@@ -119,7 +119,7 @@ sim.run()
 
 sim.check_totals()
 
-exit()
+
 
 prob = CSDLProblem(problem_name='c172_trim', simulator=sim)
 optimizer = SLSQP(
@@ -133,7 +133,7 @@ optimizer.print_results()
 # sim = Simulator(csdl_test_model, analytics=True)
 # sim.run()
 
-exit()
+
 
 
 

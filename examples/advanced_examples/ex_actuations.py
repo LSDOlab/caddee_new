@@ -154,7 +154,7 @@ sim.run()
 sim.check_totals(of='wing_to_tail_distance', wrt='cruise_tail_actuation')
 
 
-exit()
+
 # affine_section_properties = ffd_set.evaluate_affine_section_properties(prescribed_affine_dof=np.append(initial_guess_linear_taper, np.zeros(4,)))
 affine_section_properties = ffd_set.evaluate_affine_section_properties()
 rotational_section_properties = ffd_set.evaluate_rotational_section_properties()

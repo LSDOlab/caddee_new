@@ -72,7 +72,7 @@ class InertialLoadsModel(csdl.Model):
         m = self.declare_variable('total_mass', shape=(1, ), units='kg')
         mass = csdl.expand(var=m, shape=(num_nodes, 1))
 
-        ref_pt = csdl.expand(self.declare_variable(name='ref_pt', shape=(3, ), units='m'), shape=(num_nodes, 3), indices='j->ij')
+        ref_pt = csdl.expand(self.declare_variable(name='ref_pt', shape=(3, ), val=0, units='m'), shape=(num_nodes, 3), indices='j->ij')
         
         # Inputs changing across conditions (segments)
         th = self.declare_variable('theta', shape=(num_nodes, 1), units='rad')
@@ -100,7 +100,7 @@ class InertialLoadsModel(csdl.Model):
         
         M = self.create_output(name='M_inertial_compute', shape=(num_nodes, 3))
         for n in range(num_nodes):
-            M[n, :] = csdl.cross(r_vec[n, :], F[n, :], axis=1) 
+            M[n, :] = csdl.cross(r_vec[n, :], F[n, :], axis=1) * -1
         
         self.register_output('F_inertial', F * 1)
         self.register_output('M_inertial', M * 1)

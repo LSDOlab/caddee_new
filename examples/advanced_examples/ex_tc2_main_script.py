@@ -4228,7 +4228,7 @@ updated_primitives_names = list(lpc_rep.spatial_representation.primitives.keys()
 # cruise_geometry = sim['design_geometry']
 lpc_rep.spatial_representation.update(cruise_geometry, updated_primitives_names)
 lpc_rep.spatial_representation.plot()
-exit()
+
 # print('\n')
 # sim.check_totals(of='system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', wrt='system_model.system_m3l_model.qst_3_pp_disk_bem_model.rpm')
 # sim.check_totals()

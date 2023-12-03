@@ -48,7 +48,7 @@ def make_rotor_mesh(
         z1 : np.ndarray,
         z2 : np.ndarray,
         blade_geometry_parameters : List[BladeParameters] = [],
-        num_tangential : int = 25,
+        num_tangential : int = 30,
         norm_hub_radius : float = 0.2,
         create_disk_mesh = False,
         plot : bool = False,
@@ -103,8 +103,10 @@ def make_rotor_mesh(
                 # Equation of a circle (circular plane) in 3D space that does not have to be aligned with any 2 cartesian axes
                 cartesian[i, j, :] = p.value + radii[i] * np.cos(angles[j]) * v1.value + radii[i] * np.sin(angles[j]) * v2.value
         
-        disk_mesh = geometry.evaluate(disk_component.project(cartesian, plot=plot))
-        rotor_mesh.disk_mesh=disk_mesh
+        disk_mesh_parametric = disk_component.project(cartesian, plot=plot)
+        disk_mesh_physical = geometry.evaluate(disk_mesh_parametric)
+        rotor_mesh.disk_mesh_physical=disk_mesh_physical
+        rotor_mesh.disk_mesh_parametric=disk_mesh_parametric
 
     if blade_geometry_parameters:
         counter = 0
@@ -211,7 +213,7 @@ def make_vlm_camber_mesh(
         le_center : np.ndarray = None,
         te_center : np.ndarray = None,
         plot: bool=False,
-        off_set_x=None, 
+        off_set_x: Union[int, float]=None, 
         grid_search_density_parameter : int = 50,
         le_interp : str = 'ellipse',
         te_interp : str = 'ellipse',
@@ -220,6 +222,8 @@ def make_vlm_camber_mesh(
         bunching_cos : bool=False,
         actuation_axis : List[np.ndarray] = [],
         actuation_angle : Union[m3l.Variable, float, int] = None,
+        mirror : bool = False,
+        zero_y : bool = False,
     
 ) -> LiftingSurfaceMeshes: 
     """
@@ -324,7 +328,6 @@ def make_vlm_camber_mesh(
         x_range = np.linspace(0, 1, num_chordwise)
 
         half_cos =  1-np.cos(i_vec * np.pi/(2 * (len(x_range)-1)))
-
         x_interp_x = wing_chord_surface.value[0,:, 0].reshape(num_spanwise, 1) - ((chord_surface_ml.value[0, :, 0] - chord_surface_ml.value[-1, :, 0]).reshape(num_spanwise, 1) * half_cos.reshape(1,num_chordwise))
         x_interp_y = wing_chord_surface.value[0,:, 1].reshape(num_spanwise, 1) - ((chord_surface_ml.value[0, :, 1] - chord_surface_ml.value[-1, :, 1]).reshape(num_spanwise, 1) * half_cos.reshape(1,num_chordwise))
         x_interp_z = wing_chord_surface.value[0,:, 2].reshape(num_spanwise, 1) - ((chord_surface_ml.value[0, :, 2] - chord_surface_ml.value[-1, :, 2]).reshape(num_spanwise, 1) * half_cos.reshape(1,num_chordwise))
@@ -354,6 +357,12 @@ def make_vlm_camber_mesh(
     wing_lower_surface_wireframe = geometry.evaluate(wing_lower_surface_wireframe_parametric).reshape((num_chordwise, num_spanwise, 3))
 
     wing_camber_surface = m3l.linspace(wing_upper_surface_wireframe, wing_lower_surface_wireframe, 1)#.reshape((-1, 3))
+    if mirror:
+        wing_camber_surface.description = 'mirror'
+
+    if zero_y:
+        wing_camber_surface.description = 'zero_y'
+
     if plot:
         geometry.plot_meshes(meshes=wing_camber_surface, mesh_plot_types=['wireframe'], mesh_opacity=1., mesh_color='#F5F0E6')
 
@@ -369,9 +378,10 @@ def make_vlm_camber_mesh(
             raise ValueError(f"'actuation_axis' must be a list of length 2 (containing two vectors)")
         
         axis_origin = actuation_axis[0]
-        axis_vector = actuation_axis[1] - axis_origin
+        axis_vector = actuation_axis[1] #- axis_origin
 
-        wing_component.rotate(axis_origin=axis_origin, axis_vector=axis_vector, angles=actuation_angle, units='degrees')
+        # wing_component.rotate(axis_origin=axis_origin, axis_vector=axis_vector, angles=actuation_angle, units='degrees')
+        geometry.rotate(axis_origin=axis_origin, axis_vector=axis_vector, angles=actuation_angle, units='degrees', b_splines=wing_component.b_spline_names)
         if plot:
             geometry.plot()
 
@@ -385,7 +395,7 @@ def make_vlm_camber_mesh(
 
     oml_mesh = geometry.evaluate(oml_para_mesh).reshape((-1, 3))
     # print(oml_mesh.shape)
-    # exit()
+    # 
     meshes = LiftingSurfaceMeshes(
         vlm_mesh=wing_camber_surface,
         oml_mesh=oml_mesh,
@@ -603,5 +613,5 @@ def compute_component_surface_area(
 
     return surface_area_list
     # print(surface_area)
-    # exit()
+    # 
 

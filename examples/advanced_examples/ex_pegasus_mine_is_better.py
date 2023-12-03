@@ -193,7 +193,7 @@ spatial_rep.plot_meshes([plotting_point_cloud.reshape(cruise_wing_structural_nod
 
 
 
-exit()
+
 
 # eom_m3l_model = cd.EoMEuler6DOF()
 # trim_residual = eom_m3l_model.evaluate(

@@ -312,7 +312,7 @@ spatial_rep.plot_meshes([plotting_point_cloud.reshape(cruise_wing_structural_nod
 
 
 
-exit()
+
 ha_cruise.mechanics_group = mech_group = cd.MechanicsGroup()
 # mech_group.add_module(beam)
 mech_group.add_module(aerostructural_coupling, model_group=True)

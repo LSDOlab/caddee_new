@@ -4271,7 +4271,7 @@ sim = Simulator(
 
 # sim = Simulator(tc2_model, analytics=True)
 # sim.run()
-# exit()
+# 
 # print('\n')
 # sim.check_totals(of='system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', wrt='system_model.system_m3l_model.qst_3_pp_disk_bem_model.rpm')
 # sim.check_totals()

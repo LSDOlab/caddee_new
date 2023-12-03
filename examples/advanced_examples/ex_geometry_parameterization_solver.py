@@ -175,7 +175,7 @@ ffd_embedded_entities = ffd_set.evaluate_embedded_entities()
 # updated_primitives_names.extend(horizontal_stabilizer.primitive_names.copy())
 
 print('wing to tail distance: ', sim['wing_to_tail_distance'])
-exit()
+
 for t in range(cruise_num_nodes):
     updated_primitives_names = list(spatial_rep.primitives.keys()).copy()
     if cruise_num_nodes == 1:

@@ -272,7 +272,7 @@ sim.run()
 # print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.vm_stress'])
 # print(sim['system_model.aircraft_trim.cruise_1.cruise_1.wing_eb_beam_model.Aframe.wing_beam_forces'])
 
-exit()
+
 
 # sim.compute_total_derivatives()
 # sim.check_totals()

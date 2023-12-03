@@ -61,7 +61,7 @@ class SystemRepresentation(CADDEEBase):
         else:
             if component_name == 'motor_comp':
                 print(component_name)
-                exit()
+                
             self.components_dict[component_name] = component
 
 

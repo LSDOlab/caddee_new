@@ -36,7 +36,7 @@ if mode == 'Lowson':
     file = open(str(file_name), 'rb')
     data = pickle.load(file)
     file.close()
-    # exit()
+    # 
 
     inputs = {
         'num_blades': 2,
@@ -62,7 +62,7 @@ elif mode == 'KS':
     file = open(str(file_name), 'rb')
     data = pickle.load(file)
     file.close()
-    # exit()
+    # 
 
     inputs = {
         'num_blades': 4,

@@ -207,7 +207,7 @@ class BaseModelCSDL(csdl.Model):
             print('MODEL', model)
             print('MODEL INPUTS', model.inputs)
             print('Module', model.module)
-            exit()
+            
             model_name = model_names_list[i]
             selection_list = df.loc[[model_name]].values[0]
             # Check if the model is an instance of MechanicModel 
@@ -685,7 +685,7 @@ class BaseModelCSDL(csdl.Model):
             
             else:
                 raise NotImplementedError
-        # exit()
+        # 
 
     def connect_sizing_to_mass_properties(self, sizing_group=None, mechanics_group=None):
         if sizing_group:

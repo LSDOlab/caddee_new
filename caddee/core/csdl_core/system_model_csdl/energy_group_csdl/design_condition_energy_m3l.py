@@ -23,7 +23,7 @@ class EnergyModelM3L(m3l.ExplicitOperation):
             self.arg_names.append(arg.name + f'_{i+1}')
 
         self.arguments['time'] = ac_states['time']
-        # exit()
+        # 
 
         if design_condition is None:
             raise ValueError('Need to provide design condition')

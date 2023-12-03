@@ -29,7 +29,7 @@ class MechanicsGroupCSDL(BaseModelCSDL):
             self.add_module(csdl_model, csdl_model_name, promotes=[])
             # print(csdl_model.module_declared_vars)
 
-        # exit()
+        # 
         a = self.declare_variable(name='a', val=1.)
         b = a * 5.
         self.register_output(name='b', var=b)

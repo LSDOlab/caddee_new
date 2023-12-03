@@ -1552,7 +1552,7 @@ sim.run()
 
 
 sim.check_totals(of='system_model.system_m3l_model.qst_9_euler_eom_gen_ref_pt.trim_residual', wrt='system_model.system_m3l_model.qst_9_pp_disk_bem_model.rpm', step=1e-5)
-exit()
+
 
 # prob = CSDLProblem(problem_name='lpc', simulator=sim)
 # optimizer = SLSQP(prob, maxiter=1000, ftol=1E-7)

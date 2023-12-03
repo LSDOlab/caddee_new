@@ -48,6 +48,45 @@ class DragBuildUpOutputs:
     moments : m3l.Variable = None
 
 
+class StabilityAdapterModelCSDL(csdl.Model):
+    def initialize(self):
+        self.parameters.declare('arguments', types=dict)
+        self.parameters.declare('num_nodes', types=int)
+        self.parameters.declare('neglect', types=list, default=[])
+    
+    def define(self):
+        args = self.parameters['arguments']
+        num_nodes = self.parameters['num_nodes']
+        ac_states = ['u', 'v', 'w', 'p', 'q', 'r', 'theta', 'phi', 'psi', 'x', 'y', 'z']
+        special_cases = self.parameters['neglect']
+        for key, value in args.items():
+            if key in ac_states:
+                csdl_var = self.declare_variable(key, shape=(num_nodes * 13, ))
+                self.register_output(name=f'{key}_exp', var=csdl_var * 1)
+            elif key in special_cases:
+                csdl_var = self.declare_variable(key, shape=value.shape)
+                self.register_output(name=f'{key}_exp', var=csdl_var * 1)
+            else:
+                csdl_var = self.declare_variable(key, shape=value.shape)
+                if len(value.shape) == 1 and value.shape[0] == 1:
+                    print(key, value.shape)
+                    csdl_var_exp = csdl.expand(csdl_var, shape=(num_nodes * 13, ))
+                    self.register_output(name=f'{key}_exp', var=csdl_var_exp)
+                elif len(value.shape) == 1 and value.shape[0] != 1:
+                    print(key, (13, ) + value.shape)
+                    csdl_var_exp = csdl.reshape(csdl.expand(csdl_var, shape=(13, ) + value.shape, indices='i->ji'), new_shape=(13, value.shape[0]))
+                    self.register_output(name=f'{key}_exp', var=csdl_var_exp)
+                elif len(value.shape) == 2:
+                    if num_nodes == value.shape[0]:
+                        csdl_var_exp = csdl.reshape(csdl.expand(csdl_var, shape=(13, ) + value.shape, indices='ij->kij'), new_shape=(13*num_nodes, value.shape[1]))
+                        self.register_output(name=f'{key}_exp', var=csdl_var_exp)
+                    elif num_nodes == value.shape[1]:
+                        csdl_var_exp = csdl.reshape(csdl.expand(csdl_var, shape=(13, ) + value.shape, indices='ij->kij'), new_shape=(13*num_nodes, value.shape[0]))
+                        self.register_output(name=f'{key}_exp', var=csdl_var_exp)
+                elif len(value.shape) > 2:
+                    raise NotImplementedError
+                
+
 class DragBuildUpModel(m3l.ExplicitOperation):
     """
     Implementation of the Raymer drag-build up equations for computing an 
@@ -57,6 +96,7 @@ class DragBuildUpModel(m3l.ExplicitOperation):
         self.parameters.declare('name', types=str)
         self.parameters.declare('num_nodes', types=int)
         self.parameters.declare('units', default='m', values=['ft', 'm'])
+        self._stability_flag = False
 
     def assign_attributes(self):
         self.name = self.parameters['name']
@@ -64,15 +104,36 @@ class DragBuildUpModel(m3l.ExplicitOperation):
         self.units = self.parameters['units']
 
     def compute(self) -> csdl.Model:
-        csdl_model = DragBuildUpCSDL(
-            units=self.units,
-            drag_comp_list=self.drag_comp_list,
-            num_nodes=self.num_nodes
-        )
+        if self._stability_flag:
+            csdl_model = StabilityAdapterModelCSDL(
+                arguments=self.arguments,
+                num_nodes=self.num_nodes,
+                neglect=self.neglect_list,
+            )
+        
+            solver_model = DragBuildUpCSDL(
+                units=self.units,
+                drag_comp_list=self.drag_comp_list,
+                num_nodes=self.num_nodes*13,
+            )
+
+            operation_name = self.parameters['name']
+            csdl_model.add(solver_model, operation_name, promotes=[])
+            for key, value in self.arguments.items():
+                csdl_model.connect(f'{key}_exp',f'{operation_name}.{key}')
+
+        else:
+            csdl_model = DragBuildUpCSDL(
+                units=self.units,
+                drag_comp_list=self.drag_comp_list,
+                num_nodes=self.num_nodes
+            )
 
         return csdl_model
     
     def evaluate(self, atmos: AtmosphericProperties, ac_states : AcStates, drag_comp_list : List[DragComponent], s_ref : m3l.Variable):
+        self._stability_flag = ac_states.stability_flag
+        
         self.arguments = {}
         self.arguments['density'] = atmos.density
         self.arguments['dynamic_viscosity'] = atmos.dynamic_viscosity
@@ -81,24 +142,36 @@ class DragBuildUpModel(m3l.ExplicitOperation):
         self.arguments['v'] = ac_states.v
         self.arguments['w'] = ac_states.w
         self.arguments['theta'] = ac_states.theta
+        self.arguments['psi'] = ac_states.psi
         self.arguments['S_ref'] = s_ref
+        self.neglect_list = ['S_ref']
 
         for i, comp in enumerate(drag_comp_list):
             self.arguments[f"comp_{i}_s_wet"] = comp.wetted_area
             self.arguments[f"comp_{i}_l"] = comp.characteristic_length
+            self.neglect_list.append(f"comp_{i}_s_wet")
+            self.neglect_list.append(f"comp_{i}_l")
             if isinstance(comp.characteristic_diameter, m3l.Variable):
                 self.arguments[f"comp_{i}_d"] = comp.characteristic_diameter
+                self.neglect_list.append(f"comp_{i}_d")
 
             if isinstance(comp.thickness_to_chord, m3l.Variable):
                 self.arguments[f"comp_{i}_t_c"] = comp.thickness_to_chord
+                self.neglect_list.append(f"comp_{i}_t_c")
 
         self.drag_comp_list = drag_comp_list
 
+        if self._stability_flag:
+            D = m3l.Variable(name=f'{self.name}.D0', shape=(self.num_nodes * 13, ), operation=self)
+            C_D0 = m3l.Variable(name=f'{self.name}.C_D0', shape=(self.num_nodes* 13, ), operation=self)
+            F = m3l.Variable(name=f'{self.name}.F', shape=(self.num_nodes* 13, 3), operation=self)
+            # M = m3l.Variable(name='M', shape=(self.num_nodes, 3), operation=self)
 
-        D = m3l.Variable(name='D0', shape=(self.num_nodes, ), operation=self)
-        C_D0 = m3l.Variable(name='C_D0', shape=(self.num_nodes, ), operation=self)
-        F = m3l.Variable(name='F', shape=(self.num_nodes, 3), operation=self)
-        # M = m3l.Variable(name='M', shape=(self.num_nodes, 3), operation=self)
+        else:
+            D = m3l.Variable(name='D0', shape=(self.num_nodes, ), operation=self)
+            C_D0 = m3l.Variable(name='C_D0', shape=(self.num_nodes, ), operation=self)
+            F = m3l.Variable(name='F', shape=(self.num_nodes, 3), operation=self)
+            # M = m3l.Variable(name='M', shape=(self.num_nodes, 3), operation=self)
 
         outputs = DragBuildUpOutputs(
             D0=D,
@@ -129,7 +202,7 @@ class DragBuildUpCSDL(csdl.Model):
         if units == 'ft':
             S_ref = csdl.expand(self.declare_variable('S_ref', shape=(1, )), shape=(num_nodes, 1)) * ft_2_to_m_2
         else:
-            S_ref = csdl.expand(self.declare_variable('S_ref', shape=(1, )), shape=(num_nodes, 1))
+            S_ref = csdl.expand(self.declare_variable('S_ref', shape=(1, )), shape=(num_nodes, 1)) 
         
         
         rho = self.declare_variable('density', shape=(num_nodes, 1))
@@ -137,15 +210,24 @@ class DragBuildUpCSDL(csdl.Model):
         a = self.declare_variable('a', shape=(num_nodes, 1))
 
         u = self.declare_variable('u', shape=(num_nodes, 1))
-        v = self.declare_variable('w', shape=(num_nodes, 1))
-        w = self.declare_variable('v', shape=(num_nodes, 1))
+        v = self.declare_variable('v', shape=(num_nodes, 1))
+        w = self.declare_variable('w', shape=(num_nodes, 1))
+
+
 
         V_inf = (u**2 + v**2 + w**2)**0.5
         q_inf = 0.5 * rho * V_inf**2
         M = V_inf / a
 
-        theta = self.declare_variable('theta', shape=(num_nodes, 1))
-        self.register_output('theta_test', theta * 1)
+        Theta = self.declare_variable('theta', shape=(num_nodes, 1))
+        Psi = self.declare_variable('psi', shape=(num_nodes, 1))
+        self.register_output('theta_test', Theta * 1)
+        self.register_output('psi_test', Psi * 1)
+
+        theta = csdl.arctan(-w/u)
+        psi = csdl.arcsin(v/V_inf)
+
+        
 
         C_D0 = self.create_input('C_D0_compute', val=0, shape=(num_nodes, 1))
         
@@ -220,15 +302,22 @@ class DragBuildUpCSDL(csdl.Model):
         C_D0 = C_D0 / S_ref
         D = C_D0 * S_ref * q_inf
         
+        self.register_output('sref_test', S_ref * 1)
+        # self.print_var(C_D0)
+        # self.print_var(D)
+        self.print_var(S_ref)
+        # self.print_var(q_inf)
+        
         self.register_output('D0', D)
         self.register_output('C_D0', C_D0)
-
+        # self.print_var(psi)
+        # self.print_var(theta)
         # ref_pt = csdl.expand(self.declare_variable('ref_pt', shape=(3, ), val=np.array([0., 0., 0.])), shape=(num_nodes, 3), indices='i->ji')
-
         F = self.create_output('F', shape=(num_nodes, 3), val=0)
         for i in range(num_nodes):
-            F[i, 0] = -D * csdl.cos(theta)
-            F[i, 2] = D * csdl.sin(theta)
+            F[i, 0] = -D[i, 0] * csdl.cos(theta[i, 0]) * csdl.cos(psi[i, 0])
+            F[i, 1] = D[i, 0] * csdl.cos(theta[i, 0]) * csdl.sin(psi[i, 0])
+            F[i, 2] = -D[i, 0] * csdl.sin(theta[i, 0])
 
 
 

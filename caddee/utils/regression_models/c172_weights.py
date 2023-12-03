@@ -23,7 +23,7 @@ class MassProperties:
         The full 3x3 inertia tensor (w.r.t the global reference frame)
     """
     mass : m3l.Variable = None
-    cg : m3l.Variable = None
+    cg_vector : m3l.Variable = None
     inertia_tensor : m3l.Variable = None
 
 
@@ -49,7 +49,7 @@ class C172MassProperties(m3l.ExplicitOperation):
 
         mass_properties = MassProperties(
             mass=mass,
-            cg=cg_vector,
+            cg_vector=cg_vector,
             inertia_tensor=inertia_tensor,
         )
 

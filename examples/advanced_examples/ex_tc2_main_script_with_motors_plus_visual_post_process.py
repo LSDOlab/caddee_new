@@ -1172,7 +1172,7 @@ system_m3l_model.register_output(trim_residual, plus_3g_condition)
 #     target_names = []
 #     nodes = rotor_mesh.value.reshape((25*25, 3))
 #     print(nodes.shape)
-#     # exit()
+#     # 
 #     # # Project all points onto each target
 #     # for target_name in targets.keys():
 #     #     target = targets[target_name]
@@ -5438,7 +5438,7 @@ start = time.time()
 end = time.time()
 compile_time = end - start
 print('compile time: ', compile_time)
-# exit()
+# 
 
 class TC2DB(ld.DashBuilder):
     def define(self, *args):
@@ -5990,7 +5990,7 @@ if __name__ == '__main__':
     # print('\n')
     # sim.check_totals(of='system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', wrt='system_model.system_m3l_model.qst_3_pp_disk_bem_model.rpm')
     # sim.check_totals()
-    exit()
+    
 
 
 

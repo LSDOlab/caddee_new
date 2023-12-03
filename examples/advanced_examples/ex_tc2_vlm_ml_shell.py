@@ -221,7 +221,7 @@ projected_points_on_each_target = []
 target_names = []
 nodes = wing_oml_mesh_ml.value.reshape((200*24, 3))
 # print(nodes.shape)
-# exit()
+# 
 # # Project all points onto each target
 # for target_name in targets.keys():
 #     target = targets[target_name]
@@ -247,7 +247,7 @@ nodes = wing_oml_mesh_ml.value.reshape((200*24, 3))
 #     nodes_parametric.append((receiving_target_name, node_parametric_coordinates))
 # with open(PROJECTIONS_FOLDER /  'wing_cp_projections.pcikle', 'wb') as f:
 #         pickle.dump(nodes_parametric, f)
-# exit()
+# 
 with open(PROJECTIONS_FOLDER /  'wing_cp_projections.pcikle', 'rb') as f:
         nodes_parametric = pickle.load(f)
 
@@ -429,7 +429,7 @@ sim = Simulator(
 
 # sim = Simulator(tc2_model, analytics=True)
 sim.run()
-# exit()
+# 
 # print('\n')
 # sim.check_totals(of='system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', wrt='system_model.system_m3l_model.qst_3_pp_disk_bem_model.rpm')
 # sim.check_totals()
@@ -485,7 +485,7 @@ plt.colorbar(cax)
 plt.show()
 # print(cp_points)
 
-exit()
+
 # print(sim['system_model.system_m3l_model.qst_1_rlo_disk_bem_model.thrust_vector'])
 # print(sim['system_model.system_m3l_model.qst_1_rli_disk_bem_model.thrust_vector'])
 # print(sim['system_model.system_m3l_model.qst_1_rri_disk_bem_model.thrust_vector'])

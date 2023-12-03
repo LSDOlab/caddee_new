@@ -410,7 +410,7 @@ caddee_csdl_model.add_objective('system_model.aircraft_trim.hover_1.hover_1.eule
 sim = Simulator(caddee_csdl_model, analytics=True, display_scripts=True)
 sim.run()
 
-exit()
+
 # sim.check_totals(step=1e-10)
 
 
@@ -430,7 +430,7 @@ optimizer.print_results()
 # sim = Simulator(csdl_test_model, analytics=True)
 # sim.run()
 
-exit()
+
 
 
 

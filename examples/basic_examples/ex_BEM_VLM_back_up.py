@@ -52,7 +52,7 @@ wing_camber_surface = m3l.linspace(wing_upper_surface_wireframe, wing_lower_surf
 # geometry.plot_meshes(meshes=wing_camber_surface, mesh_plot_types=['wireframe'], mesh_opacity=1., mesh_color='#F5F0E6')
 # print(wing_camber_surface.value)
 # print(wing_camber_surface.shape)
-# exit()
+# 
 
 # prop_disk.plot()
 prop_disk_origin_parametric = prop_disk.project(np.array([0., 0., 0.,]), plot=False)

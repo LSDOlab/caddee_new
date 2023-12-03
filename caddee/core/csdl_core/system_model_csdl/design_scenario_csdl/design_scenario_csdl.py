@@ -138,7 +138,7 @@ class DesignScenarioCSDL(BaseModelCSDL):
         #     f_m_models = [model for model in mechanics_group._all_models_names_list if model not in mechanics_group._struct_model_names]
             
         #     #print(f_m_models)
-        #     #exit()
+        #     #
 
         #     for model_name in f_m_models:
         #         self.connect(f'mechanics_group.{model_name}.F', f'total_loads.{model_name}_F')

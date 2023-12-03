@@ -15,7 +15,7 @@ class EulerFlatEarth6DoFGenRef(csdl.Model):
         # region Inputs
         # Reference point
         ref_pt = self.declare_variable(name='ref_pt', shape=(3,), val=np.array([0, 0, 0]), units='m')
-        # self.print_var(ref_pt)
+        # # self.print_var(ref_pt)
         
         # Loads
         F = self.declare_variable('total_forces', shape=(num_nodes, 3))
@@ -31,8 +31,8 @@ class EulerFlatEarth6DoFGenRef(csdl.Model):
         My = M[:, 1] #self.declare_variable(name='My_total', shape=(num_nodes, 1), units='N*m')
         Mz = M[:, 2] #self.declare_variable(name='Mz_total', shape=(num_nodes, 1), units='N*m')
 
-        #self.print_var(Fy)
-        #self.print_var(Fz)
+        ## self.print_var(Fy)
+        ## self.print_var(Fz)
 
         # Mass properties
         m = self.declare_variable(
@@ -46,7 +46,7 @@ class EulerFlatEarth6DoFGenRef(csdl.Model):
             name='cg_vector',
             shape=(3, )
         )
-        # self.print_var(cg_vector)
+        # # self.print_var(cg_vector)
 
         Ixx = csdl.reshape(inertia_tensor[0, 0], (1, ))
         Iyy = csdl.reshape(inertia_tensor[1, 1], (1, ))
@@ -59,7 +59,7 @@ class EulerFlatEarth6DoFGenRef(csdl.Model):
         cgy = cg_vector[1]
         cgz = cg_vector[2]
 
-        # self.print_var(cg_vector)
+        # # self.print_var(cg_vector)
 
 
         # State
@@ -266,8 +266,9 @@ class EulerFlatEarth6DoFGenRef(csdl.Model):
         acc_vector[:, 9] = dx_dt
         acc_vector[:, 10] = dy_dt
         acc_vector[:, 11] = dz_dt
-
         # self.print_var(acc_vector)
+
+        # # self.print_var(acc_vector)
 
         if self.parameters['stability_flag']:
             # unperturbed_accelerations = csdl.transpose(acc_vector[0, :])
@@ -283,42 +284,57 @@ class EulerFlatEarth6DoFGenRef(csdl.Model):
             # stab_der_mat[:, 6] = (acc_vector[1:, 6] - unperturbed_accelerations) / np.deg2rad(0.1) # Column 7 of stability derivative matrix [dr1/dphi, dr2/dphi, ...]^T
             # stab_der_mat[:, 7] = (acc_vector[1:, 7] - unperturbed_accelerations) / np.deg2rad(0.1) # Column 8 of stability derivative matrix [dr1/dtheta, dr2/dtheta, ...]^T
             # stab_der_mat[:, 8] = (acc_vector[1:, 8] - unperturbed_accelerations) / np.deg2rad(0.1) # Column 9 of stability derivative matrix [dr1/dpsi, dr2/dpsi, ...]^T
-            # stab_der_mat[:, 9] = (acc_vector[1:, 9] - unperturbed_accelerations) / 1 # Column 10 of stability derivative matrix [dr1/dx, dr2/dx, ...]^T
-            # stab_der_mat[:, 10] = (acc_vector[1:, 10] - unperturbed_accelerations) / 1 # Column 11 of stability derivative matrix [dr1/dy, dr2/dy, ...]^T
-            # stab_der_mat[:, 11] = (acc_vector[1:, 11] - unperturbed_accelerations) / 1 # Column 12 of stability derivative matrix [dr1/dz, dr2/dz, ...]^T
+            # stab_der_mat[:, 9] = (acc_vector[1:, 9] - unperturbed_accelerations) / 0.5 # Column 10 of stability derivative matrix [dr1/dx, dr2/dx, ...]^T
+            # stab_der_mat[:, 10] = (acc_vector[1:, 10] - unperturbed_accelerations) / 0.5 # Column 11 of stability derivative matrix [dr1/dy, dr2/dy, ...]^T
+            # stab_der_mat[:, 11] = (acc_vector[1:, 11] - unperturbed_accelerations) / 0.5 # Column 12 of stability derivative matrix [dr1/dz, dr2/dz, ...]^T
 
-            stab_der_mat[0, :] = (acc_vector[1, :] - unperturbed_accelerations) / 2.5 # Column 1 of stability derivative matrix [dr1/du, dr2/du, ...]^T
-            stab_der_mat[1, :] = (acc_vector[2, :] - unperturbed_accelerations) / 2.5 # Column 2 of stability derivative matrix [dr1/dv, dr2/dv, ...]^T
-            stab_der_mat[2, :] = (acc_vector[3, :] - unperturbed_accelerations) / 2.5 # Column 3 of stability derivative matrix [dr1/dw, dr2/dw, ...]^T
-            stab_der_mat[3, :] = (acc_vector[4, :] - unperturbed_accelerations) / np.deg2rad(5) # Column 4 of stability derivative matrix [dr1/dp, dr2/dp, ...]^T
-            stab_der_mat[4, :] = (acc_vector[5, :] - unperturbed_accelerations) / np.deg2rad(5) # Column 5 of stability derivative matrix [dr1/dq, dr2/dq, ...]^T
-            stab_der_mat[5, :] = (acc_vector[6, :] - unperturbed_accelerations) / np.deg2rad(5) # Column 6 of stability derivative matrix [dr1/dr, dr2/dvr, ...]^T
-            stab_der_mat[6, :] = (acc_vector[7, :] - unperturbed_accelerations) / np.deg2rad(5) # Column 7 of stability derivative matrix [dr1/dphi, dr2/dphi, ...]^T
-            stab_der_mat[7, :] = (acc_vector[8, :] - unperturbed_accelerations) / np.deg2rad(5) # Column 8 of stability derivative matrix [dr1/dtheta, dr2/dtheta, ...]^T
-            stab_der_mat[8, :] = (acc_vector[9, :] - unperturbed_accelerations) / np.deg2rad(5) # Column 9 of stability derivative matrix [dr1/dpsi, dr2/dpsi, ...]^T
-            stab_der_mat[9, :] = (acc_vector[10, :] - unperturbed_accelerations) / 1 # Column 10 of stability derivative matrix [dr1/dx, dr2/dx, ...]^T
-            stab_der_mat[10, :] = (acc_vector[11, :] - unperturbed_accelerations) / 1 # Column 11 of stability derivative matrix [dr1/dy, dr2/dy, ...]^T
-            stab_der_mat[11, :] = (acc_vector[12, :] - unperturbed_accelerations) / 1 # Column 12 of stability derivative matrix [dr1/dz, dr2/dz, ...]^T
+            # Forward difference
+            stab_der_mat[0, :] = (acc_vector[1, :] - unperturbed_accelerations) / 0.25 # Column 1 of stability derivative matrix [dr1/du, dr2/du, ...]^T
+            stab_der_mat[1, :] = (acc_vector[2, :] - unperturbed_accelerations) / 0.25# Column 2 of stability derivative matrix [dr1/dv, dr2/dv, ...]^T
+            stab_der_mat[2, :] = (acc_vector[3, :] - unperturbed_accelerations) / 0.25# Column 3 of stability derivative matrix [dr1/dw, dr2/dw, ...]^T
+            stab_der_mat[3, :] = (acc_vector[4, :] - unperturbed_accelerations) / np.deg2rad(0.5) # Column 4 of stability derivative matrix [dr1/dp, dr2/dp, ...]^T
+            stab_der_mat[4, :] = (acc_vector[5, :] - unperturbed_accelerations) / np.deg2rad(0.5) # Column 5 of stability derivative matrix [dr1/dq, dr2/dq, ...]^T
+            stab_der_mat[5, :] = (acc_vector[6, :] - unperturbed_accelerations) / np.deg2rad(0.5) # Column 6 of stability derivative matrix [dr1/dr, dr2/dvr, ...]^T
+            stab_der_mat[6, :] = (acc_vector[7, :] - unperturbed_accelerations) / np.deg2rad(0.5) # Column 7 of stability derivative matrix [dr1/dphi, dr2/dphi, ...]^T
+            stab_der_mat[7, :] = (acc_vector[8, :] - unperturbed_accelerations) / np.deg2rad(0.5) # Column 8 of stability derivative matrix [dr1/dtheta, dr2/dtheta, ...]^T
+            stab_der_mat[8, :] = (acc_vector[9, :] - unperturbed_accelerations) / np.deg2rad(1) # Column 9 of stability derivative matrix [dr1/dpsi, dr2/dpsi, ...]^T
+            stab_der_mat[9, :] = (acc_vector[10, :] - unperturbed_accelerations) / 0.25 # Column 10 of stability derivative matrix [dr1/dx, dr2/dx, ...]^T
+            stab_der_mat[10, :] = (acc_vector[11, :] - unperturbed_accelerations) / 0.25 # Column 11 of stability derivative matrix [dr1/dy, dr2/dy, ...]^T
+            stab_der_mat[11, :] = (acc_vector[12, :] - unperturbed_accelerations) / 0.25 # Column 12 of stability derivative matrix [dr1/dz, dr2/dz, ...]^T
+
+            # Backward Difference
+            # stab_der_mat[0, :] = (unperturbed_accelerations -acc_vector[1, :]) / 0.5 # Column 1 of stability derivative matrix [dr1/du, dr2/du, ...]^T
+            # stab_der_mat[1, :] = (unperturbed_accelerations -acc_vector[2, :]) / 0.5# Column 2 of stability derivative matrix [dr1/dv, dr2/dv, ...]^T
+            # stab_der_mat[2, :] = (unperturbed_accelerations -acc_vector[3, :]) / 0.5# Column 3 of stability derivative matrix [dr1/dw, dr2/dw, ...]^T
+            # stab_der_mat[3, :] = (unperturbed_accelerations -acc_vector[4, :]) / np.deg2rad(1) # Column 4 of stability derivative matrix [dr1/dp, dr2/dp, ...]^T
+            # stab_der_mat[4, :] = (unperturbed_accelerations -acc_vector[5, :]) / np.deg2rad(1) # Column 5 of stability derivative matrix [dr1/dq, dr2/dq, ...]^T
+            # stab_der_mat[5, :] = (unperturbed_accelerations -acc_vector[6, :]) / np.deg2rad(1) # Column 6 of stability derivative matrix [dr1/dr, dr2/dvr, ...]^T
+            # stab_der_mat[6, :] = (unperturbed_accelerations -acc_vector[7, :]) / np.deg2rad(1) # Column 7 of stability derivative matrix [dr1/dphi, dr2/dphi, ...]^T
+            # stab_der_mat[7, :] = (unperturbed_accelerations -acc_vector[8, :]) / np.deg2rad(1) # Column 8 of stability derivative matrix [dr1/dtheta, dr2/dtheta, ...]^T
+            # stab_der_mat[8, :] = (unperturbed_accelerations -acc_vector[9, :]) / np.deg2rad(1) # Column 9 of stability derivative matrix [dr1/dpsi, dr2/dpsi, ...]^T
+            # stab_der_mat[9, :] = (unperturbed_accelerations -acc_vector[10, :]) / 0.5 # Column 10 of stability derivative matrix [dr1/dx, dr2/dx, ...]^T
+            # stab_der_mat[10, :] = (unperturbed_accelerations -acc_vector[11, :]) / 0.5 # Column 11 of stability derivative matrix [dr1/dy, dr2/dy, ...]^T
+            # stab_der_mat[11, :] = (unperturbed_accelerations -acc_vector[12, :]) / 0.5 # Column 12 of stability derivative matrix [dr1/dz, dr2/dz, ...]^T
 
 
             A_stab = csdl.transpose(stab_der_mat)
             self.register_output('A_stab', A_stab)
-
+            # self.print_var(A_stab)
             # Longitudinal stability matrix
             A_long = self.create_output(name='A_long', shape=(4, 4), val=0)
         
             A_long[0, 0] = A_stab[0, 0]
-            A_long[0, 1] = A_stab[0, 2] #* -1
-            A_long[0, 2] = A_stab[0, 4]
-            A_long[0, 3] = A_stab[0, 7] #* -1
+            A_long[0, 1] = A_stab[0, 2] * -1
+            A_long[0, 2] = A_stab[0, 4] 
+            A_long[0, 3] = A_stab[0, 7] 
 
             A_long[1, 0] = A_stab[2, 0]
-            A_long[1, 1] = A_stab[2, 2]
-            A_long[1, 2] = A_stab[2, 4]
+            A_long[1, 1] = A_stab[2, 2] * -1
+            A_long[1, 2] = A_stab[2, 4] 
             A_long[1, 3] = A_stab[2, 7]
 
             A_long[2, 0] = A_stab[4, 0]
-            A_long[2, 1] = A_stab[4, 2]
+            A_long[2, 1] = A_stab[4, 2] * -1
             A_long[2, 2] = A_stab[4, 4]
             A_long[2, 3] = A_stab[4, 7]
 

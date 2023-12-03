@@ -1309,7 +1309,7 @@ for rotor_name, rotor_dict in rotor_fitting_dict.items():
     target_names = []
     nodes = rotor_mesh.value.reshape((25*25, 3))
     print(nodes.shape)
-    # exit()
+    # 
     # # Project all points onto each target
     # for target_name in targets.keys():
     #     target = targets[target_name]
@@ -5821,7 +5821,7 @@ rep = csdl.GraphRepresentation(tc2_model)
 end = time.time()
 compile_time = end - start
 print('compile time: ', compile_time)
-# exit()
+# 
 
 class TC2DB(ld.DashBuilder):
     def define(self, *args):
@@ -7648,7 +7648,7 @@ if __name__ == '__main__':
         # else:
         sim[key] = val
         print(key, val)
-    exit()
+    
     # sim['caddee_csdl_model.system_representation.system_configurations_model.hover_1_flo_disk_actuation_1.hover_1_flo_disk_actuation_1']
     sim['caddee_csdl_model.hover_1_flo_disk_actuation_2'] = np.deg2rad(45) 
     # sim = Simulator(tc2_model, analytics=True)
@@ -7695,7 +7695,7 @@ if __name__ == '__main__':
     # fig.set_figheight(12)
     # plt.show()
 
-    exit()
+    
 
 
 

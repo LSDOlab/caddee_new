@@ -911,7 +911,7 @@ for rotor_name, rotor_dict in rotor_fitting_dict.items():
     # target_names = []
     # nodes = rotor_mesh.value.reshape((25*25, 3))
     # print(nodes.shape)
-    # # exit()
+    # # 
     # # Project all points onto each target
     # for target_name in targets.keys():
     #     target = targets[target_name]
@@ -1242,7 +1242,7 @@ for rotor_name, rotor_dict in rotor_fitting_dict.items():
     # target_names = []
     # nodes = rotor_mesh.value.reshape((25*25, 3))
     # print(nodes.shape)
-    # # exit()
+    # # 
     # # Project all points onto each target
     # for target_name in targets.keys():
     #     target = targets[target_name]
@@ -1576,7 +1576,7 @@ for rotor_name, rotor_dict in rotor_fitting_dict.items():
     # target_names = []
     # nodes = rotor_mesh.value.reshape((25*25, 3))
     # print(nodes.shape)
-    # # exit()
+    # # 
     # # Project all points onto each target
     # for target_name in targets.keys():
     #     target = targets[target_name]
@@ -2460,7 +2460,7 @@ for rotor_name, rotor_dict in rotor_fitting_dict.items():
     # target_names = []
     # nodes = rotor_mesh.value.reshape((25*25, 3))
     # print(nodes.shape)
-    # # exit()
+    # # 
     # # Project all points onto each target
     # for target_name in targets.keys():
     #     target = targets[target_name]
@@ -4641,7 +4641,7 @@ rep = csdl.GraphRepresentation(tc2_model)
 end = time.time()
 compile_time = end - start
 print('compile time: ', compile_time)
-# exit()
+# 
 
 class TC2DB(ld.DashBuilder):
     def define(self, *args):
@@ -5103,7 +5103,7 @@ if __name__ == '__main__':
     # print(f'{sim.constraints()=}')
     # print(f'{sim.objective()=}')
     # print(f'{np.linalg.norm(sim.constraint_jacobian())=}')
-    exit()
+    
     #     sim.constraints()=array([ 7.18430146e+00,  5.05429996e+00,  2.86065711e+00,  4.32156979e+00,
     #         3.79607837e+00,  2.67787187e+00,  4.57457221e+00,  4.45323818e+00,
     #         4.32522202e+00,  5.52889131e+00,  5.28124632e+00,  5.13679914e+00,
@@ -5153,7 +5153,7 @@ if __name__ == '__main__':
     # sim.objective()=array([4.2274858])
     # np.linalg.norm(sim.constraint_jacobian())=99.70674529815355
     # np.linalg.norm(sim.constraint_jacobian())=99.65057278422589 #wrong?
-    exit()
+    
     # print('\n')
     # sim.check_totals(of='system_model.system_m3l_model.qst_3_euler_eom_gen_ref_pt.trim_residual', wrt='system_model.system_m3l_model.qst_3_pp_disk_bem_model.rpm')
     # sim.check_totals()

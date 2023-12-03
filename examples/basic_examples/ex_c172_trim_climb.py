@@ -108,7 +108,7 @@ caddee_csdl_model.add_objective('EulerEoMGenRefPt.trim_residual')
 sim = Simulator(caddee_csdl_model, analytics=True)
 sim.run()
 
-# exit()
+# 
 
 sim.check_totals()
 

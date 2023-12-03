@@ -6,6 +6,8 @@ import m3l
 from caddee import GEOMETRY_FILES_FOLDER
 from caddee.utils.helper_functions.geometry_helpers import make_rotor_mesh, make_vlm_camber_mesh, make_1d_box_beam_mesh, compute_component_surface_area, BladeParameters
 from caddee.utils.aircraft_models.drag_models.drag_build_up import DragComponent
+from lsdo_geo.core.parameterization.volume_sectional_parameterization import VolumeSectionalParameterization
+import lsdo_geo.splines.b_splines as bsp
 
 # Instantiate system model
 system_model = m3l.Model()
@@ -13,15 +15,8 @@ system_model = m3l.Model()
 
 # Importing and refitting the geometry
 geometry = lg.import_geometry(GEOMETRY_FILES_FOLDER / 'LPC_final_custom_blades_3.stp', parallelize=True)
-geometry.refit(parallelize=True)
+geometry.refit(parallelize=True, order=(4, 4))
 # geometry.plot()
-
-# Create copies of the central geometries for different design conditions for which there are component actuations
-cruise_geometry = geometry.copy()
-climb_geometry = geometry.copy()
-descent_geometry = geometry.copy()
-plus_3g_geometry = geometry.copy()
-minus_1g_geometry = geometry.copy()
 
 
 # region Declaring all components
@@ -99,17 +94,113 @@ fro_hub = geometry.declare_component(component_name='fro_hub', b_spline_search_n
 fro_boom = geometry.declare_component(component_name='fro_boom', b_spline_search_names=['Rotor_7_Support'])
 # endregion
 
+# region FFD
+# Wing
+import time 
+
+t2 = time.time()
+wing_ffd_block = lg.construct_ffd_block_around_entities(name='wing_ffd_block', entities=wing, num_coefficients=(3, 10, 2))
+t1 = time.time()
+print(t1-t2)
+wing_ffd_block_sect_param = VolumeSectionalParameterization(name='wing_ffd_sect_param', principal_parametric_dimension=1, 
+                                                            parameterized_points=wing_ffd_block.coefficients,
+                                                            parameterized_points_shape=wing_ffd_block.coefficients_shape)
+
+wing_ffd_block_sect_param.add_sectional_translation(name='wing_span_stretch', axis=1)
+wing_ffd_block_sect_param.add_sectional_stretch(name='wing_chord_stretch', axis=0)
+wing_ffd_block_sect_param.add_sectional_rotation(name='wing_twist', axis=1)
+
+linear_b_spline_curve_2_dof_space = bsp.BSplineSpace(name='linear_b_spline_curve_2_dof_space', order=2, parametric_coefficients_shape=(2,))
+linear_b_spline_curve_3_dof_space = bsp.BSplineSpace(name='linear_b_spline_curve_3_dof_space', order=2, parametric_coefficients_shape=(3,))
+cubic_b_spline_curve_5_dof_space = bsp.BSplineSpace(name='cubic_b_spline_curve_5_dof_space', order=4, parametric_coefficients_shape=(5,))
+
+wing_span_strech_coefficients = system_model.create_input('wing_span_stretch_coefficients', shape=(2, ), val=np.array([1., 0.]))
+wing_span_strech_b_spline = bsp.BSpline(name='wing_span_b_spline', space=linear_b_spline_curve_2_dof_space, 
+                                           coefficients=wing_span_strech_coefficients, num_physical_dimensions=1)
+    
+wing_chord_stretch_coefficients = system_model.create_input('wing_chord_stretch_coefficients', shape=(3, ), val=np.array([-0.5, -0.1, 0]))
+wing_chord_stretch_b_spline = bsp.BSpline(name='wing_chord_b_spline', space=linear_b_spline_curve_3_dof_space, coefficients=wing_chord_stretch_coefficients, 
+                                          num_physical_dimensions=1)
+
+wing_twist_coefficients = system_model.create_input('wing_twist_coefficients', shape=(5,), val=np.array([0., 30., 20., 10., 0.]))
+wing_twist_b_spline = bsp.BSpline(name='wing_twist_b_spline', space=cubic_b_spline_curve_5_dof_space,
+                                            coefficients=wing_twist_coefficients, num_physical_dimensions=1)
+
+
+
+
+section_parametric_coordinates = np.linspace(0., 1., wing_ffd_block_sect_param.num_sections).reshape((-1,1))
+wing_wingspan_stretch = wing_span_strech_b_spline.evaluate(section_parametric_coordinates)
+wing_chord_stretch = wing_chord_stretch_b_spline.evaluate(section_parametric_coordinates)
+wing_sectional_twist = wing_twist_b_spline.evaluate(section_parametric_coordinates)
+
+
+sectional_parameters = {
+        'wing_span_stretch': wing_wingspan_stretch,
+        'wing_chord_stretch': wing_chord_stretch,
+        'wing_twist': wing_sectional_twist,
+}
+
+
+wing_ffd_block_coefficients = wing_ffd_block_sect_param.evaluate(sectional_parameters, plot=False)
+wing_coefficients = wing_ffd_block.evaluate(wing_ffd_block_coefficients, plot=False)
+geometry.assign_coefficients(coefficients=wing_coefficients, b_spline_names=wing.b_spline_names)
+
+
+wing_te_right = geometry.evaluate(wing.project(np.array([13.4, 25.250, 7.5])))
+wing_te_left = geometry.evaluate(wing.project(np.array([13.4, -25.250, 7.5])))
+wing_te_center = geometry.evaluate(wing.project(np.array([14.332, 0., 8.439])))
+wing_le_left = geometry.evaluate(wing.project(np.array([12.356, -25.25, 7.618])))
+wing_le_right = geometry.evaluate(wing.project(np.array([12.356, 25.25, 7.618])))
+wing_le_center = geometry.evaluate(wing.project(np.array([8.892, 0., 8.633])))
+
+wing_span = m3l.norm(wing_te_right - wing_te_left)
+root_chord = m3l.norm(wing_te_center-wing_le_center)
+tip_chord_left = m3l.norm(wing_te_left-wing_le_left)
+tip_chord_right = m3l.norm(wing_te_right-wing_le_right)
+
+from lsdo_geo.core.parameterization.parameterization_solver import ParameterizationSolver
+wing_parameterization_solver = ParameterizationSolver()
+
+wing_parameterization_solver.declare_state('wing_span_stretch_coefficients', wing_span_strech_coefficients)
+wing_parameterization_solver.declare_state('wing_chord_stretch_coefficients', wing_chord_stretch_coefficients)
+
+wing_parameterization_solver.declare_input(name='wing_span', input=wing_span)
+wing_parameterization_solver.declare_input(name='tip_chord_left', input=tip_chord_left)
+wing_parameterization_solver.declare_input(name='tip_chord_right', input=tip_chord_right)
+wing_parameterization_solver.declare_input(name='root_chord', input=root_chord)
+
+wing_span_input = m3l.Variable(name='wing_span', shape=(1, ), value=np.array([30]))
+root_chord_input = m3l.Variable(name='root_chord', shape=(1, ), value=np.array([5]))
+tip_chord_right_input = m3l.Variable(name='tip_chord_right', shape=(1, ), value=np.array([2]))
+tip_chord_left_input = m3l.Variable(name='tip_chord_left', shape=(1, ), value=np.array([1]))
+
+parameterization_inputs = {
+    'wing_span' : wing_span,
+    'root_chord' : root_chord_input,
+    'tip_chord_left' : tip_chord_left_input,
+    'tip_chord_right' : tip_chord_right_input,
+}
+outputs_dict = wing_parameterization_solver.evaluate(inputs=parameterization_inputs, plot=True)
+
+# wing_ffd_block_sect_param.plot()
+
+exit()
+
+# H-tail
+h_tail_ffd_blcok = lg.construct_ffd_block_around_entities(name='h_tail_ffd_block', entities=h_tail, num_coefficients=(2, 5, 2))
+
+# V-tail
+v_tail_ffd_block = lg.construct_ffd_block_around_entities(name='v_tail_ffd_block', entities=v_tail, num_coefficients=(2, 5, 2))
+# endregion
+
 # region Making meshes
 # Wing 
 num_spanwise_vlm = 25
-num_chordwise_vlm = 40
+num_chordwise_vlm = 8
 
-wing_te_right=np.array([13.4, 25.250, 7.5])
-wing_te_left=np.array([13.4, -25.250, 7.5])
-wing_te_center=np.array([14.332, 0., 8.439])
-wing_le_left=np.array([12.356, -25.25, 7.618])
-wing_le_right=np.array([12.356, 25.25, 7.618])
-wing_le_center=np.array([8.892, 0., 8.633])
+
+wing_actuation_angle = system_model.create_input('wing_act_angle', val=0, dv_flag=False, lower=-15, upper=15, scaler=1e-1)
 
 wing_meshes = make_vlm_camber_mesh(
     geometry=geometry,
@@ -123,39 +214,51 @@ wing_meshes = make_vlm_camber_mesh(
     le_right=wing_le_right,
     le_center=wing_le_center,
     grid_search_density_parameter=50,
+    actuation_axis=[
+        0.75 * wing_te_right + 0.25 * wing_le_right,
+        0.75 * wing_te_left + 0.25 * wing_le_left
+    ],
+    actuation_angle=wing_actuation_angle,
     off_set_x=0.2,
     bunching_cos=True,
-    plot=False
+    plot=False,
+    mirror=True,
 )
-# exit()
+# 
 # tail mesh
-num_spanwise_vlm_htail = 15
+num_spanwise_vlm_htail = 8
 num_chordwise_vlm_htail = 4
 
-
+# Create copies of the central geometries for different design conditions for which there are component actuations
 tail_te_right = np.array([31.5, 6.75, 6.])
 tail_te_left = np.array([31.5, -6.75, 6.])
 tail_le_right = np.array([26.5, 6.75, 6.])
 tail_le_left = np.array([26.5, -6.75, 6.])
 
-tail_actuation_angle = system_model.create_input('cruise_tail_act_angle', val=0, dv_flag=True, lower=-10, upper=10, scaler=1e-1)
+
+actuation_axis=[
+    0.5 * tail_te_right + 0.5 * tail_le_right,
+    0.5 * tail_te_left + 0.5 * tail_le_left
+]
+
+axis_origin = geometry.evaluate(h_tail.project(actuation_axis[0]))
+axis_vector = geometry.evaluate(h_tail.project(actuation_axis[1])) - axis_origin
 
 tail_meshes = make_vlm_camber_mesh(
     geometry=geometry,
-    wing_component=h_tail,
+    wing_component=h_tail, 
     num_spanwise=num_spanwise_vlm_htail,
     num_chordwise=num_chordwise_vlm_htail,
     te_right=tail_te_right,
     te_left=tail_te_left,
     le_right=tail_le_right,
     le_left=tail_le_left,
-    actuation_axis=[
-        0.75 * tail_te_right + 0.25 * tail_le_right,
-        0.75 * tail_te_left + 0.25 * tail_le_left
-    ],
-    actuation_angle=tail_actuation_angle,
-    plot=False
+    plot=False,
+    mirror=True,
 )
+
+# axis_origin = cruise_geometry_2.evaluate(h_tail_cruise_2.project(actuation_axis[0]))
+# axis_vector = cruise_geometry_2.evaluate(h_tail_cruise_2.project(actuation_axis[1])) - axis_origin
 
 
 # v tail mesh
@@ -173,6 +276,7 @@ v_tail_meshes = make_vlm_camber_mesh(
     te_right=np.array([32.065, 0., 13.911]),
     plot=False,
     orientation='vertical',
+    zero_y=True,
 )
 
 
@@ -194,7 +298,37 @@ box_beam_mesh = make_1d_box_beam_mesh(
     plot=False,
 )
 
-# Rotor meshes
+# Fuselage mesh
+num_fuselage_len = 10
+num_fuselage_height = 4
+nose = np.array([2.464, 0., 5.113])
+rear = np.array([31.889, 0., 7.798])
+nose_points = geometry.evaluate(fuselage.project(nose, grid_search_density_parameter=20))
+rear_points = geometry.evaluate(fuselage.project(rear))
+
+fuselage_linspace = m3l.linspace(nose_points, rear_points, num_fuselage_len)
+fueslage_top_points = geometry.evaluate(fuselage.project(fuselage_linspace.value + np.array([0., 0., 3]), direction=np.array([0.,0.,-1.]), plot=False, grid_search_density_parameter=20))
+fueslage_bottom_points = geometry.evaluate(fuselage.project(fuselage_linspace.value - np.array([0., 0., 3]), direction=np.array([0.,0.,1.]), plot=False, grid_search_density_parameter=20))
+fuesleage_mesh = m3l.linspace(fueslage_top_points.reshape((-1, 3)), fueslage_bottom_points.reshape((-1, 3)),  int(num_fuselage_height + 1))
+fuesleage_mesh.description = 'zero_y'
+
+
+nose2 = np.array([3.439, 1.148, 6.589])
+rear2 = np.array([22.030, 1.148, 6.589])
+nose2_points = geometry.evaluate(fuselage.project(nose2, plot=False, grid_search_density_parameter=20))
+rear2_points = geometry.evaluate(fuselage.project(rear2, plot=False, grid_search_density_parameter=20))
+fuselage_linspace2 = m3l.linspace(nose2_points, rear2_points, num_fuselage_len)
+fuselage_left_points = geometry.evaluate(fuselage.project(fuselage_linspace2.value, direction=np.array([0., 1., 0.]), plot=False)).reshape((-1, 3))
+multiplier = np.ones(fuselage_left_points.shape)
+multiplier[:, 1] *= -1
+fuselage_right_points = fuselage_left_points * multiplier
+# fuselage_right_points = geometry.evaluate(fuselage.project(fuselage_linspace2.value - np.array([0., 5., 0.,]), direction=np.array([0., -1., 0.]), plot=False)).reshape((-1, 3))
+fuselage_mesh_2 = m3l.linspace(fuselage_left_points, fuselage_right_points, num_fuselage_height)# .reshape((num_fuselage_len, num_fuselage_height, 3))
+fuselage_mesh_2.description = 'average_z'
+# geometry.plot_meshes([fuselage_mesh_2, fuesleage_mesh])
+# 
+
+# region Rotor meshes
 num_radial = 30
 num_spanwise_vlm_rotor = 8
 num_chord_vlm_rotor = 2
@@ -268,7 +402,7 @@ rlo_mesh = make_rotor_mesh(
     z1=np.array([14.2, -18.75, 9.01]),
     z2=np.array([24.2, -18.75, 9.01]),
     blade_geometry_parameters=[rlo_blade_1_params, rlo_blade_2_params],
-    create_disk_mesh=False,
+    create_disk_mesh=True,
     plot=False,
 )
 
@@ -386,7 +520,7 @@ rli_mesh = make_rotor_mesh(
     z1=np.array([13.760, -8.450, 9.300]),
     z2=np.array([23.760, -8.450, 9.300]),
     blade_geometry_parameters=[rli_blade_1_params, rli_blade_2_params],
-    create_disk_mesh=False,
+    create_disk_mesh=True,
     plot=False,
 )
 
@@ -477,8 +611,13 @@ fri_mesh = make_rotor_mesh(
     create_disk_mesh=False,
     plot=False,
 )
+# endregion
 
-# Component surface areas
+
+# endregion
+
+
+# region Component surface areas
 component_list = [rlo_boom, rlo_hub, fuselage, wing, h_tail, v_tail, pp_hub, rlo_blade_1]
 surface_area_list = compute_component_surface_area(
     component_list=component_list,
@@ -486,9 +625,8 @@ surface_area_list = compute_component_surface_area(
     parametric_mesh_grid_num=20,
     plot=False,
 )
-# endregion
 
-
+# 
 # Drag components 
 # Fuselage
 fuselage_l1 = geometry.evaluate(fuselage.project(np.array([1.889, 0., 4.249]))).reshape((-1, 3))
@@ -607,21 +745,21 @@ drag_comp_list = [wing_drag_comp, fuselage_drag_comp, h_tail_drag_comp, v_tail_d
                   blade_drag_comp, boom_drag_comp, hub_drag_comp]
 
 S_ref = surface_area_list[3] / 2.1
-
+# print(S_ref.value)
+# 
 wing_AR = wing_span**2 / S_ref
+# endregion
 
-
-# print(surface_area_list[1].value)
-# exit()
+# 
 
 # region actuations
-cruise_geometry = geometry.copy()
+# cruise_geometry = geometry.copy()
 
 # endregion
 
 
 
-# exit()
+# 
 # # TODO
 # # 1) helper function for lines 28-255
 # # 2) storing imports/projections: clean up code + location of where to store imports/projections
@@ -984,7 +1122,7 @@ cruise_geometry = geometry.copy()
 
 # wing_mc_fuselage_am = fuselage.project(wing_mc.value)
 # # print(am.norm(wing_qc-tail_qc).value)
-# # exit()
+# # 
 # lpc_param.add_input('tail_moment_arm', am.norm(wing_qc-tail_qc))
 
 # vtail_le_am = vtail.project(np.array([30.843, 0.000, 8.231]))
@@ -1124,7 +1262,7 @@ cruise_geometry = geometry.copy()
 # # updated_primitives_names = pp_blade_1_ffd_block.copy()
 # # pp_blade_1_ffd_block.plot()
 
-# # exit()
+# # 
 
 # # endregion
 
@@ -1978,12 +2116,12 @@ cruise_geometry = geometry.copy()
 # #         surfaces.remove(key)
 # #         print(key)
 # #         spatial_rep.plot(primitives=surfaces)
-# # exit()
+# # 
 # wing_upper_surface_ml_2 = wing.project(new_chord_surface_2 + np.array([0., 0., 0.5]), direction=np.array([0., 0., -1.]), grid_search_n=75, plot=False, max_iterations=200)
 # wing_lower_surface_ml_2 = wing.project(new_chord_surface_2 - np.array([0., 0., 0.5]), direction=np.array([0., 0., 1.]), grid_search_n=100, plot=False, max_iterations=200)
 
 # print(wing_lower_surface_ml_2.value.shape)
-# # exit()
+# # 
 # # wing_upper_surface_np_array = wing_upper_surface_ml_2.value
 # # for i in range(num_spanwise_vlm-1):
 # #     for j in range(100):
@@ -1992,7 +2130,7 @@ cruise_geometry = geometry.copy()
 # #             dx = np.linalg.norm(wing_upper_surface_np_array[j, i, :] +  (wing_upper_surface_np_array[j, i, :] + wing_upper_surface_np_array[j, i, :])/2)
 # #             area = dy * dx
 
-# # exit()
+# # 
 # wing_oml_mesh_name_ml = 'wing_oml_mesh_ML'
 # wing_oml_mesh_ml = am.vstack((wing_upper_surface_ml, wing_lower_surface_ml))
 # # spatial_rep.plot_meshes([wing_camber_surface])
@@ -2009,7 +2147,7 @@ cruise_geometry = geometry.copy()
 
 # # with open(PROJECTIONS_FOLDER /  'wing_cp_projections.pcikle', 'wb+') as handle:
 # #     pickle.dump(ml_nodes_parametric, handle, protocol=pickle.HIGHEST_PROTOCOL)
-# # exit()
+# # 
 # # region wing beam mesh
 # point00 = np.array([12.356, 25.250, 7.618 + 0.1]) 
 # point01 = np.array([13.400, 25.250, 7.617 + 0.1]) 
@@ -2191,7 +2329,7 @@ cruise_geometry = geometry.copy()
 # rlo_tot_v_dist = am.subtract(rlo_v_dist_le, rlo_v_dist_te)
 
 
-# # exit()
+# # 
 # # endregion
 
 # # region rear right outer (rro) rotor meshes
@@ -2265,7 +2403,7 @@ cruise_geometry = geometry.copy()
 # rro_v_dist_le = am.subtract(rro_blade_2_le_high_res, rro_le_proj_disk)
 # rro_v_dist_te = am.subtract(rro_blade_2_te_high_res, rro_te_proj_disk)
 # rro_tot_v_dist = am.subtract(rro_v_dist_le, rro_v_dist_te)
-# # exit()
+# # 
 
 # # endregion
 
@@ -2707,7 +2845,7 @@ cruise_geometry = geometry.copy()
 # fri_v_dist_le = am.subtract(fri_blade_2_le_high_res, fri_le_proj_disk)
 # fri_v_dist_te = am.subtract(fri_blade_2_te_high_res, fri_te_proj_disk)
 # fri_tot_v_dist = am.subtract(fri_v_dist_le, fri_v_dist_te)
-# # exit()
+# # 
 # # endregion
 
 # # spatial_rep.plot_meshes([
