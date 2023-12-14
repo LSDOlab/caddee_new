@@ -5,33 +5,29 @@ from caddee.core.csdl_core.system_model_csdl.energy_group_csdl.design_condition_
 
 class EnergyModelM3L(m3l.ExplicitOperation):
     def initialize(self, kwargs):
-        pass
+        self.parameters.declare('name', types=str)
+
+    def assign_attributes(self):
+        self.name = self.parameters['name']
 
     def compute(self):
         model = EnergyModelCSDL(
-            design_condition_name=self.dc_name,
             argument_names=self.arg_names
         )
         return model
 
-    def evaluate(self, *args, ac_states=None, design_condition=None) -> tuple:
+    def evaluate(self, motor_outputs, ac_states) -> tuple:
 
         self.arguments = {}
         self.arg_names = []
-        for i, arg in enumerate(args):
-            self.arguments[arg.name + f'_{i+1}'] = arg
-            self.arg_names.append(arg.name + f'_{i+1}')
+        for i, arg in enumerate(motor_outputs):
+            self.arguments[f'power_{i}'] = arg.input_power
+            self.arg_names.append(f'power_{i}')
 
-        self.arguments['time'] = ac_states['time']
-        # 
-
-        if design_condition is None:
-            raise ValueError('Need to provide design condition')
-        self.dc_name = design_condition.parameters['name']
-        self.name = f'{self.dc_name}_energy_model'
-
+        self.arguments['time'] = ac_states.time
+        
         design_condition_energy = m3l.Variable(
-            f'{self.dc_name}_energy',
+            name=f'energy',
             shape=(1,),
             operation=self
         )

@@ -29,6 +29,43 @@ class SimpleBoxBeamMesh:
     width : m3l.Variable
     beam_nodes : m3l.Variable
 
+    _top_parametric : list = None,
+    _bot_parametric : list = None
+    _te_parametric : list = None
+    _le_parametric : list = None
+
+    _num_beam_nodes : int = None
+    _node_center : list = None
+
+    def update(self, geometry):
+        """
+        Re-evaluate beam nodes, and height/width at beam nodes (all as m3l variable).
+        This method should be called only if there's FFD that changes the geometry
+
+        Return : SimpleBoxBeamMesh
+            An updated version of self (meaning updated data class)
+        """
+        num_beam_nodes = self._num_beam_nodes
+        node_center = self._node_center
+
+        te = geometry.evaluate(self._te_parametric).reshape((-1, 3))
+        le = geometry.evaluate(self._le_parametric).reshape((-1, 3))
+
+        beam_nodes = m3l.linear_combination(le, te, 1, start_weights=np.ones((num_beam_nodes, ))*(1-node_center), stop_weights=np.ones((num_beam_nodes, ))*node_center).reshape((num_beam_nodes, 3))
+        width = m3l.norm((le - te)*0.5)
+        offset = np.array([0,0,0.5])
+
+        top = geometry.evaluate(self._top_parametric).reshape((num_beam_nodes, 3))
+        bot = geometry.evaluate(self._bot_parametric).reshape((num_beam_nodes, 3))
+        height = m3l.norm((top - bot)*1)
+
+        self.height = height
+        self.width = width
+        self.beam_nodes = beam_nodes
+
+        return self
+
+
 
 @ dataclass
 class LiftingSurfaceMeshes:
@@ -37,6 +74,31 @@ class LiftingSurfaceMeshes:
     oml_mesh : m3l.Variable
     ml_mesh : m3l.Variable = None
 
+    _upper_surface_parametric : list = None
+    _lower_surface_parametric : list = None
+    
+    def update(self, geometry):
+        """Evaluates the camber mesh (e.g., after FFD)"""
+
+        if len(self.vlm_mesh.shape) == 4:
+            num_chordwise = self.vlm_mesh.shape[1]
+            num_spanwise = self.vlm_mesh.shape[2]
+        elif len(self.vlm_mesh.shape) == 3:
+            num_chordwise = self.vlm_mesh.shape[0]
+            num_spanwise = self.vlm_mesh.shape[1]
+        else:
+            print(self.vlm_mesh.shape)
+            raise NotImplementedError
+        
+        upper_surface_wireframe = geometry.evaluate(self._upper_surface_parametric).reshape((num_chordwise, num_spanwise, 3))
+        lower_surface_wireframe = geometry.evaluate(self._lower_surface_parametric).reshape((num_chordwise, num_spanwise, 3))
+        wing_camber_surface = m3l.linspace(upper_surface_wireframe, lower_surface_wireframe, 1)
+
+        wing_camber_surface.description = self.vlm_mesh.description
+
+        self.vlm_mesh = wing_camber_surface
+
+        return self
 
 def make_rotor_mesh(
         geometry : lg.Geometry,
@@ -52,28 +114,45 @@ def make_rotor_mesh(
         norm_hub_radius : float = 0.2,
         create_disk_mesh = False,
         plot : bool = False,
-        grid_search_density_parameter : int = 25
+        grid_search_density_parameter : int = 25,
+        boom_is_thrust_origin : lg.BSplineSubSet=None,
+        radius : m3l.Variable=None,
 ) -> RotorMeshes: 
     """
     Helper function to automate generation of rotor meshes
     """
     # Disk origin
-    disk_origin = geometry.evaluate(
-        disk_component.project(origin, 
-                               grid_search_density_parameter=grid_search_density_parameter), 
-                                plot=plot)
+    if boom_is_thrust_origin is not None:
+        disk_origin_parametric = boom_is_thrust_origin.project(origin, grid_search_density_parameter=grid_search_density_parameter, plot=plot)
+        disk_origin = geometry.evaluate(disk_origin_parametric)
+    else:
+        disk_origin_parametric = disk_component.project(origin, grid_search_density_parameter=grid_search_density_parameter, plot=plot)
+        disk_origin = geometry.evaluate(disk_origin_parametric)
     
     # In-plane 1
-    y11 = geometry.evaluate(disk_component.project(y1, plot=plot))
-    y12 = geometry.evaluate(disk_component.project(y2, plot=plot))
+
+    y11_parametric = disk_component.project(y1, plot=plot)
+    y11 = geometry.evaluate(y11_parametric)
+    y12_parametric = disk_component.project(y2, plot=plot)
+    y12 = geometry.evaluate(y12_parametric)
     disk_in_plane_y = y11 - y12
 
     # In-plane 2
-    y21 = geometry.evaluate(disk_component.project(z1, plot=plot))
-    y22 = geometry.evaluate(disk_component.project(z2, plot=plot))
+    y21_parametric = disk_component.project(z1, plot=plot) 
+    y21 = geometry.evaluate(y21_parametric)
+    y22_parametric = disk_component.project(z2, plot=plot)
+    y22 = geometry.evaluate(y22_parametric)
     disk_in_plane_x = y21 - y22
 
-    rotor_radius = m3l.norm(y12 - y11) / 2
+    if radius is None:
+        rotor_radius = m3l.norm((y12 - y11)/2)
+        # rotor_radius = m3l.norm(y12 - y11) / 2
+        rotor_radius_2 = m3l.norm((y22 - y21)/2)
+        # rotor_radius_2 = m3l.norm(y22 - y21) / 2
+    
+    else:
+        rotor_radius = radius
+        rotor_radius_2 = radius
 
     thrust_vector = m3l.cross(disk_in_plane_x, disk_in_plane_y)
     thrust_unit_vector = thrust_vector / m3l.norm(thrust_vector)
@@ -84,6 +163,14 @@ def make_rotor_mesh(
         radius=rotor_radius,
         in_plane_1=disk_in_plane_x,
         in_plane_2=disk_in_plane_y,
+
+        _disk_origin_parametric=disk_origin_parametric,
+        _thrust_origin_prametric=disk_origin_parametric,
+        _y11_parametric=y11_parametric,
+        _y12_parametric=y12_parametric,
+        _y21_parametric=y21_parametric,
+        _y22_parametric=y22_parametric,
+        _radius_2=rotor_radius_2,
     )
 
     if create_disk_mesh:
@@ -195,6 +282,7 @@ def make_rotor_mesh(
                 rotor_mesh.vlm_meshes.append(camber_surface)
 
             counter += 1
+
 
             
 
@@ -315,12 +403,14 @@ def make_vlm_camber_mesh(
         if off_set_x:
             array_to_project[:, 0] += off_set_x
 
-        te = geometry.evaluate(wing_component.project(array_to_project, plot=plot, grid_search_density_parameter=grid_search_density_parameter)).reshape((-1, 3))
+        te = geometry.evaluate(wing_component.project(array_to_project, plot=plot, grid_search_density_parameter=grid_search_density_parameter))#.reshape((-1, 3))
     
     else:
-        te = geometry.evaluate(wing_component.project(np.linspace(te_left, te_right, num_spanwise), plot=plot, grid_search_density_parameter=grid_search_density_parameter)).reshape((-1, 3))
+        te = geometry.evaluate(wing_component.project(np.linspace(te_left, te_right, num_spanwise), plot=plot, grid_search_density_parameter=grid_search_density_parameter))#.reshape((-1, 3))
 
     wing_chord_surface = m3l.linspace(le, te, num_chordwise)
+    if plot:
+        geometry.plot_meshes(wing_chord_surface)
 
     if bunching_cos:
         chord_surface_ml = wing_chord_surface
@@ -399,6 +489,8 @@ def make_vlm_camber_mesh(
     meshes = LiftingSurfaceMeshes(
         vlm_mesh=wing_camber_surface,
         oml_mesh=oml_mesh,
+        _upper_surface_parametric=wing_upper_surface_wireframe_parametric,
+        _lower_surface_parametric=wing_lower_surface_wireframe_parametric,
     )
 
 
@@ -465,10 +557,12 @@ def make_1d_box_beam_mesh(
         else:
             raise NotImplementedError
         
-        le = geometry.evaluate(wing_component.project(array_to_project, plot=plot, grid_search_density_parameter=grid_search_density_parameter)).reshape((-1, 3))
+        le_parametric = wing_component.project(array_to_project, plot=plot, grid_search_density_parameter=grid_search_density_parameter)
+        le = geometry.evaluate(le_parametric).reshape((-1, 3))
     
     else:
-        le = geometry.evaluate(wing_component.project(np.linspace(le_left, le_right, num_beam_nodes), plot=plot, grid_search_density_parameter=grid_search_density_parameter)).reshape((-1, 3))
+        le_parametric =  wing_component.project(np.linspace(le_left, le_right, num_beam_nodes), plot=plot, grid_search_density_parameter=grid_search_density_parameter)
+        le = geometry.evaluate(le_parametric).reshape((-1, 3))
 
 
     if te_center is not None:
@@ -506,10 +600,12 @@ def make_1d_box_beam_mesh(
         else:
             raise NotImplementedError
         
-        te = geometry.evaluate(wing_component.project(array_to_project, plot=plot, grid_search_density_parameter=grid_search_density_parameter)).reshape((-1, 3))
+        te_parametric = wing_component.project(array_to_project, plot=plot, grid_search_density_parameter=grid_search_density_parameter)
+        te = geometry.evaluate(te_parametric).reshape((-1, 3))
     
     else:
-        te = geometry.evaluate(wing_component.project(np.linspace(te_left, te_right, num_beam_nodes), plot=plot, grid_search_density_parameter=grid_search_density_parameter)).reshape((-1, 3))
+        te_parametric =  wing_component.project(np.linspace(te_left, te_right, num_beam_nodes), plot=plot, grid_search_density_parameter=grid_search_density_parameter)
+        te = geometry.evaluate(te_parametric).reshape((-1, 3))
 
     beam_nodes = m3l.linear_combination(le, te, 1, start_weights=np.ones((num_beam_nodes, ))*(1-node_center), stop_weights=np.ones((num_beam_nodes, ))*node_center).reshape((num_beam_nodes, 3))
 
@@ -529,6 +625,15 @@ def make_1d_box_beam_mesh(
         height=height,
         width=width,
         beam_nodes=beam_nodes,
+
+        _top_parametric=top_parametric,
+        _bot_parametric=bot_parametric,
+        _te_parametric=te_parametric,
+        _le_parametric=le_parametric,
+
+        _num_beam_nodes=num_beam_nodes,
+        _node_center=node_center
+
     )
 
     return box_beam_mesh

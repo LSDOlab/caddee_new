@@ -52,6 +52,12 @@ class EoMEuler6DOF(m3l.ExplicitOperation):
         del ac_states_copy['stability_flag']
         self.arguments = {**mps_forces, **ac_states_copy}
 
+        du_dt = m3l.Variable(name=f'du_dt', shape=(1, ), operation=self)
+        dv_dt = m3l.Variable(name=f'dv_dt', shape=(1, ), operation=self)
+        dw_dt = m3l.Variable(name=f'dw_dt', shape=(1, ), operation=self)
+        dp_dt = m3l.Variable(name=f'dp_dt', shape=(1, ), operation=self)
+        dq_dt = m3l.Variable(name=f'dq_dt', shape=(1, ), operation=self)
+        dr_dt = m3l.Variable(name=f'dr_dt', shape=(1, ), operation=self)
         accelerations = m3l.Variable(name=f'accelerations', shape=(1, ), operation=self)
         lhs_long = m3l.Variable(name=f'lhs_long', shape=(4, ), operation=self)
         long_stab_state_vec = m3l.Variable(name=f'long_stab_state_vec', shape=(4, ), operation=self)
@@ -61,7 +67,7 @@ class EoMEuler6DOF(m3l.ExplicitOperation):
         lat_stab_state_vec = m3l.Variable(name=f'lat_stab_state_vec', shape=(4, ), operation=self)
         A_lat = m3l.Variable(name=f'A_lat', shape=(4, 4), operation=self)
 
-        return accelerations, lhs_long, long_stab_state_vec, A_long, lhs_lat, lat_stab_state_vec, A_lat
+        return accelerations, lhs_long, long_stab_state_vec, A_long, lhs_lat, lat_stab_state_vec, A_lat, du_dt, dv_dt, dw_dt, dp_dt, dq_dt, dr_dt
         
     def compute_derivatives(self): pass
         

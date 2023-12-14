@@ -64,6 +64,12 @@ class TrimVariables:
     inertial_moments: m3l.Variable = None
     long_residual:  m3l.Variable = None
     lat_residual:  m3l.Variable = None
+    du_dt : m3l.Variable = None
+    dv_dt : m3l.Variable = None
+    dw_dt : m3l.Variable = None
+    dp_dt : m3l.Variable = None
+    dq_dt : m3l.Variable = None
+    dr_dt : m3l.Variable = None
     longitudinal_stability: LongitudinalStability = None
     lateral_stability: LateralStability = None
 
@@ -217,7 +223,7 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
             name=f"{name}_eom_model",
             num_nodes=self.num_nodes,
         )
-        accelerations, lhs_long, long_stab_state_vec, A_long, lhs_lat, lat_stab_state_vec, A_lat = eom_model.evaluate(
+        accelerations, lhs_long, long_stab_state_vec, A_long, lhs_lat, lat_stab_state_vec, A_lat, du_dt, dv_dt, dw_dt, dp_dt, dq_dt, dr_dt = eom_model.evaluate(
             total_mass=total_mass_props.mass,
             total_cg_vector=total_mass_props.cg_vector,
             total_inertia_tensor=total_mass_props.inertia_tensor,
@@ -234,6 +240,12 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
             total_moments=total_moments,
             inertial_forces=inertial_forces,
             inertial_moments=inertial_moments,
+            du_dt=du_dt,
+            dv_dt=dv_dt,
+            dw_dt=dw_dt,
+            dp_dt=dp_dt,
+            dq_dt=dq_dt,
+            dr_dt=dr_dt,
         )
 
         if stability_flag:

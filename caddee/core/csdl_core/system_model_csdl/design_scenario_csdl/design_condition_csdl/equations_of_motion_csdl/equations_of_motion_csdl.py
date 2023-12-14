@@ -11,6 +11,7 @@ class EulerFlatEarth6DoFGenRef(csdl.Model):
 
     def define(self):
         num_nodes = self.parameters['num_nodes']
+        stability_flag = self.parameters['stability_flag']
 
         # region Inputs
         # Reference point
@@ -211,8 +212,26 @@ class EulerFlatEarth6DoFGenRef(csdl.Model):
         rhs[:, 4] = mu_vec[:, 1]
         rhs[:, 5] = mu_vec[:, 2]
 
+
+        eom_solve_model = EoMSolveModel(
+            num_nodes=num_nodes,
+            stability_flag=stability_flag,
+        
+        )
+        self.add(eom_solve_model, 'eom_solve_model')
+
         # custom implicit operation
         # solve the system: accelerations = np.linalg.solve(mp_matrix, rhs)
+
+class EoMSolveModel(csdl.Model):
+    def initialize(self):
+        self.parameters.declare('num_nodes', types=int)
+        self.parameters.declare('stability_flag', types=bool)
+
+    def define(self):
+        num_nodes = self.parameters['num_nodes']
+        stability_flag = self.parameters['stability_flag']
+        
         linmodel = csdl.Model()
         a_mat = linmodel.declare_variable('mp_matrix', shape=(6, 6))
         b_mat = linmodel.declare_variable('rhs', shape=(num_nodes, 6))
@@ -241,6 +260,16 @@ class EulerFlatEarth6DoFGenRef(csdl.Model):
         dq_dt = accelerations[:, 4]
         dr_dt = accelerations[:, 5]
 
+        u = self.declare_variable(name='u', shape=(num_nodes, 1), units='m/s')
+        v = self.declare_variable(name='v', shape=(num_nodes, 1), units='m/s')
+        w = self.declare_variable(name='w', shape=(num_nodes, 1), units='m/s')
+        p = self.declare_variable(name='p', shape=(num_nodes, 1), units='rad/s')
+        q = self.declare_variable(name='q', shape=(num_nodes, 1), units='rad/s')
+        r = self.declare_variable(name='r', shape=(num_nodes, 1), units='rad/s')
+        phi = self.declare_variable(name='phi', shape=(num_nodes, 1), units='rad')
+        theta = self.declare_variable(name='theta', shape=(num_nodes, 1), units='rad')
+        psi = self.declare_variable(name='psi', shape=(num_nodes, 1), units='rad')
+
         dphi_dt = p + q * csdl.sin(phi) * csdl.tan(theta) + r * csdl.cos(phi) * csdl.tan(theta)
         dtheta_dt = q * csdl.cos(phi) - r * csdl.sin(phi)
         dpsi_dt = q * csdl.sin(phi) / csdl.cos(theta) + r * csdl.cos(phi) / csdl.cos(theta)
@@ -268,9 +297,16 @@ class EulerFlatEarth6DoFGenRef(csdl.Model):
         acc_vector[:, 11] = dz_dt
         # self.print_var(acc_vector)
 
+        self.register_output('du_dt', du_dt*1)
+        self.register_output('dv_dt', dv_dt*1)
+        self.register_output('dw_dt', dw_dt*1)
+        self.register_output('dp_dt', dp_dt*1)
+        self.register_output('dq_dt', dq_dt*1)
+        self.register_output('dr_dt', dr_dt*1)
+
         # # self.print_var(acc_vector)
 
-        if self.parameters['stability_flag']:
+        if stability_flag:
             # unperturbed_accelerations = csdl.transpose(acc_vector[0, :])
             unperturbed_accelerations = acc_vector[0, :]
             stab_der_mat = self.create_output('A_stab_transpose', shape=(12, 12), val=0)
