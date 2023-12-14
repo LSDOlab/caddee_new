@@ -123,7 +123,7 @@ class PavGeomMesh:
             left_wing_te_top_names = []
             left_wing_te_bottom_names = []
             # NOTE: The '+1' in the range upper bound was added later to correct an error
-            for i in range(22 + 172, 37 + 172+1):
+            for i in range(194, 210):
                 surf_name = 'Wing_1_' + str(i)
                 left_wing_names.append(surf_name)
                 if i % 4 == 2:
@@ -141,7 +141,7 @@ class PavGeomMesh:
             right_wing_bottom_names = []
             right_wing_te_top_names = []
             right_wing_te_bottom_names = []
-            for i in range(174, 189):
+            for i in range(174, 190):
                 surf_name = 'Wing_0_' + str(i)
                 right_wing_names.append(surf_name)
                 if i % 4 == 2:
@@ -353,17 +353,17 @@ class PavGeomMesh:
             self.functions['wing_thickness'] = wing_thickness
 
             # wing stress function
-            order = 3
-            shape = 5
-            space_t = lg.BSplineSpace(name='stress_base_space',
+            order = 1  # NOTE: We use a first-order spline to make it easy to sample directly in the framework
+            shape = 10
+            space_stress = lg.BSplineSpace(name='stress_base_space',
                                       order=(order, order),
                                       control_points_shape=(shape, shape))
-            wing_stress = index_functions(structural_left_wing_names, 'wing_stress', space_t, 1)
+            wing_stress = index_functions(structural_left_wing_names, 'wing_stress', space_stress, 1)
             self.functions['wing_stress'] = wing_stress
 
             # wing displacement input function
             order = 3
-            shape = 20
+            shape = 10
             space_u = lg.BSplineSpace(name='displacement_base_space',
                                       order=(order, order),
                                       control_points_shape=(shape, shape))
@@ -371,11 +371,15 @@ class PavGeomMesh:
             self.functions['wing_displacement_input'] = wing_displacement_input
 
             # wing displacement output function (uses space of displacement input)
-            wing_displacement_output = index_functions(both_wings_names, 'wing_displacement_output', space_u, 3)
+            wing_displacement_output = index_functions(left_wing_names, 'wing_displacement_output', space_u, 3)
             self.functions['wing_displacement_output'] = wing_displacement_output
 
+            # wing displacement output function extended to both wings (for coupling purposes)
+            wing_displacement_output_rightwing = index_functions(right_wing_names, 'wing_displacement_output_rightwing', space_u, 3)
+            self.functions['wing_displacement_output_rightwing'] = wing_displacement_output_rightwing
+
         # wing force function
-        num = 25
+        num = 12
         u, v = np.meshgrid(np.linspace(0, 1, num), np.linspace(0, 1, num))
         u = np.array(u).flatten()
         v = np.array(v).flatten()
@@ -397,7 +401,7 @@ class PavGeomMesh:
         coefficients = {}
         geo_space = lg.BSplineSpace(name='geo_base_space',
                                     order=(4,4),
-                                    control_points_shape=(25,25))
+                                    control_points_shape=(15,15))
         wing_oml_geo = index_functions(left_wing_names+right_wing_names, 'wing_oml_geo', geo_space, 3)
         spatial_rep = self.sys_rep.spatial_representation
         for name in left_wing_names+right_wing_names:
@@ -455,6 +459,21 @@ class PavGeomMesh:
             self.mesh_data['oml']['oml_geo_nodes']['left_wing'] = left_oml_geo_nodes
             self.mesh_data['oml']['oml_para_nodes']['left_wing'] = left_wing_oml_para_coords
             self.mesh_data['oml']['mesh_name']['left_wing'] = left_wing_oml_geo_name
+
+            # Right Wing
+            right_wing_oml_para_coords = []
+            for name in self.geom_data['primitive_names']['right_wing']:
+                for u in np.linspace(0, 1, grid_num_u):
+                    for v in np.linspace(0, 1, grid_num_v):
+                        right_wing_oml_para_coords.append((name, np.array([u, v]).reshape((1, 2))))
+            right_oml_geo_nodes = spatial_rep.evaluate_parametric(right_wing_oml_para_coords)
+            right_wing_oml_geo_name = 'right_wing_oml_geo'
+            self.sys_rep.add_output(right_wing_oml_geo_name, right_oml_geo_nodes)
+            if debug_geom_flag:
+                spatial_rep.plot_meshes([right_oml_geo_nodes])
+            self.mesh_data['oml']['oml_geo_nodes']['right_wing'] = right_oml_geo_nodes
+            self.mesh_data['oml']['oml_para_nodes']['right_wing'] = right_wing_oml_para_coords
+            self.mesh_data['oml']['mesh_name']['right_wing'] = right_wing_oml_geo_name
             # endregion
 
             # # region OML mesh (geometric)
