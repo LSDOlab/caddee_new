@@ -5,7 +5,7 @@ import scipy.sparse as sps
 from lsdo_geo.cython.basis_matrix_volume_py import get_basis_volume_matrix
 from lsdo_geo.cython.volume_projection_py import compute_volume_projection
 
-from caddee.core.primitives.b_splines.bspline import BSpline
+from caddee.core.primitives.bsplines.bspline import BSpline
 
 import vedo
 from caddee import PROJECTIONS_FOLDER

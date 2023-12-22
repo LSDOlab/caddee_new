@@ -8,7 +8,7 @@ from lsdo_geo.cython.basis_matrix_curve_py import get_basis_curve_matrix
 from lsdo_geo.cython.curve_projection_py import compute_curve_projection
 from lsdo_geo.cython.get_open_uniform_py import get_open_uniform
 
-from caddee.core.primitives.b_splines.bspline import BSpline
+from caddee.core.primitives.bsplines.bspline import BSpline
 
 class BSplineCurve(BSpline):
     def __init__(self, name, control_points, order_u=4, knots_u=None):

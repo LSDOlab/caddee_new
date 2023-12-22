@@ -1,5 +1,12 @@
 from caddee.core.caddee_core.caddee import CADDEE
 from caddee.core.caddee_core.system_model.system_model import SystemModel
+from caddee.core.caddee_core.system_parameterization.system_parameterization import SystemParameterization, SystemRepresentation
+from caddee.core.caddee_core.system_representation.component.component import Component
+from caddee.core.caddee_core.system_representation.prescribed_actuations import PrescribedActuation, PrescribedRotation, PrescribedTranslation
+
+from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_functions import create_cartesian_enclosure_volume
+from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_block import SRBGFFDBlock
+from caddee.core.caddee_core.system_parameterization.free_form_deformation.ffd_set import SRBGFFDSet
 
 from caddee.core.caddee_core.system_model.design_scenario.design_scenario import DesignScenario
 from caddee.core.caddee_core.system_model.design_scenario.design_condition.design_condition import (

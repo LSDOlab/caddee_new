@@ -1,12 +1,18 @@
 from caddee.utils.caddee_base import CADDEEBase
 from caddee.core.caddee_core.system_model.sizing_group.sizing_group import SizingGroup
+import m3l
 
-class SystemModel(CADDEEBase):
+# class SystemModel(CADDEEBase):
+class SystemModel(m3l.ExplicitOperation):
     def initialize(self, kwargs):
+        self.parameters.declare(name='name', default='system_model')
         self.sizing_group = None
         self.design_scenario_dictionary = {}
         self.connections_list = []
         self.m3l_models = dict()
+
+    def assign_attributes(self):
+        self.name = self.parameters['name']
 
     def add_design_scenario(self,design_scenario):
         if design_scenario.parameters['name'] == '':

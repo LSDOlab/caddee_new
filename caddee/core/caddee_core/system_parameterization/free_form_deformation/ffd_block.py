@@ -4,9 +4,9 @@ import scipy.sparse as sps
 import array_mapper as am
 from pathlib import Path
 import pickle
-from caddee.core.primitives.b_splines.bspline_curve import BSplineCurve
-from caddee.core.primitives.b_splines.bspline_surface import BSplineSurface
-from caddee.core.primitives.b_splines.bspline_volume import BSplineVolume
+from caddee.core.primitives.bsplines.bspline_curve import BSplineCurve
+from caddee.core.primitives.bsplines.bspline_surface import BSplineSurface
+from caddee.core.primitives.bsplines.bspline_volume import BSplineVolume
 import vedo
 from caddee import FFD_PROJECTIONS_FOLDER
 import os

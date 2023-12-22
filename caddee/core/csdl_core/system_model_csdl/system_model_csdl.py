@@ -27,7 +27,7 @@ class SystemModelCSDL(BaseModelCSDL):
         if m3l_models:
             for m3l_model_name, m3l_model in m3l_models.items():
                 csdl_model = m3l_model.assemble_csdl()
-                self.add_module(csdl_model, m3l_model_name)
+                self.add(csdl_model, m3l_model_name)
 
         # print(system_model.design_scenario_dictionary)
         # design scenario

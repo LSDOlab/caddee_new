@@ -22,7 +22,7 @@ class M4Regressions(m3l.ExplicitOperation):
         
         return csdl_model
     
-    def evaluate(self,  battery_mass, fuselage_length, tail_area, fin_area, wing_area, wing_AR):
+    def evaluate(self,  battery_mass, fuselage_length=None, tail_area=None, fin_area=None, wing_area=None, wing_AR=None):
         self.arguments = {
             'battery_mass' : battery_mass,
             'fuselage_length' : fuselage_length,

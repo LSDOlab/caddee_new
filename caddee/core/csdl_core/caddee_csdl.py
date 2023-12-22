@@ -8,7 +8,7 @@ from caddee.core.csdl_core.system_model_csdl.system_model_csdl import SystemMode
 from caddee.core.csdl_core.system_parameterization_csdl.system_parameterization_csdl import SystemParameterizationCSDL
 from caddee.core.csdl_core.system_representation_csdl.system_representation_csdl import SystemRepresentationCSDL
 
-class CADDEECSDL(csdl.Model):
+class CADDEECSDL(Model):
     """
     Top-level caddee csdl class
 
@@ -33,7 +33,7 @@ class CADDEECSDL(csdl.Model):
             system_parameterization_csdl = SystemParameterizationCSDL(
                 system_parameterization=system_parameterization,
             )
-            self.add_module(system_parameterization_csdl, 'system_parameterization')
+            self.add(system_parameterization_csdl, 'system_parameterization')
 
        
         if system_representation is not None:
@@ -43,7 +43,7 @@ class CADDEECSDL(csdl.Model):
                 system_representation_csdl = SystemRepresentationCSDL(
                     system_representation=system_representation,
                 )
-                self.add_module(system_representation_csdl, 'system_representation')
+                self.add(system_representation_csdl, 'system_representation')
 
 
         # system model
@@ -53,7 +53,7 @@ class CADDEECSDL(csdl.Model):
             system_representation=system_representation,
             system_param=system_parameterization
         )
-        self.add_module(system_model_csdl, 'system_model')
+        self.add(system_model_csdl, 'system_model')
 
         # system_model_csdl = csdl.Model()
 

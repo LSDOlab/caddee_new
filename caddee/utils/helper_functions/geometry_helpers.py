@@ -146,7 +146,7 @@ def make_rotor_mesh(
 
     if radius is None:
         rotor_radius = m3l.norm((y12 - y11)/2)
-        # rotor_radius = m3l.norm(y12 - y11) / 2
+        # rotor_radius = m3l.norm(y12 - y11) / 2IM
         rotor_radius_2 = m3l.norm((y22 - y21)/2)
         # rotor_radius_2 = m3l.norm(y22 - y21) / 2
     
