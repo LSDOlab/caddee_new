@@ -5,14 +5,16 @@ import numpy as np
 from python_csdl_backend import Simulator
 from caddee import GEOMETRY_FILES_FOLDER
 import lsdo_geo as lg
-from caddee.api import make_rotor_mesh
+from caddee.utils.helper_functions.geometry_helpers import (make_rotor_mesh, make_vlm_camber_mesh, make_1d_box_beam_mesh, 
+                                                            compute_component_surface_area, BladeParameters)
+from caddee.utils.aircraft_models.drag_models.drag_build_up import DragComponent
 
 
 geometry = lg.import_geometry(GEOMETRY_FILES_FOLDER / 'LPC_final_custom_blades.stp', parallelize=True)
 geometry.refit(parallelize=True)
 
-m3l_model = m3l.Model()
-FFD = False
+system_model = m3l.Model()
+FFD = True
 
 # region Declaring all components
 # Wing, tails, fuselage
@@ -239,6 +241,45 @@ fuselage_nose_points_parametric = fuselage.project(fuselage_nose, grid_search_de
 fueslage_rear_points_parametric = fuselage.project(fuselage_rear)
 fuselage_rear_point_on_pusher_disk_parametric = pp_disk.project(fuselage_rear)
 
+fuselage_l1_parametric = fuselage.project(np.array([1.889, 0., 4.249]))
+fuselage_l2_parametric = fuselage.project(np.array([31.889, 0., 7.798]))
+
+fuselage_d1_parametric = fuselage.project(np.array([10.916, -2.945, 5.736]))
+fuselage_d2_parametric = fuselage.project(np.array([10.916, 2.945, 5.736]))
+
+fuselage_d1_parametric = fuselage.project(np.array([10.916, -2.945, 5.736]))
+fuselage_d2_parametric = fuselage.project(np.array([10.916, 2.945, 5.736]))
+
+# wing
+wing_mid_le_parametric = wing.project(np.array([8.892, 0., 8.633]))
+wing_mid_te_parametric = wing.project(np.array([14.332, 0, 8.439]))
+
+# wing_le_right_parametric = wing.project(wing_le_right)
+# wing_le_left__parametric = wing.project(wing_le_left)
+
+# htail
+h_tail_mid_le_parametric = h_tail.project(np.array([27.806, -6.520, 8.008]))
+h_tail_mid_te_parametric = h_tail.project(np.array([30.050, -6.520, 8.008]))
+
+# vtail
+vtail_mid_le_parametric = v_tail.project(np.array([26.971, 0.0, 11.038]))
+vtail_mid_te_parametric = v_tail.project(np.array([31.302, 0.0, 11.038]))
+
+# boom
+boom_l1_parametric = rlo_boom.project(np.array([20.000, -18.750, 7.613]))
+boom_l2_parametric = rlo_boom.project(np.array([12.000, -18.750, 7.613]))
+
+boom_d1_parametric = rlo_boom.project(np.array([15.600, -19.250, 7.613]))
+boom_d2_parametric = rlo_boom.project(np.array([15.600, -18.250, 7.613]))
+
+# lift hubs
+hub_l1_parametric = rlo_hub.project(np.array([18.075, -18.750,9.525]))
+hub_l2_parametric = rlo_hub.project(np.array([20.325, -18.750,9.525]))
+
+# blade 
+blade_tip_parametric = rlo_blade_2.project(np.array([14.200, -18.626, 9.040]))
+blade_hub_parametric = rlo_blade_2.project(np.array([18.200, -18.512, 9.197]))
+
 # endregion
 
 # region rotor meshes
@@ -274,15 +315,6 @@ rlo_mesh = make_rotor_mesh(
     plot=False,
 )
 
-rlo_disk_origin_para = rlo_disk.project(np.array([19.2, -18.75, 9.01]))
-rlo_disk_y1_para = rlo_disk.project(np.array([19.2, -13.75, 9.01]))
-rlo_disk_y2_para = rlo_disk.project(np.array([19.2, -23.75, 9.01]))
-rlo_disk_z1_para = rlo_disk.project(np.array([14.2, -18.75, 9.01]))
-rlo_disk_z2_para = rlo_disk.project(np.array([24.2, -18.75, 9.01]))
-
-# rlo_r1 = m3l.norm((geometry.evaluate(rlo_disk_y1_para) - geometry.evaluate(rlo_disk_y2_para))) 
-# rlo_r2 = m3l.norm((geometry.evaluate(rlo_disk_z1_para) - geometry.evaluate(rlo_disk_z2_para)))
-
 # Rear right outer 
 rro_mesh = make_rotor_mesh(
     geometry=geometry,
@@ -297,14 +329,6 @@ rro_mesh = make_rotor_mesh(
     plot=False,
 )
 
-rro_disk_origin_para = rro_disk.project(np.array([19.2, 18.75, 9.01]))
-rro_disk_y1_para = rro_disk.project(np.array([19.2, 23.75, 9.01]))
-rro_disk_y2_para = rro_disk.project(np.array([19.2, 13.75, 9.01]))
-rro_disk_z1_para = rro_disk.project(np.array([14.2, 18.75, 9.01]))
-rro_disk_z2_para = rro_disk.project(np.array([24.2, 18.75, 9.01]))
-
-# rro_r1 = m3l.norm((geometry.evaluate(rro_disk_y1_para) - geometry.evaluate(rro_disk_y2_para))) 
-# rro_r2 = m3l.norm((geometry.evaluate(rro_disk_z1_para) - geometry.evaluate(rro_disk_z2_para)))
 
 # Front left outer 
 flo_mesh = make_rotor_mesh(
@@ -320,14 +344,6 @@ flo_mesh = make_rotor_mesh(
     plot=False,
 )
 
-flo_disk_origin_para = flo_disk.project(np.array([5.07, -18.75, 6.73]))
-flo_disk_y1_para = flo_disk.project(np.array([5.070, -13.750, 6.730]))
-flo_disk_y2_para = flo_disk.project(np.array([5.070, -23.750, 6.730]))
-flo_disk_z1_para = flo_disk.project(np.array([0.070, -18.750, 6.730]))
-flo_disk_z2_para = flo_disk.project(np.array([10.070, -18.750, 6.730]))
-
-# flo_r1 = m3l.norm((geometry.evaluate(flo_disk_y1_para) - geometry.evaluate(flo_disk_y2_para))) 
-# flo_r2 = m3l.norm((geometry.evaluate(flo_disk_z1_para) - geometry.evaluate(flo_disk_z2_para)))
 
 # Front right outer 
 fro_mesh = make_rotor_mesh(
@@ -343,14 +359,6 @@ fro_mesh = make_rotor_mesh(
     plot=False,
 )
 
-fro_disk_origin_para = fro_disk.project(np.array([5.07, 18.75, 6.73]))
-fro_disk_y1_para = fro_disk.project(np.array([5.070, 23.750, 6.730]))
-fro_disk_y2_para = fro_disk.project(np.array([5.070, 13.750, 6.730]))
-fro_disk_z1_para = fro_disk.project(np.array([0.070, 18.750, 6.730]))
-fro_disk_z2_para = fro_disk.project(np.array([10.070, 18.750, 6.730]))
-
-# fro_r1 = m3l.norm((geometry.evaluate(fro_disk_y1_para) - geometry.evaluate(fro_disk_y2_para))) 
-# fro_r2 = m3l.norm((geometry.evaluate(fro_disk_z1_para) - geometry.evaluate(fro_disk_z2_para)))
 
 # Rear left inner
 rli_mesh = make_rotor_mesh(
@@ -366,15 +374,6 @@ rli_mesh = make_rotor_mesh(
     plot=False,
 )
 
-rli_disk_origin_para = rli_disk.project(np.array([18.760, -8.537, 9.919]))
-rli_disk_y1_para = rli_disk.project(np.array([18.760, -3.499, 9.996]))
-rli_disk_y2_para = rli_disk.project(np.array([18.760, -13.401, 8.604]))
-rli_disk_z1_para = rli_disk.project(np.array([13.760, -8.450, 9.30]))
-rli_disk_z2_para = rli_disk.project(np.array([23.760, -8.450, 9.300]))
-
-# rli_r1 = m3l.norm((geometry.evaluate(rli_disk_y1_para) - geometry.evaluate(rli_disk_y2_para))) 
-# rli_r2 = m3l.norm((geometry.evaluate(rli_disk_z1_para) - geometry.evaluate(rli_disk_z2_para)))
-
 # Rear right inner
 rri_mesh = make_rotor_mesh(
     geometry=geometry,
@@ -388,15 +387,6 @@ rri_mesh = make_rotor_mesh(
     create_disk_mesh=False,
     plot=False,
 )
-
-rri_disk_origin_para = rri_disk.project(np.array([18.760, 8.537, 9.919]))
-rri_disk_y1_para = rri_disk.project(np.array([18.760, 13.401, 8.60]))
-rri_disk_y2_para = rri_disk.project(np.array([18.760, 3.499, 9.996]))
-rri_disk_z1_para = rri_disk.project(np.array([13.760, 8.450, 9.300]))
-rri_disk_z2_para = rri_disk.project(np.array([23.760, 8.450, 9.300]))
-
-# rri_r1 = m3l.norm((geometry.evaluate(rri_disk_y1_para) - geometry.evaluate(rri_disk_y2_para))) 
-# rri_r2 = m3l.norm((geometry.evaluate(rri_disk_z1_para) - geometry.evaluate(rri_disk_z2_para)))
 
 # Front left inner
 fli_mesh = make_rotor_mesh(
@@ -412,15 +402,6 @@ fli_mesh = make_rotor_mesh(
     plot=False,
 )
 
-fli_disk_origin_para = fli_disk.project(np.array([4.630, -8.217, 7.659]))
-fli_disk_y1_para = fli_disk.project(np.array([4.630, -3.179, 7.736]))
-fli_disk_y2_para = fli_disk.project(np.array([4.630, -13.081, 6.344]))
-fli_disk_z1_para = fli_disk.project(np.array([-0.370, -8.130, 7.040]))
-fli_disk_z2_para = fli_disk.project(np.array([9.630, -8.130, 7.040]))
-
-# fli_r1 = m3l.norm((geometry.evaluate(fli_disk_y1_para) - geometry.evaluate(fli_disk_y2_para))/2) 
-# fli_r2 = m3l.norm((geometry.evaluate(fli_disk_z1_para) - geometry.evaluate(fli_disk_z2_para))/2)
-
 # Front right inner
 fri_mesh = make_rotor_mesh(
     geometry=geometry,
@@ -435,40 +416,72 @@ fri_mesh = make_rotor_mesh(
     plot=False,
 )
 
-fri_disk_origin_para = fri_disk.project(np.array([4.630, 8.217, 7.659]))
-fri_disk_y1_para = fri_disk.project(np.array([4.630, 13.081, 6.344]))
-fri_disk_y2_para = fri_disk.project(np.array([4.630, 3.179, 7.736]))
-fri_disk_z1_para = fri_disk.project(np.array([-0.370, 8.130, 7.040]))
-fri_disk_z2_para = fri_disk.project(np.array([9.630, 8.130, 7.04]))
+lift_rotor_mesh_list = [rlo_mesh, rli_mesh, rri_mesh, rro_mesh, flo_mesh, fli_mesh, fri_mesh, fro_mesh]
+lift_rotor_mesh_list_oei_flo = [rlo_mesh, rli_mesh, rri_mesh, rro_mesh, fli_mesh, fri_mesh, fro_mesh]
+lift_rotor_mesh_list_oei_fli = [rlo_mesh, rli_mesh, rri_mesh, rro_mesh, flo_mesh, fri_mesh, fro_mesh]
+lift_rotor_mesh_list_oei_rlo = [rli_mesh, rri_mesh, rro_mesh, flo_mesh, fli_mesh, fri_mesh, fro_mesh]
+lift_rotor_mesh_list_oei_rli = [rlo_mesh, rri_mesh, rro_mesh, flo_mesh, fli_mesh, fri_mesh, fro_mesh]
 
-# fri_r1 = m3l.norm((geometry.evaluate(fri_disk_y1_para) - geometry.evaluate(fri_disk_y2_para))/2) 
-# fri_r2 = m3l.norm((geometry.evaluate(fri_disk_z1_para) - geometry.evaluate(fri_disk_z2_para))/2)
-
-# radius_1_list = [rlo_r1, rli_r1, rri_r1, rro_r1,
-#                  flo_r1, fli_r1, fri_r1, fro_r1]
-
-# radius_2_list = [rlo_r2, rli_r2, rri_r2, rro_r2,
-#                  flo_r2, fli_r2, fri_r2, fro_r2]
+lift_rotor_origin_list = [mesh.thrust_origin for mesh in lift_rotor_mesh_list]
+all_rotor_origin_list = lift_rotor_origin_list + [pp_mesh.thrust_origin]
 # endregion
 
 # region Projection for meshes
-num_spanwise_vlm = 17
-num_chordwise_vlm = 5
-leading_edge_line_parametric = wing.project(np.linspace(np.array([8.356, -26., 7.618]), np.array([8.356, 26., 7.618]), num_spanwise_vlm), 
-                                 direction=np.array([0., 0., -1.]), grid_search_density_parameter=20.)
-trailing_edge_line_parametric = wing.project(np.linspace(np.array([15.4, -25.250, 7.5]), np.array([15.4, 25.250, 7.5]), num_spanwise_vlm), 
-                                  direction=np.array([0., 0., -1.]), grid_search_density_parameter=20.)
-leading_edge_line = geometry.evaluate(leading_edge_line_parametric)
-trailing_edge_line = geometry.evaluate(trailing_edge_line_parametric)
-chord_surface = m3l.linspace(leading_edge_line, trailing_edge_line, num_chordwise_vlm)
-upper_surface_wireframe_parametric = wing.project(chord_surface.value.reshape((num_chordwise_vlm,num_spanwise_vlm,3))+np.array([0., 0., 1.]), 
-                                       direction=np.array([0., 0., -1.]), plot=False, grid_search_density_parameter=40.)
-lower_surface_wireframe_parametric = wing.project(chord_surface.value.reshape((num_chordwise_vlm,num_spanwise_vlm,3))+np.array([0., 0., -1.]), 
-                                       direction=np.array([0., 0., 1.]), plot=False, grid_search_density_parameter=40.)
-upper_surface_wireframe = geometry.evaluate(upper_surface_wireframe_parametric)
-lower_surface_wireframe = geometry.evaluate(lower_surface_wireframe_parametric)
-camber_surface = m3l.linspace(upper_surface_wireframe, lower_surface_wireframe, 1).reshape((num_chordwise_vlm, num_spanwise_vlm, 3))
-# geometry.plot_meshes([camber_surface])
+# num_spanwise_vlm = 17
+# num_chordwise_vlm = 5
+
+num_spanwise_vlm = 25
+num_chordwise_vlm = 8
+# leading_edge_line_parametric = wing.project(np.linspace(np.array([8.356, -26., 7.618]), np.array([8.356, 26., 7.618]), num_spanwise_vlm), 
+#                                  direction=np.array([0., 0., -1.]), grid_search_density_parameter=20.)
+# trailing_edge_line_parametric = wing.project(np.linspace(np.array([15.4, -25.250, 7.5]), np.array([15.4, 25.250, 7.5]), num_spanwise_vlm), 
+#                                   direction=np.array([0., 0., -1.]), grid_search_density_parameter=20.)
+# leading_edge_line = geometry.evaluate(leading_edge_line_parametric)
+# trailing_edge_line = geometry.evaluate(trailing_edge_line_parametric)
+# chord_surface = m3l.linspace(leading_edge_line, trailing_edge_line, num_chordwise_vlm)
+# upper_surface_wireframe_parametric = wing.project(chord_surface.value.reshape((num_chordwise_vlm,num_spanwise_vlm,3))+np.array([0., 0., 1.]), 
+#                                        direction=np.array([0., 0., -1.]), plot=False, grid_search_density_parameter=40.)
+# lower_surface_wireframe_parametric = wing.project(chord_surface.value.reshape((num_chordwise_vlm,num_spanwise_vlm,3))+np.array([0., 0., -1.]), 
+#                                        direction=np.array([0., 0., 1.]), plot=False, grid_search_density_parameter=40.)
+# upper_surface_wireframe = geometry.evaluate(upper_surface_wireframe_parametric)
+# lower_surface_wireframe = geometry.evaluate(lower_surface_wireframe_parametric)
+# camber_surface = m3l.linspace(upper_surface_wireframe, lower_surface_wireframe, 1).reshape((num_chordwise_vlm, num_spanwise_vlm, 3))
+
+wing_meshes = make_vlm_camber_mesh(
+    geometry=geometry,
+    wing_component=wing,
+    num_spanwise=num_spanwise_vlm,
+    num_chordwise=num_chordwise_vlm,
+    te_right=np.array([13.4, 25.250, 7.5]),
+    te_left=np.array([13.4, -25.250, 7.5]),
+    te_center=np.array([14.332, 0., 8.439]),
+    le_left=np.array([12.356, -25.25, 7.618]),
+    le_right=np.array([12.356, 25.25, 7.618]),
+    le_center=np.array([8.892, 0., 8.633]),
+    grid_search_density_parameter=100,
+    off_set_x=0.2,
+    bunching_cos=True,
+    plot=False,
+    mirror=True,
+)
+
+num_spanwise_vlm_htail = 8
+num_chordwise_vlm_htail = 4
+
+tail_meshes = make_vlm_camber_mesh(
+    geometry=geometry,
+    wing_component=h_tail, 
+    num_spanwise=num_spanwise_vlm_htail,
+    num_chordwise=num_chordwise_vlm_htail,
+    te_right=np.array([31.5, 6.75, 6.]),
+    te_left=np.array([31.5, -6.75, 6.]),
+    le_right=np.array([26.5, 6.75, 6.]),
+    le_left=np.array([26.5, -6.75, 6.]),
+    plot=False,
+    mirror=True,
+)
+
+# geometry.plot_meshes([wing_meshes.vlm_mesh])
 # endregion
 
 if FFD:
@@ -984,9 +997,6 @@ if FFD:
     boom_points = [boom_rlo, boom_rli, boom_rri, boom_rro, boom_flo, boom_fli, boom_fri, boom_fro]
     rotor_prefixes = ['rlo', 'rli', 'rri', 'rro', 'flo', 'fli', 'fri', 'fro']
 
-    # rlo_r1 = m3l.norm((geometry.evaluate(rlo_disk_y1_para) - geometry.evaluate(rlo_disk_y2_para))/2) 
-    # rlo_r2 = m3l.norm((geometry.evaluate(rlo_disk_z1_para) - geometry.evaluate(rlo_disk_z2_para))/2)
-
     rlo_mesh = rlo_mesh.update(geometry=geometry)
     rli_mesh = rli_mesh.update(geometry=geometry)
     rri_mesh = rri_mesh.update(geometry=geometry)
@@ -995,33 +1005,6 @@ if FFD:
     fli_mesh = fli_mesh.update(geometry=geometry)
     fri_mesh = fri_mesh.update(geometry=geometry)
     fro_mesh = fro_mesh.update(geometry=geometry)
-
-    # rro_r1 = m3l.norm((geometry.evaluate(rro_disk_y1_para) - geometry.evaluate(rro_disk_y2_para))/2) 
-    # rro_r2 = m3l.norm((geometry.evaluate(rro_disk_z1_para) - geometry.evaluate(rro_disk_z2_para))/2)
-
-    # fro_r1 = m3l.norm((geometry.evaluate(fro_disk_y1_para) - geometry.evaluate(fro_disk_y2_para))/2) 
-    # fro_r2 = m3l.norm((geometry.evaluate(fro_disk_z1_para) - geometry.evaluate(fro_disk_z2_para))/2)
-
-    # rli_r1 = m3l.norm((geometry.evaluate(rli_disk_y1_para) - geometry.evaluate(rli_disk_y2_para))/2) 
-    # rli_r2 = m3l.norm((geometry.evaluate(rli_disk_z1_para) - geometry.evaluate(rli_disk_z2_para))/2)
-
-    # rri_r1 = m3l.norm((geometry.evaluate(rri_disk_y1_para) - geometry.evaluate(rri_disk_y2_para))/2) 
-    # rri_r2 = m3l.norm((geometry.evaluate(rri_disk_z1_para) - geometry.evaluate(rri_disk_z2_para))/2)
-
-    # fli_r1 = m3l.norm((geometry.evaluate(fli_disk_y1_para) - geometry.evaluate(fli_disk_y2_para))/2) 
-    # fli_r2 = m3l.norm((geometry.evaluate(fli_disk_z1_para) - geometry.evaluate(fli_disk_z2_para))/2)
-
-    # fri_r1 = m3l.norm((geometry.evaluate(fri_disk_y1_para) - geometry.evaluate(fri_disk_y2_para))/2) 
-    # fri_r2 = m3l.norm((geometry.evaluate(fri_disk_z1_para) - geometry.evaluate(fri_disk_z2_para))/2)
-
-    # flo_r1 = m3l.norm((geometry.evaluate(flo_disk_y1_para) - geometry.evaluate(flo_disk_y2_para))/2) 
-    # flo_r2 = m3l.norm((geometry.evaluate(flo_disk_z1_para) - geometry.evaluate(flo_disk_z2_para))/2)
-
-    # radius_1_list = [rlo_r1, rli_r1, rri_r1, rro_r1,
-    #                  flo_r1, fli_r1, fri_r1, fro_r1]
-
-    # radius_2_list = [rlo_r2, rli_r2, rri_r2, rro_r2,
-    #                  flo_r2, fli_r2, fri_r2, fro_r2]
 
     radius_1_list = [rlo_mesh.radius, rli_mesh.radius, rri_mesh.radius, rro_mesh.radius,
                     flo_mesh.radius, fli_mesh.radius, fri_mesh.radius, fro_mesh.radius]
@@ -1267,13 +1250,153 @@ if FFD:
     geometry.plot()
 
     # region Mesh Evaluation
-    upper_surface_wireframe = geometry.evaluate(upper_surface_wireframe_parametric)
-    lower_surface_wireframe = geometry.evaluate(lower_surface_wireframe_parametric)
-    vlm_mesh = m3l.linspace(upper_surface_wireframe, lower_surface_wireframe, 1).reshape((num_chordwise_vlm, num_spanwise_vlm, 3))
+    # upper_surface_wireframe = geometry.evaluate(upper_surface_wireframe_parametric)
+    # lower_surface_wireframe = geometry.evaluate(lower_surface_wireframe_parametric)
+    # vlm_mesh = m3l.linspace(upper_surface_wireframe, lower_surface_wireframe, 1).reshape((num_chordwise_vlm, num_spanwise_vlm, 3))
+
+    wing_meshes = wing_meshes.update(geometry=geometry)
+    tail_meshes = tail_meshes.update(geometry=geometry)
+    geometry.plot_meshes([wing_meshes.vlm_mesh, tail_meshes.vlm_mesh])
+
     # dummy_objective = m3l.norm(vlm_mesh.reshape((-1,)))
     # m3l_model.register_output(vlm_mesh)
     # m3l_model.register_output(dummy_objective)
     # endregion
+
+
+# region compute component surface areas and make drag components
+component_list = [rlo_boom, rlo_hub, fuselage, wing, h_tail, v_tail, pp_hub, rlo_blade_1]
+surface_area_list = compute_component_surface_area(
+    component_list=component_list,
+    geometry=geometry,
+    parametric_mesh_grid_num=20,
+    plot=False,
+)
+
+# wing reference area (~total wetted area/ 2.1)
+S_ref = surface_area_list[3] / 2.1
+
+# Wing aspect ratio
+wing_AR = wingspan**2 / S_ref
+
+# fuselage length
+fuselage_l1 = geometry.evaluate(fuselage_l1_parametric).reshape((-1, 3))
+fuselage_l2 = geometry.evaluate(fuselage_l2_parametric).reshape((-1, 3))
+fuselage_length = m3l.norm(fuselage_l2-fuselage_l1)
+
+
+fuselage_d1 = geometry.evaluate(fuselage_d1_parametric).reshape((-1, 3))
+fuselage_d2=  geometry.evaluate(fuselage_d2_parametric).reshape((-1, 3))
+fuselage_diameter = m3l.norm(fuselage_d2-fuselage_d1)
+
+fuselage_drag_comp = DragComponent(
+    component_type='fuselage',
+    wetted_area=surface_area_list[2],
+    characteristic_length=fuselage_length,
+    characteristic_diameter=fuselage_diameter,
+    Q=2.9,
+)
+
+
+# wing
+wing_mid_le = geometry.evaluate(wing_mid_le_parametric).reshape((-1, 3))
+wing_mid_te = geometry.evaluate(wing_mid_te_parametric).reshape((-1, 3))
+wing_mid_chord_length = m3l.norm(wing_mid_le-wing_mid_te)
+
+wing_le_right_mapped_array = geometry.evaluate(wing_le_right).reshape((-1, 3))
+wing_le_left_mapped_array = geometry.evaluate(wing_le_left).reshape((-1, 3))
+wing_span = m3l.norm(wing_le_left_mapped_array - wing_le_right_mapped_array)
+
+wing_drag_comp = DragComponent(
+    component_type='wing',
+    wetted_area=surface_area_list[3],
+    characteristic_length=wing_mid_chord_length,
+    thickness_to_chord=0.16,
+    x_cm=0.45,
+    Q=1.4,
+)
+
+# h tail
+h_tail_mid_le = geometry.evaluate(h_tail_mid_le_parametric).reshape((-1, 3))
+h_tail_mid_te = geometry.evaluate(h_tail_mid_te_parametric).reshape((-1, 3))
+h_tail_chord_length = m3l.norm(h_tail_mid_le-h_tail_mid_te)
+
+h_tail_drag_comp = DragComponent(
+    component_type='wing',
+    wetted_area=surface_area_list[4],
+    characteristic_length=h_tail_chord_length,
+    thickness_to_chord=0.15,
+    x_cm=0.3,
+    Q=1.5,
+
+)
+
+# v tail
+vtail_mid_le = geometry.evaluate(vtail_mid_le_parametric).reshape((-1, 3))
+vtail_mid_te = geometry.evaluate(vtail_mid_te_parametric).reshape((-1, 3))
+vtail_chord_length = m3l.norm(vtail_mid_le-vtail_mid_te)
+
+vtail_drag_comp = DragComponent(
+    component_type='wing',
+    wetted_area=surface_area_list[5],
+    characteristic_length=vtail_chord_length,
+    thickness_to_chord=0.115,
+    x_cm=0.2,
+    Q=1.5,
+)
+
+# boom
+boom_l1 = geometry.evaluate(boom_l1_parametric).reshape((-1, 3))
+boom_l2 = geometry.evaluate(boom_l2_parametric).reshape((-1, 3))
+boom_length = m3l.norm(boom_l1-boom_l2)
+
+boom_d1 = geometry.evaluate(boom_d1_parametric).reshape((-1, 3))
+boom_d2 = geometry.evaluate(boom_d2_parametric).reshape((-1, 3))
+boom_diameter = m3l.norm(boom_d1-boom_d2)
+
+boom_drag_comp = DragComponent(
+    component_type='boom',
+    wetted_area=surface_area_list[0],
+    characteristic_diameter=boom_diameter,
+    characteristic_length=boom_length,
+    multiplicity=8,
+    Q=2.,
+)
+
+# lift hubs
+hub_l1 = geometry.evaluate(hub_l1_parametric)
+hub_l2 = geometry.evaluate(hub_l2_parametric)
+hub_length = m3l.norm(hub_l1-hub_l2)
+
+hub_drag_comp = DragComponent(
+    component_type='nacelle',
+    wetted_area=surface_area_list[1],
+    characteristic_diameter=hub_length,
+    characteristic_length=hub_length,
+    multiplicity=8,
+    Q=1,
+
+)
+
+
+# blade 
+blade_tip = geometry.evaluate(blade_tip_parametric)
+blade_hub = geometry.evaluate(blade_hub_parametric)
+
+blade_length = m3l.norm(blade_tip-blade_hub)
+blade_drag_comp = DragComponent(
+    component_type='flat_plate',
+    characteristic_length=blade_length,
+    wetted_area=surface_area_list[-1],
+    multiplicity=16,
+    Q=2,
+
+)
+
+drag_comp_list = [wing_drag_comp, fuselage_drag_comp, h_tail_drag_comp, vtail_drag_comp,
+                  blade_drag_comp, boom_drag_comp, hub_drag_comp]
+
+
 
 # endregion
 # m3l_model.register_output(geometry.coefficients)
