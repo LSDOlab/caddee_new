@@ -1,4 +1,4 @@
-'''Example 1 : TC 2 analysis and optimization script
+'''Example 2 : TC 2 analysis and optimization script
 
 This advanced example demonstrates how to build the analysis script for the complex NASA ULI technical challenge 2 (TC2) problem,
 which include physics-based models for aerodynamics, structures, acoustics, motors and other disciplines. 
@@ -18,7 +18,6 @@ from VAST import FluidProblem, VASTFluidSover, VASTNodalForces
 from lsdo_acoustics import Acoustics, evaluate_multiple_acoustic_models
 from lsdo_motor import evaluate_multiple_motor_sizing_models, evaluate_multiple_motor_analysis_models, MotorAnalysis, MotorSizing
 from aframe import BeamMassModel, EBBeam, EBBeamForces
-from caddee.utils.helper_functions.geometry_helpers import  make_vlm_camber_mesh
 import time 
 import pickle
 
