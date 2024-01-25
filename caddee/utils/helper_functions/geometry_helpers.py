@@ -145,9 +145,12 @@ def make_rotor_mesh(
     disk_in_plane_x = y21 - y22
 
     if radius is None:
-        rotor_radius = m3l.norm((y12 - y11)/2)
+        rotor_radius = m3l.norm(disk_in_plane_y) / 2
+        # rotor_radius = m3l.norm((y12 - y11)/2)
         # rotor_radius = m3l.norm(y12 - y11) / 2IM
-        rotor_radius_2 = m3l.norm((y22 - y21)/2)
+        
+        rotor_radius_2 = m3l.norm(disk_in_plane_x) / 2
+        # rotor_radius_2 = m3l.norm((y22 - y21)/2)
         # rotor_radius_2 = m3l.norm(y22 - y21) / 2
     
     else:
@@ -255,7 +258,7 @@ def make_rotor_mesh(
 
             if num_spanwise is not None:
                 if num_spanwise %2 != 0:
-                    raise ValueError(f"Odd number for 'num_spanwise_vlm' not yet implemented. Must be even number for now")
+                    raise ValueError(f"Odd number for 'num_spanwise' not yet implemented. Must be even number for now")
                 linspace_parametric_vlm = np.hstack((np.linspace(0, 0.55, int(num_spanwise/2)), np.linspace(0.7, 1, int(num_spanwise/2))))
 
                 le_list_vlm = []

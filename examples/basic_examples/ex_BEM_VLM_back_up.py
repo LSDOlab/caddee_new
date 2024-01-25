@@ -131,6 +131,7 @@ vlm_model = VASTFluidSover(
 
 
 vlm_outputs = vlm_model.evaluate(
+    atmosphere=atmosphere,
     ac_states=ac_states,
     meshes=[wing_camber_surface],
 )
@@ -166,7 +167,9 @@ caddee_csdl_model = m3l_model.assemble_csdl()
 sim = Simulator(caddee_csdl_model, analytics=True)
 sim.run()
 
+cd.print_caddee_outputs(m3l_model=m3l_model, sim=sim)
 
+exit()
 num_spanwise_vlm = 14
 num_chordwise_vlm = 9
 

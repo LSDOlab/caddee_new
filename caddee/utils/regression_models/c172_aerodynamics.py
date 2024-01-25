@@ -198,7 +198,7 @@ class C172AerodynamicsModelCSDL(csdl.Model):
         alpha_deg = alpha * 57.2958
         # self.print_var(Theta)
         self.register_output('alpha', alpha)
-        self.print_var(alpha_deg)
+        # self.print_var(alpha_deg)
         beta =   csdl.arcsin(v / V) + scaler_mat * Psi # Psi + psiw #
         beta_deg = beta * 57.2958
         self.register_output('beta', beta)

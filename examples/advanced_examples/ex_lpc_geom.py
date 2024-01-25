@@ -465,6 +465,23 @@ tail_meshes = make_vlm_camber_mesh(
 
 # geometry.plot_meshes([wing_meshes.vlm_mesh])
 # endregion
+num_spanwise_vlm = 17
+num_chordwise_vlm = 5
+leading_edge_line_parametric = wing.project(np.linspace(np.array([8.356, -26., 7.618]), np.array([8.356, 26., 7.618]), num_spanwise_vlm), 
+                                 direction=np.array([0., 0., -1.]), grid_search_density_parameter=20.)
+trailing_edge_line_parametric = wing.project(np.linspace(np.array([15.4, -25.250, 7.5]), np.array([15.4, 25.250, 7.5]), num_spanwise_vlm), 
+                                  direction=np.array([0., 0., -1.]), grid_search_density_parameter=20.)
+leading_edge_line = geometry.evaluate(leading_edge_line_parametric)
+trailing_edge_line = geometry.evaluate(trailing_edge_line_parametric)
+chord_surface = m3l.linspace(leading_edge_line, trailing_edge_line, num_chordwise_vlm)
+upper_surface_wireframe_parametric = wing.project(chord_surface.value.reshape((num_chordwise_vlm,num_spanwise_vlm,3))+np.array([0., 0., 1.]), 
+                                       direction=np.array([0., 0., -1.]), plot=False, grid_search_density_parameter=40.)
+lower_surface_wireframe_parametric = wing.project(chord_surface.value.reshape((num_chordwise_vlm,num_spanwise_vlm,3))+np.array([0., 0., -1.]), 
+                                       direction=np.array([0., 0., 1.]), plot=False, grid_search_density_parameter=40.)
+upper_surface_wireframe = geometry.evaluate(upper_surface_wireframe_parametric)
+lower_surface_wireframe = geometry.evaluate(lower_surface_wireframe_parametric)
+camber_surface = m3l.linspace(upper_surface_wireframe, lower_surface_wireframe, 1).reshape((num_chordwise_vlm, num_spanwise_vlm, 3))
+
 
 if FFD:
     # region Parameterization

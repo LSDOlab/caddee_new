@@ -45,7 +45,8 @@ wing_meshes = cd.make_vlm_camber_mesh(
     te_left=np.array([4.33, -5., 0.]),
     plot=False,
 )
-
+# geometry.plot_meshes(wing_meshes.vlm_mesh)
+# exit()
 
 # ------------------------ Creating the 'mesh' for BEM analysis (i.e., get the thrust vector and origin)
 # Calling helper function with 2 pairs of oppposite points on the disk edge (y1/2, z1/2)
@@ -117,6 +118,7 @@ vlm_model = VASTFluidSover(
 # Evaluate VLM outputs and register them as outputs
 vlm_outputs = vlm_model.evaluate(
     ac_states=ac_states,
+    atmosphere=atmosphere,
     meshes=[wing_meshes.vlm_mesh],
 )
 
@@ -143,11 +145,13 @@ bem_model = BEM(
 omega = m3l_model.create_input('omega', val=np.array([2109.07445251]), dv_flag=True, lower=2000, upper=2800, scaler=1e-3)
 chord_profile = m3l_model.create_input('chord', val=np.linspace(0.3, 0.1, num_radial))
 twist_profile = m3l_model.create_input('twist', val=np.deg2rad(np.linspace(60, 10, num_radial)))
+radius_m3l = m3l_model.create_input('radius', val=1., shape=(1, ))
 # NOTE: 'chord_profile' and 'twist_profile' can also be created using the rotor blade geometry in combination with projections
 
 # Evaluate and register BEM outputs 
 bem_outputs = bem_model.evaluate(
     ac_states=ac_states, rpm=omega, rotor_radius=rotor_mesh.radius, 
+    # ac_states=ac_states, rpm=omega, rotor_radius=radius_m3l, 
     thrust_vector=rotor_mesh.thrust_vector, thrust_origin=rotor_mesh.thrust_origin, 
     atmosphere=atmosphere, blade_chord=chord_profile, blade_twist=twist_profile
 )
@@ -166,7 +170,7 @@ cd.print_caddee_outputs(m3l_model, sim)
 
 # Optional for advanced users: A user can take advantage of CADDEE's SIFR interface to plot field quantities such as pressure 
 # on top of the geometry 
-plot = True
+plot = False
 
 if plot:
     # Here, we need to define where VLM outputs exist on the geometry
