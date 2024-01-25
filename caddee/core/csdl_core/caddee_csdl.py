@@ -5,8 +5,8 @@ from csdl import Model
 # from caddee.core.caddee_core.system_parameterization.system_parameterization import SystemParameterization
 from caddee.core.caddee_core.system_model.system_model import SystemModel
 from caddee.core.csdl_core.system_model_csdl.system_model_csdl import SystemModelCSDL
-from caddee.core.csdl_core.system_parameterization_csdl.system_parameterization_csdl import SystemParameterizationCSDL
-from caddee.core.csdl_core.system_representation_csdl.system_representation_csdl import SystemRepresentationCSDL
+# from caddee.core.csdl_core.system_parameterization_csdl.system_parameterization_csdl import SystemParameterizationCSDL
+# from caddee.core.csdl_core.system_representation_csdl.system_representation_csdl import SystemRepresentationCSDL
 
 class CADDEECSDL(Model):
     """
@@ -27,23 +27,23 @@ class CADDEECSDL(Model):
         # caddee
         caddee = self.parameters['caddee']
         # system configuration & parameterization
-        system_representation = caddee.system_representation
-        system_parameterization = caddee.system_parameterization
-        if system_parameterization is not None:
-            system_parameterization_csdl = SystemParameterizationCSDL(
-                system_parameterization=system_parameterization,
-            )
-            self.add(system_parameterization_csdl, 'system_parameterization')
+        # system_representation = caddee.system_representation
+        # system_parameterization = caddee.system_parameterization
+        # if system_parameterization is not None:
+        #     system_parameterization_csdl = SystemParameterizationCSDL(
+        #         system_parameterization=system_parameterization,
+        #     )
+        #     self.add(system_parameterization_csdl, 'system_parameterization')
 
        
-        if system_representation is not None:
-            # print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$', system_representation.spatial_representation.outputs)
-            if system_representation.spatial_representation.outputs:
+        # if system_representation is not None:
+        #     # print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$', system_representation.spatial_representation.outputs)
+        #     if system_representation.spatial_representation.outputs:
                 
-                system_representation_csdl = SystemRepresentationCSDL(
-                    system_representation=system_representation,
-                )
-                self.add(system_representation_csdl, 'system_representation')
+        #         system_representation_csdl = SystemRepresentationCSDL(
+        #             system_representation=system_representation,
+        #         )
+        #         self.add(system_representation_csdl, 'system_representation')
 
 
         # system model
