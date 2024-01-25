@@ -14,7 +14,7 @@ geometry = lg.import_geometry(GEOMETRY_FILES_FOLDER / 'LPC_final_custom_blades.s
 geometry.refit(parallelize=True)
 
 system_model = m3l.Model()
-FFD = True
+FFD = False
 
 # region Declaring all components
 # Wing, tails, fuselage
@@ -279,7 +279,6 @@ hub_l2_parametric = rlo_hub.project(np.array([20.325, -18.750,9.525]))
 # blade 
 blade_tip_parametric = rlo_blade_2.project(np.array([14.200, -18.626, 9.040]))
 blade_hub_parametric = rlo_blade_2.project(np.array([18.200, -18.512, 9.197]))
-
 # endregion
 
 # region rotor meshes
@@ -427,25 +426,8 @@ all_rotor_origin_list = lift_rotor_origin_list + [pp_mesh.thrust_origin]
 # endregion
 
 # region Projection for meshes
-# num_spanwise_vlm = 17
-# num_chordwise_vlm = 5
-
 num_spanwise_vlm = 25
 num_chordwise_vlm = 8
-# leading_edge_line_parametric = wing.project(np.linspace(np.array([8.356, -26., 7.618]), np.array([8.356, 26., 7.618]), num_spanwise_vlm), 
-#                                  direction=np.array([0., 0., -1.]), grid_search_density_parameter=20.)
-# trailing_edge_line_parametric = wing.project(np.linspace(np.array([15.4, -25.250, 7.5]), np.array([15.4, 25.250, 7.5]), num_spanwise_vlm), 
-#                                   direction=np.array([0., 0., -1.]), grid_search_density_parameter=20.)
-# leading_edge_line = geometry.evaluate(leading_edge_line_parametric)
-# trailing_edge_line = geometry.evaluate(trailing_edge_line_parametric)
-# chord_surface = m3l.linspace(leading_edge_line, trailing_edge_line, num_chordwise_vlm)
-# upper_surface_wireframe_parametric = wing.project(chord_surface.value.reshape((num_chordwise_vlm,num_spanwise_vlm,3))+np.array([0., 0., 1.]), 
-#                                        direction=np.array([0., 0., -1.]), plot=False, grid_search_density_parameter=40.)
-# lower_surface_wireframe_parametric = wing.project(chord_surface.value.reshape((num_chordwise_vlm,num_spanwise_vlm,3))+np.array([0., 0., -1.]), 
-#                                        direction=np.array([0., 0., 1.]), plot=False, grid_search_density_parameter=40.)
-# upper_surface_wireframe = geometry.evaluate(upper_surface_wireframe_parametric)
-# lower_surface_wireframe = geometry.evaluate(lower_surface_wireframe_parametric)
-# camber_surface = m3l.linspace(upper_surface_wireframe, lower_surface_wireframe, 1).reshape((num_chordwise_vlm, num_spanwise_vlm, 3))
 
 wing_meshes = make_vlm_camber_mesh(
     geometry=geometry,
@@ -1249,20 +1231,89 @@ if FFD:
     # endregion
     geometry.plot()
 
-    # region Mesh Evaluation
-    # upper_surface_wireframe = geometry.evaluate(upper_surface_wireframe_parametric)
-    # lower_surface_wireframe = geometry.evaluate(lower_surface_wireframe_parametric)
-    # vlm_mesh = m3l.linspace(upper_surface_wireframe, lower_surface_wireframe, 1).reshape((num_chordwise_vlm, num_spanwise_vlm, 3))
-
+    # region Mesh Evaluation/Update
     wing_meshes = wing_meshes.update(geometry=geometry)
     tail_meshes = tail_meshes.update(geometry=geometry)
     geometry.plot_meshes([wing_meshes.vlm_mesh, tail_meshes.vlm_mesh])
+
+    pp_mesh = pp_mesh.update(geometry=geometry)
+    rlo_mesh = rlo_mesh.update(geometry=geometry)
+    rro_mesh = rro_mesh.update(geometry=geometry)
+    flo_mesh = flo_mesh.update(geometry=geometry)
+    fro_mesh = fro_mesh.update(geometry=geometry)
+    rli_mesh = rli_mesh.update(geometry=geometry)
+    rri_mesh = rri_mesh.update(geometry=geometry)
+    fli_mesh = fli_mesh.update(geometry=geometry)
+    fri_mesh = fri_mesh.update(geometry=geometry)
+
+
+    lift_rotor_mesh_list = [rlo_mesh, rli_mesh, rri_mesh, rro_mesh, flo_mesh, fli_mesh, fri_mesh, fro_mesh]
+    lift_rotor_mesh_list_oei_flo = [rlo_mesh, rli_mesh, rri_mesh, rro_mesh, fli_mesh, fri_mesh, fro_mesh]
+    lift_rotor_mesh_list_oei_fli = [rlo_mesh, rli_mesh, rri_mesh, rro_mesh, flo_mesh, fri_mesh, fro_mesh]
+    lift_rotor_mesh_list_oei_rlo = [rli_mesh, rri_mesh, rro_mesh, flo_mesh, fli_mesh, fri_mesh, fro_mesh]
+    lift_rotor_mesh_list_oei_rli = [rlo_mesh, rri_mesh, rro_mesh, flo_mesh, fli_mesh, fri_mesh, fro_mesh]
+
+    lift_rotor_origin_list = [mesh.thrust_origin for mesh in lift_rotor_mesh_list]
+    all_rotor_origin_list = lift_rotor_origin_list + [pp_mesh.thrust_origin]
 
     # dummy_objective = m3l.norm(vlm_mesh.reshape((-1,)))
     # m3l_model.register_output(vlm_mesh)
     # m3l_model.register_output(dummy_objective)
     # endregion
 
+# region assign blade twist and chord coefficients
+# chord/ twist profiles
+chord_cps_numpy = np.array([0.122222, 0.213889, 0.188426, 0.050926]) * 5
+chord_cps_numpy_pusher = np.array([0.122222, 0.213889, 0.188426, 0.050926]) * 4.5
+
+twist_cps_numpy = np.deg2rad(np.linspace(35.000000, 15.000000, 4))
+twist_cps_numpy_pusher = np.deg2rad(np.linspace(55.000000, 10.000000, 4))
+
+lower_twist_hover = np.deg2rad(1)
+upper_twist_hover = np.deg2rad(60)
+lower_twist_pusher = np.deg2rad(5)
+upper_twist_pusher = np.deg2rad(85)
+
+flo_blade_chord_bsp_cps = fro_blade_chord_bsp_cps = system_model.create_input('front_outer_blade_chord_cps', val=chord_cps_numpy, dv_flag=True, lower=0.1, upper=1.1)
+fli_blade_chord_bsp_cps = fri_blade_chord_bsp_cps = system_model.create_input('front_inner_blade_chord_cps', val=chord_cps_numpy, dv_flag=True, lower=0.1, upper=1.1)
+rlo_blade_chord_bsp_cps = rro_blade_chord_bsp_cps = system_model.create_input('rear_outer_blade_chord_cps', val=chord_cps_numpy, dv_flag=True, lower=0.1, upper=1.1)
+rli_blade_chord_bsp_cps = rri_blade_chord_bsp_cps = system_model.create_input('rear_inner_blade_chord_cps', val=chord_cps_numpy, dv_flag=True, lower=0.1, upper=1.1)
+
+flo_blade_twist_bsp_cps = fro_blade_twist_bsp_cps = system_model.create_input('front_outer_blade_twist_cps', val=twist_cps_numpy, dv_flag=True, lower=lower_twist_hover, upper=upper_twist_hover)
+fli_blade_twist_bsp_cps = fri_blade_twist_bsp_cps = system_model.create_input('front_inner_blade_twist_cps', val=twist_cps_numpy, dv_flag=True, lower=lower_twist_hover, upper=upper_twist_hover)
+rlo_blade_twist_bsp_cps = rro_blade_twist_bsp_cps = system_model.create_input('rear_outer_blade_twist_cps', val=twist_cps_numpy, dv_flag=True, lower=lower_twist_hover, upper=upper_twist_hover)
+rli_blade_twist_bsp_cps = rri_blade_twist_bsp_cps = system_model.create_input('rear_inner_blade_twist_cps', val=twist_cps_numpy, dv_flag=True, lower=lower_twist_hover, upper=upper_twist_hover)
+
+pusher_chord_bsp_cps = system_model.create_input('pusher_chord_bsp_cps', val=chord_cps_numpy_pusher, dv_flag=True, lower=0.08, upper=1.4)
+pusher_twist_bsp_cps = system_model.create_input('pusher_twist_bsp_cps', val=twist_cps_numpy_pusher, dv_flag=True, lower=lower_twist_pusher, upper=upper_twist_pusher)
+
+rlo_mesh.chord_cps = rlo_blade_chord_bsp_cps
+rlo_mesh.twist_cps = rlo_blade_twist_bsp_cps
+
+rli_mesh.chord_cps = rli_blade_chord_bsp_cps
+rli_mesh.twist_cps = rli_blade_twist_bsp_cps
+
+rri_mesh.chord_cps = rri_blade_chord_bsp_cps
+rri_mesh.twist_cps = rri_blade_twist_bsp_cps
+
+rro_mesh.chord_cps = rro_blade_chord_bsp_cps
+rro_mesh.twist_cps = rro_blade_twist_bsp_cps
+
+flo_mesh.chord_cps = flo_blade_chord_bsp_cps
+flo_mesh.twist_cps = flo_blade_twist_bsp_cps
+
+fli_mesh.chord_cps = fli_blade_chord_bsp_cps
+fli_mesh.twist_cps = fli_blade_twist_bsp_cps
+
+fri_mesh.chord_cps = fri_blade_chord_bsp_cps
+fri_mesh.twist_cps = fri_blade_twist_bsp_cps
+
+fro_mesh.chord_cps = fro_blade_chord_bsp_cps
+fro_mesh.twist_cps = fro_blade_twist_bsp_cps
+
+pp_mesh.chord_cps = pusher_chord_bsp_cps
+pp_mesh.twist_cps = pusher_twist_bsp_cps
+# endregion
 
 # region compute component surface areas and make drag components
 component_list = [rlo_boom, rlo_hub, fuselage, wing, h_tail, v_tail, pp_hub, rlo_blade_1]
@@ -1277,6 +1328,7 @@ surface_area_list = compute_component_surface_area(
 S_ref = surface_area_list[3] / 2.1
 
 # Wing aspect ratio
+wingspan = m3l.norm(geometry.evaluate(wing_le_right) - geometry.evaluate(wing_le_left))
 wing_AR = wingspan**2 / S_ref
 
 # fuselage length
@@ -1320,6 +1372,7 @@ wing_drag_comp = DragComponent(
 h_tail_mid_le = geometry.evaluate(h_tail_mid_le_parametric).reshape((-1, 3))
 h_tail_mid_te = geometry.evaluate(h_tail_mid_te_parametric).reshape((-1, 3))
 h_tail_chord_length = m3l.norm(h_tail_mid_le-h_tail_mid_te)
+h_tail_area = surface_area_list[4] / 2.1
 
 h_tail_drag_comp = DragComponent(
     component_type='wing',
@@ -1335,6 +1388,7 @@ h_tail_drag_comp = DragComponent(
 vtail_mid_le = geometry.evaluate(vtail_mid_le_parametric).reshape((-1, 3))
 vtail_mid_te = geometry.evaluate(vtail_mid_te_parametric).reshape((-1, 3))
 vtail_chord_length = m3l.norm(vtail_mid_le-vtail_mid_te)
+v_tail_area = surface_area_list[5] / 2.
 
 vtail_drag_comp = DragComponent(
     component_type='wing',
@@ -1399,6 +1453,9 @@ drag_comp_list = [wing_drag_comp, fuselage_drag_comp, h_tail_drag_comp, vtail_dr
 
 
 # endregion
+
+
+
 # m3l_model.register_output(geometry.coefficients)
 # m3l_model.add_objective(dummy_objective)
 

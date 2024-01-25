@@ -88,8 +88,8 @@ class TotalForcesMomentsCSDL(csdl.Model):
         forces_names = self.parameters['forces_names']
         moments_names = self.parameters['moments_names']
 
-        print(forces_names)
-        print(moments_names)
+        # print(forces_names)
+        # print(moments_names)
         
         F_total = self.create_input('F_total', val=0, shape=(num_nodes, 3))
         M_total = self.create_input('M_total', val=0, shape=(num_nodes, 3))

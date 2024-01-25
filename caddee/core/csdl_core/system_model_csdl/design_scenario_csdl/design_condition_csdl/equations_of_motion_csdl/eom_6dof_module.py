@@ -45,11 +45,19 @@ class EoMEuler6DOF(m3l.ExplicitOperation):
         if ref_pt:
             mps_forces['ref_pt'] = ref_pt
 
-        ac_states_dict = ac_states.__dict__
-        ac_states_copy = copy.deepcopy(ac_states_dict)
-        del ac_states_copy['gamma']
-        del ac_states_copy['time']
-        del ac_states_copy['stability_flag']
+        ac_states_copy = {}
+        ac_states_copy['u'] = ac_states.u
+        ac_states_copy['v'] = ac_states.v
+        ac_states_copy['w'] = ac_states.w
+        ac_states_copy['p'] = ac_states.p
+        ac_states_copy['q'] = ac_states.q
+        ac_states_copy['r'] = ac_states.r
+        ac_states_copy['phi'] = ac_states.phi
+        ac_states_copy['theta'] = ac_states.theta
+        ac_states_copy['psi'] = ac_states.psi
+        ac_states_copy['x'] = ac_states.x
+        ac_states_copy['y'] = ac_states.y
+        ac_states_copy['z'] = ac_states.z
         self.arguments = {**mps_forces, **ac_states_copy}
 
         du_dt = m3l.Variable(name=f'du_dt', shape=(1, ), operation=self)

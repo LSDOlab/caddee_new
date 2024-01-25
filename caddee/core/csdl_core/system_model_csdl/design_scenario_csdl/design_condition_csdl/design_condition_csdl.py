@@ -33,6 +33,7 @@ class CruiseConditionCSDL(SteadyDesignConditionCSDL):
 
         speed_of_sound = self.declare_variable('speed_of_sound', shape=(num_nodes, ))
 
+        print(cruise_condition.arguments)
         mach_m3l = cruise_condition.arguments['mach_number']
         speed_m3l = cruise_condition.arguments['cruise_speed']
         range_m3l = cruise_condition.arguments['cruise_range']

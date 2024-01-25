@@ -195,7 +195,7 @@ class VaryingMassPropertiesCSDL(Model):
 
     def define(self):
         component_mass_properties = self.parameters['component_mass_properties']
-        print(component_mass_properties)
+        # print(component_mass_properties)
         ref_pt = self.declare_variable('ref_pt', shape=(3,), val=np.array([0, 0, 0]))
         
         # Initialize mass proporties as CSDL variables with zero value

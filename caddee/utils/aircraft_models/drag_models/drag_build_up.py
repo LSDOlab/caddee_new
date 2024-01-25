@@ -69,11 +69,11 @@ class StabilityAdapterModelCSDL(csdl.Model):
             else:
                 csdl_var = self.declare_variable(key, shape=value.shape)
                 if len(value.shape) == 1 and value.shape[0] == 1:
-                    print(key, value.shape)
+                    # print(key, value.shape)
                     csdl_var_exp = csdl.expand(csdl_var, shape=(num_nodes * 13, ))
                     self.register_output(name=f'{key}_exp', var=csdl_var_exp)
                 elif len(value.shape) == 1 and value.shape[0] != 1:
-                    print(key, (13, ) + value.shape)
+                    # print(key, (13, ) + value.shape)
                     csdl_var_exp = csdl.reshape(csdl.expand(csdl_var, shape=(13, ) + value.shape, indices='i->ji'), new_shape=(13, value.shape[0]))
                     self.register_output(name=f'{key}_exp', var=csdl_var_exp)
                 elif len(value.shape) == 2:

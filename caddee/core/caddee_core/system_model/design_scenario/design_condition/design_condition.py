@@ -266,12 +266,12 @@ class SteadyDesignCondition(m3l.ExplicitOperation):
             trim_variables.lat_residual = lat_residual
 
             long_stab_model = LongitudinalAircraftStability(
-                design_condition_name=self.parameters['name'],
+                design_condition_name=f"{self.parameters['name']}",
             )
             long_stab_metrics = long_stab_model.evaluate()
 
             lat_stab_model = LateralAircraftStability(
-                design_condition_name=self.parameters['name'],
+                design_condition_name=f"{self.parameters['name']}",
             )
             lat_stab_metric = lat_stab_model.evaluate()
 

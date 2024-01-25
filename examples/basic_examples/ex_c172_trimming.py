@@ -20,15 +20,14 @@ sizing_model = m3l.Model()
 
 # Battery sizing
 c172_sizing = cd.C172MassProperties()
-c172_mass, c172_cg, c172_I = c172_sizing.evaluate()
-sizing_model.register_output(c172_mass)
-sizing_model.register_output(c172_cg)
-sizing_model.register_output(c172_I)
+c172_mass_props = c172_sizing.evaluate()
+sizing_model.register_output(c172_mass_props)
+# sizing_model.register_output(c172_cg)
+# sizing_model.register_output(c172_I)
 
 system_model.add_m3l_model('sizing_model', sizing_model)
 
 # design scenario
-design_scenario = cd.DesignScenario(name='aircraft_trim')
 
 # cruise condition
 cruise_model = m3l.Model()
@@ -70,7 +69,7 @@ cruise_model.register_output(c172_prop_forces)
 
 # inertial forces and moments
 inertial_loads_model = cd.InertialLoads()
-inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=c172_cg, totoal_mass=c172_mass, ac_states=ac_states)
+inertial_forces, inertial_moments = inertial_loads_model.evaluate(total_cg_vector=c172_mass_props.cg_vector, totoal_mass=c172_mass_props.mass, ac_states=ac_states)
 cruise_model.register_output(inertial_forces)
 cruise_model.register_output(inertial_moments)
 
@@ -90,9 +89,9 @@ cruise_model.register_output(total_moments)
 # pass total forces/moments + mass properties into EoM model
 eom_m3l_model = cd.EoMEuler6DOF()
 trim_residual = eom_m3l_model.evaluate(
-    total_mass=c172_mass, 
-    total_cg_vector=c172_cg, 
-    total_inertia_tensor=c172_I, 
+    total_mass=c172_mass_props.mass, 
+    total_cg_vector=c172_mass_props.cg_vector, 
+    total_inertia_tensor=c172_mass_props.inertia_tensor, 
     total_forces=total_forces, 
     total_moments=total_moments,
     ac_states=ac_states

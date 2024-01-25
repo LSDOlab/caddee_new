@@ -8,7 +8,6 @@ models for the analysis.
 The central geometry along with meshes required for the analysis are imported from 'ex_lpc_geom.py'.
 '''
 
-
 # Module imports
 import numpy as np 
 import caddee.api as cd
@@ -16,6 +15,7 @@ from lsdo_rotor import BEMParameters, evaluate_multiple_BEM_models, BEM
 from VAST import FluidProblem, VASTFluidSover
 from lsdo_motor import evaluate_multiple_motor_sizing_models, evaluate_multiple_motor_analysis_models, MotorAnalysis, MotorSizing
 from lsdo_acoustics import Acoustics, evaluate_multiple_acoustic_models
+from python_csdl_backend import Simulator
 
 # Imports from geometry setup file
 from ex_lpc_geom import (system_model, lift_rotor_mesh_list, all_rotor_origin_list, 
@@ -65,7 +65,7 @@ motor_mass_properties = evaluate_multiple_motor_sizing_models(
     name_prefix='motor_sizing',
     m3l_model=system_model,
 )
-system_model.register_output(motor_mass_properties)
+# system_model.register_output(motor_mass_properties)
 
 # battery
 battery_mass = system_model.create_input(name='battery_mass', val=800, shape=(1, ), dv_flag=battery_sizing_dv, lower=500, upper=1100, scaler=3e-3)
@@ -279,3 +279,107 @@ climb_trim_variables = climb_condition.assemble_trim_residual(
 system_model.register_output(climb_trim_variables)
 system_model.add_constraint(climb_trim_variables.accelerations, equals=0, scaler=5.)
 # endregion 
+
+# region cruise
+cruise_condition = cd.CruiseCondition(
+    name='steady_cruise',
+    num_nodes=1,
+    stability_flag=False,
+)
+
+cruise_M = system_model.create_input('cruise_mach', val=0.195)
+cruise_h = system_model.create_input('cruise_altitude', val=1000)
+cruise_range = system_model.create_input('cruise_range', val=60000)
+cruise_pitch = system_model.create_input('cruise_pitch', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-5), upper=np.deg2rad(5), scaler=10)
+
+cruise_ac_states, cruise_atmos = cruise_condition.evaluate(mach_number=cruise_M, pitch_angle=cruise_pitch, altitude=cruise_h, cruise_range=cruise_range)
+
+system_model.register_output(cruise_ac_states)
+system_model.register_output(cruise_atmos)
+
+cruise_bem = BEM(
+    name='cruise_bem',
+    num_nodes=1, 
+    BEM_parameters=bem_pusher_rotor_parameters,
+    rotation_direction='ignore',
+)
+cruise_rpm = system_model.create_input('cruise_rpm', val=2000, dv_flag=True, lower=600, upper=2500, scaler=1e-3)
+cruise_bem_outputs = cruise_bem.evaluate(ac_states=cruise_ac_states, rpm=cruise_rpm, rotor_radius=pp_mesh.radius, thrust_vector=pp_mesh.thrust_vector,
+                                                thrust_origin=pp_mesh.thrust_origin, atmosphere=cruise_atmos, blade_chord_cp=pp_mesh.chord_cps, blade_twist_cp=pp_mesh.twist_cps, 
+                                                cg_vec=m4_mass_properties.cg_vector, reference_point=m4_mass_properties.cg_vector)
+system_model.register_output(cruise_bem_outputs) 
+
+# VAST solver
+vlm_model = VASTFluidSover(
+    name='cruise_vlm_model',
+    surface_names=[
+        'cruise_wing_mesh',
+        'cruise_tail_mesh',
+        # 'cruise_vtail_mesh',
+        # 'cruise_fuselage_mesh',
+    ],
+    surface_shapes=[
+        (1, ) + wing_meshes.vlm_mesh.shape[1:],
+        (1, ) + tail_meshes.vlm_mesh.shape[1:],
+        # (1, ) + vtail_meshes.vlm_mesh.shape[1:],
+        # (1, ) + fuesleage_mesh.shape,
+    ],
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
+    mesh_unit='ft',
+    cl0=[0., 0., 0., 0.]
+)
+elevator = system_model.create_input('cruise_elevator', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-20), upper=np.deg2rad(20))
+# Evaluate VLM outputs and register them as outputs
+vlm_outputs = vlm_model.evaluate(
+    atmosphere=cruise_atmos,
+    ac_states=cruise_ac_states,
+    meshes=[wing_meshes.vlm_mesh, tail_meshes.vlm_mesh], #, vtail_meshes.vlm_mesh, fuesleage_mesh],
+    deflections=[None, elevator], #, None, None],
+    wing_AR=wing_AR,
+    eval_pt=m4_mass_properties.cg_vector,
+)
+system_model.register_output(vlm_outputs)
+
+drag_build_up_model = cd.DragBuildUpModel(
+    name='cruise_drag_build_up',
+    num_nodes=1,
+    units='ft',
+)
+
+drag_build_up_outputs = drag_build_up_model.evaluate(atmos=cruise_atmos, ac_states=cruise_ac_states, drag_comp_list=drag_comp_list, s_ref=S_ref)
+system_model.register_output(drag_build_up_outputs)
+
+if motor_analysis:
+    cruise_motor_outputs = evaluate_multiple_motor_analysis_models(
+        rotor_outputs_list=[cruise_bem_outputs],
+        motor_sizing_list=[motor_mass_properties[-1]],
+        rotor_rpm_list=[cruise_rpm],
+        motor_diameter_list=[motor_diameters[-1]],
+        name_prefix='cruise_motor_analysis',
+        flux_weakening=False,
+        m3l_model=system_model,
+    )
+
+    cruise_energy_model = cd.EnergyModelM3L(name='energy_cruise')
+    cruise_energy = cruise_energy_model.evaluate(
+        cruise_motor_outputs,
+        ac_states=cruise_ac_states,
+    )
+    system_model.register_output(cruise_energy)
+
+cruise_trim_variables = cruise_condition.assemble_trim_residual(
+    mass_properties=[motor_mass_properties, battery_mass_properties, m4_mass_properties],
+    aero_propulsive_outputs=[vlm_outputs, cruise_bem_outputs, drag_build_up_outputs],
+    ac_states=cruise_ac_states,
+    load_factor=1.,
+    ref_pt=m4_mass_properties.cg_vector,
+)
+system_model.register_output(cruise_trim_variables)
+system_model.add_constraint(cruise_trim_variables.accelerations, equals=0, scaler=5.)
+
+csdl_model = system_model.assemble_csdl()
+
+sim = Simulator(csdl_model)
+sim.run()
+
+cd.print_caddee_outputs(system_model, sim)
