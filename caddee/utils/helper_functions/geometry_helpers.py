@@ -145,11 +145,11 @@ def make_rotor_mesh(
     disk_in_plane_x = y21 - y22
 
     if radius is None:
-        rotor_radius = m3l.norm(disk_in_plane_y) / 2
+        rotor_radius = m3l.norm(disk_in_plane_y / 2)
         # rotor_radius = m3l.norm((y12 - y11)/2)
         # rotor_radius = m3l.norm(y12 - y11) / 2IM
         
-        rotor_radius_2 = m3l.norm(disk_in_plane_x) / 2
+        rotor_radius_2 = m3l.norm(disk_in_plane_x / 2)
         # rotor_radius_2 = m3l.norm((y22 - y21)/2)
         # rotor_radius_2 = m3l.norm(y22 - y21) / 2
     

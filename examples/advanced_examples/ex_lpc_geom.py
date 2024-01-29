@@ -14,7 +14,8 @@ geometry = lg.import_geometry(GEOMETRY_FILES_FOLDER / 'LPC_final_custom_blades.s
 geometry.refit(parallelize=True)
 
 system_model = m3l.Model()
-FFD = False
+FFD = True
+rotor_geom_dv = True
 
 # region Declaring all components
 # Wing, tails, fuselage
@@ -984,10 +985,10 @@ if FFD:
     parameterization_solver.declare_input(name='fuselage_pusher_connection', input=pusher_fuselage_connection)
     parameterization_inputs['fuselage_pusher_connection'] = m3l.Variable(name='fuselage_pusher_connection', shape=(3,), value=pusher_fuselage_connection.value)
 
-    flo_radius = fro_radius = front_outer_radius = m3l.Variable(name='front_outer_radius', shape=(1, ), value=10/2, dv_flag=False, lower=5/2, upper=15/2, scaler=1e-1)
-    fli_radius = fri_radius = front_inner_radius = m3l.Variable(name='front_inner_radius', shape=(1, ), value=10/2, dv_flag=False, lower=5/2, upper=15/2, scaler=1e-1)
-    rlo_radius = rro_radius = rear_outer_radius = m3l.Variable(name='rear_outer_radius',  shape=(1, ),value=10/2, dv_flag=False, lower=5/2, upper=15/2, scaler=1e-1)
-    rli_radius = rri_radius = rear_inner_radius = m3l.Variable(name='rear_inner_radius', shape=(1, ), value=10/2, dv_flag=False, lower=5/2, upper=15/2, scaler=1e-1)
+    flo_radius = fro_radius = front_outer_radius = m3l.Variable(name='front_outer_radius', shape=(1, ), value=10/2, dv_flag=rotor_geom_dv, lower=5/2, upper=15/2, scaler=1e-1)
+    fli_radius = fri_radius = front_inner_radius = m3l.Variable(name='front_inner_radius', shape=(1, ), value=10/2, dv_flag=rotor_geom_dv, lower=5/2, upper=15/2, scaler=1e-1)
+    rlo_radius = rro_radius = rear_outer_radius = m3l.Variable(name='rear_outer_radius',  shape=(1, ),value=10/2, dv_flag=rotor_geom_dv, lower=5/2, upper=15/2, scaler=1e-1)
+    rli_radius = rri_radius = rear_inner_radius = m3l.Variable(name='rear_inner_radius', shape=(1, ), value=10/2, dv_flag=rotor_geom_dv, lower=5/2, upper=15/2, scaler=1e-1)
     dv_radius_list = [rlo_radius, rli_radius, rri_radius, rro_radius, flo_radius, fli_radius, fri_radius, fro_radius]
 
     disk_centers = [rlo_disk_center, rli_disk_center, rri_disk_center, rro_disk_center, flo_disk_center, fli_disk_center, fri_disk_center, fro_disk_center]
@@ -1246,12 +1247,12 @@ if FFD:
     # endregion
 
     # endregion
-    geometry.plot()
+    # geometry.plot()
 
     # region Mesh Evaluation/Update
     wing_meshes = wing_meshes.update(geometry=geometry)
     tail_meshes = tail_meshes.update(geometry=geometry)
-    geometry.plot_meshes([wing_meshes.vlm_mesh, tail_meshes.vlm_mesh])
+    # geometry.plot_meshes([wing_meshes.vlm_mesh, tail_meshes.vlm_mesh])
 
     pp_mesh = pp_mesh.update(geometry=geometry)
     rlo_mesh = rlo_mesh.update(geometry=geometry)
@@ -1291,18 +1292,18 @@ upper_twist_hover = np.deg2rad(60)
 lower_twist_pusher = np.deg2rad(5)
 upper_twist_pusher = np.deg2rad(85)
 
-flo_blade_chord_bsp_cps = fro_blade_chord_bsp_cps = system_model.create_input('front_outer_blade_chord_cps', val=chord_cps_numpy, dv_flag=True, lower=0.1, upper=1.1)
-fli_blade_chord_bsp_cps = fri_blade_chord_bsp_cps = system_model.create_input('front_inner_blade_chord_cps', val=chord_cps_numpy, dv_flag=True, lower=0.1, upper=1.1)
-rlo_blade_chord_bsp_cps = rro_blade_chord_bsp_cps = system_model.create_input('rear_outer_blade_chord_cps', val=chord_cps_numpy, dv_flag=True, lower=0.1, upper=1.1)
-rli_blade_chord_bsp_cps = rri_blade_chord_bsp_cps = system_model.create_input('rear_inner_blade_chord_cps', val=chord_cps_numpy, dv_flag=True, lower=0.1, upper=1.1)
+flo_blade_chord_bsp_cps = fro_blade_chord_bsp_cps = system_model.create_input('front_outer_blade_chord_cps', val=chord_cps_numpy, dv_flag=rotor_geom_dv, lower=0.1, upper=1.1)
+fli_blade_chord_bsp_cps = fri_blade_chord_bsp_cps = system_model.create_input('front_inner_blade_chord_cps', val=chord_cps_numpy, dv_flag=rotor_geom_dv, lower=0.1, upper=1.1)
+rlo_blade_chord_bsp_cps = rro_blade_chord_bsp_cps = system_model.create_input('rear_outer_blade_chord_cps', val=chord_cps_numpy, dv_flag=rotor_geom_dv, lower=0.1, upper=1.1)
+rli_blade_chord_bsp_cps = rri_blade_chord_bsp_cps = system_model.create_input('rear_inner_blade_chord_cps', val=chord_cps_numpy, dv_flag=rotor_geom_dv, lower=0.1, upper=1.1)
 
-flo_blade_twist_bsp_cps = fro_blade_twist_bsp_cps = system_model.create_input('front_outer_blade_twist_cps', val=twist_cps_numpy, dv_flag=True, lower=lower_twist_hover, upper=upper_twist_hover)
-fli_blade_twist_bsp_cps = fri_blade_twist_bsp_cps = system_model.create_input('front_inner_blade_twist_cps', val=twist_cps_numpy, dv_flag=True, lower=lower_twist_hover, upper=upper_twist_hover)
-rlo_blade_twist_bsp_cps = rro_blade_twist_bsp_cps = system_model.create_input('rear_outer_blade_twist_cps', val=twist_cps_numpy, dv_flag=True, lower=lower_twist_hover, upper=upper_twist_hover)
-rli_blade_twist_bsp_cps = rri_blade_twist_bsp_cps = system_model.create_input('rear_inner_blade_twist_cps', val=twist_cps_numpy, dv_flag=True, lower=lower_twist_hover, upper=upper_twist_hover)
+flo_blade_twist_bsp_cps = fro_blade_twist_bsp_cps = system_model.create_input('front_outer_blade_twist_cps', val=twist_cps_numpy, dv_flag=rotor_geom_dv, lower=lower_twist_hover, upper=upper_twist_hover)
+fli_blade_twist_bsp_cps = fri_blade_twist_bsp_cps = system_model.create_input('front_inner_blade_twist_cps', val=twist_cps_numpy, dv_flag=rotor_geom_dv, lower=lower_twist_hover, upper=upper_twist_hover)
+rlo_blade_twist_bsp_cps = rro_blade_twist_bsp_cps = system_model.create_input('rear_outer_blade_twist_cps', val=twist_cps_numpy, dv_flag=rotor_geom_dv, lower=lower_twist_hover, upper=upper_twist_hover)
+rli_blade_twist_bsp_cps = rri_blade_twist_bsp_cps = system_model.create_input('rear_inner_blade_twist_cps', val=twist_cps_numpy, dv_flag=rotor_geom_dv, lower=lower_twist_hover, upper=upper_twist_hover)
 
-pusher_chord_bsp_cps = system_model.create_input('pusher_chord_bsp_cps', val=chord_cps_numpy_pusher, dv_flag=True, lower=0.08, upper=1.4)
-pusher_twist_bsp_cps = system_model.create_input('pusher_twist_bsp_cps', val=twist_cps_numpy_pusher, dv_flag=True, lower=lower_twist_pusher, upper=upper_twist_pusher)
+pusher_chord_bsp_cps = system_model.create_input('pusher_chord_bsp_cps', val=chord_cps_numpy_pusher, dv_flag=rotor_geom_dv, lower=0.08, upper=1.4)
+pusher_twist_bsp_cps = system_model.create_input('pusher_twist_bsp_cps', val=twist_cps_numpy_pusher, dv_flag=rotor_geom_dv, lower=lower_twist_pusher, upper=upper_twist_pusher)
 
 rlo_mesh.chord_cps = rlo_blade_chord_bsp_cps
 rlo_mesh.twist_cps = rlo_blade_twist_bsp_cps

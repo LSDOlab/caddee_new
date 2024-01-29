@@ -16,6 +16,8 @@ from VAST import FluidProblem, VASTFluidSover
 from lsdo_motor import evaluate_multiple_motor_sizing_models, evaluate_multiple_motor_analysis_models, MotorAnalysis, MotorSizing
 from lsdo_acoustics import Acoustics, evaluate_multiple_acoustic_models
 from python_csdl_backend import Simulator
+from modopt.scipy_library import SLSQP
+from modopt.csdl_library import CSDLProblem
 
 # Imports from geometry setup file
 from ex_lpc_geom import (system_model, lift_rotor_mesh_list, all_rotor_origin_list, 
@@ -28,6 +30,7 @@ motor_sizing_dv = False
 battery_sizing_dv = False
 motor_analysis = False
 acoustic_analysis = False
+perform_optimization = False
 
 # Defining BEM parameters
 bem_hover_rotor_parameters = BEMParameters(
@@ -44,7 +47,7 @@ bem_pusher_rotor_parameters = BEMParameters(
     num_radial=30,
     num_tangential=1,
     airfoil='NACA_4412',
-    use_custom_airfoil_ml=True,
+    use_custom_airfoil_ml=False,
     mesh_units='ft',
 )
 
@@ -91,96 +94,96 @@ total_mass_props_model = cd.TotalMassPropertiesM3L(
 )
 total_mass_props = total_mass_props_model.evaluate(component_mass_properties=[motor_mass_properties, battery_mass_properties, m4_mass_properties])
 system_model.register_output(total_mass_props)
-system_model.add_objective(total_mass_props.mass, scaler=1e-3)
+# system_model.add_objective(total_mass_props.mass, scaler=1e-3)
 # endregion
 
-# # region hover condition
-# hover_condition = cd.HoverCondition(
-#     name='hover_condition',
-# )
+# region hover condition
+hover_condition = cd.HoverCondition(
+    name='hover_condition',
+)
 
-# # Create inputs for hover condition
-# hover_1_time = system_model.create_input('hover_1_time', val=90)
-# hover_1_altitude = system_model.create_input('hover_1_altitude', val=300)
+# Create inputs for hover condition
+hover_1_time = system_model.create_input('hover_1_time', val=90)
+hover_1_altitude = system_model.create_input('hover_1_altitude', val=300)
 
-# # Evaluate aircraft states and atmospheric properties and register them as outputs
-# hover_1_ac_states, hover_1_atmosphere = hover_condition.evaluate(hover_time=hover_1_time, altitude=hover_1_altitude)
-# system_model.register_output(hover_1_ac_states)
-# system_model.register_output(hover_1_atmosphere)
+# Evaluate aircraft states and atmospheric properties and register them as outputs
+hover_1_ac_states, hover_1_atmosphere = hover_condition.evaluate(hover_time=hover_1_time, altitude=hover_1_altitude)
+system_model.register_output(hover_1_ac_states)
+system_model.register_output(hover_1_atmosphere)
 
-# hover_1_rpms = []
-# for i in range(8):
-#     hover_1_rpms.append(system_model.create_input(f'hover_1_rpm_{i}', val=1000, dv_flag=True, lower=300, upper=2200, scaler=1e-3))
+hover_1_rpms = []
+for i in range(8):
+    hover_1_rpms.append(system_model.create_input(f'hover_1_rpm_{i}', val=1000, dv_flag=True, lower=300, upper=2200, scaler=1e-3))
 
-# hover_bem_output_list = evaluate_multiple_BEM_models(
-#     name_prefix='hover_1_bem',
-#     bem_parameters=bem_hover_rotor_parameters,
-#     bem_mesh_list=lift_rotor_mesh_list,
-#     rpm_list=hover_1_rpms,
-#     ac_states=hover_1_ac_states,
-#     atmoshpere=hover_1_atmosphere,
-#     num_nodes=1,
-#     m3l_model=system_model,
-#     rotation_direction_list=lift_rotation_direction_list,
-#     chord_cp=True,
-#     twist_cp=True,
-# )
+hover_bem_output_list = evaluate_multiple_BEM_models(
+    name_prefix='hover_1_bem',
+    bem_parameters=bem_hover_rotor_parameters,
+    bem_mesh_list=lift_rotor_mesh_list,
+    rpm_list=hover_1_rpms,
+    ac_states=hover_1_ac_states,
+    atmoshpere=hover_1_atmosphere,
+    num_nodes=1,
+    m3l_model=system_model,
+    rotation_direction_list=lift_rotation_direction_list,
+    chord_cp=True,
+    twist_cp=True,
+)
 
-# if acoustic_analysis:
-#     hover_acoustics_data = Acoustics(
-#         aircraft_position=np.array([0., 0., 100])
-#     )
+if acoustic_analysis:
+    hover_acoustics_data = Acoustics(
+        aircraft_position=np.array([0., 0., 100])
+    )
 
-#     hover_acoustics_data.add_observer(
-#         name='hover_observer',
-#         obs_position=np.array([0., 0., 0.]),
-#         time_vector=np.array([0.,]),
+    hover_acoustics_data.add_observer(
+        name='hover_observer',
+        obs_position=np.array([0., 0., 0.]),
+        time_vector=np.array([0.,]),
 
-#     )
+    )
 
-#     hover_total_noise, hover_total_noise_a_weighted = evaluate_multiple_acoustic_models(
-#         rotor_outputs=hover_bem_output_list,
-#         acoustics_data=hover_acoustics_data,
-#         ac_states=hover_1_ac_states,
-#         atmos=hover_1_atmosphere,
-#         tonal_noise_model='Lowson',
-#         broadband_noise_model='GL',
-#         altitude=hover_1_altitude,
-#         rotor_parameters=bem_hover_rotor_parameters,
-#         rotor_meshes=lift_rotor_mesh_list,
-#         rpm_list=hover_1_rpms,
-#         model_name_prefix='hover_noise',
-#         num_nodes=1,
-#         m3l_model=system_model,
-#     )
-#     system_model.add_constraint(hover_total_noise_a_weighted, upper=70, scaler=1e-2)
+    hover_total_noise, hover_total_noise_a_weighted = evaluate_multiple_acoustic_models(
+        rotor_outputs=hover_bem_output_list,
+        acoustics_data=hover_acoustics_data,
+        ac_states=hover_1_ac_states,
+        atmos=hover_1_atmosphere,
+        tonal_noise_model='Lowson',
+        broadband_noise_model='GL',
+        altitude=hover_1_altitude,
+        rotor_parameters=bem_hover_rotor_parameters,
+        rotor_meshes=lift_rotor_mesh_list,
+        rpm_list=hover_1_rpms,
+        model_name_prefix='hover_noise',
+        num_nodes=1,
+        m3l_model=system_model,
+    )
+    system_model.add_constraint(hover_total_noise_a_weighted, upper=70, scaler=1e-2)
 
-# if motor_analysis:
-#     hover_motor_outputs = evaluate_multiple_motor_analysis_models(
-#         rotor_outputs_list=hover_bem_output_list,
-#         motor_sizing_list=motor_mass_properties[0:-1],
-#         rotor_rpm_list=hover_1_rpms,
-#         motor_diameter_list=motor_diameters,
-#         name_prefix='hover_motor_analysis',
-#         flux_weakening=False,
-#         m3l_model=system_model,
-#     )
+if motor_analysis:
+    hover_motor_outputs = evaluate_multiple_motor_analysis_models(
+        rotor_outputs_list=hover_bem_output_list,
+        motor_sizing_list=motor_mass_properties[0:-1],
+        rotor_rpm_list=hover_1_rpms,
+        motor_diameter_list=motor_diameters,
+        name_prefix='hover_motor_analysis',
+        flux_weakening=False,
+        m3l_model=system_model,
+    )
 
-#     hover_energy_model = cd.EnergyModelM3L(name='energy_hover')
-#     hover_energy = hover_energy_model.evaluate(
-#         hover_motor_outputs,
-#         ac_states=hover_1_ac_states,
-#     )
-#     system_model.register_output(hover_energy)
+    hover_energy_model = cd.EnergyModelM3L(name='energy_hover')
+    hover_energy = hover_energy_model.evaluate(
+        hover_motor_outputs,
+        ac_states=hover_1_ac_states,
+    )
+    system_model.register_output(hover_energy)
 
 
-# hover_trim_variables = hover_condition.assemble_trim_residual(
-#     mass_properties=[motor_mass_properties, battery_mass_properties, m4_mass_properties],
-#     aero_propulsive_outputs=hover_bem_output_list,
-#     ac_states=hover_1_ac_states,
-# )
-# system_model.register_output(hover_trim_variables)
-# system_model.add_constraint(hover_trim_variables.accelerations, equals=0)
+hover_trim_variables = hover_condition.assemble_trim_residual(
+    mass_properties=[motor_mass_properties, battery_mass_properties, m4_mass_properties],
+    aero_propulsive_outputs=hover_bem_output_list,
+    ac_states=hover_1_ac_states,
+)
+system_model.register_output(hover_trim_variables)
+system_model.add_constraint(hover_trim_variables.accelerations, equals=0)
 
 # # endregion
 
@@ -271,118 +274,148 @@ if motor_analysis:
 
 climb_trim_variables = climb_condition.assemble_trim_residual(
     mass_properties=[motor_mass_properties, battery_mass_properties, m4_mass_properties],
-    # aero_propulsive_outputs=[vlm_outputs, climb_bem_outputs, drag_build_up_outputs],
-    aero_propulsive_outputs=[vlm_outputs, drag_build_up_outputs],
+    aero_propulsive_outputs=[vlm_outputs, climb_bem_outputs, drag_build_up_outputs],
+    # aero_propulsive_outputs=[vlm_outputs, drag_build_up_outputs],
     ac_states=climb_ac_states,
     load_factor=1.,
     ref_pt=m4_mass_properties.cg_vector,
 )
 system_model.register_output(climb_trim_variables)
 system_model.add_constraint(climb_trim_variables.accelerations, equals=0, scaler=5.)
+# system_model.add_objective(climb_trim_variables.accelerations, scaler=5.)
 # endregion 
 
-# # region cruise
-# cruise_condition = cd.CruiseCondition(
-#     name='steady_cruise',
-#     num_nodes=1,
-#     stability_flag=False,
-# )
+# region cruise
+cruise_condition = cd.CruiseCondition(
+    name='steady_cruise',
+    num_nodes=1,
+    stability_flag=False,
+)
 
-# cruise_M = system_model.create_input('cruise_mach', val=0.195)
-# cruise_h = system_model.create_input('cruise_altitude', val=1000)
-# cruise_range = system_model.create_input('cruise_range', val=60000)
-# cruise_pitch = system_model.create_input('cruise_pitch', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-5), upper=np.deg2rad(5), scaler=10)
+cruise_M = system_model.create_input('cruise_mach', val=0.195)
+cruise_h = system_model.create_input('cruise_altitude', val=1000)
+cruise_range = system_model.create_input('cruise_range', val=60000)
+cruise_pitch = system_model.create_input('cruise_pitch', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-5), upper=np.deg2rad(5), scaler=10)
 
-# cruise_ac_states, cruise_atmos = cruise_condition.evaluate(mach_number=cruise_M, pitch_angle=cruise_pitch, altitude=cruise_h, cruise_range=cruise_range)
+cruise_ac_states, cruise_atmos = cruise_condition.evaluate(mach_number=cruise_M, pitch_angle=cruise_pitch, altitude=cruise_h, cruise_range=cruise_range)
 
-# system_model.register_output(cruise_ac_states)
-# system_model.register_output(cruise_atmos)
+system_model.register_output(cruise_ac_states)
+system_model.register_output(cruise_atmos)
 
-# cruise_bem = BEM(
-#     name='cruise_bem',
-#     num_nodes=1, 
-#     BEM_parameters=bem_pusher_rotor_parameters,
-#     rotation_direction='ignore',
-# )
-# cruise_rpm = system_model.create_input('cruise_rpm', val=2000, dv_flag=True, lower=600, upper=2500, scaler=1e-3)
-# cruise_bem_outputs = cruise_bem.evaluate(ac_states=cruise_ac_states, rpm=cruise_rpm, rotor_radius=pp_mesh.radius, thrust_vector=pp_mesh.thrust_vector,
-#                                                 thrust_origin=pp_mesh.thrust_origin, atmosphere=cruise_atmos, blade_chord_cp=pp_mesh.chord_cps, blade_twist_cp=pp_mesh.twist_cps, 
-#                                                 cg_vec=m4_mass_properties.cg_vector, reference_point=m4_mass_properties.cg_vector)
-# system_model.register_output(cruise_bem_outputs) 
+cruise_bem = BEM(
+    name='cruise_bem',
+    num_nodes=1, 
+    BEM_parameters=bem_pusher_rotor_parameters,
+    rotation_direction='ignore',
+)
+cruise_rpm = system_model.create_input('cruise_rpm', val=2000, dv_flag=True, lower=600, upper=2500, scaler=1e-3)
+cruise_bem_outputs = cruise_bem.evaluate(ac_states=cruise_ac_states, rpm=cruise_rpm, rotor_radius=pp_mesh.radius, thrust_vector=pp_mesh.thrust_vector,
+                                                thrust_origin=pp_mesh.thrust_origin, atmosphere=cruise_atmos, blade_chord_cp=pp_mesh.chord_cps, blade_twist_cp=pp_mesh.twist_cps, 
+                                                cg_vec=m4_mass_properties.cg_vector, reference_point=m4_mass_properties.cg_vector)
+system_model.register_output(cruise_bem_outputs) 
 
-# # VAST solver
-# vlm_model = VASTFluidSover(
-#     name='cruise_vlm_model',
-#     surface_names=[
-#         'cruise_wing_mesh',
-#         'cruise_tail_mesh',
-#         # 'cruise_vtail_mesh',
-#         # 'cruise_fuselage_mesh',
-#     ],
-#     surface_shapes=[
-#         (1, ) + wing_meshes.vlm_mesh.shape[1:],
-#         (1, ) + tail_meshes.vlm_mesh.shape[1:],
-#         # (1, ) + vtail_meshes.vlm_mesh.shape[1:],
-#         # (1, ) + fuesleage_mesh.shape,
-#     ],
-#     fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
-#     mesh_unit='ft',
-#     cl0=[0., 0., 0., 0.]
-# )
-# elevator = system_model.create_input('cruise_elevator', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-20), upper=np.deg2rad(20))
-# # Evaluate VLM outputs and register them as outputs
-# vlm_outputs = vlm_model.evaluate(
-#     atmosphere=cruise_atmos,
-#     ac_states=cruise_ac_states,
-#     meshes=[wing_meshes.vlm_mesh, tail_meshes.vlm_mesh], #, vtail_meshes.vlm_mesh, fuesleage_mesh],
-#     deflections=[None, elevator], #, None, None],
-#     wing_AR=wing_AR,
-#     eval_pt=m4_mass_properties.cg_vector,
-# )
-# system_model.register_output(vlm_outputs)
+# VAST solver
+vlm_model = VASTFluidSover(
+    name='cruise_vlm_model',
+    surface_names=[
+        'cruise_wing_mesh',
+        'cruise_tail_mesh',
+        # 'cruise_vtail_mesh',
+        # 'cruise_fuselage_mesh',
+    ],
+    surface_shapes=[
+        (1, ) + wing_meshes.vlm_mesh.shape[1:],
+        (1, ) + tail_meshes.vlm_mesh.shape[1:],
+        # (1, ) + vtail_meshes.vlm_mesh.shape[1:],
+        # (1, ) + fuesleage_mesh.shape,
+    ],
+    fluid_problem=FluidProblem(solver_option='VLM', problem_type='fixed_wake', symmetry=True),
+    mesh_unit='ft',
+    cl0=[0., 0., 0., 0.]
+)
+elevator = system_model.create_input('cruise_elevator', val=np.deg2rad(0), dv_flag=True, lower=np.deg2rad(-20), upper=np.deg2rad(20))
+# Evaluate VLM outputs and register them as outputs
+vlm_outputs = vlm_model.evaluate(
+    atmosphere=cruise_atmos,
+    ac_states=cruise_ac_states,
+    meshes=[wing_meshes.vlm_mesh, tail_meshes.vlm_mesh], #, vtail_meshes.vlm_mesh, fuesleage_mesh],
+    deflections=[None, elevator], #, None, None],
+    wing_AR=wing_AR,
+    eval_pt=m4_mass_properties.cg_vector,
+)
+system_model.register_output(vlm_outputs)
 
-# drag_build_up_model = cd.DragBuildUpModel(
-#     name='cruise_drag_build_up',
-#     num_nodes=1,
-#     units='ft',
-# )
+drag_build_up_model = cd.DragBuildUpModel(
+    name='cruise_drag_build_up',
+    num_nodes=1,
+    units='ft',
+)
 
-# drag_build_up_outputs = drag_build_up_model.evaluate(atmos=cruise_atmos, ac_states=cruise_ac_states, drag_comp_list=drag_comp_list, s_ref=S_ref)
-# system_model.register_output(drag_build_up_outputs)
+drag_build_up_outputs = drag_build_up_model.evaluate(atmos=cruise_atmos, ac_states=cruise_ac_states, drag_comp_list=drag_comp_list, s_ref=S_ref)
+system_model.register_output(drag_build_up_outputs)
 
-# if motor_analysis:
-#     cruise_motor_outputs = evaluate_multiple_motor_analysis_models(
-#         rotor_outputs_list=[cruise_bem_outputs],
-#         motor_sizing_list=[motor_mass_properties[-1]],
-#         rotor_rpm_list=[cruise_rpm],
-#         motor_diameter_list=[motor_diameters[-1]],
-#         name_prefix='cruise_motor_analysis',
-#         flux_weakening=False,
-#         m3l_model=system_model,
-#     )
+if motor_analysis:
+    cruise_motor_outputs = evaluate_multiple_motor_analysis_models(
+        rotor_outputs_list=[cruise_bem_outputs],
+        motor_sizing_list=[motor_mass_properties[-1]],
+        rotor_rpm_list=[cruise_rpm],
+        motor_diameter_list=[motor_diameters[-1]],
+        name_prefix='cruise_motor_analysis',
+        flux_weakening=False,
+        m3l_model=system_model,
+    )
 
-#     cruise_energy_model = cd.EnergyModelM3L(name='energy_cruise')
-#     cruise_energy = cruise_energy_model.evaluate(
-#         cruise_motor_outputs,
-#         ac_states=cruise_ac_states,
-#     )
-#     system_model.register_output(cruise_energy)
+    cruise_energy_model = cd.EnergyModelM3L(name='energy_cruise')
+    cruise_energy = cruise_energy_model.evaluate(
+        cruise_motor_outputs,
+        ac_states=cruise_ac_states,
+    )
+    system_model.register_output(cruise_energy)
 
-# cruise_trim_variables = cruise_condition.assemble_trim_residual(
-#     mass_properties=[motor_mass_properties, battery_mass_properties, m4_mass_properties],
-#     aero_propulsive_outputs=[vlm_outputs, cruise_bem_outputs, drag_build_up_outputs],
-#     ac_states=cruise_ac_states,
-#     load_factor=1.,
-#     ref_pt=m4_mass_properties.cg_vector,
-# )
-# system_model.register_output(cruise_trim_variables)
-# system_model.add_constraint(cruise_trim_variables.accelerations, equals=0, scaler=5.)
+cruise_trim_variables = cruise_condition.assemble_trim_residual(
+    mass_properties=[motor_mass_properties, battery_mass_properties, m4_mass_properties],
+    aero_propulsive_outputs=[vlm_outputs, cruise_bem_outputs, drag_build_up_outputs],
+    ac_states=cruise_ac_states,
+    load_factor=1.,
+    ref_pt=m4_mass_properties.cg_vector,
+)
+system_model.register_output(cruise_trim_variables)
+system_model.add_constraint(cruise_trim_variables.accelerations, equals=0, scaler=5.)
+# endregion
 
+if motor_analysis:
+    total_energy_model = cd.TotalEnergyModelM3L(name='total_energy_model')
+    total_energy = total_energy_model.evaluate(
+        hover_energy, 
+        climb_energy, 
+        cruise_energy, 
+    )
+    system_model.register_output(total_energy)
 
+    soc_model = cd.SOCModelM3L(name='SoC_model', battery_energy_density=400) # Note, either turn this parameter into csdl variable or connect it from battery sizing 
+    final_SoC = soc_model.evaluate(battery_mass=battery_mass, total_energy_consumption=total_energy, mission_multiplier=2.7)
+    system_model.register_output(final_SoC)
+    system_model.add_constraint(final_SoC, equals=0.2)
 
 csdl_model = system_model.assemble_csdl()
 
 sim = Simulator(csdl_model, analytics=True)
 sim.run()
 
-# cd.print_caddee_outputs(system_model, sim)
+cd.print_caddee_outputs(system_model, sim, compact_print=True)
+
+# sim.check_totals(of='hover_condition_eom_model.eom_solve_model.accelerations', )
+sim.check_totals(of='steady_climb_eom_model.eom_solve_model.accelerations', wrt='tail_moment_arm')
+#     'wingspan',
+#     'h_tail_span',
+#     'h_tail_root_chord',
+#     'wingspan',
+#     'root_chord',
+# ])
+
+if perform_optimization:
+    prob = CSDLProblem(problem_name='TC1_problem', simulator=sim)
+    optimizer = SLSQP(prob, maxiter=100, ftol=1E-5)
+
+    optimizer.solve()
+    cd.print_caddee_outputs(system_model, sim, compact_print=True)
