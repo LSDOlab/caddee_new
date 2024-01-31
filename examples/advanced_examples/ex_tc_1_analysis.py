@@ -405,13 +405,26 @@ sim.run()
 cd.print_caddee_outputs(system_model, sim, compact_print=True)
 
 # sim.check_totals(of='hover_condition_eom_model.eom_solve_model.accelerations', )
-sim.check_totals(of='steady_climb_eom_model.eom_solve_model.accelerations', wrt='tail_moment_arm')
-#     'wingspan',
-#     'h_tail_span',
-#     'h_tail_root_chord',
-#     'wingspan',
-#     'root_chord',
-# ])
+sim.check_totals(of=['steady_climb_eom_model.eom_solve_model.accelerations'], 
+                 wrt=['tail_moment_arm',
+                    'wingspan',
+                    'h_tail_span',
+                    'h_tail_root_chord',
+                    'wingspan',
+                    'root_chord',
+])
+
+sim.check_totals(of=['hover_condition_eom_model.eom_solve_model.accelerations'],
+                 wrt=[
+                     'rlo_r1',
+                     'rlo_r2',
+                     'rli_r1',
+                     'rli_r2',
+                     'rri_r1',
+                     'rri_r2',
+                     'rro_r1',
+                     'rro_r2',
+                 ])
 
 if perform_optimization:
     prob = CSDLProblem(problem_name='TC1_problem', simulator=sim)

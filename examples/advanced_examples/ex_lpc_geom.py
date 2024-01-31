@@ -1023,8 +1023,10 @@ if FFD:
         
         parameterization_inputs[rotor_prefixes[i]+'_lift_rotor_connection'] = m3l.Variable(name=rotor_prefixes[i]+'_lift_rotor_connection', shape=(3,), value=disk_connection.value)
         parameterization_inputs[rotor_prefixes[i]+'_wing_boom_connection'] = m3l.Variable(name=rotor_prefixes[i]+'_wing_boom_connection', shape=(3,), value=boom_connection.value)
-        parameterization_inputs[rotor_prefixes[i]+'_r1'] = m3l.Variable(name=rotor_prefixes[i]+'_r1', shape=(1,), value=3.5)
-        parameterization_inputs[rotor_prefixes[i]+'_r2'] = m3l.Variable(name=rotor_prefixes[i]+'_r2', shape=(1,), value=3.5)
+        parameterization_inputs[rotor_prefixes[i]+'_r1'] = m3l.Variable(name=rotor_prefixes[i]+'_r1', shape=(1,), value=3.5, dv_flag=True)
+        parameterization_inputs[rotor_prefixes[i]+'_r2'] = m3l.Variable(name=rotor_prefixes[i]+'_r2', shape=(1,), value=3.5, dv_flag=True)
+        # parameterization_inputs[rotor_prefixes[i]+'_r1'] = dv_radius_list[i]
+        # parameterization_inputs[rotor_prefixes[i]+'_r2'] = dv_radius_list[i]
 
     # endregion
 
