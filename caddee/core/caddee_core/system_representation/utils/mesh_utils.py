@@ -19,9 +19,25 @@ def import_mesh(file, ms, targets=None, component=None, rescale:float=1e-3, remo
     if remove_dupes:
         nnodes = nodes.shape[0]
         # remove duplicate nodes
-        nodes, index = np.unique(nodes, return_inverse=True, axis=0)
+        # nodes, index = np.unique(nodes, return_inverse=True, axis=0)
+        nodes_rounded = np.round(nodes, decimals=8)
+        _, nodes_idx, index = np.unique(nodes_rounded, return_index=True, return_inverse=True, axis=0)
+        nodes = nodes[nodes_idx, :]
+
+
+
+
         #print('dupes removed in ' + str(end-start) + ' seconds')
         # map indices in cells to new indices
+
+        # from scipy.spatial.distance import cdist
+        # cdist_mat = cdist(nodes, nodes)
+        # cdist_mat += np.eye(cdist_mat.shape[0])  # set diagonal elements equal to 1
+        # mins_cdist = cdist_mat.min(axis=0)
+
+    
+
+
         cells = []
         connectivity = np.ndarray((0,4))
         nquads = 0
