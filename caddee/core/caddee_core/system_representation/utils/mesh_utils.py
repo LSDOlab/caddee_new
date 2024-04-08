@@ -111,3 +111,54 @@ def import_mesh(file, ms, targets=None, component=None, rescale:float=1e-3, remo
                 targets = list(ms.primitives.values())
             ma_nodes = ms.project(nodes, targets=targets, grid_search_n=grid_search_n, plot=plot)
     return ma_nodes, connectivity
+
+def import_mesh_without_projections(file, rescale:float=1e-3, remove_dupes=True, plot=False, tol:float=1e-8):
+    '''
+    Read mesh file (from any format meshio supports) and convert into mapped array + connectivity without doing any projections;
+    This is useful for meshes that don't directly correspond to a physical geometry (like beam cross-sectional meshes)
+    ------------
+    Parameters:
+        file: str, name of mesh file
+        ...
+    
+    '''
+    mesh = meshio.read(file)
+    nodes = mesh.points*rescale
+    cell_sets = mesh.cell_sets_dict
+    cell_data = mesh.get_cell_data("gmsh:physical", 'quad')
+    if remove_dupes:
+        nnodes = nodes.shape[0]
+        # remove duplicate nodes
+        # nodes, index = np.unique(nodes, return_inverse=True, axis=0)
+        nodes_rounded = np.round(nodes, decimals=8)
+        _, nodes_idx, index = np.unique(nodes_rounded, return_index=True, return_inverse=True, axis=0)
+        nodes = nodes[nodes_idx, :]
+
+        cells = []
+        connectivity = np.ndarray((0,4))
+        nquads = 0
+        for i, cell in enumerate(mesh.cells):
+            if cell.type == 'quad':     #TODO: add aditional 2D element types
+                for n in range(cell.data.shape[0]):
+                    row = cell.data[n,:]
+                    # row = np.array([cind2[i] for i in row])
+                    row = np.array([index[i] for i in row])
+                    connectivity = np.vstack((connectivity,row.reshape((1,4))))
+                    cell.data[n,:] = row
+                cells.append(cell)
+                nquads += cell.data.shape[0]
+        print('number of duplicates removed is ' + str(nnodes-nodes.shape[0]))
+        nnodes = nodes.shape[0]
+    else:
+        connectivity = np.ndarray((0,4))
+        nquads = 0
+        # TODO: Implement functionality for multiple cell blocks
+        for cell in mesh.cells:
+            if cell.type == 'quad':     #TODO: add aditional 2D element types
+                for row in cell.data:
+                    connectivity = np.vstack((connectivity,row.reshape((1,4))))
+                nquads += cell.data.shape[0]
+    
+    # convert nodes array to mapped array
+    ma_nodes = am.MappedArray(nodes)
+    return ma_nodes, connectivity, cells, cell_sets, cell_data

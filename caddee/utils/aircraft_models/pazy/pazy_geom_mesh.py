@@ -483,6 +483,152 @@ class PazyGeomMesh:
         self.geom_data['primitive_names']['structural_right_wing_names'] = structural_right_wing_names
         return
 
+    def setup_beam_cross_sectional_geometries(self, stiffener_thickness=2.25e-3):
+        spatial_rep = self.sys_rep.spatial_representation
+
+        root_te = self.geom_data['points']['wing']['root_te']
+        root_le = self.geom_data['points']['wing']['root_le']
+
+        wing_right_bottom = self.geom_data['components']['right_wing_bottom']
+        wing_right_top = self.geom_data['components']['right_wing_top']
+
+        front_cutoff_point = (99 * root_le + 1*root_te) / 100
+        rear_cutoff_point = (1 * root_le + 99*root_te) / 100
+        chord20_point = (4 * root_le + root_te) / 5
+        chord80_point = (root_le + 4*root_te) / 5
+
+        # First we generate a cross-section that contains the ribs
+        num_rib_pts = 20  # number of projection points per surface piece
+
+        rib_front_projection_points = np.linspace(front_cutoff_point, chord20_point, num_rib_pts)
+        rib_mid_projection_points = np.linspace(chord20_point, chord80_point, num_rib_pts)
+        rib_rear_projection_points = np.linspace(chord80_point, rear_cutoff_point, num_rib_pts)
+
+        # create airfoil surface projections
+        ribs_top_f = wing_right_top.project(rib_front_projection_points, direction=[0., 0., 1.],
+                                         grid_search_n=100)
+        ribs_bottom_f = wing_right_bottom.project(rib_front_projection_points, direction=[0., 0., 1.],
+                                               grid_search_n=100)
+        ribs_top_m = wing_right_top.project(rib_mid_projection_points, direction=[0., 0., 1.],
+                                         grid_search_n=100)
+        ribs_bottom_m = wing_right_bottom.project(rib_mid_projection_points, direction=[0., 0., 1.],
+                                               grid_search_n=100)
+        ribs_top_r = wing_right_top.project(rib_rear_projection_points, direction=[0., 0., 1.],
+                                         grid_search_n=100)
+        ribs_bottom_r = wing_right_bottom.project(rib_rear_projection_points, direction=[0., 0., 1.],
+                                               grid_search_n=100)
+        
+        ribs_top_list = [ribs_top_f, ribs_top_m, ribs_top_r]
+        ribs_bottom_list = [ribs_bottom_f, ribs_bottom_m, ribs_bottom_r]
+
+        # take the edge points of the airfoil surface projections to create additional surfaces
+        ribs_top_f_front, ribs_top_f_rear = ribs_top_f.value[0, :], ribs_top_f.value[-1, :]
+        ribs_top_r_front, ribs_top_r_rear = ribs_top_r.value[0, :], ribs_top_r.value[-1, :]
+        ribs_bottom_f_front, ribs_bottom_f_rear = ribs_bottom_f.value[0, :], ribs_bottom_f.value[-1, :]
+        ribs_bottom_r_front, ribs_bottom_r_rear = ribs_bottom_r.value[0, :], ribs_bottom_r.value[-1, :]
+
+        # define points on the front and rear surfaces to split the rib into a structured mesh
+        ribs_f_top = (3 * ribs_top_f_front + 2 * ribs_bottom_f_front) / 5
+        ribs_f_bot = (2 * ribs_top_f_front + 3 * ribs_bottom_f_front) / 5
+        ribs_r_top = (3 * ribs_top_r_rear + 2 * ribs_bottom_r_rear) / 5
+        ribs_r_bot = (2 * ribs_top_r_rear + 3 * ribs_bottom_r_rear) / 5
+
+        # create linspaces that span the middle of the rib from front to back
+        ribs_mid_f_top_points = np.linspace(ribs_f_top, chord20_point + np.array([0., 0., stiffener_thickness/2.]), num_rib_pts)
+        ribs_mid_f_bot_points = np.linspace(ribs_f_bot, chord20_point - np.array([0., 0., stiffener_thickness/2.]), num_rib_pts)
+
+        ribs_mid_m_top_points = np.linspace(chord20_point + np.array([0., 0., stiffener_thickness/2.]), chord80_point + np.array([0., 0., stiffener_thickness/2.]), num_rib_pts)
+        ribs_mid_m_bot_points = np.linspace(chord20_point - np.array([0., 0., stiffener_thickness/2.]), chord80_point - np.array([0., 0., stiffener_thickness/2.]), num_rib_pts)
+
+        ribs_mid_r_top_points = np.linspace(chord80_point + np.array([0., 0., stiffener_thickness/2.]), ribs_r_top, num_rib_pts)
+        ribs_mid_r_bot_points = np.linspace(chord80_point - np.array([0., 0., stiffener_thickness/2.]), ribs_r_bot, num_rib_pts)
+
+        ribs_mid_top_list = [ribs_mid_f_top_points, ribs_mid_m_top_points, ribs_mid_r_top_points]
+        ribs_mid_bot_list = [ribs_mid_f_bot_points, ribs_mid_m_bot_points, ribs_mid_r_bot_points]
+
+        # define the Bsplines that will span the surfaces
+        n_cp = (num_rib_pts, 2)
+        order = (2,)
+
+        surface_dict = {}
+        surface_names = []
+        for i in range(len(ribs_top_list)):
+            surf_boundary_points_top = np.zeros((num_rib_pts, 2, 3))
+            surf_boundary_points_mid = np.zeros((num_rib_pts, 2, 3))
+            surf_boundary_points_bot = np.zeros((num_rib_pts, 2, 3))
+
+            surf_boundary_points_top[:, 0, :] = ribs_top_list[i].value
+            surf_boundary_points_top[:, 1, :] = ribs_mid_top_list[i]
+            surf_boundary_points_mid[:, 0, :] = ribs_mid_top_list[i]
+            surf_boundary_points_mid[:, 1, :] = ribs_mid_bot_list[i]
+            surf_boundary_points_bot[:, 0, :] = ribs_mid_bot_list[i]
+            surf_boundary_points_bot[:, 1, :] = ribs_bottom_list[i].value
+
+            t_panel_bspline = bsf.fit_bspline(surf_boundary_points_top, num_control_points=n_cp, order=order)
+            t_panel = SystemPrimitive('top_panel_{}'.format(i), t_panel_bspline)
+            surface_dict[t_panel.name] = t_panel
+            surface_names.append(t_panel.name)
+
+            m_panel_bspline = bsf.fit_bspline(surf_boundary_points_mid, num_control_points=n_cp, order=order)
+            m_panel = SystemPrimitive('mid_panel_{}'.format(i), m_panel_bspline)
+            surface_dict[m_panel.name] = m_panel
+            surface_names.append(m_panel.name)
+
+            if i == 1:
+                # store stiffener plate cross-section separately for later use
+                stiffener_xsection = deepcopy(m_panel)
+
+            b_panel_bspline = bsf.fit_bspline(surf_boundary_points_bot, num_control_points=n_cp, order=order)
+            b_panel = SystemPrimitive('bot_panel_{}'.format(i), b_panel_bspline)
+            surface_dict[b_panel.name] = b_panel
+            surface_names.append(b_panel.name)
+
+        spatial_rep.beam_primitives_crosssection_1 = deepcopy(surface_dict)
+        self.geom_data['primitive_names']['beam_cross-section_1'] = deepcopy(surface_names)
+
+        # Then we move to the second cross-section, which contains only the stiffener + front and rear Nylon spars
+
+        # we can copy the stiffener cross-section from the rib cross-section above!
+        surface_dict_2 = {}
+        surface_names_2 = []
+
+        surface_dict_2[stiffener_xsection.name] = stiffener_xsection
+        surface_names_2.append(stiffener_xsection.name)
+
+        # generate projection points for front and rear spars
+        front_projection_points = np.linspace(front_cutoff_point, np.array([0.006, 0., 0.]), num_rib_pts)
+        rear_projection_points = np.linspace(np.array([0.1 - 0.0058, 0., 0.]), rear_cutoff_point, num_rib_pts)
+
+        spar_top_f = wing_right_top.project(front_projection_points, direction=[0., 0., 1.],
+                                         grid_search_n=100)
+        spar_bottom_f = wing_right_bottom.project(front_projection_points, direction=[0., 0., 1.],
+                                               grid_search_n=100)
+        spar_top_r = wing_right_top.project(rear_projection_points, direction=[0., 0., 1.],
+                                         grid_search_n=100)
+        spar_bottom_r = wing_right_bottom.project(rear_projection_points, direction=[0., 0., 1.],
+                                               grid_search_n=100)
+
+        spar_f_points = np.zeros((num_rib_pts, 2, 3))
+        spar_f_points[:, 0, :] = spar_top_f.value
+        spar_f_points[:, 1, :] = spar_bottom_f.value
+        f_spar_bspline = bsf.fit_bspline(spar_f_points, num_control_points=n_cp, order=order)
+        f_spar = SystemPrimitive('front_spar', f_spar_bspline)
+        surface_dict_2[f_spar.name] = f_spar
+        surface_names_2.append(f_spar.name)
+
+        spar_r_points = np.zeros((num_rib_pts, 2, 3))
+        spar_r_points[:, 0, :] = spar_top_r.value
+        spar_r_points[:, 1, :] = spar_bottom_r.value
+        r_spar_bspline = bsf.fit_bspline(spar_r_points, num_control_points=n_cp, order=order)
+        r_spar = SystemPrimitive('rear_spar', r_spar_bspline)
+        surface_dict_2[r_spar.name] = r_spar
+        surface_names_2.append(r_spar.name)
+
+        spatial_rep.beam_primitives_crosssection_2 = deepcopy(surface_dict_2)
+        self.geom_data['primitive_names']['beam_cross-section_2'] = deepcopy(surface_names_2)
+
+        return
+
     def setup_index_functions(self):
         right_wing_names = self.geom_data['primitive_names']['right_wing']
         right_wing_structural_names = self.geom_data['primitive_names']['structural_right_wing_names']
@@ -523,7 +669,7 @@ class PazyGeomMesh:
 
         # wing displacement input function
         order = 3
-        shape = 10
+        shape = 20
         space_u = lg.BSplineSpace(name='displacement_base_space',
                                     order=(order, order),
                                     control_points_shape=(shape, shape))
@@ -538,7 +684,7 @@ class PazyGeomMesh:
         self.functions['wing_displacement_output_leftwing'] = wing_displacement_output_leftwing
 
         # wing force function
-        num = 12
+        num = 20
         u, v = np.meshgrid(np.linspace(0, 1, num), np.linspace(0, 1, num))
         u = np.array(u).flatten()
         v = np.array(v).flatten()
