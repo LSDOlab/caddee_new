@@ -206,9 +206,9 @@ class PazyGeomMesh:
             self.geom_data['components']['right_wing_oml'] = right_wing_oml
             self.geom_data['components']['right_wing_top'] = right_wing_top
             self.geom_data['components']['right_wing_bottom'] = right_wing_bottom
-            # self.geom_data['components']['left_wing_oml'] = left_wing_oml
-            # self.geom_data['components']['left_wing_top'] = left_wing_top
-            # self.geom_data['components']['left_wing_bottom'] = left_wing_bottom
+            self.geom_data['components']['left_wing_oml'] = left_wing_oml
+            self.geom_data['components']['left_wing_top'] = left_wing_top
+            self.geom_data['components']['left_wing_bottom'] = left_wing_bottom
 
         # endregion
 
@@ -222,13 +222,19 @@ class PazyGeomMesh:
 
         spatial_rep = self.sys_rep.spatial_representation
 
+        wing_right_bottom = self.geom_data['components']['right_wing_bottom']
+        wing_right_top = self.geom_data['components']['right_wing_top']
+        wing_left_bottom = self.geom_data['components']['left_wing_bottom']
+        wing_left_top = self.geom_data['components']['left_wing_top']
+
+        # construct a matrix that reflects vectors of coordinates to their corresponding negative y-coordinates
+        y_reflection_mat = np.eye(3)
+        y_reflection_mat[1, 1] = -1.
+
         r_tip_le = self.geom_data['points']['wing']['r_tip_le']
         r_tip_te = self.geom_data['points']['wing']['r_tip_te']
         root_te = self.geom_data['points']['wing']['root_te']
         root_le = self.geom_data['points']['wing']['root_le']
-
-        wing_right_bottom = self.geom_data['components']['right_wing_bottom']
-        wing_right_top = self.geom_data['components']['right_wing_top']
 
         structural_right_wing_names = []
 
@@ -243,12 +249,12 @@ class PazyGeomMesh:
         root_80 = (root_le + 4 * root_te) / 5
         root_97 = (3 * root_le + 97 * root_te) / 100
         tip_03 = (97 * tip_le + 3 * tip_te) / 100
-        tip_97 = (3 * tip_le + 97 * tip_te) / 100
+        # tip_97 = (3 * tip_le + 97 * tip_te) / 100
 
         second_rib_03 = root_03 + np.array([0., 0.041, 0.])
-        second_rib_20 = root_20 + np.array([0., 0.041, 0.])
-        second_rib_80 = root_80 + np.array([0., 0.041, 0.])
-        second_rib_97 = root_97 + np.array([0., 0.041, 0.])
+        # second_rib_20 = root_20 + np.array([0., 0.041, 0.])
+        # second_rib_80 = root_80 + np.array([0., 0.041, 0.])
+        # second_rib_97 = root_97 + np.array([0., 0.041, 0.])
 
         rib_projection_points_y = np.arange(second_rib_03[1], tip_03[1]-0.035, 0.03825)
         tip_rib_points_y = np.array([rib_projection_points_y[-1] + 0.0325, 0.55])
@@ -637,7 +643,7 @@ class PazyGeomMesh:
 
         left_wing_names = self.geom_data['primitive_names']['left_wing']
         both_wings_names = self.geom_data['primitive_names']['both_wings']
-        both_wings_all_surfaces = both_wings_names + right_wing_structural_names
+        both_wings_all_surfaces = left_wing_names + right_wing_all_surfaces
 
         # wing thickness function
         order = 1
@@ -668,30 +674,30 @@ class PazyGeomMesh:
         self.functions['wing_stress'] = wing_stress
 
         # wing displacement input function
-        order = 3
-        shape = 20
+        order = 2
+        shape = 10
         space_u = lg.BSplineSpace(name='displacement_base_space',
                                     order=(order, order),
                                     control_points_shape=(shape, shape))
-        wing_displacement_input = index_functions(both_wings_names, 'wing_displacement_input', space_u, 3, value=np.zeros((shape, shape, 3)))
+        wing_displacement_input = index_functions(both_wings_all_surfaces, 'wing_displacement_input', space_u, 3, value=np.zeros((shape, shape, 3)))
         self.functions['wing_displacement_input'] = wing_displacement_input
 
         # wing displacement output function (uses space of displacement input)
-        wing_displacement_output = index_functions(right_wing_names, 'wing_displacement_output', space_u, 3)
+        wing_displacement_output = index_functions(right_wing_all_surfaces, 'wing_displacement_output', space_u, 3)
         self.functions['wing_displacement_output'] = wing_displacement_output
 
         wing_displacement_output_leftwing = index_functions(left_wing_names, 'wing_displacement_output_leftwing', space_u, 3)
         self.functions['wing_displacement_output_leftwing'] = wing_displacement_output_leftwing
 
         # wing force function
-        num = 20
+        num = 10
         u, v = np.meshgrid(np.linspace(0, 1, num), np.linspace(0, 1, num))
         u = np.array(u).flatten()
         v = np.array(v).flatten()
         points = np.vstack((u, v)).T
         space_f = IDWFunctionSpace(name='force_base_space', points=points, order=1,
                                    coefficients_shape=(points.shape[0],))
-        wing_force = index_functions(both_wings_names, 'wing_force', space_f, 3)
+        wing_force = index_functions(both_wings_all_surfaces, 'wing_force', space_f, 3)
         self.functions['wing_force'] = wing_force
 
         # wing cp function
@@ -731,14 +737,14 @@ class PazyGeomMesh:
             # wing_component = self.geom_data['components']['wing']
             # wing_te_component = self.geom_data['components']['wing_te']
             right_wing_names = self.geom_data['primitive_names']['right_wing']
-            # right_wing_structural_names = self.geom_data['primitive_names']['structural_right_wing_names']
+            right_wing_structural_names = self.geom_data['primitive_names']['structural_right_wing_names']
             both_wings_names = self.geom_data['primitive_names']['both_wings']
             left_wing_names = self.geom_data['primitive_names']['left_wing']
 
             # region OML nodes (parametric)
             # Right Wing
             right_wing_oml_para_coords = []
-            for name in right_wing_names:# + right_wing_structural_names:
+            for name in right_wing_names + right_wing_structural_names:
                 for u in np.linspace(0, 1, grid_num_u):
                     for v in np.linspace(0, 1, grid_num_v):
                         right_wing_oml_para_coords.append((name, np.array([u, v]).reshape((1, 2))))
@@ -752,7 +758,7 @@ class PazyGeomMesh:
             self.mesh_data['oml']['mesh_name']['right_wing'] = right_wing_oml_geo_name
 
             both_wings_oml_para_coords = []
-            for name in both_wings_names:# + right_wing_structural_names:
+            for name in both_wings_names + right_wing_structural_names:
                 for u in np.linspace(0, 1, grid_num_u):
                     for v in np.linspace(0, 1, grid_num_v):
                         both_wings_oml_para_coords.append((name, np.array([u, v]).reshape((1, 2))))
